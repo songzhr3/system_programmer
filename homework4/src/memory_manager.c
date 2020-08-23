@@ -147,55 +147,98 @@ static void* _memory_manager_alloc(Memory_Manager* thiz, size_t size)
 	return (char*)iter + sizeof(size_t);
 }
 
+static void _memory_manager_merge_prev_next(Memory_Manager* thiz, DListNode* prev, DListNode* next)
+{
+	PrivInfo* priv = (PrivInfo*)thiz->priv;
+	return_if_fail(NULL != prev && NULL != next && prev->next == next);
+
+	prev->next = next->next;
+	if (NULL != next->next)
+	{
+		next->next->prev = prev;
+	}
+
+	prev->length += next->length;
+
+	if (priv->dlist == next)
+	{
+		priv->dlist = prev;
+	}
+
+	return;
+}
+
+static void _memory_manager_merge_dlist(Memory_Manager* thiz, DListNode* iter)
+{
+	DListNode* prevNode = iter->prev;
+	DListNode* nextNode = iter->next;
+
+	return_if_fail(NULL != thiz && NULL != iter);
+
+	if (NULL != prevNode && ((size_t)prevNode + prevNode->length) == (size_t)iter)
+	{
+		_memory_manager_merge_prev_next(thiz, prevNode, nextNode);
+	}
+
+	if (NULL != nextNode && ((size_t)iter + iter->length) == (size_t)nextNode)
+	{
+		_memory_manager_merge_prev_next(thiz, iter, nextNode);
+	}
+
+	return;
+}
+
 static void _memory_manager_free(Memory_Manager* thiz, void* ptr)
 {
 	DListNode* iter = NULL;
-	DListNode* freeIter = NULL;
+	DListNode* needIter = NULL;
 	PrivInfo* priv = (PrivInfo*)thiz->priv;
 
 	return_if_fail(NULL != ptr);
 
-	freeIter = (DListNode*)((char*)ptr - sizeof(size_t));
+	needIter = (DListNode*)((char*)ptr - sizeof(size_t));
 
-	freeIter->prev = NULL;
-	freeIter->next = NULL;
+	needIter->prev = NULL;
+	needIter->next = NULL;
 
 	if (NULL == priv->dlist)
 	{
-		priv->dlist = freeIter;
+		priv->dlist = needIter;
 
 		return;
 	}
 
 	for (iter = priv->dlist; NULL != iter; iter = iter->next)
 	{
-		if ((size_t)iter > (size_t)freeIter)
+		if ((size_t)iter > (size_t)needIter)
 		{
-			freeIter->next = iter;
-			freeIter->prev = iter->prev;
+			needIter->next = iter;
+			needIter->prev = iter->prev;
 
 			if (NULL != iter->prev)
 			{
-				iter->prev->next = freeIter;
+				iter->prev->next = needIter;
 			}
 
-			iter->prev = freeIter;
+			iter->prev = needIter;
 
 			if (priv->dlist == iter)
 			{
-				priv->dlist = freeIter;
+				priv->dlist = needIter;
 			}
 
 			break;
 		}
 		if (NULL == iter->next)
 		{
-			iter->next = freeIter;
-			freeIter->prev = iter;
+			iter->next = needIter;
+			needIter->prev = iter;
 
 			break;
 		}
 	}
+
+	_memory_manager_merge_dlist(thiz, needIter);
 
 	return ;
 }
@@ -249,7 +292,7 @@ Memory_Manager* memory_manager_create(void* buffer, size_t length)
 #include <assert.h>
 // #include "../include/memory_manager.h"
 
-static void memory_manager_dump(Memory_Manager* thiz)
+static void memory_manager_print(Memory_Manager* thiz)
 {
 	int index = 0;
 	DListNode* iter = NULL;
@@ -275,13 +318,13 @@ int main()
 
 	char* ptr = memory_manager_alloc(memory_manager, 100);
 	memory_manager_free(memory_manager, ptr);
-	memory_manager_dump(memory_manager);
+	memory_manager_print(memory_manager);
 	printf("\n");
 
 	// for (i = 0; i < sizeof(ptrs) / sizeof(ptrs[0]); i++)
 	// {
 	// 	ptrs[i] = memory_manager_alloc(memory_manager, 100 * (i+1));
-	// 	memory_manager_dump(memory_manager);
+	// 	memory_manager_print(memory_manager);
 	// }
 
 	// printf("\n");
@@ -290,34 +333,34 @@ int main()
 	// {
 	// 	memory_manager_free(memory_manager, ptrs[i]);
 	// 	ptrs[i] = NULL;
-	// 	memory_manager_dump(memory_manager);
+	// 	memory_manager_print(memory_manager);
 	// }
 
 	// printf("\n");
-	// memory_manager_dump(memory_manager);
+	// memory_manager_print(memory_manager);
 
 	ptr = memory_manager_alloc(memory_manager, 200);
 	memory_manager_free(memory_manager, ptr);
-	memory_manager_dump(memory_manager);
+	memory_manager_print(memory_manager);
 	printf("\n");
 
 	ptr = memory_manager_alloc(memory_manager, 300);
 	memory_manager_free(memory_manager, ptr);
-	memory_manager_dump(memory_manager);
+	memory_manager_print(memory_manager);
 	printf("\n");
 
 	ptr = memory_manager_alloc(memory_manager, 110);
-	memory_manager_dump(memory_manager);
+	memory_manager_print(memory_manager);
 	printf("#########\n");
 	memory_manager_free(memory_manager, ptr);
-	memory_manager_dump(memory_manager);
+	memory_manager_print(memory_manager);
 	printf("\n");
 
 	ptr = memory_manager_alloc(memory_manager, 350);
-	memory_manager_dump(memory_manager);
+	memory_manager_print(memory_manager);
 	printf("#########\n");
 	memory_manager_free(memory_manager, ptr);
-	memory_manager_dump(memory_manager);
+	memory_manager_print(memory_manager);
 	printf("\n");
 
 	getchar();
