@@ -1,27 +1,28 @@
 源文件
-//关于链表功能的函数
-DListNode.c
+//bestfit算法的内存管理器实现
+memory_manager_bestfit.c
 
-// 加锁解锁定义，多线程
-locker_pthread.c
+//firstfit算法的内存管理器实现
+memory_manager_firstfit.c
 
-//队列测试/单元测试
-test_queue.c
-cunit_test_queue.c
+//bestfit算法内存管理器的单元测试
+cunit_test_memory_manager_bestfit.c
 
-// 哈希表测试/单元测试
-test_hash_table
-cunit_test_hash_table.c
+//firstfit算法内存管理器的单元测试
+cunit_test_memory_manager_firstfit.c
 
-测试：linux 系统 在src路径下编译
-// 队列的测试
-[root@localhost src] # gcc locker_pthread.c  test_queue.c  queue.c DListNode.c -g –o test_queue.exe -Wall
+头文件
+memory_manager.h
 
-//哈希表的测试
-[root@localhost src] # gcc locker_pthread.c  test_hash_table.c hash_table.c DListNode.c -g –o test_hash_table.exe -Wall
+测试：linux/centos 7 系统 在src路径下编译
+// bestfit算法内存管理器的测试
+[root@localhost src] # gcc -g memory_manager_bestfit.c -DTEST_MEMORY_MANAGER_BESTFIT -o test_memory_manager_bestfit.exe -Wall
 
-// 队列单元测试
-[root@localhost src] # gcc locker_pthread.c  cunit_test_queue.c  queue.c DListNode.c -g –o cunit_test_queue.exe -lcunit
+// bestfit算法内存管理器的单元测试
+[root@localhost src] # gcc -g memory_manager_bestfit.c cunit_test_memory_manager_bestfit.c -lcunit -o cunit_test_memory_manager_bestfit.exe  -Wall
 
-// 哈希表单元测试
-[root@localhost src] # gcc locker_pthread.c  cunit_test_hash_table.c  hash_table.c DListNode.c -g –o cunit_test_hash_table.exe -lcunit
+// firstfit算法内存管理器的测试
+[root@localhost src] # gcc -g memory_manager_firstfit.c -DTEST_MEMORY_MANAGER_FIRSTFIT -o test_memory_manager_firstfit.exe -Wall
+
+// firstfit算法内存管理器的单元测试
+[root@localhost src] # gcc -g memory_manager_firstfit.c cunit_test_memory_manager_firstfit.c -lcunit -o cunit_test_memory_manager_firstfit.exe  -Wall

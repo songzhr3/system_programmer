@@ -31,6 +31,7 @@
 extern "C"{
 #endif /* __cplusplus */
 
+
 #define return_if_fail(p) if(!(p))\
 	{printf("%s:%d Warning: "#p" failed.\n", \
 		__func__, __LINE__); return;}
@@ -47,22 +48,43 @@ extern "C"{
 struct _Memory_Manager;
 typedef struct _Memory_Manager Memory_Manager;
 
+/*
+* 内存分配函数指针
+*/
 typedef void* (*MemoryManagerAllocFunc)(Memory_Manager* thiz, size_t size);
+
+/*
+* 内存释放函数指针
+*/
 typedef void (*MemoryManagerFreeFunc)(Memory_Manager* thiz, void* ptr);
-typedef void (*MemoryManagerDestroyFunc)(Memory_Manager* thiz);
+
+/*
+* 内存管理器销毁函数指针
+*/
+typedef void (*MemoryManagerDestroyFunc)(Memory_Manager** thiz);
 
 struct _Memory_Manager
 {
 	MemoryManagerAllocFunc alloc;
-	// MemoryManagerCallocFunc calloc;
 	MemoryManagerFreeFunc free;
 	MemoryManagerDestroyFunc destroy;
 
-	char priv[0];
+	char priv[0];        /* 可变长数据成员 */
 };
 
 typedef struct _DListNode DListNode;
 typedef struct _PrivInfo PrivInfo;
+
+struct _DListNode
+{
+	size_t length;                /* 空闲内存块大小 */
+	struct _DListNode* prev;      /* 指向前一个空闲内存块 */
+	struct _DListNode* next;      /* 指向后一个空闲内存块 */
+};
+
+#define MIN_SIZE sizeof(DListNode)
+
+#define REAL_NEED_SZIE(size) ((size > sizeof(DListNode)? size : MIN_SIZE) + sizeof(size_t))
 
 /**************************************************************************************************/
 /*                                          EXTERN_PROTOTYPES                                     */
@@ -84,14 +106,25 @@ typedef struct _PrivInfo PrivInfo;
 /*                                          PUBLIC_FUNCTIONS                                      */
 /**************************************************************************************************/
 
-// 内存管理器创建接口声明，在src/memory_manager.c 中定义
+/*
+* 内存管理器创建接口声明，在src/memory_manager.c 中定义
+*/
 Memory_Manager* memory_manager_create(void* buffer, size_t length);
 
-
-// void* memory_manager_calloc(Memory_Manager* thiz, size_t nmemb, size_t size);
+/*
+* 内存管理器内存分配接口，在src/memory_manager.c 中定义
+*/
 void* memory_manager_alloc(Memory_Manager* thiz, size_t size);
+
+/*
+* 内存管理器内存释放接口，在src/memory_manager.c 中定义
+*/
 void memory_manager_free(Memory_Manager* thiz, void* ptr);
-void memory_manager_destroy(Memory_Manager* thiz);
+
+/*
+* 内存管理器销毁接口，在src/memory_manager.c 中定义
+*/
+void memory_manager_destroy(Memory_Manager** thiz);
 
 /**************************************************************************************************/
 /*                                          GLOBAL_FUNCTIONS                                      */
