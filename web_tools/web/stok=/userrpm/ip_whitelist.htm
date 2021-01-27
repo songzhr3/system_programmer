@@ -1,0 +1,146 @@
+<!DOCTYPE html
+    PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
+<html xmlns="http://www.w3.org/1999/xhtml">
+
+<head>
+    <meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
+    <title>IP Whitelist</title>
+</head>
+
+<body>
+    <div class="func-container">
+        <div id="ip_whitelist_rule_list">
+            <div id="ip_whitelist_rule_grid"></div>
+        </div>
+
+        <div id="ip_whitelist_help"></div>
+    </div>
+    <script src="../web-static/js/ips/ips-common.js?random=20201217044300" type="text/javascript"></script>
+    <script type="text/javascript">
+try {
+    $
+} catch (e) {
+    location.href = "/";
+};
+
+$(document).ready(function (e) {
+    var g_direction_trans = {
+        src: $.su.CHAR.IP_BWLIST.TYPE_SRC,
+        dst: $.su.CHAR.IP_BWLIST.TYPE_DST
+    };
+
+    $("#ip_whitelist_rule_list").panel({
+        title: $.su.CHAR.IP_BWLIST.WHITELIST_LIST,
+        collapsible: false
+    });
+
+    var ruleGrid = $("#ip_whitelist_rule_grid").grid({
+        editor: {
+            content: "default",
+            fields: [
+                { name: "ip" },
+                { name: "type" },
+                { name: "enable" },
+                { name: "comment" }
+            ],
+            validator: function () {
+                var cidr_input = $("input[name=ip]");
+                var cidr = cidr_input.subnet("getValue");
+                var normalized_cidr = normalizeCIDR(cidr);
+                cidr_input.subnet("setValue", normalized_cidr);
+                return true;
+            }
+        },
+        store: {
+            proxy: new $.su.Proxy(),
+            fields: [
+                { name: "ip" },
+                { name: "type" },
+                { name: "enable" },
+                { name: "comment" }
+            ],
+            parseKey: {
+                moduleName: "ip_bwlist",
+                tableName: "whitelist",
+                pageSizeName: "ip_whitelist_entry"
+            },
+            autoLoad: true
+        },
+        columns: [
+            {
+                xtype: "checkcolumn",
+                width: 15
+            },
+            {
+                xtype: "rownumberer",
+                width: 15
+            },
+            {
+                text: $.su.CHAR.IP_BWLIST.IP,
+                dataIndex: "ip",
+                width: 50,
+                editor: {
+                    xtype: "subnet"
+                }
+            },
+            {
+                text: $.su.CHAR.IP_BWLIST.TYPE,
+                dataIndex: "type",
+                width: 50,
+                editor: {
+                    xtype: "radio",
+                    items: [
+                        { boxlabel: $.su.CHAR.IP_BWLIST.TYPE_SRC, name: 'type', inputValue: 'src', checked: true },
+                        { boxlabel: $.su.CHAR.IP_BWLIST.TYPE_DST, name: 'type', inputValue: 'dst' }
+                    ],
+                    columns: 2
+                },
+                renderer: function (dd) {
+                    return g_direction_trans[dd] || dd;
+                }
+            },
+            {
+                text: $.su.CHAR.IP_BWLIST.COMMENT,
+                dataIndex: "comment",
+                xtype: "comment",
+                width: 75,
+                editor: {
+                    xtype: "textbox",
+                    allowBlank: true,
+                    vtype: "string_visible_allow_blank",
+                    tips: $.su.CHAR.IP_BWLIST.OPTIONAL,
+                    maxLength: 50
+                }
+            },
+            {
+                text: $.su.CHAR.GRID.STATUS,
+                xtype: "statuscolumn",
+                dataIndex: "enable",
+                width: 35,
+                editor: {
+                    xtype: "checkbox",
+                    fieldLabel: '',
+                    items: [
+                        { boxlabel: $.su.CHAR.GRID.ENABLED, inputValue: 'on', uncheckedValue: 'off', checked: true }
+                    ]
+                }
+            },
+            {
+                xtype: "settings",
+                width: 25
+            }
+        ],
+        paging_true: {},
+        operation: 'add|delete'
+    });
+
+    var helpConnlimit = new $.su.Help({
+        container: "div#ip_whitelist_help",
+        content: ["IP_WHITELIST_LIST"]
+    });
+
+});
+    </script>
+</body>
+
+</html>

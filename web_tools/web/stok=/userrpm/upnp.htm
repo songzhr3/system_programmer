@@ -1,0 +1,308 @@
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
+<html xmlns="http://www.w3.org/1999/xhtml">
+<head>
+<meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
+<title>ISP_ROUTING</title>
+<style type="text/css">
+</style>
+</head>
+
+<body>
+<div class="func-container">
+    <div id="function_setting">
+        <form id="upnp_settings">
+            <input id="internal_iface_list" name="internal_iface" value=""/>
+            <input id="external_iface_list" name="external_iface" value=""/>
+            <input id="upnp_enable_upnp" name="enable_upnp" value=""/>
+        </form>
+        <div id="startupnp_alert_cnt">
+            <h4 class="title">
+                <span class="icon" ></span>
+                <span class="text" id="error_str"></span>
+            </h4>
+        </div>
+    </div>
+
+    <div id="upnp_rule_list">
+        <div id="upnp_rule_grid">
+        </div>
+    </div>
+
+    <div id="upnp_hlep">    </div>
+</div>
+
+<script type="text/javascript">
+try{
+    $
+}catch(e){
+    location.href = "/";
+};
+
+
+$(document).ready(function(e){
+    $(".func-container").hide();
+
+    var existInterface=[];
+    var upnp_global_Proxy = new $.su.Proxy();
+    var upnp_rule_Proxy = new $.su.Proxy();
+
+    $("#function_setting").panel({
+        title: $.su.CHAR.UPNP.TITLE,
+        collapsible: false
+    });
+
+    $("#internal_iface_list").combobox({
+        fieldLabel: $.su.CHAR.UPNP.SERVER_IFACE,
+        multiSelect: true ,
+        items:[
+                {name:"---",value:"---"}
+            ]
+    });
+
+    $("#external_iface_list").combobox({
+        fieldLabel: $.su.CHAR.UPNP.EXTERNAL_IFACE,
+        multiSelect: true ,
+        items:[
+                {name:"---",value:"---"}
+            ]
+    });
+
+	var interfaceItem=[];
+	var interfaceProxy = new $.su.Proxy({async: false});
+	interfaceProxy.query({"network":{"table": "if"}}, function(data){
+		data = data.network["if"];
+		for (var i = 0; i < data.length; i++){
+			for (var key in data[i]){
+                if(data[i][key].isbridged != 1) {
+    				interfaceItem.push({name:data[i][key].if_name,value:data[i][key].if_name});
+                }
+            }
+        }
+
+		var combobox = $('#internal_iface_list');
+		combobox.combobox('loadData',interfaceItem);
+
+		var combobox1 = $('#external_iface_list');
+		combobox1.combobox('loadData',interfaceItem);
+	});
+
+    $("#upnp_enable_upnp").radio({
+        fieldLabel: $.su.CHAR.UPNP.UPNP_ENABLE,
+        allowBlank: false,
+        columns: 2,
+        items:[
+            {boxlabel: $.su.CHAR.UPNP.ENABLE, name:'enable_upnp', inputValue:'on',checked:true},
+            {boxlabel: $.su.CHAR.UPNP.DISABLE, name:'enable_upnp', inputValue:'off'}
+        ]
+    }).on("ev_change", function(e, oldValue, newValue) {
+
+        if(newValue === 'on' && oldValue === 'off'){
+
+            var security_policy_support = false;
+            new $.su.Proxy({async: false}).query({"function":{"name":"new_module_spec"}}, function(data){
+                if (typeof(data) != "undefined" && typeof(data['function']) != "undefined" && typeof(data['function'].new_module_spec.new_module_list) != "undefined"){
+                    for (var mod in data['function'].new_module_spec.new_module_list) {
+                        if (data['function'].new_module_spec.new_module_list[mod] == "security_policy") {
+                            security_policy_support = true;
+                            break;
+                        }
+                    }
+                    if (security_policy_support)
+                    {
+                        $("#startupnp_alert_cnt").msg("show");
+                    }
+                }
+            })
+        }
+    });
+
+    $("#upnp_settings").form({
+        proxy: upnp_global_Proxy,
+        fields: [
+            {name: "internal_iface", mapping: "internal_iface"},
+            {name: "external_iface", mapping: "external_iface"},
+            {name: "enable_upnp", mapping: "enable_upnp"}
+        ],
+		parseKey:{
+			moduleName: "upnpd",
+			sectionName: "config"
+		},
+        submitBtn: "default"
+    })
+
+    $("#upnp_rule_list").panel({
+        title: $.su.CHAR.UPNP.UPNP_LIST,
+        collapsible: false
+    });
+
+
+    $("#startupnp_alert_cnt").msg({
+        cls: 'warning reboot-confirm-size',
+        msg: "注：当默认安全策略动作为\"禁止\"的情况下UPnP功能将无法生效！",
+        type: "alert"
+    });
+
+
+    var upnp_grid =$("div#upnp_rule_grid").grid({
+        store:{
+            proxy:upnp_rule_Proxy,
+            extraProperty: ["desc", "proto", "client", "ext_port", "inner_port"],
+            fields: [
+                {name: "desc"},
+                {name: "proto"},
+                {name: "if"},
+                {name: "client"},
+                {name: "ext_port"},
+                {name: "inner_port"},
+                {name: "enable"}
+            ],
+			parseKey:{
+				moduleName: "upnpd",
+				tableName: "upnp_lease",
+				delFilter: function(itemNames, data, indexes){
+					return indexes;
+				}
+			},
+            autoLoad: true
+        },
+        editor: {
+            content:"default",
+            fields: [
+                {name: "desc"},
+                {name: "proto"},
+                {name: "if"},
+                {name: "client"},
+                {name: "ext_port"},
+                {name: "inner_port"},
+                {name: "enable"}
+            ]
+        },
+        paging:[],
+        columns: [
+            {
+                xtype: "checkcolumn",
+                width: 25
+            },
+            {
+                text: $.su.CHAR.GRID.ID,
+                xtype: "rownumberer",
+                width: 25
+            },
+            {
+                text: $.su.CHAR.UPNP.SERVICE_NAME,
+                width:70,
+                dataIndex: "desc",
+                editor: {
+                    xtype: "textbox",
+                    allowBlank: false,
+                    vtype:"string_visible_allow_blank"
+                }
+            },
+            {
+                text: $.su.CHAR.UPNP.PROTO_TYPE,
+                width:40,
+                dataIndex: "proto",
+                editor: {
+                    xtype: "textbox",
+                    allowBlank: false,
+                    vtype:"string_visible_allow_blank"
+                }
+            },
+            {
+                text: $.su.CHAR.UPNP.UPNP_IFACE,
+                width:80,
+                dataIndex: "if",
+                editor: {
+                    xtype: "textbox",
+                    allowBlank: false,
+                    vtype:"string_visible_allow_blank"
+                }
+            },
+            {
+                text: $.su.CHAR.UPNP.IP_ADDR,
+                width:80,
+                dataIndex: "client",
+                editor: {
+                    xtype: "textbox",
+                    allowBlank: false,
+                    vtype:"string_visible_allow_blank"
+                }
+            },
+            {
+                text: $.su.CHAR.UPNP.EXTERNAL_PORT,
+                width:60,
+                dataIndex: "ext_port",
+                editor: {
+                    xtype: "textbox",
+                    allowBlank: false,
+                    vtype:"string_visible_allow_blank"
+                }
+            },
+            {
+                text: $.su.CHAR.UPNP.INTERNAL_PORT,
+                width:60,
+                dataIndex: "inner_port",
+                editor: {
+                    xtype: "textbox",
+                    allowBlank: false,
+                    vtype:"string_visible_allow_blank"
+                }
+            },
+            {
+                text: $.su.CHAR.UPNP.STATUS,
+                width:30,
+                dataIndex: "enable",
+                editor: {
+                    xtype: "textbox",
+                    allowBlank: false,
+                    vtype:"string_visible_allow_blank"
+                },
+                renderer: function(v)
+                {
+                    if(v == 1)
+                    {
+                        return $.su.CHAR.UPNP.ENABLED;
+                    }
+                    else
+                    {
+                        return $.su.CHAR.UPNP.DISABLED;
+                    }
+                }
+
+            },
+            {
+                xtype: "settings",
+                width: 100,
+                renderer: function(type, dd, index, data)
+                {
+                    if(type === 'delete')
+                    {
+                        return true;
+                    }
+                }
+
+            }
+        ],
+        operation: "delete|refresh"
+    }).on("ev_load", function(e, data, others){
+        if(others)
+        {
+            //console.log(others.max_rules)
+        }
+
+    }).on("ev_remove", function(){
+        upnp_grid.grid("getStore").load();
+    }).on("ev_refresh", function(){
+        upnp_grid.grid("getStore").load();
+    });
+
+    var helpupnp = new $.su.Help({
+        container: "div#upnp_hlep",
+        content: ["UPNP_SETTING", "UPNP_LIST"]
+    });
+    $(".func-container").show();
+});
+</script>
+</body>
+
+</html>

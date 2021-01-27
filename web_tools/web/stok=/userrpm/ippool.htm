@@ -1,0 +1,250 @@
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
+<html xmlns="http://www.w3.org/1999/xhtml">
+<head>
+<meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
+<title>IP 地址池</title>
+<style type="text/css">
+</style>
+</head>
+
+<body>
+<div class="func-container">
+    <div id="ippool_lists">
+        <div id="ippool_lists_grid">
+        </div>
+        <div id="add_ippool">
+            <input id="name" name="name"/>
+            <input id="start_ip" name="start_ip"/>
+            <input id="end_ip" name="end_ip"/>
+			<input class = "hidden" id = "ref" name = "ref">
+        </div>
+    </div>
+
+    <div id="ippool_help"></div>
+</div>
+<script type="text/javascript">
+try{
+    $
+}catch(e){
+    location.href = "/";
+};
+
+$(document).ready(function(e){
+    $(".func-container").hide();
+
+    $("#ippool_lists").panel({
+        title: $.su.CHAR.IP_POOL.TITLE,
+        collapsible: false
+    });
+
+    var ippoolListProxy = new $.su.Proxy();
+
+    $("input#name").textbox({
+        fieldLabel: $.su.CHAR.IP_POOL.NAME,
+        tips:"(1-30个字符)",
+        labelCls: 's',
+        maxLength: 30,
+        allowBlank: false,
+        vtype: 'name',
+        validator: function(v)
+        {
+            if(new $.su.vtype({vtype:'name'}).validate(v) !== true)
+            {
+                return $.su.CHAR.L2TP_CLIENT.WRONG_NAME;
+            }
+            if (v.length > 30)
+            {
+                return $.su.CHAR.L2TP_CLIENT.WRONG_NAME_LENGTH;
+            }
+            return true;
+        }
+    });
+
+    $("input#start_ip").textbox({
+        fieldLabel: $.su.CHAR.IP_POOL.IP_START,
+        labelCls: 's',
+        textFormat: $.su.format.ip,
+        allowBlank: false,
+        vtype: {
+            vtype: "ip",
+            allowAllZeroFlag: true
+        }
+    });
+
+    $("input#end_ip").textbox({
+        fieldLabel: $.su.CHAR.IP_POOL.IP_END,
+        labelCls: 's',
+        textFormat: $.su.format.ip,
+        allowBlank: false,
+        vtype: {
+            vtype: "ip",
+            allowAllZeroFlag: true
+        }
+    });
+
+	$("input#ref").textbox({
+		fieldLabel: ""
+	});
+
+    var ippoolRuleGrid = $("#ippool_lists_grid").grid({
+        store:{
+            proxy: ippoolListProxy,
+            fields: [
+                {name: "name"},
+                {name: "start_ip"},
+                {name: "end_ip"},
+				{name: "ref"}
+            ],
+			parseKey: {
+				moduleName: "ippool",
+				tableName: "ippool",
+				pageSizeName: "ippool_entry"
+			},
+            autoLoad: true
+        },
+        editor: {
+            content:"#add_ippool",
+            fields: [
+                {name: "name"},
+                {name: "start_ip"},
+                {name: "end_ip"},
+				{name: "ref"}
+            ],
+            validator: function(){
+                var startIp = $("input#start_ip").textbox('getValue');
+                var endIp = $("input#end_ip").textbox('getValue');
+                var startIpInt = $.su.func.ipToInt(startIp);
+                var endIpInt = $.su.func.ipToInt(endIp);
+                var poolName = $("input#name").textbox('getValue');
+                //console.log(startIp,endIp);
+                //console.log(startIpInt,endIpInt);
+                if(startIpInt > endIpInt){
+                    $($("div#ippool_lists_grid").grid("getEditor")).form('setError', "地址池的起始地址大于结束地址，请重新输入！" );
+                    return false;
+                }
+
+                // actual_num = endIpInt - startIpInt + 1
+                if(endIpInt - startIpInt  >= 8192){
+                    $($("div#ippool_lists_grid").grid("getEditor")).form('setError', "地址池最多可以包含8192个IP地址，请重新输入！" );
+                    return false;
+                }
+
+                var poolList = $("div#ippool_lists_grid").grid('getStore').data;
+                var editingId = $($("div#ippool_lists_grid").grid("getEditor")).editor("getEditingId");
+                //console.log(editingId);
+                //console.log(poolList);
+                for (var i=0; i<poolList.length; i++){
+                    if(editingId == poolList[i].key){
+                        continue;
+                    }
+                    var itemStartIpInt = $.su.func.ipToInt(poolList[i].start_ip);
+                    var itemEndIpInt = $.su.func.ipToInt(poolList[i].end_ip);
+                    //console.log(itemStartIpInt,itemEndIpInt);
+                    if(poolName == poolList[i].name){
+                        $($("div#ippool_lists_grid").grid("getEditor")).form('setError',  "您输入的地址池名称已经使用，请重新输入！" );
+                        return false;
+                    }
+                    if((startIpInt >= itemStartIpInt && endIpInt <= itemEndIpInt) ||
+                       (endIpInt >= itemStartIpInt && endIpInt <= itemEndIpInt) ||
+                       (startIpInt >= itemStartIpInt && startIpInt <= itemEndIpInt) ||
+                       (startIpInt <= itemStartIpInt && endIpInt >= itemEndIpInt)){
+                       $($("div#ippool_lists_grid").grid("getEditor")).form('setError',  "地址池与已有地址池发生重叠，请重新输入！" );
+                       return false;
+                    }
+                }
+
+                var interfaceProxy = new $.su.Proxy({
+                    async: false
+                });
+
+                var result = false;
+                interfaceProxy.query({"network":{"table":"interface"}}, function(data){
+					data = data["network"]["interface"]
+                    for (var i=0; i<data.length; i++){
+						for (var j in data[i])
+						{
+							if(typeof(data[i][j].ipaddr) == "undefined"){
+								continue;
+							}
+
+							var interfaceIpInt = $.su.func.ipToInt(data[i][j].ipaddr);
+							if(interfaceIpInt >= startIpInt && interfaceIpInt <= endIpInt){
+								result = false;
+								return ;
+							}
+						}
+                    }
+                    result = true;
+                });
+                //console.log(result);
+                if(false == result){
+                    $($("div#ippool_lists_grid").grid("getEditor")).form('setError', "地址池不能包含接口IP，请重新输入！");
+                    return false;
+                }
+                return true;
+            }
+        },
+        paging_true:[],
+        columns: [
+            {
+                xtype: "checkcolumn",
+                width: $.su.CHAR.SETTING.IP_POOL.CHECK_COLUMN_WIDTH
+            },
+            {
+                xtype: "rownumberer",
+                width: $.su.CHAR.SETTING.IP_POOL.ROW_NUMBER_WIDTH
+            },
+            {
+                text: $.su.CHAR.IP_POOL.NAME,
+                width: $.su.CHAR.SETTING.IP_POOL.NAME_WIDTH,
+                dataIndex: "name"
+            },
+            {
+                text: $.su.CHAR.IP_POOL.IP_START,
+                width: $.su.CHAR.SETTING.IP_POOL.IP_START_WIDTH,
+                dataIndex: "start_ip"
+            },
+            {
+                text: $.su.CHAR.IP_POOL.IP_END,
+                width: $.su.CHAR.SETTING.IP_POOL.IP_END_WIDTH,
+                dataIndex: "end_ip"
+            },
+            {
+                xtype: "settings",
+                width: $.su.CHAR.SETTING.IP_POOL.SETTING_WIDTH
+            }
+        ],
+        operation: 'prompt|add|delete'
+    }).on("ev_load", function(e, data, others){
+        if ( others )
+        {
+            maxrules = others.max_rules;
+        }
+    });
+
+    var editor = $("div#ippool_lists_grid").grid("getEditor");
+    $(editor).on("ev_startEdit", function(e, index, key){
+
+        //console.log('ev_startEdit');
+        if(index == "add")
+        {
+            $("input#name").textbox('enableStyle');
+			$("input#ref").textbox("setValue", "0");
+        }
+		else
+		{
+            $("input#name").textbox('disableStyle');
+        }
+    });
+
+
+    var helpIppool = new $.su.Help({
+        container: "div#ippool_help",
+        content: ["IP_POOL_LIST"]
+    });
+
+    $(".func-container").show();
+});
+</script>
+</body>
+</html>

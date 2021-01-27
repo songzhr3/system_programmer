@@ -1,0 +1,497 @@
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN"
+        "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
+<html xmlns="http://www.w3.org/1999/xhtml">
+<head>
+    <meta http-equiv="Content-Type" content="text/html; charset=utf-8"/>
+    <style type="text/css">
+            .top{
+                min-width: 1500px !important;
+            }
+            .top-content{
+                width: 1375px !important;
+                min-width: 1405px !important;
+            }
+
+    </style>
+    <title>flow_log</title>
+</head>
+
+<body>
+<div class="func-container">
+    <div id="flowlog_list">
+        <div id="flowlog_list_grid">
+
+        </div>
+        <div id="sort_remind"></div>
+
+    </div>
+
+    <div id="flowlog-detail"></div>
+
+    <div id="clean_alarm_cnt">
+        <h4 class="title">
+            <span class="icon" ></span>
+            <span class="text" id="error_str"></span>
+        </h4>
+    </div>
+
+    <div id="flowlog_help"></div>
+</div>
+
+
+<script type="text/javascript">
+    try{
+        $
+    }catch(e){
+        location.href = "/";
+    };
+    $(document).ready(function(e){
+        $("#flowlog-detail").msg({
+            cls: 'warning reboot-confirm-size',
+            type: "confirm",
+            closeBtn: true,
+            _title: $.su.CHAR.FLOWLOG.DETAIL,
+            okHandler:function(){},
+            cancelHandler:function(){}
+        });
+        $("#flowlog-detail").msg('hideButtons');
+        var clean_proxy = new $.su.Proxy({});
+        $("#flowlog_list").panel({
+            title: $.su.CHAR.FLOWLOG.FLOWLOG_LIST,
+            collapsible: false
+        });
+
+        var zoneItem=[];
+        var ifItem=[];
+        var disk_status = "";
+        ifItem.push({name:"loopback", value:"loopback"});
+        var itemProxy = new $.su.Proxy({async: false});
+        itemProxy.query(
+        {
+            "zone":{"table":"zone"},
+            "network":{"table": "if"},
+            "system": {"name": "check_disk_status"}
+        }, function(data){
+            for(var i=0; i<data.zone.zone.length;i++){
+                for(var j in data.zone.zone[i]){
+                    zoneItem.push({name:data.zone.zone[i][j].name,value:data.zone.zone[i][j].name});
+                    break;
+                }
+            }
+            for(var i=0; i<data.network.if.length;i++){
+                for(var j in data.network.if[i]){
+                    ifItem.push({name:data.network.if[i][j].if_name,value:data.network.if[i][j].if_name});
+                    break;
+                }
+            }
+            disk_status = data.system.check_disk_status.status;
+        });
+
+        $("#clean_alarm_cnt").msg({
+            cls: 'warning reboot-confirm-size',
+            msg: $.su.CHAR.SYSLOG.LOG_CLEAN_ALARM,
+            type: "alert"
+        });
+
+        var order = "down";
+
+        var flowlogProxy = new $.su.Proxy({});
+
+        var flowlog_grid = $("div#flowlog_list_grid").grid({
+            store:{
+                proxy: flowlogProxy,
+                parseKey: {					/* 此处在store中增加parseKey，便于store对象在底层对数据进行预处理，以实现SLP数据结构和SU数据结构的转变 */
+                    moduleName: "audit_policy",
+                    pageSizeName: "flowlog_entry",
+                    tableName: "flow_log"
+                },
+                fields: [
+                    {name: "time"},
+                    {name: "src_zone"},
+                    {name: "dst_zone"},
+                    {name: "src_ip"},
+                    {name: "dst_ip"},
+                    {name: "src_port"},
+                    {name: "dst_port"},
+                    {name: "user"},
+                    {name: "proto"},
+                    {name: "app"},
+                    {name: "up_flow"},
+                    {name: "down_flow"},
+                    {name: "in_if"},
+                    {name: "out_if"},
+                    {name: "security_policy"},
+                    {name: "app_group"},
+                    {name: "start_time"}
+                ],
+                autoLoad: true
+            },
+            selectionDisplay: true,
+            maxLines: 11,
+            minLines: 0,
+            paging_true:{},
+            columns: [
+                {
+                    text: $.su.CHAR.FLOWLOG.ID,
+                    xtype: "rownumberer",
+                    width:40
+                },
+                {
+                    text: $.su.CHAR.FLOWLOG.START_TIME,
+                    width:160,
+                    dataIndex: "start_time",
+                    scan: {
+                        cmp: $.search.compare.string
+                    }
+                },
+                {
+                    text: $.su.CHAR.FLOWLOG.END_TIME,
+                    width:160,
+                    dataIndex: "time",
+                    scan: {
+                        cmp: $.search.compare.string
+                    }
+                },
+                {
+                    text: $.su.CHAR.FLOWLOG.SRC_ZONE,
+                    width:80,
+                    dataIndex: "src_zone",
+                    scan: {
+                        cmp: $.search.compare.string
+                    }
+                },
+                {
+                    text: $.su.CHAR.FLOWLOG.DST_ZONE,
+                    width:80,
+                    dataIndex: "dst_zone",
+                    scan: {
+                        cmp: $.search.compare.string
+                    }
+                },
+                {
+                    text: $.su.CHAR.FLOWLOG.SRC_IP,
+                    width:100,
+                    dataIndex: "src_ip",
+                    scan: {
+                        cmp: $.search.compare.ip
+                    }
+                },
+                {
+                    text: $.su.CHAR.FLOWLOG.DST_IP,
+                    width:100,
+                    dataIndex: "dst_ip",
+                    scan: {
+                        cmp: $.search.compare.ip
+                    }
+                },
+                {
+                    text: $.su.CHAR.FLOWLOG.SRC_PORT,
+                    width:50,
+                    dataIndex: "src_port",
+                    scan: {
+                        cmp: $.search.compare.string
+                    },
+                    renderer: function(dd, index, data){
+                        if (data.proto == "UDP" || data.proto == "TCP") return dd;
+                        else return "---";
+                    }
+                },
+                {
+                    text: $.su.CHAR.FLOWLOG.DST_PORT,
+                    width:50,
+                    dataIndex: "dst_port",
+                    scan: {
+                        cmp: $.search.compare.string
+                    },
+                    renderer: function(dd, index, data){
+                        if (data.proto == "UDP" || data.proto == "TCP") return dd;
+                        else return "---";
+                    }
+                },
+                {
+                    text: $.su.CHAR.FLOWLOG.USER,
+                    width:60,
+                    dataIndex: "user",
+                    scan:{
+                        cmp: $.search.compare.string
+                    }
+                },
+                {
+                    text: $.su.CHAR.FLOWLOG.PROTO,
+                    width:60,
+                    dataIndex: "proto",
+                    scan: {
+                        cmp: $.search.compare.string
+                    }
+                },
+                {
+                    text: $.su.CHAR.FLOWLOG.APP,
+                    width:60,
+                    dataIndex: "app",
+                    scan: {
+                        cmp: $.search.compare.string
+                    }
+                },
+                {
+                    text: $.su.CHAR.FLOWLOG.APP_GROUP,
+                    width:60,
+                    dataIndex: "app_group",
+                    scan: {
+                        cmp: $.search.compare.string
+                    },
+                    renderer: function(dd, index, data){
+                        if (data.app_group) return dd;
+                        else return "---";
+                    }
+                },
+                {
+                    text: $.su.CHAR.FLOWLOG.UP_FLOW,
+                    width:80,
+                    dataIndex: "up_flow",
+                    scan: {
+                        cmp: $.search.compare.string
+                    }
+                },
+                {
+                    text: $.su.CHAR.FLOWLOG.DOWN_FLOW,
+                    width:80,
+                    dataIndex: "down_flow",
+                    scan: {
+                        cmp: $.search.compare.string
+                    }
+                },
+                {
+                    text: $.su.CHAR.FLOWLOG.IN_IF,
+                    width:60,
+                    dataIndex: "in_if",
+                    scan: {
+                        cmp: $.search.compare.string
+                    }
+                },
+                {
+                    text: $.su.CHAR.FLOWLOG.OUT_IF,
+                    width:80,
+                    dataIndex: "out_if",
+                    scan: {
+                        cmp: $.search.compare.string
+                    }
+                },
+                {
+                    text: $.su.CHAR.FLOWLOG.SECURITY_POLICY,
+                    width:60,
+                    dataIndex: "security_policy",
+                    scan: {
+                        cmp: $.search.compare.string
+                    },
+                    renderer: function(dd, index, data){
+                        if (data.security_policy) return dd;
+                        else return "---";
+                    }
+                },
+                //todo 全局搜索时间端的字段待确定
+                {
+                    xtype: "globalSearch",
+                    hidden: true,
+                    columns: [
+                    {
+                            text: $.su.CHAR.FLOWLOG.SRC_ZONE,
+                            width: 100,
+                            dataIndex: "src_zone",
+                            scan: {
+                                type: "combobox",
+                                vtype: "string",
+                                items: zoneItem
+                            }
+                        },
+                        {
+                            text: $.su.CHAR.FLOWLOG.DST_ZONE,
+                            width: 100,
+                            dataIndex: "dst_zone",
+                            scan: {
+                                type: "combobox",
+                                vtype: "string",
+                                items: zoneItem
+                            }
+                        },
+                        {
+                            text: $.su.CHAR.FLOWLOG.SRC_IP,
+                            width: 100,
+                            dataIndex: "src_ip",
+                            scan: {
+                                type: "textbox",
+                                vtype : "string"
+                            }
+                        },
+                        {
+                            text: $.su.CHAR.FLOWLOG.DST_IP,
+                            width: 100,
+                            dataIndex: "dst_ip",
+                            scan: {
+                                type: "textbox",
+                                vtype : "string"
+                            }
+                        },
+                        {
+                            text: $.su.CHAR.FLOWLOG.SRC_PORT,
+                            width: 100,
+                            dataIndex: "src_port",
+                            scan: {
+                                type: "textbox",
+                                vtype : "string"
+                            }
+                        },
+                        {
+                            text: $.su.CHAR.FLOWLOG.DST_PORT,
+                            width: 100,
+                            dataIndex: "dst_port",
+                            scan: {
+                                type: "textbox",
+                                vtype : "string"
+                            }
+                        },
+                        {
+                            text: $.su.CHAR.FLOWLOG.IN_IF,
+                            width: 100,
+                            dataIndex: "in_if",
+                            scan: {
+                                type: "combobox",
+                                vtype: "string",
+                                items: ifItem
+                            }
+                        },
+                        {
+                            text: $.su.CHAR.FLOWLOG.OUT_IF,
+                            width: 100,
+                            dataIndex: "out_if",
+                            scan: {
+                                type: "combobox",
+                                vtype: "string",
+                                items: ifItem
+                            }
+                        },
+                        {
+                            text: $.su.CHAR.FLOWLOG.USER,
+                            width: 100,
+                            dataIndex: "user",
+                            scan: {
+                                type: "textbox",
+                                vtype : "string"
+                            }
+                        },
+                        {
+                            text: $.su.CHAR.FLOWLOG.PROTO,
+                            width: 100,
+                            dataIndex: "proto",
+                            scan: {
+                                type: "textbox",
+                                vtype : "string"
+                            }
+                        },
+                        {
+                            text: $.su.CHAR.FLOWLOG.APP,
+                            width:100,
+                            dataIndex: "app",
+                            scan:{
+                                type: "textbox",
+                                vtype : "string"
+                            }
+                        }
+                    ],
+                    render_search: function(){
+                    },
+                    render_show: function(){
+                    },
+                    render_return: function(){
+                    }
+                }
+            ],
+            exportCfg:{
+                text:$.su.CHAR.FLOWLOG.SAVE_LOG,
+                url: $.su.url.subs + $.su.url.stok + "/admin/audit_policy/download_flowlog",
+                checkCallback: function(callback){
+                    var exportCheckProxy = new $.su.Proxy();
+
+                    exportCheckProxy.query({audit_policy:{name:"flowlog_download"}}, function(data){
+                        data = data.audit_policy.flowlog_download;
+
+                        if (data.status == "1")
+                        {
+                            callback(true);
+                        }
+                        else
+                        {
+                            callback(false);
+                        }
+                    });
+                }
+            },
+            operation: ["clear","search","searchLog","refreshLog","autoRefresh","export"],
+            autoRefresh: false
+        }).on("ev_clear", function(e, obj, action){
+            if ("online" == disk_status){
+                $(clean_alarm_cnt).msg("show");
+            }else{
+                clean_proxy.action({"audit_policy":{"flowlog_clean":{}}}, function(data){
+                    $(flowlog_grid.get(0).store).trigger("ev_refresh", []);
+                });
+            }
+        }).delegate('a.btn-detail', 'click', function(e){
+            var index = $(this).data('index');
+            showDetail(flowlog_grid.grid('getStore').data[index].detail);
+        });
+
+        function showDetail(detail) {
+            $("#flowlog-detail").msg("setTitle",$.su.CHAR.FLOWLOG.DETAIL+':'+detail);
+            $("#flowlog-detail").msg("show");
+        }
+
+        var g_dataIndex = "time";
+        function dataSort(x, y) {
+            if(order == "down"){
+                if (x[g_dataIndex] > y[g_dataIndex]) {
+                    return -1;
+                }else if (x[g_dataIndex] < y[g_dataIndex]) {
+                    return 1;
+                }
+            }else{
+                if (x[g_dataIndex] > y[g_dataIndex]) {
+                    return 1;
+                }else if (x[g_dataIndex] < y[g_dataIndex]) {
+                    return -1;
+                }
+            }
+        }
+
+        function sort_click_cb(dataIndex) {
+            var store = flowlog_grid.grid("getStore");
+            var data = store.data;
+            g_dataIndex = dataIndex;
+            store.loadData(data.sort(dataSort));
+            if(order == "down"){
+                order = "up";
+            }else{
+                order = "down";
+            }
+        }
+
+        flowlog_grid.delegate("th", "click", function(e){
+            sort_click_cb($(this).attr('name'));
+        });
+
+        $("th").css({
+            "color": "#00E",
+            "cursor": "pointer"
+        });
+
+        $("#sort_remind").html("<hr/>如需要按指定内容排序，请点击表头切换排序方式。");
+        $(".grid-panel").css("marginBottom","40px");
+
+        var FLOWLOG_help = new $.su.Help({
+            container: "div#flowlog_help",
+            content: ["FLOWLOG"]
+        });
+    });
+</script>
+</body>
+
+</html>

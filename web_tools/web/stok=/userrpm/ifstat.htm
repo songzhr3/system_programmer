@@ -1,0 +1,570 @@
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
+<html xmlns="http://www.w3.org/1999/xhtml">
+<head>
+<meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
+<title>SYSTEM_ROUTETBL</title>
+</head>
+
+<body>
+<div class="func-container">
+	 <div id="report"></div>
+
+	 <div id="ifstat_list">
+	 	<div id="ifstat_list_grid">
+
+		</div>
+		<div id="sort_remind"></div>
+
+	 </div>
+	 <div id="ifstat_help"></div>
+</div>
+<script type="text/javascript">
+try{
+	$
+}catch(e){
+	location.href = "/";
+};
+
+$(document).ready(function(e){
+	// 依据路径渲染导出页面
+	if ($.su.app.runningModule.name === 'report_ifstat'){
+		//动态加载js库函数
+		function loadJs(url, callback){
+			var length = url.length;
+			function jsReady(){
+				length --;
+
+				if(length == -1){
+					callback();
+				}else{
+					var script = document.createElement("script");
+					script.type = "text/javascript";
+					script.src = url[url.length - length - 1];
+					script.onload = jsReady;
+					document.getElementsByTagName('head')[0].appendChild(script);
+				}
+			}
+			jsReady();
+		}
+
+		//动态加载js
+		loadJs(['../web-static/js/libs/html2canvas.min.js',
+				'../web-static/js/libs/jspdf.min.js',
+				'../web-static/js/libs/SourceHanSansCN-Normal-normal.js',
+				'../web-static/js/libs/bluebird.min.js'], function(){
+			$("#report").html('<button id="export_pdf">导出pdf</button>');
+
+			Date.prototype.Format = function (fmt) {
+				var o = {
+					"M+": this.getMonth() + 1, //月份
+					"d+": this.getDate(), //日
+					"H+": this.getHours(), //小时
+					"m+": this.getMinutes(), //分
+					"s+": this.getSeconds(), //秒
+					"q+": Math.floor((this.getMonth() + 3) / 3), //季度
+					"S": this.getMilliseconds() //毫秒
+				};
+				if (/(y+)/.test(fmt)) fmt = fmt.replace(RegExp.$1, (this.getFullYear() + "").substr(4 - RegExp.$1.length));
+				for (var k in o)
+					if (new RegExp("(" + k + ")").test(fmt)) fmt = fmt.replace(RegExp.$1, (RegExp.$1.length == 1) ? (o[k]) : (("00" + o[k]).substr(("" + o[k]).length)));
+				return fmt;
+			};
+
+			function percent(value, total) {
+				return (Number(value)*100/total).toFixed(2) + '%';
+			}
+
+			function percentage(index, data, total, pdf, hintHeight) {
+				dataIndex = index;
+				if (order === 'up'){ // 如果order === up, 先强制置为down再排序，保证下面的百分比计算正确；之后再修改回正确的order值保证下次排序正常
+					order = 'down';
+					data.sort(dataSort);
+					order = 'up';
+				} else {
+					data.sort(dataSort);
+				}
+
+				var text = index === 'tx_bytes' ? '上行' : '下行';
+				var serialNumber = index === 'tx_bytes' ? '2、' : '3、';
+				var height = index === 'tx_bytes' ? hintHeight + 20 : hintHeight + 40;
+
+				if (total === 0) {
+					pdf.text(40, height, serialNumber + '以上数据中 所有接口占用的' + text + '流量均为0');
+				} else if (Number(data[0][index]) === total){
+					pdf.text(40, height, serialNumber + '以上数据中，占用' + text + '流量较多的接口是' + data[0].interface + '，占比为100%');
+				} else if ((Number(data[0][index]) + Number(data[1][index])) === total) {
+					pdf.text(40, height, serialNumber + '以上数据中，占用' + text + '流量较多的接口是' + data[0].interface + '和' + data[1].interface +'，占比为' +percent(data[0][index], total) + '、' + percent(data[1][index], total));
+				} else {
+					pdf.text(40, height, serialNumber + '以上数据中，占用' + text + '流量较多的接口是' + data[0].interface + '、' + data[1].interface +'和' + data[2].interface + '，占比为' + percent(data[0][index], total) + '、' + percent(data[1][index], total) + '、' + percent(data[2][index], total));
+				}
+			};
+
+			function getImageFromUrl(url, pdf) {
+				var img = new Image, data;
+
+				img.onError = function() {
+					throw new Error('Cannot load image: "'+url+'"');
+				}
+				img.onload = function() {
+					var canvas = document.createElement('canvas');
+					document.body.appendChild(canvas);
+					canvas.width = img.width;
+					canvas.height = img.height;
+
+					var ctx = canvas.getContext('2d');
+					ctx.drawImage(img, 0, 0);
+					data = canvas.toDataURL('image/png');
+					document.body.removeChild(canvas);
+
+					pdf.addImage(data, 'png', 40, 45, 140, 20);
+				}
+				img.src = url;
+			}
+
+			$("#export_pdf").on("click", function () {
+				// 基础设置
+				var grid = document.getElementsByClassName('grid-container')[0],
+				width = grid.clientWidth,
+				height = grid.clientHeight,
+				canvas = document.createElement("canvas"), //创建一个canvas节点
+				scale = 2; //定义任意放大倍数 支持小数
+				canvas.width = width * scale; //定义canvas 宽度 * 缩放
+				canvas.height = height * scale; //定义canvas高度 *缩放
+				canvas.style.width = grid.clientWidth * scale + "px";
+				canvas.style.height = grid.clientHeight * scale + "px";
+				canvas.getContext("2d").scale(scale, scale); //获取context,设置scale
+				var opts = {
+					scale: scale, // 添加的scale 参数
+					canvas: canvas, //自定义 canvas
+					logging: false, //日志开关，便于查看html2canvas的内部执行流程
+					width: width, //dom 原始宽度
+					height: height,
+					useCORS: true // 【重要】开启跨域配置
+				};
+				var pdf = new jsPDF('', 'pt', 'a4'); //方向默认竖直，尺寸points，格式a4[595.28,841.89]
+				pdf.setFont('SourceHanSansCN-Normal');
+
+				// 添加首页
+				getImageFromUrl('../web-static/themes/old/img/logo.png', pdf);
+
+				pdf.setFillColor(0, 104, 183);
+				pdf.rect(0, 165, 360, 60, 'f');
+				pdf.setFontSize(36);
+				pdf.setTextColor(255, 255, 255);
+				pdf.text(40, 210, 'TP-LINK综合报表');
+
+				pdf.setFontSize(16);
+				pdf.setTextColor(102, 102, 102);
+				var time = new Date().Format("yyyy-MM-dd");
+				var hour = new Date().Format("HH:mm:ss");
+				pdf.text(40, 260, '生成时间：' + time);
+				pdf.text(210, 260, hour); // 强行在天数和小时之间添加空格效果
+
+				// 添加详情页
+				html2canvas(grid,opts).then(function(canvas){
+					pdf.addPage();
+
+					// add title
+					pdf.setFillColor(0, 104, 177);
+					pdf.rect(40, 40, 80, 26, 'f');
+					pdf.setFillColor(153,195,226);
+					pdf.rect(120, 40, 435, 26, 'f');
+					pdf.setFontSize(12);
+					pdf.setTextColor(255, 255, 255);
+					pdf.text(55, 57, '流量报表');
+
+					var contentWidth = canvas.width;
+					var contentHeight = canvas.height;
+
+					var pageHeight = contentWidth / 515 * 841.89; // 单页pdf能显示多少的canvas高度
+					var leftHeight = contentHeight; // 剩余的canvas高度;
+					var titleHeight = contentWidth / 515 * 90; // 计算第一页的pdf title的90高度对应canvas的高度。
+					var position = 90 - 841.89; // pdf页面偏移量(初始值为添加完带标题页面的值);
+
+					var pageData = canvas.toDataURL('image/jpeg', 1.0);
+					var canvasWidth = 515;
+					var canvasHeight = 515/contentWidth * contentHeight; // canvas在pdf中实际高度
+
+					//有两个高度需要区分，一个是html页面的实际高度，和生成pdf的页面高度(841.89)
+					//当内容未超过pdf一页显示的范围，无需分页
+					pdf.addImage(pageData, 'JPEG', 40, 90, canvasWidth, canvasHeight ); // 第一页有标题多占据90高度,所以向下偏移90
+					leftHeight = leftHeight - pageHeight + titleHeight; // 第一页放完之后canvas剩余高度
+
+					while(leftHeight > 0) {
+						pdf.addPage();
+						pdf.addImage(pageData, 'JPEG', 40, position, canvasWidth, canvasHeight);
+						leftHeight -= pageHeight;
+						position -= 841.89;
+					}
+
+					// add footer, 发送总字节tx_bytes 下行， 接收总字节rx_bytes 上行
+					var data = ifstat_grid.grid('getStore').data,
+						length = data.length;
+					var br_note = "";
+
+					if (length > 0) {
+						var total_tx_bytes = 0,
+							total_rx_bytes = 0;
+						for (var i = 0; i < length; i++) {
+							if (data[i].interface === "LAN"){ //清零网桥接口的数据，避免重复计算
+								br_note = "(除LAN外)";
+								data[i].tx_bytes = 0;
+								data[i].rx_bytes = 0;
+								continue;
+							}
+							var ifType = interfaceType.filter(function(item){return item.name === data[i].interface})[0].value;
+							if( ifType !== "physical") {	//清零非物理接口的数据，避免重复计算
+								data[i].tx_bytes = 0;
+								data[i].rx_bytes = 0;
+								continue;
+							}
+							total_tx_bytes += Number(data[i].tx_bytes);
+							total_rx_bytes += Number(data[i].rx_bytes);
+						}
+
+						pdf.setFontSize(9);
+						pdf.setTextColor(153, 153, 153);
+
+						var lastCanvasPageHeight = leftHeight + pageHeight;
+						var hintHeight = 515/contentWidth * lastCanvasPageHeight + 20; // 带canvas的最后一页，canvas图像占据pdf多少高度
+						if (hintHeight + 60 > 830) { // 如果末尾提示文字占用高度超过一页，则另起一页显示,每页最高841.89，为显示效果考虑，按830判断
+							pdf.addPage();
+							hintHeight = 40;
+						};
+
+						pdf.text(40, hintHeight, '1、在统计时间内，所有接口'+br_note+'的总上行流量为' + filter(total_tx_bytes) + '，所有接口'+br_note+'的总下行流量为' + filter(total_rx_bytes) + '。');
+						percentage('tx_bytes', data, total_tx_bytes, pdf, hintHeight);
+						percentage('rx_bytes', data, total_rx_bytes, pdf, hintHeight);
+						pdf.text(40, hintHeight + 60, '4、如果网络带宽不足，可以根据统计结果配置接口。');
+					};
+
+					pdf.save('接口流量报表.pdf');
+				})
+			});
+		});
+	}
+
+	var list_proxy = new $.su.Proxy({});
+	$("#ifstat_list").panel({
+		title: $.su.CHAR.IFSTAT.TITLE_LIST,
+		collapsible: false
+	});
+
+	var order = "down";
+
+	var interfaceItem=[];
+	var interfaceType=[];
+	var interfaceProxy = new $.su.Proxy({});
+	// delete the selected interfaces from all interfaces
+	interfaceProxy.query({"network": {table: "if"}}, function(data){
+		if (data.error_code != ENONE)
+		{
+			return;
+		}
+		var ifs = data.network["if"];
+		$.each(ifs, function(_, item){
+			for (var key in item)
+			{
+				interfaceItem.push({name:item[key].if_name,value:""+item[key].if_name});
+				interfaceType.push({name:item[key].if_name,value:""+item[key].if_type});
+			}
+		});
+	});
+
+
+	function filter(v){
+		if(parseInt(v) >= 1024*1024*1024){
+			v = v * 1.0 / (1024*1024*1024);
+			return v.toFixed(1) + "G";
+		}
+		if(parseInt(v) >= 1024*1024){
+			v = v * 1.0 / (1024*1024);
+			return v.toFixed(1) + "M";
+		}
+		return v;
+	}
+	
+	var ifstatProxy = new $.su.Proxy({
+	});
+
+	var ifstat_grid = $("div#ifstat_list_grid").grid({
+		store:{
+			proxy: ifstatProxy,
+			parseKey: {					/* 此处在store中增加parseKey，便于store对象在底层对数据进行预处理，以实现SLP数据结构和SU数据结构的转变 */
+				moduleName:"system",		/* 此处的moduleName和tableName分别指数据块名和对应请求的table名 */
+				tableName:"ifstat_list",
+				pageSizeName: "ifstat_pages",
+				maxSizeTableName: "interface",
+				maxSizeOptionName: "total_max"
+			},
+			fields: [
+				{name: "interface"},
+				{name: "tx_bps"},
+				{name: "rx_bps"},
+				{name: "tx_pps"},
+				{name: "rx_pps"},
+				{name: "tx_bytes"},
+				{name: "rx_bytes"},
+				{name: "tx_pkts"},
+				{name: "rx_pkts"}
+			],
+			autoLoad: true
+		},
+		minLines: 0,
+		paging_true:{},
+		columns: [
+			{
+				text: $.su.CHAR.IFSTAT.ID,
+				xtype: "rownumberer",
+				width:70,
+				hidden:true
+			},
+			{
+				text: $.su.CHAR.IFSTAT.ADDR,
+				width:120,
+				dataIndex: "interface",
+				scan: {
+					type: "combobox",
+					cmp: $.search.compare.stringStrict,
+					items: function(){
+						return interfaceItem;
+					}
+				}
+			},
+			{
+				text: $.su.CHAR.IFSTAT.TX_BPS,
+				width:90,
+				dataIndex: "tx_bps"
+			},
+			{
+				text: $.su.CHAR.IFSTAT.RX_BPS,
+				width:90,
+				dataIndex: "rx_bps"
+			},
+			{
+				text: $.su.CHAR.IFSTAT.TX_PPS,
+				width:110,
+				dataIndex: "tx_pps"
+			},
+			{
+				text: $.su.CHAR.IFSTAT.RX_PPS,
+				width:110,
+				dataIndex: "rx_pps"
+			},
+			{
+				text: $.su.CHAR.IFSTAT.TX_BYTES,
+				width:80,
+				dataIndex: "tx_bytes",
+				renderer: function(v){
+					if(0 == v){
+						return "---";
+					}
+					return filter(v);
+				}
+			},
+			{
+				text: $.su.CHAR.IFSTAT.RX_BYTES,
+				width:80,
+				dataIndex: "rx_bytes",
+				renderer: function(v){
+					if(0 == v){
+						return "---";
+					}
+					return filter(v);
+				}
+			},
+			{
+				text: $.su.CHAR.IFSTAT.TX_PKTS,
+				width:80,
+				dataIndex: "tx_pkts",
+				renderer: function(v){
+					if(0 == v){
+						return "---";
+					}
+					return filter(v);
+				}
+			},
+			{
+				text: $.su.CHAR.IFSTAT.RX_PKTS,
+				width:80,
+				dataIndex: "rx_pkts",
+				renderer: function(v){
+					if(0 == v){
+						return "---";
+					}
+					return filter(v);
+				}
+			}
+		],
+		operation: ["clear","search","refresh","autoRefresh"],
+		autoRefresh: true
+	}).on("ev_load", function(e){
+		var trList = $("tbody.grid-content-data").find("tr");
+		$(trList).each(function(i, obj){
+			var ifName = $(obj).find("td.grid-content-td-interface").text();
+		});
+	}).on("ev_clear", function(e, obj, action){
+		list_proxy.action({"system":{"clear_ifstats":{}}}, function(data){
+			$(ifstat_grid.get(0).store).trigger("ev_refresh", []);
+		});
+	});
+
+	var dataIndex = "tx_bps";
+	function dataSort(x, y) {
+		if(order == "down"){
+			if(dataIndex == "interface"){
+				if (x[dataIndex] > y[dataIndex]) {
+	       			return -1;
+		    	}else if (x[dataIndex] < y[dataIndex]) {
+		       		return 1;
+		    	}
+			}else{
+				if (parseInt(x[dataIndex]) > parseInt(y[dataIndex])) {
+	       			return -1;
+		    	}else if (parseInt(x[dataIndex]) < parseInt(y[dataIndex])) {
+		       		return 1;
+		    	}
+			}
+
+		}else{
+			if(dataIndex == "interface"){
+				if (x[dataIndex] > y[dataIndex]) {
+	       			return 1;
+		    	}else if (x[dataIndex] < y[dataIndex]) {
+		       		return -1;
+		    	}
+			}else{
+				if (parseInt(x[dataIndex]) > parseInt(y[dataIndex])) {
+	       			return 1;
+		    	}else if (parseInt(x[dataIndex]) < parseInt(y[dataIndex])) {
+		       		return -1;
+		    	}
+			}
+
+		}
+	}
+
+	ifstat_grid.delegate("th.grid-header-1", "click", function(e){
+		var store = ifstat_grid.grid("getStore");
+		var data = store.data;
+		dataIndex = "interface";
+		store.loadData(data.sort(dataSort));
+		if(order == "down"){
+			order = "up";
+		}else{
+			order = "down";
+		}
+	});
+
+	ifstat_grid.delegate("th.grid-header-2", "click", function(e){
+		var store = ifstat_grid.grid("getStore");
+		var data = store.data;
+		dataIndex = "tx_bps";
+		store.loadData(data.sort(dataSort));
+		if(order == "down"){
+			order = "up";
+		}else{
+			order = "down";
+		}
+	});
+
+	ifstat_grid.delegate("th.grid-header-3", "click", function(e){
+		var store = ifstat_grid.grid("getStore");
+		var data = store.data;
+		dataIndex = "rx_bps";
+		store.loadData(data.sort(dataSort));
+		if(order == "down"){
+			order = "up";
+		}else{
+			order = "down";
+		}
+	});
+
+	ifstat_grid.delegate("th.grid-header-4", "click", function(e){
+		var store = ifstat_grid.grid("getStore");
+		var data = store.data;
+		dataIndex = "tx_pps";
+		store.loadData(data.sort(dataSort));
+		if(order == "down"){
+			order = "up";
+		}else{
+			order = "down";
+		}
+	});
+
+	ifstat_grid.delegate("th.grid-header-5", "click", function(e){
+		var store = ifstat_grid.grid("getStore");
+		var data = store.data;
+		dataIndex = "rx_pps";
+		store.loadData(data.sort(dataSort));
+		if(order == "down"){
+			order = "up";
+		}else{
+			order = "down";
+		}
+	});
+	ifstat_grid.delegate("th.grid-header-6", "click", function(e){
+		var store = ifstat_grid.grid("getStore");
+		var data = store.data;
+		dataIndex = "tx_bytes";
+		store.loadData(data.sort(dataSort));
+		if(order == "down"){
+			order = "up";
+		}else{
+			order = "down";
+		}
+	});
+
+	ifstat_grid.delegate("th.grid-header-7", "click", function(e){
+		var store = ifstat_grid.grid("getStore");
+		var data = store.data;
+		dataIndex = "rx_bytes";
+		store.loadData(data.sort(dataSort));
+		if(order == "down"){
+			order = "up";
+		}else{
+			order = "down";
+		}
+	});
+
+	ifstat_grid.delegate("th.grid-header-8", "click", function(e){
+		var store = ifstat_grid.grid("getStore");
+		var data = store.data;
+		dataIndex = "tx_pkts";
+		store.loadData(data.sort(dataSort));
+		if(order == "down"){
+			order = "up";
+		}else{
+			order = "down";
+		}
+	});
+
+	ifstat_grid.delegate("th.grid-header-9", "click", function(e){
+		var store = ifstat_grid.grid("getStore");
+		var data = store.data;
+		dataIndex = "rx_pkts";
+		store.loadData(data.sort(dataSort));
+		if(order == "down"){
+			order = "up";
+		}else{
+			order = "down";
+		}
+	});
+
+	$("th").css({
+		"color": "#00E",
+		"cursor": "pointer"
+	});
+
+	$("#sort_remind").html("<hr/>如需要按指定内容排序，请点击表头切换排序方式。");
+	$(".grid-panel").css("marginBottom","40px");
+
+	var IFSTAT_help = new $.su.Help({
+		container: "div#ifstat_help",
+		content: ["IFSTAT"]
+	});
+});
+</script>
+</body>
+
+</html>

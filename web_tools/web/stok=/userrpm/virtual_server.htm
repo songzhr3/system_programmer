@@ -1,0 +1,750 @@
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
+<html xmlns="http://www.w3.org/1999/xhtml">
+<head>
+<meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
+<title>虚拟服务器</title>
+<style type="text/css">
+</style>
+</head>
+
+<body>
+	<div class="func-container" >
+		<div id="virtual-servers">
+			<div id="virtualServersGrid" class="natSeries"></div>
+		</div>
+
+		<div id="own_editor">
+			<input id="name" name="name">
+			<input id="virtual_interface" name="if">
+			<input id="src_dport" name="src_dport">
+			<input id="dest_port" name="dest_port">
+			<input id="virtual_ipaddr" name="dest_ip">
+			<input id="virtual_protocol" name="proto">
+			<input id="virtual_loopback_ipaddr" name="virtual_loopback_ipaddr">
+			<button id="add_virtual_loopback_ipaddr" name="add_virtual_loopback_ipaddr" class="add_virtual_loopback_ipaddr"></button>
+			<div id="virtual_loopback_ipaddr_block" style="display:none;">
+				<ul id="virtual_loopback_ipaddr_list"></ul>
+			</div>
+			<input id="loopback_ipaddr" name="loopback_ipaddr" value=""/>
+			<input id="virtual_enable" name="enable">
+			<input id="src_dport_start" name="src_dport_start" class="hidden" value="65536">
+			<input id="src_dport_end" name="src_dport_end" class="hidden" value="65536">
+			<input id="dest_port_start" name="dest_port_start" class="hidden" value="65536">
+			<input id="dest_port_end" name="dest_port_end" class="hidden" value="65536">
+		</div>
+
+		 <div id="virtual_alert_cnt">
+			<h4 class="title">
+				<span class="icon"></span>
+				 <span class="text" id="virtual_confirm_content"></span>
+			 </h4>
+		</div>
+
+		<span id="nat_notice" class="hidden"></span>
+		<div id="virtual_server_help"></div>
+	</div>
+<script type="text/javascript">
+try{
+	$
+}catch(e){
+	location.href = "/";
+};
+
+$(document).ready(function(e){
+	$(".func-container").hide();
+
+	var remote_port = 0;
+	var remote_enable = "on";
+	var remoteProxy = new $.su.Proxy({});
+	remoteProxy.query({nat:{name:"remote_mngt"}}, function(data){
+		remote_port = data.nat.remote_mngt.port;
+		remote_enable = data.nat.remote_mngt.enable;
+	});
+
+	$("span#nat_notice").html($.su.CHAR.VIRTUAL_SERVERS.NAT_ENABLE_NOTICE);
+
+	function is_portcharacter(port_string, ch) {
+		for (var i = 0; i < port_string.length; i++) {
+			var c = port_string.charAt(i);
+			if (ch.indexOf(c) == -1) {
+				return false;
+			}
+		}
+		return true;
+	}
+
+	function portverify(port_string) {
+		if (!is_portcharacter(port_string,"0123456789")) {
+			return false;
+		}
+		if (parseInt(port_string,10) <= 0 || parseInt(port_string,10) > 65535) {
+			return false;
+		}
+		return true;
+	}
+
+	function is_port(port_string) {
+		if (!portverify(port_string)) {
+			return false;
+		}
+		return true;
+	}
+
+	function check_port_range(port_string) {
+		var sub_port_array = port_string.split("-");
+		if (sub_port_array.length == 2) {
+			for (var i = 0; i < 2; i++) {
+				if (sub_port_array[i] == "" ) {
+					return false;
+				}
+				if (!is_port(sub_port_array[i])) {
+					return false;
+				}
+			}
+			formatVal = (parseInt(sub_port_array[0], 10)).toString() + "-" + (parseInt(sub_port_array[1], 10)).toString();
+		} else if (sub_port_array.length == 1) {
+			if (!is_port(sub_port_array[0])) {
+				return false;
+			}
+		} else {
+			return false;
+		}
+		return true;
+	}
+
+	function check_port(port_string) {
+		var formatVal = "";
+		if (!is_portcharacter(port_string,"-,0123456789")) {
+			return false;
+		}
+		var sub_port_array = port_string.split(",");
+		for (var i=0; i<sub_port_array.length; i++) {
+			if (false == check_port_range(sub_port_array[i])) {
+				return false;
+			}
+		}
+		return true;
+	}
+
+	function port_range_format(value) {
+		var formatVal = "";
+		var arr = value.split("-");
+		if (arr.length == 1) {
+			if (!isNaN(parseInt(arr[0],10))) {
+				formatVal = (parseInt(arr[0], 10)).toString();
+			}
+		} else if (arr.length == 2) {
+			if ((!isNaN(parseInt(arr[0],10))) && (!isNaN(parseInt(arr[1],10)))) {
+				var portFst = parseInt(arr[0],10);
+				var portScd = parseInt(arr[1],10);
+				if (portScd > portFst) {
+					formatVal = portFst.toString() + "-" + portScd.toString();
+				} else if (portScd == portFst) {
+					formatVal = portFst.toString()
+				} else {
+					formatVal = portScd.toString() + "-" + portFst.toString();
+				}
+			}
+		}
+		return formatVal;
+	}
+
+	function port_format(value) {
+		var formatVal = "";
+		var arr = value.split(",");
+		for (var i=0; i<arr.length; i++) {
+			var port_format = port_range_format(arr[i]);
+			if (port_format != "") {
+				if (formatVal == "" ) {
+					formatVal = port_format;
+				} else {
+					formatVal = formatVal + "," + port_format;
+				}
+			}
+		}
+		return formatVal;
+	}
+
+	$("div.func-container").page({
+		title: $.su.CHAR.VIRTUAL_SERVERS.TITLE,
+		help: ""
+	});
+
+	$("div#virtual-servers").panel({
+		title: $.su.CHAR.VIRTUAL_SERVERS.TITLE,
+		collapsible: false
+	});
+
+	$("input#name").textbox({
+		fieldLabel: $.su.CHAR.VIRTUAL_SERVERS.SERVICE_NAME,
+		maxLength:32,
+		vtype:"name",
+		allowBlank: false,
+		cls: 'inline'
+	});
+
+	$("input#virtual_interface").combobox({
+		fieldLabel: $.su.CHAR.VIRTUAL_SERVERS.INTERFACE,
+		allowBlank: false,
+		vtype:"string_visible_allow_blank",
+		items:[
+			{name:"---",value:'---'}
+		]
+	});
+
+	$("input#src_dport").textbox({
+		fieldLabel: $.su.CHAR.VIRTUAL_SERVERS.EXTERNAL_PORT,
+		tips:$.su.CHAR.VIRTUAL_SERVERS.EXTERNAL_UNIT,
+		tipsCls:"inline-block",
+		maxLength:128,
+		allowBlank:false,
+		textFormat:function(value) {
+			return port_format(value);
+		},
+		validator: function(value) {
+			if (check_port(value) == false) {
+				return "错误的数值，请输入1到65535之间的数值";
+			} else {
+				return true;
+			}
+		},
+		validateIcon: true
+	});
+
+	$("input#dest_port").textbox({
+		fieldLabel: $.su.CHAR.VIRTUAL_SERVERS.INTERNAL_PORT,
+		tips:$.su.CHAR.VIRTUAL_SERVERS.EXTERNAL_UNIT,
+		tipsCls:"inline-block",
+		maxLength:128,
+		allowBlank:false,
+		textFormat:function(value) {
+			return port_format(value);
+		},
+		validator: function(value) {
+			if (check_port(value) == false) {
+				return "错误的数值，请输入1到65535之间的数值";
+			} else {
+				return true;
+			}
+		},
+		validateIcon: true
+	});
+
+	$("input#virtual_ipaddr").textbox({
+		fieldLabel: $.su.CHAR.VIRTUAL_SERVERS.INTERNAL_IP,
+		tipsCls:"m",
+		allowBlank:false,
+		textFormat:$.su.format.ip,
+		maxLength:15,
+		vtype:"ip"
+	});
+
+	$("input#virtual_protocol").combobox({
+		fieldLabel: $.su.CHAR.VIRTUAL_SERVERS.PROTOCAL,
+		inputCls: "l",
+		items: [
+			{"value": "ALL", "name": $.su.CHAR.VIRTUAL_SERVERS.PROTOCAL_ALL, selected:"selected"},
+			{"value": "TCP", "name": $.su.CHAR.VIRTUAL_SERVERS.PROTOCAL_TCP},
+			{"value": "UDP", "name": $.su.CHAR.VIRTUAL_SERVERS.PROTOCAL_UDP}
+		]
+	});
+
+	$("input#virtual_loopback_ipaddr").subnet({
+		fieldLabel:"环回地址",
+		cls:"inline xxxs",
+		allowBlank:true,
+		validator: function(value) {
+			if (value == "" || value == null || value == "/") {
+				return true;
+			}
+			var arr = value.split("/");
+			if (arr.length != 2) {
+				return $.su.CHAR.VTYPETEXT.INVALIDTEXT;
+			}
+			if (arr[0] == "" || arr[0] == null || arr[1] == "" || arr[1] == null) {
+				return $.su.CHAR.VTYPETEXT.INVALIDTEXT;
+			}
+			var ip = new $.su.vtype({vtype:'ip'}).validate(arr[0]);
+			if (ip != true) {
+				return $.su.CHAR.VTYPETEXT.INVALIDTEXT;
+			}
+			var mask = new $.su.vtype({vtype:'number', min:1, max: 32}).validate(arr[1]);
+			if (mask != true) {
+				return $.su.CHAR.VTYPETEXT.INVALIDTEXT;
+			}
+			var ipInt = $.su.func.ipToInt(arr[0]);
+			var ipFmt = ipInt & (0xffffffff << (32 - parseInt(arr[1])));
+			var ipStr = $.su.func.intToIp(ipFmt);
+			var subNet = ipStr + "/" + arr[1];
+			$("input#virtual_loopback_ipaddr").subnet("setValue", subNet);
+			return true;
+		}
+	});
+
+	$("#loopback_ipaddr").textbox({
+		fieldLabel: "virtual_loopback-ipaddr-list"
+	});
+	$("#loopback_ipaddr").textbox("hide");
+
+	$("input#virtual_enable").checkbox({
+		fieldLabel:$.su.CHAR.VIRTUAL_SERVERS.STATUS,
+		defaultValue:["on"],
+		items: [
+			{boxlabel: $.su.CHAR.VIRTUAL_SERVERS.ENABLE_THIS_ENTRY, uncheckedValue:"off", inputValue: "on", id: "chk_enable",  checked:true}
+		]
+	});
+
+	var virtual_loopback_ipaddr_array = [];
+	var virtual_loopback_ipaddr_list = "";
+	var max_virtual_loopback_ipaddr = 64;
+	for (var i = 1 ; i <= max_virtual_loopback_ipaddr ; i++) {
+		virtual_loopback_ipaddr_list += "<li class=\"block\">";
+		virtual_loopback_ipaddr_list +=     "<input id=\"virtual_loopback_ipaddr" + i + "\" name=\"virtual_loopback_ipaddr" + i + "\" value=\"\"/>";
+		virtual_loopback_ipaddr_list +=     "<button id=\"virtual_loopback_ipaddr_btn" + i + "\" name=\"virtual_loopback_ipaddr_btn" + i + "\" class=\"del_virtual_loopback_ipaddr\"></button>";
+		virtual_loopback_ipaddr_list += "</li>";
+	}
+	$("ul#virtual_loopback_ipaddr_list").html(virtual_loopback_ipaddr_list);
+
+	for (var i = 1 ; i <= max_virtual_loopback_ipaddr ; i++) {
+		var item = "#virtual_loopback_ipaddr" + i
+		var time12 = $(item).textbox({
+			cls:"inline",
+			readOnly:"ture"
+		});
+		var btn = "#virtual_loopback_ipaddr_btn" + i
+		var time12M = $(btn).button({
+			cls:"inline xxxs",
+			text:"-"
+		});
+	}
+
+	function virtual_loopback_ipaddr_renew(){
+		for (var i = 1; i <= max_virtual_loopback_ipaddr; i++) {
+			var obj = "input#virtual_loopback_ipaddr" + i.toString();
+			var btn = "button#virtual_loopback_ipaddr_btn" + i.toString();
+			$(obj).textbox("hide");
+			$(btn).button("hide");
+		}
+
+		for (var i = 1; i <= virtual_loopback_ipaddr_array.length && i <= max_virtual_loopback_ipaddr; i++) {
+			var obj = "input#virtual_loopback_ipaddr" + i.toString();
+			var btn = "button#virtual_loopback_ipaddr_btn" + i.toString();
+			$(obj).textbox("show");
+			$(btn).button("show");
+			var loopback_ipaddr = virtual_loopback_ipaddr_array[i-1];
+			$(obj).textbox("setValue", loopback_ipaddr);
+		}
+	}
+
+	$("#add_virtual_loopback_ipaddr").button({
+		tips: "（可选）",
+		cls:"inline",
+		text:"+"
+	}).click(function() {
+		/* clear old error information */
+		$(o.grid("getEditor")).form("setError", "&nbsp&nbsp");
+
+		if (!$("#virtual_loopback_ipaddr").subnet("validate")) {
+			return false;
+		}
+
+		if (virtual_loopback_ipaddr_array.length >= max_virtual_loopback_ipaddr) {
+			$(o.grid("getEditor")).form("setError", "&nbsp&nbsp环回地址已满");
+			return false;
+		}
+		var loopback_ipaddr = $("input#virtual_loopback_ipaddr").subnet("getValue");
+		if (loopback_ipaddr == "" || loopback_ipaddr == "---" || loopback_ipaddr == null || loopback_ipaddr == "/") {
+			$(o.grid("getEditor")).form("setError", "&nbsp&nbsp环回地址不能为空");
+			return false;
+		}
+		for (var i = 0; i < virtual_loopback_ipaddr_array.length; i++) {
+			if (loopback_ipaddr == virtual_loopback_ipaddr_array[i]) {
+				$(o.grid("getEditor")).form("setError", "&nbsp&nbsp环回地址重复");
+				return false;
+			}
+		}
+
+		var count =  virtual_loopback_ipaddr_array.push(loopback_ipaddr);
+		virtual_loopback_ipaddr_renew();
+		$("#virtual_loopback_ipaddr").subnet("setValue", "");
+	});
+
+	$(".del_virtual_loopback_ipaddr").click(function() {
+		me = this;
+		var rownuber = parseInt($(me).attr('id').match(/[0-9]{1,}/));
+		virtual_loopback_ipaddr_array.splice(rownuber-1, 1);
+		virtual_loopback_ipaddr_renew();
+	});
+
+	function port_list_format(value) {
+		var array = [];
+		var value_split = value.split(",");
+		for (var i=0; i<value_split.length; i++) {
+			var split = value_split[i].split("-");
+			if (split.length == 2) {
+				var start = parseInt(split[0]);
+				var end = parseInt(split[1]);
+				for (var k=start; k<=end; k++) {
+					array.push(k);
+				}
+			} else if (split.length == 1) {
+				array.push(parseInt(split[0]));
+			}
+		}
+		return array;
+	}
+
+	function check_port_contain(p1, p2) {
+		var p1_array = port_list_format(p1);
+		var p2_array = port_list_format(p2);
+		for (var i=0; i<p1_array.length; i++) {
+			for (var j=0; j<p2_array.length; j++) {
+				if (p1_array[i] == p2_array[j]) {
+					return true;
+				}
+			}
+		}
+		return false;
+	}
+
+	function check_port_only(value) {
+		var value_array = port_list_format(value);
+		var kay_value = {};
+		for (var k=0; k<value_array.length; k++) {
+			if (kay_value[value_array[k]] == 1) {
+				return false;
+			} else {
+				kay_value[value_array[k]] = 1;
+			}
+		}
+		return true;
+	}
+
+	var virtualProxy = new $.su.Proxy({});
+	var o = $("div#virtualServersGrid").grid({
+		store:{
+			proxy: virtualProxy,
+			fields: [
+				{name: "name"},
+				{name: "if"},
+				{name: "src_dport"},
+				{name: "dest_port"},
+				{name: "dest_ip"},
+				{name: "proto"},
+				{name: "loopback_ipaddr"},
+				{name:"enable"},
+				{name: "src_dport_start"},
+				{name: "src_dport_end"},
+				{name: "dest_port_start"},
+				{name: "dest_port_end"}
+			],
+			parseKey:{
+				moduleName:"firewall",
+				tableName:"redirect",
+				pageSizeName: "virtual_server_entry"
+			},
+			autoLoad: true
+		},
+		editor: {
+			validator:function(){
+				var store = $(o).grid("getStore");
+				var editor = $(o.grid("getEditor"));
+				var store = o.grid("getStore");
+				var keyProperty = store.keyProperty;
+				var grid_array = store.data;
+				var editingId = editor.editor("getEditingId");
+				var editing_name = $("input#name").textbox("getValue");
+				var editing_export = $("input#src_dport").textbox("getValue");
+				var editing_virtual_interface = $("input#virtual_interface").combobox("getValue");
+				var editing_virtual_protocol = $("input#virtual_protocol").combobox("getValue");
+				var remote_flag = false;
+				var src_dport = $("input#src_dport").textbox("getValue");
+				var dest_port = $("input#dest_port").textbox("getValue");
+				var protocol = $("input#virtual_protocol").combobox("getValue");
+				var enable = $("#enable").checkbox("getValue");
+				var src_dport_array = src_dport.split(",");
+				var dest_port_array = dest_port.split(",");
+
+				if (src_dport_array.length > 5) {
+					$($("div#virtualServersGrid").grid("getEditor")).form('setError', "外部端口超出规格，请重新输入！");
+					$('input#src_dport').textbox('setError');
+					return false;
+				}
+
+				if (dest_port_array.length > 5) {
+					$($("div#virtualServersGrid").grid("getEditor")).form('setError', "内部端口超出规格，请重新输入！");
+					$('input#dest_port').textbox('setError');
+					return false;
+				}
+
+				if (src_dport_array.length != dest_port_array.length) {
+					$($("div#virtualServersGrid").grid("getEditor")).form('setError', "外部端口和内部端口格式不一致，请重新输入！");
+					$('input#dest_port').textbox('setError');
+					return false;
+				}
+
+				if (check_port_only(src_dport) == false) {
+					$($("div#virtualServersGrid").grid("getEditor")).form('setError', "外部端口重复，请重新输入！");
+					$('input#src_dport').textbox('setError');
+					return false;
+				}
+
+				if (check_port_only(dest_port) == false) {
+					$($("div#virtualServersGrid").grid("getEditor")).form('setError', "内部端口重复，请重新输入！");
+					$('input#dest_port').textbox('setError');
+					return false;
+				}
+
+				for (var i=0; i<src_dport_array.length; i++) {
+					var sub_export = src_dport_array[i].split("-");
+					if (sub_export.length == 2) {
+						if (parseInt(sub_export[0], 10) > parseInt(sub_export[1], 10)) {
+							$($("div#virtualServersGrid").grid("getEditor")).form('setError', "起始端口必须不大于结束端口，请重新输入！");
+							$('input#src_dport').textbox('setError');
+							return false;
+						}
+					}
+
+					var sub_inport = dest_port_array[i].split("-");
+					if (sub_inport.length == 2) {
+						if (parseInt(sub_inport[0], 10) > parseInt(sub_inport[1], 10)) {
+							$($("div#virtualServersGrid").grid("getEditor")).form('setError', "起始端口必须不大于结束端口，请重新输入！");
+							$('input#dest_port').textbox('setError');
+							return false;
+						}
+					}
+
+					var sub_export_range = sub_export.length == 2 ? (parseInt(sub_export[1], 10) - parseInt(sub_export[0], 10)) : 1;
+					var sub_inport_range = sub_inport.length == 2 ? (parseInt(sub_inport[1], 10) - parseInt(sub_inport[0], 10)) : 1;
+					if (sub_export.length != sub_inport.length) {
+						$($("div#virtualServersGrid").grid("getEditor")).form('setError', "外部端口数目必须和内部端口数目相等，请重新输入！");
+						$('input#dest_port').textbox('setError');
+						return false;
+					}
+
+					if (sub_export.length == 2 && sub_inport.length == 2) {
+						var extport_range = Math.abs(parseInt(sub_export[1], 10) - parseInt(sub_export[0], 10));
+						var intport_range  = Math.abs(parseInt(sub_inport[1], 10) - parseInt(sub_inport[0], 10));
+						if (extport_range != intport_range) {
+							$($("div#virtualServersGrid").grid("getEditor")).form('setError', "外部端口数目必须和内部端口数目相等，请重新输入！");
+							$('input#dest_port').textbox('setError');
+							return false;
+						}
+					}
+
+					/* check export contains remote port */
+					if (sub_export.length == 1) {
+						if (parseInt(sub_export[0], 10) == remote_port) {
+							remote_flag = true;
+						}
+					}
+					if (sub_export.length == 2) {
+						if ((sub_export[0] <= remote_port) && (sub_export[1] >= remote_port)) {
+							remote_flag = true;
+						}
+					}
+				}
+
+				if ((protocol != "UDP") && (enable) && (remote_flag == true) && remote_enable != "off") {
+					$("#virtual_alert_cnt").msg("show");
+					return false;
+				}
+
+				if ($.isArray(grid_array) && grid_array.length > 0) {
+					for(var k=0; k<grid_array.length; k++) {
+						var data = grid_array[k];
+						var data_extport = data["src_dport"];
+						var data_interface = data["if"];
+						var data_protocol = data["proto"];
+						if (data[keyProperty] == editingId)    {
+							continue;
+						}
+						if (data["name"] == editing_name) {
+							$($("div#virtualServersGrid").grid("getEditor")).form('setError', "规则名称与已有条目冲突！");
+							$('input#name').textbox('setError');
+							return false;
+						}
+						if (editing_virtual_interface[0] == data_interface && (editing_virtual_protocol[0] == "ALL" || data_protocol == "ALL" || editing_virtual_protocol[0] == data_protocol)) {
+							if (true == check_port_contain(data_extport, editing_export)) {
+								$($("div#virtualServersGrid").grid("getEditor")).form('setError', "外部端口已分配给其他规则！");
+								return false;
+							}
+						}
+					}
+				}
+
+				var virtual_loopback_ipaddr = $("#virtual_loopback_ipaddr").subnet("getValue");
+				if (virtual_loopback_ipaddr != "" && virtual_loopback_ipaddr != "---"
+					&& virtual_loopback_ipaddr != null && virtual_loopback_ipaddr != "/") {
+					var flag = false;
+					for(var i=0; i<virtual_loopback_ipaddr_array.length; i++){
+						if (virtual_loopback_ipaddr == virtual_loopback_ipaddr_array[i]) {
+							flag = true;
+							break;
+						}
+					}
+					if (flag == false && virtual_loopback_ipaddr_array.length < max_virtual_loopback_ipaddr) {
+						virtual_loopback_ipaddr_array.push(virtual_loopback_ipaddr);
+					}
+				}
+				var loopback_ipaddr_string = "";
+				for (var i = 0; i < virtual_loopback_ipaddr_array.length; i++) {
+					if (i==0) {
+						loopback_ipaddr_string = virtual_loopback_ipaddr_array[i];
+					} else {
+						loopback_ipaddr_string = loopback_ipaddr_string + "," + virtual_loopback_ipaddr_array[i];
+					}
+				}
+				$("#loopback_ipaddr").textbox("setValue", loopback_ipaddr_string);
+
+				/* disable virtual_loopback_ipaddr to forbid submitting */
+				$("#virtual_loopback_ipaddr").subnet("disable");
+				for (var i = 1 ; i <= max_virtual_loopback_ipaddr ; i++) {
+					var value = "#virtual_loopback_ipaddr" + i.toString();
+					$(value).textbox("disable");
+				}
+
+				return true;
+			},
+			content: "#own_editor",
+			fields: [
+				{name: "name"},
+				{name: "if"},
+				{name: "src_dport"},
+				{name: "dest_port"},
+				{name: "dest_ip"},
+				{name: "proto"},
+				{name: "enable"},
+				{name: "virtual_loopback_ipaddr"},
+				{name: "loopback_ipaddr"},
+				{name: "src_dport_start"},
+				{name: "src_dport_end"},
+				{name: "dest_port_start"},
+				{name: "dest_port_end"}
+			]
+		},
+		paging_true: {},
+		columns: [
+			{
+				xtype: "checkcolumn",
+				width: $.su.CHAR.SETTING.VIRTUAL_SERVER.CHECK_COLUMN_WIDTH
+			},
+			{
+				text: $.su.CHAR.VIRTUAL_SERVERS.ID,
+				xtype: "rownumberer",
+				width: $.su.CHAR.SETTING.VIRTUAL_SERVER.ROW_NUMBER_WIDTH
+			},
+			{
+				text: $.su.CHAR.VIRTUAL_SERVERS.SERVICE_NAME,
+				width:100,
+				dataIndex: "name"
+
+			},
+			{
+				text: $.su.CHAR.VIRTUAL_SERVERS.INTERFACE,
+				width:$.su.CHAR.SETTING.VIRTUAL_SERVER.INTERFACE_WIDTH,
+				dataIndex: "if"
+			},{
+				text: $.su.CHAR.VIRTUAL_SERVERS.EXTERNAL_PORT,
+				width:$.su.CHAR.SETTING.VIRTUAL_SERVER.PORT_WIDTH,
+				dataIndex: "src_dport"
+			},
+			{
+				text: $.su.CHAR.VIRTUAL_SERVERS.INTERNAL_PORT,
+				width:$.su.CHAR.SETTING.VIRTUAL_SERVER.PORT_WIDTH,
+				dataIndex: "dest_port"
+			},
+			{
+				text: $.su.CHAR.VIRTUAL_SERVERS.INTERNAL_IP,
+				width:100,
+				dataIndex: "dest_ip"
+			},
+			{
+				text: $.su.CHAR.VIRTUAL_SERVERS.PROTOCAL,
+				width:$.su.CHAR.SETTING.VIRTUAL_SERVER.PROTOCOL_WIDTH,
+				dataIndex: "proto"
+
+			},
+			{
+				text: $.su.CHAR.VIRTUAL_SERVERS.STATUS,
+				width:$.su.CHAR.SETTING.VIRTUAL_SERVER.STATUS_WIDTH,
+				dataIndex: "enable",
+				xtype: "statuscolumn"
+			},
+			{
+				xtype: "settings"
+			}
+		],
+		operation: "prompt|add|delete"
+	}).on("ev_load", function(e,data, others){
+		var interfaceItem=[];
+		var interfaceProxy = new $.su.Proxy({async: false});
+		interfaceProxy.query({"network":{"table":"if", "filter":[{"zone":"WAN"}, {"zone":"VPN"}]}}, function(data) {
+			var data = data.network["if"];
+			for (j=0; j<data.length; j++) {
+				for (var key in data[j]) {
+					if (data[j][key].if_name != "LAN" && data[j][key].isbridged != 1)
+						interfaceItem.push({name:data[j][key].if_name,value:data[j][key].if_name});
+				}
+			}
+		});
+		var editor = $("div#virtualServersGrid").grid("getEditor");
+		var combobox = $(editor).find('.combobox-value[name=if]');
+		combobox.combobox('loadData', interfaceItem);
+	});
+
+	var editor = $("div#virtualServersGrid").grid("getEditor");
+	$(editor).on("ev_startEdit", function(e, index, key) {
+		/* recovery virtual_loopback_ipaddr widget  */
+		$("#virtual_loopback_ipaddr").subnet("enable");
+		for (var i = 1 ; i <= max_virtual_loopback_ipaddr ; i++) {
+			var value = "#virtual_loopback_ipaddr" + i.toString();
+			$(value).textbox("enable");
+		}
+		$("input#virtual_loopback_ipaddr").subnet("setValue", "");
+		virtual_loopback_ipaddr_array.splice(0, virtual_loopback_ipaddr_array.length);
+		virtual_loopback_ipaddr_renew();
+
+		if (index == "add") {
+			$('input#name').textbox("enableStyle");
+			$("#virtual_protocol").combobox("setValue", "ALL");
+		} else {
+			$('input#name').textbox("disableStyle");
+			var store = o.grid("getStore");
+			var store_data = store.getData(key);
+			var loopback_ipaddr_array = store_data.loopback_ipaddr;
+			if (loopback_ipaddr_array != "" && loopback_ipaddr_array != null) {
+				var array = loopback_ipaddr_array.split(",");
+				for (var i=0; i<array.length; i++) {
+					virtual_loopback_ipaddr_array.push(array[i]);
+				}
+				virtual_loopback_ipaddr_renew();
+			}
+		}
+		var dest_port = $("input#dest_port").textbox("getValue");
+		document.getElementById("virtual_loopback_ipaddr_block").style.display="block";
+	});
+
+	$("#virtual_alert_cnt").msg({
+		okHandler:function() {
+			$($("div#virtualServersGrid").grid("getEditor")).editor("completeEdit");
+		},
+		cls:"m warning",
+		cancelHandler:function() {
+			return true;
+		},
+		type: "prompt"
+	});
+
+	$("#virtual_confirm_content").html($.su.CHAR.VIRTUAL_SERVERS.NOTICE);
+
+	var helpVirtualServer = new $.su.Help({
+		container: "div#virtual_server_help",
+		content: "VIRTUAL_SERVER"
+	});
+
+	$(".func-container").show();
+});
+</script>
+</body>
+</html>

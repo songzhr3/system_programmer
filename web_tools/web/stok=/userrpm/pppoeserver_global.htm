@@ -1,0 +1,219 @@
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
+<html xmlns="http://www.w3.org/1999/xhtml">
+<head>
+<meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
+<title>PPPOE_SERVER_GLOBAL</title>
+<style type="text/css">
+</style>
+</head>
+
+<body>
+
+<div class="func-container">
+	<form id="pppoe_server_global">
+		<div id="global_setting">
+			<input id="enable" name="enable" value="off"/>
+			<input id="force_enable" name="force_enable" value="off"/>
+			<input id="user_isolation" name="user_isolation" value="on"/>
+			<input id="service_if" name="service_if" value=""/>
+			<input id="first_dns_server" name="first_dns_server" value=""/>
+			<input id="second_dns_server" name="second_dns_server" value=""/>
+			<input id="max_sessions" name="max_sessions" value=""/>
+			<input id="max_noreply_lcp" name="max_noreply_lcp" value=""/>
+			<input id="idle_time" name="idle_time" value=""/>
+			<input id="auth_type" name="auth_type" value=""/>
+		</div>
+	</form>
+	<p id="caution"/>
+	<div id="global_help"></div>
+</div>
+
+<script type="text/javascript">
+
+$(document).ready(function(e){
+    $(".func-container").hide();
+	var max_sessions_num = 0;
+	var max_sessions_num_tips = "";
+	var pppoe_server_sessons_proxy = new $.su.Proxy({
+		async: false
+	});
+	pppoe_server_sessons_proxy.query({"profile":{"name": "pppoe_server"}}, function(data){
+			data=data.profile.pppoe_server;
+			/*console.log("#############");*/
+			if (data && data.max_sessions) {
+				max_sessions_num = parseInt(data.max_sessions, 10);
+				max_sessions_num_tips = "（1-" + max_sessions_num.toString() + "）";
+				/*console.log(max_sessions_num);
+				console.log(max_sessions_num_tips);*/
+			}
+	});
+
+	/* GLOBAL:全局设置 */
+	$("#global_setting").panel({
+		title: $.su.CHAR.PPPOE_SERVER_GLOBAL.GLOBAL,
+		collapsible: false
+	});
+
+	/* STATE:'PPPoE服务器'; STATE_ON:'启用';STATE_OFF:'禁用' */
+	$("#enable").radio({
+		fieldLabel: $.su.CHAR.PPPOE_SERVER_GLOBAL.STATE,
+		columns: 2,
+		items:[
+			{boxlabel: $.su.CHAR.PPPOE_SERVER_GLOBAL.STATE_ON, name:'enable', inputValue:'on'},
+			{boxlabel: $.su.CHAR.PPPOE_SERVER_GLOBAL.STATE_OFF, name:'enable', inputValue:'off'}
+		]
+	}).on('ev_change', function(e, oldValue, newValue){});
+
+	/* FORCE_STATE:'强制PPPoE拨号'; FORCE_STATE_ON:'启用';FORCE_STATE_OFF:'禁用' */
+	$("#force_enable").radio({
+		fieldLabel: $.su.CHAR.PPPOE_SERVER_GLOBAL.FORCE_STATE,
+		columns: 2,
+		items:[
+			{boxlabel: $.su.CHAR.PPPOE_SERVER_GLOBAL.FORCE_STATE_ON, name:'force_enable', inputValue:'on'},
+			{boxlabel: $.su.CHAR.PPPOE_SERVER_GLOBAL.FORCE_STATE_OFF, name:'force_enable', inputValue:'off'}
+		]
+	}).on('ev_change', function(e, oldValue, newValue){});
+
+	/* USER_ISOLATION:'拨号用户互访'; USER_ISOLATION_ON:'允许';USER_ISOLATION_OFF:'禁止' */
+	$("#user_isolation").radio({
+		fieldLabel: $.su.CHAR.PPPOE_SERVER_GLOBAL.USER_ISOLATION,
+		columns: 2,
+		items:[
+			{boxlabel: $.su.CHAR.PPPOE_SERVER_GLOBAL.USER_ISOLATION_ON, name:'user_isolation', inputValue:'on'},
+			{boxlabel: $.su.CHAR.PPPOE_SERVER_GLOBAL.USER_ISOLATION_OFF, name:'user_isolation', inputValue:'off'}
+		]
+	}).on('ev_change', function(e, oldValue, newValue){});
+
+	/* SERVER_IFACE:LAN接口列表 */
+	$("#service_if").combobox({
+		fieldLabel: $.su.CHAR.PPPOE_SERVER_GLOBAL.SERVER_IFACE,
+		allowBlank: false,
+		multiSelect: false,
+		items:[
+				{name:"---", value:"---"}
+			]
+	});
+
+	/* FIRST_NDS_SERVER:'首选DNS服务器地址' */
+	$("#first_dns_server").textbox({
+		fieldLabel: $.su.CHAR.PPPOE_SERVER_GLOBAL.FIRST_NDS_SERVER,
+		allowBlank: true,
+		vtype: "ip",
+		tips: $.su.CHAR.PPPOE_SERVER_GLOBAL.FIRST_NDS_SERVER_TIPS
+	});
+
+	/* SECOND_NDS_SERVER:'备选DNS服务器地址' */
+	$("#second_dns_server").textbox({
+		fieldLabel: $.su.CHAR.PPPOE_SERVER_GLOBAL.SECOND_NDS_SERVER,
+		allowBlank: true,
+		vtype: "ip",
+		tips: $.su.CHAR.PPPOE_SERVER_GLOBAL.SECOND_NDS_SERVER_TIPS
+	});
+
+	/* MAX_SESSIONS:'系统最大会话数' */
+	$("#max_sessions").textbox({
+		fieldLabel: $.su.CHAR.PPPOE_SERVER_GLOBAL.MAX_SESSIONS,
+		allowBlank: false,
+		tips: max_sessions_num_tips/*$.su.CHAR.PPPOE_SERVER_GLOBAL.MAX_SESSIONS_TIPS*/,
+		vtype: {
+			vtype: "number",
+			max: max_sessions_num,
+			min: 1
+		}
+	});
+
+	/* max_noreply_lcp: '' */
+	$("#max_noreply_lcp").textbox({
+		fieldLabel: $.su.CHAR.PPPOE_SERVER_GLOBAL.MAX_NOREPLY_LCP,
+		allowBlank: false,
+		tips: $.su.CHAR.PPPOE_SERVER_GLOBAL.MAX_NOREPLY_LCP_TIPS,
+		vtype: {
+			vtype: "number",
+			max: 60,
+			min: 1
+		}
+	});
+
+	/* IDEL_TIME:'空闲断线时间' */
+	$("#idle_time").textbox({
+		fieldLabel: $.su.CHAR.PPPOE_SERVER_GLOBAL.IDEL_TIME,
+		allowBlank: false,
+		tips: $.su.CHAR.PPPOE_SERVER_GLOBAL.IDEL_TIME_TIPS,
+		vtype: {
+			vtype: "number",
+			max: 10080,
+			min: 0
+		}
+	});
+
+	/* AUTH_TYPE: '认证方式'*/
+	$("#auth_type").checkbox({
+		fieldLabel: $.su.CHAR.PPPOE_SERVER_GLOBAL.AUTH_TYPE,
+		columns: "4",
+		items: [
+			{boxlabel:$.su.CHAR.PPPOE_SERVER_GLOBAL.AUTH_TYPE_PAP, inputValue:"pap"},
+			{boxlabel:$.su.CHAR.PPPOE_SERVER_GLOBAL.AUTH_TYPE_CHAP, inputValue:"chap"},
+			{boxlabel:$.su.CHAR.PPPOE_SERVER_GLOBAL.AUTH_TYPE_MSCHAP, inputValue:"mschap"},
+			{boxlabel:$.su.CHAR.PPPOE_SERVER_GLOBAL.AUTH_TYPE_MSCHAPV2, inputValue:"mschapv2"}
+		]
+	});
+
+
+		var interfaceItem=[];
+		var interfaceProxy = new $.su.Proxy({
+			async: false
+		});
+		interfaceProxy.query({"network":{"table": "interface"}}, function(data){
+			data = data.network.interface;
+			for (var i = 0; i < data.length; i++)
+			{
+				for (var key in data[i])
+					if (typeof(data[i][key].t_type) != "undefined" && data[i][key].t_type != "none"
+					&& data[i][key].t_type != "pppoe" && data[i][key].ipaddr
+					&& data[i][key].t_isbridged != "1")
+						interfaceItem.push({name:data[i][key].t_name,value:data[i][key].t_name});
+			}
+			var combobox = $('#service_if');
+			combobox.combobox('loadData',interfaceItem);
+	});
+
+	/* pppoe server global settings form */
+	$("#pppoe_server_global").form({
+        proxy: new $.su.Proxy(),
+		fields: [
+			{name: "enable", mapping: "enable"},
+			{name: "force_enable", mapping: "force_enable"},
+			{name: "user_isolation", mapping: "user_isolation"},
+			{name: "service_if", mapping: "service_if"},
+			{name: "first_dns_server", mapping: "first_dns_server"},
+			{name: "second_dns_server", mapping: "second_dns_server"},
+			{name: "max_sessions", mapping: "max_sessions"},
+			{name: "max_noreply_lcp", mapping: "max_noreply_lcp"},
+			{name: "idle_time", mapping: "idle_time"},
+			{name: "auth_type", mapping: "auth_type"}
+		],
+		parseKey:{
+			moduleName: "pppoe_server",
+			sectionName: "setting"
+		},
+		submitBtn: "default"
+	});
+
+	var cautionString = "（1）" + $.su.CHAR.PPPOE_SERVER_GLOBAL.CAUTION + "<br>" +
+						"<font color=red>（2）PPPoE服务器的服务接口不能为被桥接的接口，只能设置为带IP的静态接口，否则PPPoE服务器功能无效。</font><br>" +
+						"<font color=red>（3）开启PPPoE Server功能，请到NAT设置添加NAPT规则。</font><br>" +
+						"（4）账号引用的地址池禁止与服务接口地址同一网段。<br>" +
+						"（5）例外IP地址段需与服务接口同一网段，但不能包含服务接口IP。";
+	$("#caution").html("<br><br>注意：<br>" + cautionString);
+	var global_help = new $.su.Help({
+		container: "div#global_help",
+		content: ["PPPOE_SERVER_GLOBAL_HELP"]
+	});
+    $(".func-container").show();
+});
+
+</script>
+
+</body>
+
+</html>

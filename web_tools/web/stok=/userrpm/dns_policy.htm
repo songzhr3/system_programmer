@@ -1,0 +1,148 @@
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
+<html xmlns="http://www.w3.org/1999/xhtml">
+<head>
+<meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
+<title>DNS_POLICY</title>
+<style type="text/css">
+</style>
+</head>
+
+<body>
+<div class="func-container">
+    <div id="dns_policy_list">
+        <div id="dns_policy_grid">
+        </div>
+    </div>
+    <div id="dns_policy_hlep">    </div>
+</div>
+
+<script type="text/javascript">
+try{
+    $
+}catch(e){
+    location.href = "/";
+};
+
+
+$(document).ready(function(e){
+    var dns_policy_Proxy = new $.su.Proxy();
+
+    $("#dns_policy_list").panel({
+        title: $.su.CHAR.DNS_SETTING.DNS_POLICY_LIST,
+        collapsible: false
+    });
+
+    var ruleGrid = $("#dns_policy_grid").grid({
+        editor: {
+            content:"default",
+            fields: [
+                {name: "domain",mapping: "domain"},
+                {name: "userif",mapping: "userif"},
+                {name: "enable",mapping: "enable"}
+            ]
+        },
+        store:{
+            proxy: dns_policy_Proxy,
+            fields: [
+                {name: "domain",mapping: "domain"},
+                {name: "userif",mapping: "userif"},
+                {name: "enable",mapping: "enable"}
+            ],
+            parseKey:{
+                moduleName: "dns",
+                tableName: "dns_policy",
+                pageSizeName: "dnspolicy_entry"
+            },            
+            autoLoad: true
+        },
+        paging_true: {},
+        columns: [
+            {
+                xtype: "checkcolumn"
+            },
+            {
+                xtype: "rownumberer"
+            },
+            {
+                text: $.su.CHAR.DNS_SETTING.DOMAIN,
+                width: 130,
+                dataIndex: "domain",
+                editor: {
+                    xtype: "textbox",
+                    allowBlank: false
+                }
+            },
+            {
+                text: $.su.CHAR.DNS_SETTING.OUT_IP_IFACE,
+                width: 130,
+                dataIndex: "userif",
+                editor: {
+                    xtype: "combobox",
+                    allowBlank: false,
+                    vtype:"string_visible_allow_blank",
+                    items:[
+                        {name:"---",value:"---"}
+                    ]
+                }
+            },
+            {
+                text: $.su.CHAR.DNS_SETTING.STATUS,
+                xtype: "statuscolumn",
+                dataIndex: "enable",
+                editor: {
+                    xtype: "checkbox",
+                    items:[
+                        {boxlabel: $.su.CHAR.DNS_SETTING.ENABLE_RULE, name:'enable', inputValue:'on',uncheckedValue:"off",checked:true}
+                    ]
+                }
+            },
+            {
+                xtype: "settings"
+            }
+        ],
+        operation: 'prompt|add|delete'
+   }).on("ev_load", function(e, data, others){
+        if(others)
+        {
+            maxrules = others.max_rules;
+        }
+
+    }).on("ev_insert", function(){
+        ruleGrid.grid("getStore").load();
+    }).on("ev_update", function(){
+        ruleGrid.grid("getStore").load();
+    }).on("ev_remove", function(){
+        ruleGrid.grid("getStore").load();
+    });
+
+    //$("#dns_policy_grid").css("marginBottom","240px");
+    var i;
+    var editor = ruleGrid.grid('getEditor');
+    var combobox;
+
+
+    /*发送form请求,获取interface列表.用于显示于接口下拉框*/
+    var interfaceItem=[];
+    var interfaceProxy = new $.su.Proxy({ async: false});
+    interfaceProxy.query({"network":{"table": "if","filter":[{"zone":"WAN"},{"zone":"VPN"}]}}, function(if_data){
+        data = if_data.network["if"];
+        for (var i = 0; i < data.length; i++)
+        {
+            for (var key in data[i])
+            {
+                interfaceItem.push({name:data[i][key].if_name,value:key});
+           }
+        }
+        combobox = $(editor).find('.combobox-value[name=userif]');
+        combobox.combobox('loadData',interfaceItem);
+    });
+
+    var helpDns = new $.su.Help({
+        container: "div#dns_policy_hlep",
+        content: ["DNS_POLICY_LIST_HELP"]
+    });
+});
+</script>
+</body>
+
+</html>

@@ -1,0 +1,746 @@
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
+<html xmlns="http://www.w3.org/1999/xhtml">
+	<head>
+		<meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
+		<title>用户设置</title>
+		<style type="text/css">
+		</style>
+	</head>
+	<body>
+		<div class="func-container">
+			<div id="usermngr_user">
+				<div id="usermngr_user_grid" class="natSeries">
+				</div>
+			</div>
+			<div id="own_editor">
+				<input id="user_type" name="user_type" value="formal">
+				<input id="username" name="username">
+				<input id="password" name="password" value="">
+				<div id="div_expire_time">
+					<input id="expire_time" name="expire_time" >
+				</div>
+				<div id="div_free_time">
+					<input id="free_time" name="free_time" value = "30">
+				</div>
+				<input id="allow_auth_time" name="allow_auth_time" value = "00:00-24:00">
+
+				<div id="div_macBind">
+					<input id="mac_bind_type" name="mac_bind_type" value="none">
+					<div id="div_mac_bind_addr" hidden>
+						<input id="mac" name="mac" value="">
+					</div>
+				</div>
+
+				<input id="allow_user" name="allow_user" value = "1">
+				<input id="up_limit" name="up_limit" value = "0">
+				<input id="down_limit" name="down_limit" value = "0">
+
+				<div id="div_note">
+					<input id="name" name="name" value="">
+					<input id="telephone" name="telephone" value="">
+				</div>
+
+				<input id="note" name="note" value="">
+				<input id="enable" name="enable">
+			</div>
+			<span id="usermngr_notice" class="hidden"></span>
+			<div id="usermngr_help"></div>
+		</div>
+
+
+<script type="text/javascript">
+		//<![CDATA[
+try{
+$
+}catch(e){
+location.href = "/";
+};
+
+function emptyVerify(str)
+{
+
+	var codeStr = /^\s*$/;
+
+	if(codeStr.test(str))return true;
+
+	else return false;
+
+}
+
+function checkMaxUser(value)
+{
+	var user_type = $("input#user_type").combobox("getValue");
+	var mac_bind_type =  $("input#mac_bind_type").combobox("getValue");
+
+	if(('formal' == user_type &&('none' != mac_bind_type && value != 1)))
+	{
+
+		//console.log('allow_user must be 1 when mac_bind_type is static or dynamic');
+        $("div#usermngr_user_grid").form('setError', "设置MAC地址绑定时，同时登录用户数必须设为1");
+		//$("input#allow_user").textbox("setValue",1);
+		return false;
+	}
+	return true;
+}
+
+function checkBand(value)
+{
+
+	var bandMin = 10;
+	var bandMax = 1000000;
+	if(parseInt(value) != 0 && (value > bandMax || value < bandMin))
+	{
+		return false;
+	}
+	return true;
+}
+
+function removeBlank(value)
+{
+	return value.replace(/(^\s*)|(\s*$)/g,'');
+}
+
+function checkExpTime(value)
+{
+        var user_type = $("input#user_type").combobox("getValue");
+        if('formal' == user_type)
+        {
+	        value = removeBlank(value);
+			var pattern = /^([0-9]{4})\/([0-9]{1,2})\/([0-9]{1,2})$/;
+			if (!pattern.exec(value))
+			{
+				return $.su.CHAR.VTYPETEXT.DATE;
+			}
+			var arr = value.split("/"); 
+			if(arr.length != 3)
+			{
+				return $.su.CHAR.VTYPETEXT.DATE;
+			}
+
+			if(1 == arr[1].length){
+				arr[1] = "0" + arr[1];
+			}
+			if(1 == arr[2].length){
+				arr[2] = "0" + arr[2];
+			}
+			var formatDate = arr[0] + "/" + arr[1] + "/" + arr[2];
+			if(parseInt(new Date(formatDate).getDate()) != parseInt(arr[2],10))
+			{
+				return $.su.CHAR.VTYPETEXT.DATE;
+			}
+			if(parseInt(arr[0],10) < 1970)
+			{
+				return $.su.CHAR.VTYPETEXT.DATE_INVALID;
+			}
+			if(parseInt(arr[0],10) > 2030)
+			{
+				return $.su.CHAR.VTYPETEXT.DATE_INVALID;
+			}
+			$("#expire_time").textbox("setValue",arr[0] + "/" + arr[1] + "/" + arr[2]);
+			return true;
+
+        }
+        else if('free' == user_type)
+        {
+        	 if(isNaN(value))
+        	 {
+        	 	return false;
+        	 }
+
+        	 if(parseInt(value) > 43200 || parseInt(value) < 1)
+        	 {
+        	 	return false;
+        	 }
+        }
+
+
+        return true;
+
+}
+
+function checkTmScale(period)
+{
+	var tmScaleArr = new Array();
+	var tmTmp 	= period.split('-');
+	//console.log(tmTmp.length);
+	if(tmTmp.length <= 1)
+	{
+		//console.log('illegal allow_auth_time');
+		return false;
+	}
+	var tmStart 	= tmTmp[0].split(':');
+	var tmEnd 	= tmTmp[1].split(':');
+
+	if(tmStart.length <= 1 || tmEnd.length <= 1)
+	{
+		//console.log('illegal allow_auth_time');
+		return false;
+	}
+
+	tmScaleArr[0]	= parseInt(tmStart[0]);
+	tmScaleArr[1] 	= parseInt(tmStart[1]);
+	tmScaleArr[2] 	= parseInt(tmEnd[0]);
+	tmScaleArr[3] 	= parseInt(tmEnd[1]);
+
+	var sHour = tmScaleArr[0];
+	var sMin = tmScaleArr[1];
+	var eHour = tmScaleArr[2];
+	var eMin = tmScaleArr[3];
+
+	// 为空验证 和 数字是否为正确格式 验证
+	for(var m=0; m<tmScaleArr.length; m++)
+	{
+		if(emptyVerify(tmScaleArr[m].value))
+		{
+			return false;
+		}
+	}
+
+	if(sHour < 0 || sHour >24 || sMin < 0 || sMin > 59 || eHour < 0 || eHour >24 || eMin < 0 || eMin > 59)
+	{
+		return false;
+	}
+
+	if((sHour == 24) && (sMin != 0))
+	{
+		return false;
+	}
+	if((eHour == 24) && (eMin != 0))
+	{
+		return false;
+	}
+
+	return true;
+}
+
+$(document).ready(function(e){
+	//var URL_USERMNGR = $.su.url("/admin/usermngr?form=usermngr");
+	//var URL_TIME_SETTING = $.su.url("/admin/time?form=settings");
+	var default_year = '';
+	if(undefined == default_year || '' == default_year){
+		default_year = '2020';
+	}
+    $(".func-container").hide();
+	$("span#usermngr_notice").html($.su.CHAR.USERMNGR.NOTICE);
+	$("div.func-container").page({
+		title: $.su.CHAR.USERMNGR.TITLE,
+		help: ""	//可能是个调用的id 也可能是个url
+	});
+	$('div#usermngr_user').panel({
+		title: $.su.CHAR.USERMNGR.MAPPING_LIST,
+		collapsible: false,
+		help: $("#usermngr_help")
+	});
+
+	// 依据路径设置用户标题
+	if($.su.app.runningModule.name ==='user') {
+		$('#usermngr_user').panel('setTitle', $.su.CHAR.USERMNGR.USERMNGR_LIST);
+	}
+
+	$("input#user_type").combobox({
+		fieldLabel: $.su.CHAR.USERMNGR.USERTYPE,
+		inputCls: "l",
+		items: [
+			{"value": "formal", "name": $.su.CHAR.USERMNGR.FORMALUSER, selected:"selected"},
+			{"value": "free", "name": $.su.CHAR.USERMNGR.FREEUSER}
+		]
+	}).on('ev_change', function(e, oldValue, newValue){
+		var value = newValue[0],
+		$editor = $(o.grid("getEditor"));
+
+		if('formal' == value)
+		{
+			$('div#div_macBind').form("show");
+			$('div#div_note').form("show");
+			$('div#div_expire_time').form("show");
+			$('div#div_free_time').hide();
+
+			//$("input#mac_bind_type").combobox('enable');
+			//$("input#mac").textbox('enable');
+			$("input#expire_time").textbox("setValue", default_year+'/12/31');
+			$("input#expire_time").textbox("setTips",'(格式：YYYY/MM/DD)');
+			$("input#expire_time").textbox("setFieldLabel","有效期至");
+			$('div#div_mac_bind_addr').form("hide");
+			$("input#mac").textbox('disable');
+		}
+		else
+		{
+			$('div#div_macBind').hide();
+			$('div#div_note').hide();
+			$('div#div_expire_time').hide();
+			$('div#div_free_time').form("show");
+
+			//$("input#mac_bind_type").combobox('disable');
+			$("input#mac").textbox('disable');
+			$("input#free_time").textbox("setValue",30);
+			$("input#free_time").textbox("setTips",'(1-43200)');
+			$("input#free_time").textbox("setFieldLabel","上网时长(分钟)");
+		}
+
+	});
+	$("input#username").textbox({
+		fieldLabel: $.su.CHAR.USERMNGR.USERNAME,
+		vtype:"name",
+		maxLength:100,
+		allowBlank:false,
+		tips: '(1-100个字符)'
+	});
+	$("input#password").textbox({
+		fieldLabel: $.su.CHAR.USERMNGR.PASSWORD,
+		vtype:"password",
+		maxLength:100,
+		allowBlank:false,
+		tips: '(1-100个字符)' ,
+		validator:function(v)
+		{
+			var reg=new RegExp(/[\'\,]/g);
+			if(v.match(reg) && v.match(reg).length>0){
+				return "存在不合法字符，请重新输入";
+			}
+			return true;
+		}
+
+	});
+	$("input#expire_time").textbox({
+		fieldLabel: "有效期至",
+		vtype:"string_visible",
+		maxLength:20,
+		allowBlank:false,
+		tips: '（格式：YYYY/MM/DD）',
+		validator: function(value)
+		{
+			var user_type = $("input#user_type").combobox("getValue");
+			if (user_type == "formal")
+			{
+				$("input#free_time").textbox("setValue", "0");
+				return checkExpTime(value);
+			}
+			else
+			{
+				return true;
+			}
+		}
+	});
+	$("input#free_time").textbox({
+		fieldLabel: "免费时长",
+		vtype: {
+		vtype: "number"
+		},
+		maxLength:20,
+		allowBlank:false,
+		tips: '(1-43200)分钟',
+		validator: function(value)
+		{
+			var user_type = $("input#user_type").combobox("getValue");
+			if (user_type == "free")
+			{
+				$("input#expire_time").textbox("setValue", "0");
+				return checkExpTime(value);
+			}
+			else
+			{
+				return true;
+			}
+		}
+	});
+	$("input#allow_auth_time").textbox({
+		fieldLabel: $.su.CHAR.USERMNGR.VALIDPERIOD,
+		vtype:"string_visible",
+		maxLength:20,
+		allowBlank:false,
+		tips: '（格式为xx:xx-xx:xx）' ,
+		validator: function(value)
+		{
+			return checkTmScale(value);
+		}
+	});
+	$("input#mac_bind_type").combobox({
+		fieldLabel: $.su.CHAR.USERMNGR.MACBINDTYPE,
+		inputCls: "l",
+		items: [
+			{"value": "none",   "name": $.su.CHAR.USERMNGR.BINDNONE, selected:"selected"},
+			{"value": "static", "name": $.su.CHAR.USERMNGR.BINDSTATIC},
+			{"value": "dynamic", "name": $.su.CHAR.USERMNGR.BINDDYNAMIC}
+		],
+		allowBlank:false
+	}).on('ev_change', function(e, oldValue, newValue){
+		var value = newValue[0],
+		$editor = $(o.grid("getEditor"));
+
+		if('static' == value)
+		{
+			$('div#div_mac_bind_addr').form("show");
+			$("input#mac").textbox('enable');
+		}
+		else
+		{
+			$('div#div_mac_bind_addr').form("hide");
+			$("input#mac").textbox('disable');
+		}
+
+	});
+	$("input#mac").textbox({
+		fieldLabel: $.su.CHAR.USERMNGR.MACBINDADDR,
+		allowBlank:false,
+		vtype:'mac',
+		tips: '（格式为xx-xx-xx-xx-xx-xx）'
+	});
+	$("input#allow_user").textbox({
+		fieldLabel: $.su.CHAR.USERMNGR.MAXUSER,
+		textFormat: $.su.format.number,
+		vtype: {
+		vtype: "number",
+		max: 1024,
+		min: 1
+		},
+		allowBlank:false,
+		validator: function(value)
+		{
+            return true;
+			//return checkMaxUser(value);
+		},
+		tips: '(1-1024)'
+
+	});
+	$("input#up_limit").textbox({
+		fieldLabel: $.su.CHAR.USERMNGR.UPBAND,
+		textFormat: $.su.format.number,
+		vtype: {
+		vtype: "number"
+		},
+		allowBlank:false,
+		validator: function(value)
+		{
+			if(false == checkBand(value))
+			{
+				return "错误的数值，请输入0或10-1000000";
+			}
+			return true;
+		},
+
+		tips: 'Kbps(0或10-1000000,0表示不限制)'
+	});
+	$("input#down_limit").textbox({
+		fieldLabel: $.su.CHAR.USERMNGR.DOWNBAND,
+		textFormat: $.su.format.number,
+		vtype: {
+		vtype: "number"
+		},
+		allowBlank:false,
+		validator: function(value)
+		{
+			if(false == checkBand(value))
+			{
+				return "错误的数值，请输入0或10-1000000";
+			}
+			return true;
+		},
+		tips: 'Kbps(0或10-1000000,0表示不限制)'
+		});
+
+	if($.su.app.runningModule.name ==='user') {
+		$("input#up_limit").textbox("disable");
+		$("input#down_limit").textbox("disable");
+		$("input#up_limit").textbox("hide");
+		$("input#down_limit").textbox("hide");
+	}
+
+	$("input#name").textbox({
+		fieldLabel: $.su.CHAR.USERMNGR.NOTENAME,
+		vtype:"string_visible_allow_blank",
+		maxLength:50,
+		allowBlank:true,
+		tips: '(1-50个字符，可选)' ,
+		validator:function(v)
+		{
+			var reg=new RegExp(/\'/g);
+			if(v.match(reg) && v.match(reg).length>0){
+				return "存在不合法字符，请重新输入";
+			}
+			return true;
+		}
+	});
+	$("input#telephone").textbox({
+		fieldLabel: $.su.CHAR.USERMNGR.NOTETEL,
+		vtype:"string_visible_allow_blank",
+		maxLength:50,
+		allowBlank:true,
+		tips: '(1-50个字符，可选)',
+		validator:function(v)
+		{
+			var reg=new RegExp(/\'/g);
+			if(v.match(reg) && v.match(reg).length>0){
+				return "存在不合法字符，请重新输入";
+			}
+			return true;
+		}
+
+	});
+	$("input#note").textbox({
+		fieldLabel: $.su.CHAR.USERMNGR.NOTE,
+		vtype:"string_visible_allow_blank",
+		maxLength:50,
+		allowBlank:true,
+		tips: '(1-50个字符，可选)' ,
+		validator:function(v)
+		{
+			var reg=new RegExp(/\'/g);
+			if(v.match(reg) && v.match(reg).length>0){
+				return "存在不合法字符，请重新输入";
+			}
+			return true;
+		}
+
+	});
+    $("input#enable").checkbox({
+		fieldLabel:$.su.CHAR.USERMNGR.ENABLE,
+		defaultValue:["on"],
+		items: [
+			{boxlabel: $.su.CHAR.VIRTUAL_SERVERS.ENABLE_THIS_ENTRY, uncheckedValue:"off", inputValue: "on", id: "chk_enable",  checked:true}
+		]
+	});
+	var usermngrProxy = new $.su.Proxy(/*{
+		url: URL_USERMNGR
+	}*/);
+	var timeSettingProxy = new $.su.Proxy(/*{
+		url: URL_TIME_SETTING
+	}*/);
+	var o = $("div#usermngr_user_grid").grid({
+		store:{
+			proxy: usermngrProxy,
+			fields: [
+				{name: "entry_id"},
+				{name: "user_type"},
+				{name: "username"},
+				{name: "password"},
+				{name: "expire_time"},
+				{name: "free_time"},
+				{name: "allow_auth_time"},
+				{name: "mac_bind_type"},
+				{name: "mac"},
+				{name: "allow_user"},
+				{name: "up_limit"},
+				{name: "down_limit"},
+				{name: "name"},
+				{name: "telephone"},
+				{name: "note"},
+				{name: "enable"}
+			],
+			autoLoad: true,
+			parseKey:{
+				moduleName: "authentication",
+				tableName: "userlist",
+				pageSizeName: "user_mngr_entry",
+				maxSizeTableName: "wportal",
+				maxSizeOptionName: "usermngr_max",
+				setFilter:function(index, itemName, data){
+					var dataSet = $("div#usermngr_user_grid").grid("getStore").data;
+					var entry_id = dataSet[index].entry_id;
+					return [{"entry_id" : entry_id}];
+				},
+				delFilter:function(itemNames, data, indexes){
+					var result = [];
+					for (var i = 0; i < indexes.length; i++)
+					{
+						result.push({ "entry_id" : indexes[i].entry_id})
+					}
+					return result;
+				}
+			}
+		},
+		editor: {
+			validator:function()
+			{
+                var store   = o.grid("getStore");
+                var keyProperty = store.keyProperty;
+                var grid_array  = store.data;
+                var editingId = editor.editingId;
+                var name = $("input#username").textbox('getValue');
+
+                if($.isArray(grid_array) && grid_array.length > 0)
+                {
+                    for(var k = 0; k < grid_array.length;k++)
+                    {
+                        var data = grid_array[k];
+                        if(data[keyProperty] == editingId)
+                        {
+                            continue;
+                        }
+                        else if(data["username"] == name)
+                        {
+                            $("div#usermngr_user_grid").form('setError', "用户名已被使用，请重新输入");
+                            //console.log('conflict name');
+                            return false;
+                        }
+                    }
+                }
+				return checkMaxUser($("input#allow_user").textbox('getValue'));
+			},
+			content: "#own_editor",
+
+			fields: [
+				{name: "user_type"},
+				{name: "username"},
+				{name: "password"},
+				{name: "expire_time"},
+				{name: "free_time"},
+				{name: "allow_auth_time"},
+				{name: "mac_bind_type"},
+				{name: "mac"},
+				{name: "allow_user"},
+				{name: "up_limit"},
+				{name: "down_limit"},
+				{name: "name"},
+				{name: "telephone"},
+				{name: "note"},
+				{name: "enable"}
+			]
+		},
+		paging_true: {},
+		columns: [
+			{
+				xtype: "checkcolumn"
+			},
+			{
+				text: $.su.CHAR.USERMNGR.ID,
+				xtype: "rownumberer"
+			},
+			{
+				text: $.su.CHAR.USERMNGR.USERTYPE,
+				width: 80,
+				dataIndex: "user_type",
+				renderer:function (v)
+				{
+					if('formal' == v)
+						return '正式用户';
+					else
+						return '免费用户';
+				}
+			},
+			{
+				text: $.su.CHAR.USERMNGR.USERNAME,
+				width: 100,
+				dataIndex: "username"
+			},
+			{
+				text: $.su.CHAR.USERMNGR.EXPIRETIME,
+				width: 100,
+				dataIndex: "expire_time",
+				renderer:function (val,index,data){
+					if("free" == data.user_type){
+						return data.free_time;
+					}
+					return val;
+				}
+			},
+			{
+				text: $.su.CHAR.USERMNGR.MACBINDADDR,
+				width: 145,
+				dataIndex: "mac"
+			},
+			{
+				text: $.su.CHAR.USERMNGR.NOTE,
+				dataIndex: "note",
+				xtype: "comment"
+			},
+            {
+                xtype: 'statuscolumn',
+                dataIndex: 'enable',
+				trueValue: 'on',
+				falseValue: 'off'
+            },
+			{
+				xtype: "settings"
+			}
+		],
+		operation: "prompt|add|delete"
+	}).on("ev_load", function(e,data, others){
+			if(others)/* 閫氳繃json閲岀殑others鍙傛暟浼犻€掑姩鎬侀榾鍊?*/
+			{
+				//console.log(others.max_rules);
+				maxrules = others.max_rules;
+
+			}
+	});
+
+	var sys_year = 0;
+	var editor = o.grid("getEditor");
+	timeSettingProxy.query({system:{name:"system_time"}},function(data){
+		data = data.system.system_time;
+
+		var date = data.date.split("/");
+		sys_year = date[0];
+    });
+	$(editor).on("ev_startEdit", function(e, index, key){
+		 if (index == "add"){
+	    		$("input#user_type").combobox("enableStyle");
+	    		$("input#username").textbox("enableStyle");
+				//console.log(sys_year);
+				var expTime = sys_year + "/12/31";
+				//console.log(expTime);
+				$("input#expire_time").textbox("setValue",expTime);
+	    	}
+	    	else{
+	    		//console.log(index)
+	    		$("input#user_type").combobox("disableStyle");
+	    		$("input#username").textbox("disableStyle");
+	    	}
+		var user_type = $("input#user_type").textbox('getValue');
+		var mac_bind_type = $("input#mac_bind_type").textbox('getValue');
+		//console.log(user_type)
+		if('formal' == user_type)
+		{
+			$('div#div_macBind').form("show");
+			$('div#div_note').form("show");
+			$('div#div_expire_time').form("show");
+			$('div#div_free_time').form("hide");
+
+			$("input#expire_time").textbox("setTips",'(格式：YYYY/MM/DD)');
+			$("input#expire_time").textbox("setFieldLabel","有效期至");
+
+			if('static' == mac_bind_type)
+			{
+				$('div#div_mac_bind_addr').form("show");
+				$("input#mac").textbox('enable');
+			}
+			else
+			{
+				$('div#div_mac_bind_addr').form("hide");
+				$("input#mac").textbox('disable');
+			}
+		}
+		else
+		{
+			$('div#div_macBind').hide();
+			$('div#div_note').hide();
+			$('div#div_expire_time').form("hide");
+			$('div#div_free_time').form("show");
+
+			$("input#free_time").textbox("setTips",'(1-43200)');
+			$("input#free_time").textbox("setFieldLabel","上网时长(分钟)");
+
+			$("input#mac").textbox('disable');
+		}
+
+
+	});
+
+	if($.su.app.runningModule.name ==='user') {
+		var helpUsermngr = new $.su.Help({
+			container: "div#usermngr_help",
+			content: "USER_LIST"
+	    });
+	}
+	else {
+		var helpUsermngr = new $.su.Help({
+			container: "div#usermngr_help",
+			content: "USERMNGR_USER"
+	    });
+	}
+
+	$(".func-container").show();
+});
+
+</script>
+</body>
+</html>

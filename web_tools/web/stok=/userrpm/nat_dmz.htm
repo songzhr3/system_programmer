@@ -1,0 +1,221 @@
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
+<html xmlns="http://www.w3.org/1999/xhtml">
+<head>
+<meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
+<title>NAT DMZ</title>
+<style type="text/css">
+</style>
+</head>
+
+<body>
+<div class="func-container">
+    <div id="dmz_list">
+        <div id="dmz_grid">
+        </div>
+    </div>
+
+    <div id="dmz_list_help"></div>
+</div>
+
+<script type="text/javascript">
+try{
+    $
+}catch(e){
+    location.href = "/";
+};
+
+$(document).ready(function(e){
+    var maxIpMask;
+
+
+	$("#dmz_list").panel({
+		title: $.su.CHAR.DMZ.MAPPING_LIST,
+		collapsible: false
+	});
+
+	var naptListProxy = new $.su.Proxy({
+	});
+
+
+	var naptGrid = $("#dmz_grid").grid({
+        editor: {
+			validator:function(){
+				var editor  = $(naptGrid.grid("getEditor"));
+				var name    = editor.find(".text-text[name=name]").textbox("getValue");
+				var iface = editor.find(".combobox-value[name=if]").combobox("getValue");
+				//console.log(iface);
+				var store 	= naptGrid.grid("getStore");
+				var keyProperty = store.keyProperty;
+				var grid_array  = store.data;
+				var editingId = editor.editor("getEditingId");
+				if($.isArray(grid_array) && grid_array.length > 0)
+				{
+					for(var k = 0; k < grid_array.length;k++)
+					{
+						var data = grid_array[k];
+
+						if(data[keyProperty] == editingId)
+						{
+							continue;
+						}
+						//name conflict
+						else if(data["name"] == name)
+						{
+							//$($("#naptGrid").grid("getEditor")).form('setError',  $.su.CHAR.ERROR['00000076']);
+							//console.log('conflict name');
+							$($("div#dmz_grid").grid("getEditor")).form('setError', "规则名称与已有条目冲突！");
+							$('input#name').textbox('setError');
+							return false;
+						}
+						else if(data["if"] == iface)
+						{
+							//$($("#naptGrid").grid("getEditor")).form('setError',  $.su.CHAR.ERROR['00000076']);
+							//console.log('conflict name');
+							$($("div#dmz_grid").grid("getEditor")).form('setError', "绑定接口与已有条目冲突！");
+							$('input#if').textbox('setError');
+							return false;
+						}
+					}
+				}
+				return true;
+			},
+            content:"default",
+            fields: [
+                {name: "name"},
+                {name: "if"},
+                {name: "ip"},
+                {name: "enable"}
+            ]
+        },
+		store:{
+			proxy: naptListProxy,
+			fields: [
+				{name: "name"},
+		 		{name: "if"},
+		 		{name: "ip"},
+                {name: "enable"}
+			],
+			parseKey: {					/* 此处在store中增加parseKey，便于store对象在底层对数据进行预处理，以实现SLP数据结构和SU数据结构的转变 */
+				moduleName:"nat",		/* 此处的moduleName和tableName分别指数据块名和对应请求的table名 */
+				tableName:"rule_dmz",
+				pageSizeName: "nat_dmz_entry"
+			},
+			autoLoad: true
+		},
+		paging_true:{},
+		columns: [
+			{
+				xtype: "checkcolumn",
+				width: $.su.CHAR.SETTING.DMZ.CHECK_COLUMN_WIDTH
+			},
+			{
+				xtype: "rownumberer",
+				width: $.su.CHAR.SETTING.DMZ.ROW_NUMBER_WIDTH
+			},
+			{
+				text: $.su.CHAR.DMZ.NAME,
+				width: $.su.CHAR.SETTING.DMZ.NAME_WIDTH,
+				dataIndex: "name",
+				editor: {
+				    xtype: "textbox",
+				    allowBlank: false,
+            		vtype:"name",
+				    maxLength:32
+				}
+			},
+			{
+				text: $.su.CHAR.DMZ.INTERFACE,
+		        width: $.su.CHAR.SETTING.DMZ.INTERFACE_WIDTH,
+		        dataIndex: "if",
+		        editor: {
+					xtype: "combobox",
+		            allowBlank: false,
+					vtype:"string_visible_allow_blank",
+					items:[
+						{name:"---",value:'---'}
+					]
+		        }
+		    },
+		            {
+				text: $.su.CHAR.DMZ.IP_RANGE,
+				width: $.su.CHAR.SETTING.DMZ.IP_RANGE_WIDTH,
+				dataIndex: "ip",
+				editor: {
+				    xtype: "textbox",
+				    text: $.su.CHAR.DMZ.IP_RANGE_IP,
+				    allowBlank: false,
+				    validator: function(v){
+				        if((new $.su.vtype('ip').validate(v) === true)){
+				            return true;
+				        }
+				        return $.su.CHAR.DMZ.IP_HINT;
+				    },
+				    maxLength:32
+                			}
+			},
+            {
+                text: $.su.CHAR.DMZ.STATUS,
+                width: $.su.CHAR.SETTING.DMZ.STATUS_WIDTH,
+                xtype: "statuscolumn",
+                dataIndex: "enable",
+                editor: {
+                    xtype: "checkbox",
+                    fieldLabel: '',
+                    items: [
+                        {boxlabel: $.su.CHAR.DMZ.ENABLE_THIS_ENTRY, inputValue:'on', uncheckedValue:'off',checked:true}
+                    ]
+                }
+            },
+            {
+                xtype: "settings",
+                width: $.su.CHAR.SETTING.DMZ.SETTING_WIDTH
+            }
+		],
+		operation: 'prompt|add|delete'
+	}).on("ev_load", function(e,data, others){
+			if(others)/* 通过json里的others参数传递动态阀值 */
+			{
+				maxrules = others.max_rules;
+				/*保留不用*/
+			}
+			/*发送form请求,获取interface列表.用于显示于local_binding下拉框*/
+			var interfaceItem=[];
+			var interfaceProxy = new $.su.Proxy({
+					//url: $.su.url('/admin/interface?form=status'),
+					async: false
+			});
+			interfaceProxy.query({"network":{table:"if"}}, function(data){
+				var data = data.network["if"];
+				for (j=0; j<data.length; j++)
+				{
+					for (var key in data[j])
+					{
+						if (data[j][key].if_name != "LAN" && data[j][key].isbridged != 1)
+							interfaceItem.push({name:data[j][key].if_name,value:data[j][key].if_name});
+					}
+				}
+			});
+			var editor = $("div#dmz_grid").grid("getEditor");
+			var combobox = $(editor).find('.combobox-value[name=if]');
+				combobox.combobox('loadData',interfaceItem);
+		});
+
+	var editor  = $(naptGrid.grid("getEditor"));
+	editor.on("ev_startEdit", function(e, index, key){
+    	if (index == "add"){
+    		editor.find(".text-text[name=name]").textbox("enableStyle");
+    	}
+    	else{
+    		editor.find(".text-text[name=name]").textbox("disableStyle");
+    	}
+    })
+    var helpDmzGrid = new $.su.Help({
+        container: "div#dmz_list_help",
+        content: "NAT_DMZ"
+    });
+
+});
+</script>
+</body>
+
+</html>

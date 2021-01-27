@@ -1,0 +1,125 @@
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
+<html xmlns="http://www.w3.org/1999/xhtml">
+<head>
+<meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
+<title>DNS_MAP</title>
+<style type="text/css">
+</style>
+</head>
+
+<body>
+<div class="func-container">
+    <div id="dns_map_list">
+        <div id="dns_map_grid">
+        </div>
+    </div>
+    <div id="dns_map_hlep">    </div>
+</div>
+
+<script type="text/javascript">
+try{
+    $
+}catch(e){
+    location.href = "/";
+};
+
+
+$(document).ready(function(e){
+    var dns_map_Proxy = new $.su.Proxy();
+
+    $("#dns_map_list").panel({
+        title: $.su.CHAR.DNS_SETTING.DNS_MAP_LIST,
+        collapsible: false
+    });
+
+    var ruleGrid = $("#dns_map_grid").grid({
+        editor: {
+            content:"default",
+            fields: [
+                {name: "domain", mapping: "domain"},
+                {name: "ip", mapping: "ip"},
+                {name: "enable", mapping: "enable"}
+            ]
+        },
+        store:{
+            proxy: dns_map_Proxy,
+            fields: [
+                {name: "domain", mapping: "domain"},
+                {name: "ip", mapping: "ip"},
+                {name: "enable", mapping: "enable"}
+            ],
+            parseKey:{
+                moduleName: "dns",
+                tableName: "dns_map",
+                pageSizeName: "dnsmap_entry"
+            },
+            autoLoad: true
+        },
+        paging_true: {},
+        columns: [
+            {
+                xtype: "checkcolumn"
+            },
+            {
+                xtype: "rownumberer"
+            },
+            {
+                text: $.su.CHAR.DNS_SETTING.DOMAIN,
+                width: 130,
+                dataIndex: "domain",
+                editor: {
+                    xtype: "textbox",
+                    allowBlank: false
+                }
+            },
+            {
+                text: $.su.CHAR.DNS_SETTING.OUT_IP_ADDR,
+                width: 150,
+                dataIndex: "ip",
+                editor: {
+                    xtype: "textbox",
+                    vtype: "ip",
+                    allowBlank: false
+                }
+            },
+            {
+                text: $.su.CHAR.DNS_SETTING.STATUS,
+                xtype: "statuscolumn",
+                dataIndex: "enable",
+                editor: {
+                    xtype: "checkbox",
+                    items:[
+                        {boxlabel: $.su.CHAR.DNS_SETTING.ENABLE_RULE, name:'enable', inputValue:'on',uncheckedValue:"off",checked:true}
+                    ]
+                }
+            },
+            {
+                xtype: "settings"
+            }
+        ],
+        operation: 'prompt|add|delete'
+   }).on("ev_load", function(e, data, others){
+        if(others)
+        {
+            maxrules = others.max_rules;
+        }
+
+    }).on("ev_insert", function(){
+        ruleGrid.grid("getStore").load();
+    }).on("ev_update", function(){
+        ruleGrid.grid("getStore").load();
+    }).on("ev_remove", function(){
+        ruleGrid.grid("getStore").load();
+    });
+
+    $("#dns_map_grid").css("marginBottom","240px");
+
+    var helpDns = new $.su.Help({
+        container: "div#dns_map_hlep",
+        content: ["DNS_MAP_LIST_HELP"]
+    });
+});
+</script>
+</body>
+
+</html>

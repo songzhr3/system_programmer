@@ -1,0 +1,953 @@
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
+<html xmlns="http://www.w3.org/1999/xhtml">
+<head>
+<meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
+<title>Security Policy</title>
+<style type="text/css">
+    .top{
+        min-width: 1500px !important;
+    }
+    .top-content{
+        width: 1460px !important;
+        min-width: 1460px !important;
+    }
+    #signature_db_grid{
+        width: 1200px;
+    }
+</style>
+</head>
+
+<body>
+<div class="func-container">
+    <div id="signature_db">
+        <div class="container widget-container text-container  read-only" style="height: 40px;">
+            <div class="widget-fieldlabel-wrap m">
+                <label class="widget-fieldlabel text-fieldlabel">版本信息</label>
+                <span class="widget-separator">:</span>
+            </div>
+            <div class="widget-wrap-outer text-wrap-outer">
+                <div class="widget-wrap text-wrap">
+                    <span class="text-wrap">
+                        <span id="cloud_status" name="cloud_status">未知</span>
+                    </span>
+                </div>
+            </div>
+        </div>
+        <!-- <input value=""/> -->
+        <input id="get_latest_version" name="get_latest_version"/>
+        <div id="cloud_statu_msg">
+            <p id="cloud_status_text" class="cloud_status_text"></p>
+            <input id="cloud_status_bar" type="text" />
+        </div>
+        <div id="signature_db_grid">
+        </div>
+    </div>
+
+    <div class="notice" style="top:-20px;position:relative;">
+        <hr/>
+        <div id="download_center" name="download_center"></div>
+    </div>
+
+    <div id="own_editor">
+        <input id="auto_upgrade" name="auto_upgrade" />
+        <input id="upgrade_action" name="upgrade_action"/>
+        <input id="upgrade_day" name="upgrade_day"/>
+        <input id="upgrade_hour" name="upgrade_hour"/>
+        <input id="upgrade_minute" name="upgrade_minute"/>
+    </div>
+
+    <!--升级确认信息 -->
+    <div id="upgrade_alert_cnt">
+        <h4 class="title"  id="upgrade_confirm_cnt">
+            <span class="icon"></span>
+             <span class="text" id="upgrade_confirm_content"></span>
+         </h4>
+
+        <!--升级时显示弹窗信息，避免用户操作打断-->
+        <input id="upgrade_pro_bar" type="text" />
+    </div>
+
+
+    <div id="signature_db_help">
+    </div>
+</div>
+
+<script type="text/javascript">
+try{
+    $
+}catch(e){
+    location.href = "/";
+};
+
+Date.prototype.Format = function (fmt) {
+    var o = {
+        "M+": this.getMonth() + 1, //月份
+        "d+": this.getDate(), //日
+        "H+": this.getHours(), //小时
+        "m+": this.getMinutes(), //分
+        "s+": this.getSeconds(), //秒
+        "q+": Math.floor((this.getMonth() + 3) / 3), //季度
+        "S": this.getMilliseconds() //毫秒
+    };
+    if (/(y+)/.test(fmt)) fmt = fmt.replace(RegExp.$1, (this.getFullYear() + "").substr(4 - RegExp.$1.length));
+    for (var k in o)
+        if (new RegExp("(" + k + ")").test(fmt)) fmt = fmt.replace(RegExp.$1, (RegExp.$1.length == 1) ? (o[k]) : (("00" + o[k]).substr(("" + o[k]).length)));
+    return fmt;
+};
+
+/*Authore : Fu Fenghai
+ *Date : 2020/3/12
+ *Page : 升级中心界面
+ */
+$(document).ready(function(e){
+    $(".func-container").hide();
+
+    var get_down_ret = false;
+
+    var OWNER_BY_LUCI = "0";
+    var OWNER_BY_CLOUD = "1";
+    var ACTION_TIMEOUT = "5";
+    var CLOUD_SUCCESS = "0";
+    var DOWNLOAD_SUCCESS = "003"
+
+    var signature_db_proxy = new $.su.Proxy();
+
+    //将特征库缩写转换为中文全称
+    var dbNameToStr = {
+        ips:$.su.CHAR.SIGNATURE_DB.IPS_DB,
+        av:$.su.CHAR.SIGNATURE_DB.AV_DB,
+        app:$.su.CHAR.SIGNATURE_DB.APP_DB,
+        url:$.su.CHAR.SIGNATURE_DB.URL_DB
+    };
+
+    var dayToStr = {
+        1:$.su.CHAR.SIGNATURE_DB.MONDAY,
+        2:$.su.CHAR.SIGNATURE_DB.TUESDAY,
+        3:$.su.CHAR.SIGNATURE_DB.WEDNESDAY,
+        4:$.su.CHAR.SIGNATURE_DB.THURSDAY,
+        5:$.su.CHAR.SIGNATURE_DB.FRIDAY,
+        6:$.su.CHAR.SIGNATURE_DB.SATURDAY,
+        7:$.su.CHAR.SIGNATURE_DB.SUNDAY,
+        0:$.su.CHAR.SIGNATURE_DB.EVERYDAY
+    };
+
+    /* ----------------------- 设置主要控件类型和参数 ---------------------------*/
+    $("#signature_db").panel({
+        title: $.su.CHAR.SIGNATURE_DB.CENTER_LIST,
+        collapsible: false
+    });
+
+    $("#download_center").html('您可访问 <a href="https://webresource.tp-link.com.cn/fwlink/linkid2006001" \
+                        target="_blank"><b>特征库升级中心</b></a> 手动下载最新版本特征库');
+
+    $("#auto_upgrade").checkbox({
+        items: [
+            {boxlabel: "定时升级", name:"auto_upgrade", uncheckedValue:"no", inputValue: "yes", checked:true}
+        ]
+    });
+
+    $("#upgrade_action").combobox({
+        fieldLabel: $.su.CHAR.SIGNATURE_DB.ACTION,
+        defaultValue: ['setup'],
+        items: [
+            {value:"setup", name:$.su.CHAR.SIGNATURE_DB.SETUP},
+            {value:"download", name:$.su.CHAR.SIGNATURE_DB.DOWNLOAD}
+        ]
+    });
+
+    $("#upgrade_day").combobox({
+        fieldLabel: $.su.CHAR.SIGNATURE_DB.TIMING_UPGRADE_TIME,
+        defaultValue: ['sun'],
+        items: [
+            {value:"0", name:$.su.CHAR.SIGNATURE_DB.EVERY_DAY},
+            {value:"1", name:$.su.CHAR.DATE.MON},
+            {value:"2", name:$.su.CHAR.DATE.TUES},
+            {value:"3", name:$.su.CHAR.DATE.WED},
+            {value:"4", name:$.su.CHAR.DATE.THUR},
+            {value:"5", name:$.su.CHAR.DATE.FRI},
+            {value:"6", name:$.su.CHAR.DATE.SAT},
+            {value:"7", name:$.su.CHAR.DATE.SUN}
+        ]
+    });
+
+    $("#upgrade_hour").textbox({
+        fieldLabel:$.su.CHAR.SIGNATURE_DB.HOUR,
+        allowBlank:false,
+        maxLength:2,
+        defaultValue:"00",
+        inputCls:"xxxs",
+        validator:function(value){
+            var number = parseInt(value);
+            if(isNaN(number) || number > 23 || number < 0)
+            {
+                return false;
+            }
+            return true;
+        }
+    });
+
+    $("#upgrade_minute").textbox({
+        fieldLabel:$.su.CHAR.SIGNATURE_DB.MINUTE,
+        allowBlank:false,
+        maxLength:2,
+        defaultValue:"32",
+        inputCls:"xxxs",
+        validator:function(value){
+            var number = parseInt(value);
+            if(isNaN(number) || number > 59 || number < 0)
+            {
+                return false;
+            }
+            return true;
+        }
+    });
+
+    /*----------------------------------在线升级--------------------------------------------------*/
+    var download_msg_html = "<div id=\"download-tips\" name=\"download-tips\"/>";
+
+    //渲染msg里组件函数，通过grid的download_msg参数传入
+    var download_render_func = function _msg_func()
+    {
+        $('#download-tips').html("请先点击<b>[获取最新版本信息]</b>按钮来获取云端插件信息<br><br>本操作可能会持续几分钟，确定要升级吗?");
+    };
+
+    var msg_okHandler = function _msg_okHandler(){
+        var msg = $(this).get(0),
+            cur_index = msg.index;
+
+        var store = $(ruleGrid).grid("getStore"),
+            data = store.data;
+
+        if(null == cur_index || cur_index >= store.data.length)
+        {
+            return false;
+        }
+
+        //console.log(data[cur_index].dbname);
+        var download_proxy = new $.su.Proxy();
+        var data = {
+            signature_db: {
+                sdb_cloud_upgrade: {module: data[cur_index].dbname}
+            }
+        };
+        download_proxy.action(data, function(data){
+        },function(errcode){
+            displayErrorCode(errcode);
+        },function(){});
+
+        // 标记全局应用信息可能需要更新
+        if(data.signature_db.sdb_cloud_upgrade.module == "app") {
+            $.su.app_list.setUpdateFlag();
+        }
+
+        return true;
+    };
+
+
+    /* ----------------------------设置表格编辑选项和后台数据连接------------------------*/
+    var ruleGrid = $("#signature_db_grid").grid({
+        editor:{
+            content:"#own_editor",
+            fields:[
+                {name: "auto_upgrade"},
+                {name: "upgrade_action"},
+                {name: "upgrade_day"},
+                {name: "upgrade_hour"},
+                {name: "upgrade_minute"}
+            ]
+        },
+        store:{
+            proxy:signature_db_proxy,
+            fields:[
+                {name: "dbname"},
+                {name: "last_version"},
+                {name: "last_version_date"},
+                {name: "current_version"},
+                {name: "current_version_date"},
+                {name: "can_install_version"},
+                {name: "upgrade_validity"},
+                {name: "auto_upgrade"},
+                {name: "upgrade_action"},
+                {name: "upgrade_day"},
+                {name: "upgrade_hour"},
+                {name: "upgrade_minute"},
+                {name: "status"},
+                {name: "action"}
+            ],
+            parseKey:{
+                moduleName: "signature_db",
+                tableName: "signature_db"
+            },
+            autoLoad:true
+        },
+        //主表格，格式设置
+        columns:[
+            {
+                text:$.su.CHAR.SIGNATURE_DB.DB,
+                width:80,
+                dataIndex: "dbname",
+                renderer:function(dd, index, data){
+                    return "<b>" + dbNameToStr[data.dbname] + "</b>";
+                }
+            },
+            {
+                text:$.su.CHAR.SIGNATURE_DB.LAST_VERSION,
+                width:80,
+                dataIndex: "last_version"
+            },
+            {
+                text:$.su.CHAR.SIGNATURE_DB.LAST_VERSION_DATE,
+                width:80,
+                dataIndex: "last_version_date"
+            },
+            {
+                text:$.su.CHAR.SIGNATURE_DB.CURRENT_VERSION,
+                width:80,
+                dataIndex: "current_version"
+            },
+            {
+                text:$.su.CHAR.SIGNATURE_DB.CURRENT_VERSION_DATE,
+                width:80,
+                dataIndex: "current_version_date"
+            },
+            {
+                text:$.su.CHAR.SIGNATURE_DB.UPGRADE_VALIDITY,
+                width:70,
+                dataIndex: "upgrade_validity",
+                renderer:function(dd, index, data){
+                    var expiredTime = "";
+                    if("0" == data.upgrade_validity)
+                    {
+                        expiredTime = "永久有效";
+                    }
+                    else if("null" == data.upgrade_validity)
+                    {
+                        expiredTime = "---";
+                    }
+                    else
+                    {
+                        expiredTime = new Date(parseInt(data.upgrade_validity)).Format("yyyy-MM-dd");
+                    }
+                    return expiredTime;
+                }
+            },
+            {
+                text:$.su.CHAR.SIGNATURE_DB.TIMING_UPGRADE,
+                width:40,
+                dataIndex: "auto_upgrade",
+                renderer:function(dd, index, data){
+                    //待添加：返回一个勾或者没有
+                    if("yes" === data.auto_upgrade){
+                        return "是";
+                    }else{
+                        return "否";
+                    }
+                }
+            },
+            {
+                text:$.su.CHAR.SIGNATURE_DB.TIMING_UPGRADE_TIME,
+                width:120,
+                dataIndex: "upgrade_hour",
+                renderer:function(dd, index, data){
+                    //这里能够配置定时升级时间
+                    var timeStr = "";
+                    var actionStr;
+
+                    if("setup" === data.upgrade_action)
+                    {
+                        actionStr = $.su.CHAR.SIGNATURE_DB.SETUP;
+                    }
+                    else
+                    {
+                        actionStr = $.su.CHAR.SIGNATURE_DB.DOWNLOAD;
+                    }
+
+                    timeStr = dayToStr[data.upgrade_day] + data.upgrade_hour + ":" + data.upgrade_minute + "(" + actionStr + ")";
+
+                    // 这里为了不修改框架grid，所以这样别扭的实现了...
+                    // class中是grid的事件和属性
+                    return '<a href="javascript:void(0);" data-index="'+index+'" data-key="' + data.key + '" title="' + $.su.CHAR.OPERATION.EDIT + '" class="grid-content-btn grid-content-btn-edit btn-edit">' + timeStr + '</a>';
+                }
+            },
+            {
+                text:$.su.CHAR.SIGNATURE_DB.STATE,
+                width:80,
+                dataIndex: "status",
+                renderer:function(dd, index, data){
+                    var download_link = "";
+
+                    if("2" != data.status[0] && data.can_install_version)
+                    {
+                        download_link =  '<a href="javascript:void(0);" onclick="cloud_upgrade(\''+ index + '\')">[立即安装]</a>';
+                    }
+                    return $.su.CHAR.SIGNATURE_DB.STATUS[data.status] + download_link;
+                }
+            },
+            {
+                xtype:"download",
+                text:"在线升级",
+            },
+            {
+                text:"本地升级",
+                width:60,
+                renderer:function(dd, index, data){
+                    var innerHTML = "";
+                    //返回一个复选框
+                    if(data.can_install_version)
+                    {
+                        innerHTML =  '<a href="javascript:void(0);" onclick="alert_delete_downloaded_sdb(\''+ index + '\')">本地升级</a>';
+                    }
+                    else
+                    {
+                        innerHTML =  '<a href="javascript:void(0);" onclick="local_upgrade(\''+ data.dbname + '\')">本地升级</a>';
+                    }
+
+                    return innerHTML;
+                }
+            },
+            {
+                text:"版本回退",
+                width:60,
+                renderer:function(dd, index, data){
+                    //返回一个复选框
+                    if(data.last_version)
+                    {
+                        inHTML =    '<a href="javascript:void(0);" onclick="fallback(' + index + ')" title=\""+ "版本回退" +"\">';
+                        inHTML +=        '<span class="icon"></span>';
+                        inHTML +=        '<span class="text">版本回退</span>';
+                        inHTML +=    '</a>';
+                    }
+                    else
+                    {
+                        inHTML = '版本回退';
+                    }
+                    return inHTML;
+                }
+            }
+        ],
+        operation:["autoRefresh"],
+        autoRefresh: true,
+        refreshDuration: 3000,  //设置刷新间隔为3s
+        download_msg:{
+            title: "立即升级",
+            msgInHTML: download_msg_html,
+            msgRenderFunc: download_render_func,
+            okHandler: msg_okHandler
+        }
+    });
+
+    // 将自动刷新按钮隐藏
+    $(ruleGrid).find("input.operation-auto-refresh").checkbox("hide");
+
+    /* ------------------------------------------------------------------------ */
+    /* -----------------------获取特征库最新版本控件 -----------------------------*/
+
+    $("#cloud_statu_msg").msg({
+        type:"alert",
+        okText:"取消",
+        okHandler:function(){
+            clearPluginInterval();
+            clearVersionInterval();
+            return true;
+        },
+        closeBtn: true
+    });
+
+    var cloud_status_bar  = $('input#cloud_status_bar').waitingbar({
+        barWidth: 320,
+        fieldLabel:"正在获取云端信息，请不要切换页面",
+        labelCls:"xxl",
+    });
+
+    var cloud_time_out=15;
+    var version_query_interval = false;
+    var plugin_query_interval = false;
+
+    function clearPluginInterval()
+    {
+        if(plugin_query_interval)
+        {
+            clearInterval(plugin_query_interval);
+            plugin_query_interval = false;
+        }
+    }
+
+    function clearVersionInterval()
+    {
+        if(version_query_interval)
+        {
+            clearInterval(version_query_interval);
+            version_query_interval = false;
+        }
+    }
+
+    function get_plugin_info()
+    {
+        var tmp_proxy = new $.su.Proxy();
+        var data = {signature_db: {
+                sdb_latest_version_get: {module:"get_plugin_info"}
+        }};
+        tmp_proxy.action(data, function(data){
+            clearPluginInterval();
+            plugin_query_interval = setInterval(get_plugin_info_func, 1000);
+        },function(errcode){
+            displayErrorCode(errcode);
+            clearPluginInterval();
+        },function(){
+            clearPluginInterval();
+        });
+    }
+
+    function displayErrorCode(errcode)
+    {
+        if ($.su.app &&
+            $.su.app.errorOperation &&
+            $.su.app.errorOperation.denied)
+        {
+            errcode = errcode || -50904;
+            $.su.app.errorOperation.denied(errcode);
+        }
+    }
+
+
+    var cloud_hold_time = 0;
+    var cloud_max_hold_time = 5;
+
+    $("#get_latest_version").button({
+        text: "获取最新版本信息",
+        handler: function(){
+            cloud_time_out = 15;
+            cloud_hold_time = 0;
+            $("#cloud_statu_msg").msg("show");
+            cloud_status_bar.waitingbar("run");
+            get_plugin_info();
+        }
+    });
+
+    function needCloudTryAgain(sync_status)
+    {
+        ++cloud_hold_time;
+        if(ACTION_TIMEOUT == sync_status.action_status)
+        {
+            cloud_hold_time = 0;
+            return 1;
+        }
+
+        if(OWNER_BY_CLOUD == sync_status.owner && cloud_max_hold_time == cloud_hold_time)
+        {
+            //console.log("cloud == sync_status.owner && cloud_max_hold_time == cloud_hold_time");
+            return 1;
+        }
+
+        return 0;
+    }
+
+    function isCloudFinal(sync_status)
+    {
+        if(OWNER_BY_LUCI == sync_status.owner)
+        {
+            return 1;
+        }
+        return 0;
+    }
+
+    function isCloudError(sync_status)
+    {
+        if(CLOUD_SUCCESS != sync_status.err_code)
+        {
+            return 1;
+        }
+
+        return 0;
+    }
+
+    /* 获取特征库信息，可安装和可更新特征库个数 */
+    function get_plugin_info_func()
+    {
+        var versionProxy = new $.su.Proxy();
+        cloud_time_out--;
+        if(cloud_time_out < 0)
+        {
+            clearPluginInterval();
+            hideCloudWaitingBar("获取最新版本超时");
+            return 0;
+        }
+
+        versionProxy.query({cloud_status:{name:"synchronize_plugin"}}, function(data) {
+            var sync_status = data.cloud_status.synchronize_plugin;
+            //超时后再次重试，直到timeout时间为0
+            if(needCloudTryAgain(sync_status))
+            {
+                get_plugin_info();
+            }
+            else if(isCloudFinal(sync_status))
+            {
+                if(isCloudError(sync_status))
+                {
+                    clearPluginInterval();
+                    hideCloudWaitingBar($.su.CHAR.ERROR_CODE[sync_status.err_code]);
+                }
+                else
+                {
+                    var tmp_proxy = new $.su.Proxy();
+                    var data = { signature_db: {
+                        sdb_latest_version_get: {module:"get_sdb_url"}
+                    }};
+
+                    clearPluginInterval();
+                    clearVersionInterval();
+                    version_query_interval = setInterval(get_latest_version_func, 2000);
+                    tmp_proxy.action(data, function(data){},function(errcode){
+                        displayErrorCode(errcode);
+                        clearVersionInterval();
+                        hideCloudWaitingBar("获取最新版本信息失败");
+                    },function(){
+                        clearVersionInterval();
+                        hideCloudWaitingBar("获取最新版本信息失败");
+                    });
+                }
+            }
+        },function(errcode){
+            /* 提示获取云端信息失败 */
+            displayErrorCode(errcode);
+            clearPluginInterval();
+            hideCloudWaitingBar("获取最新版本信息失败");
+        },function(){
+            clearPluginInterval();
+            hideCloudWaitingBar("获取最新版本信息失败");
+        });
+    }
+
+    var cloud_action_status = {
+        0:"获取失败",
+        1:"空闲",
+        2:"正在同步",
+        4:"获取成功",
+        5:"获取超时",
+    };
+
+    /* 获取特征库的url等信息 */
+    function get_latest_version_func() {
+        var versionProxy = new $.su.Proxy();
+        versionProxy.query({cloud_status:{name: ["get_can_update_plugins", "get_not_installed_plugins"]}}, function(data) {
+            var can_update = data.cloud_status.get_can_update_plugins;
+            var can_install = data.cloud_status.get_not_installed_plugins;
+
+            if(OWNER_BY_LUCI == can_update.owner && OWNER_BY_LUCI == can_install.owner)
+            {
+                clearVersionInterval();
+                hideCloudWaitingBar("可安装特征库 " + cloud_action_status[can_install.action_status] +
+                                    "<br>可更新特征库 " + cloud_action_status[can_update.action_status])
+            }
+
+            cloud_time_out--;
+            if(cloud_time_out <= 0)
+            {
+                clearVersionInterval();
+                hideCloudWaitingBar("获取最新版本超时");
+            }
+        },function(errcode){
+            /* 提示获取云端信息失败 */
+            displayErrorCode(errcode);
+            clearVersionInterval();
+            hideCloudWaitingBar("获取最新版本信息失败");
+        },function(){
+            clearVersionInterval();
+            hideCloudWaitingBar("获取最新版本信息失败");
+        });
+    }
+
+    function hideCloudWaitingBar(cloud_status_text)
+    {
+        cloud_status_bar.waitingbar("stop");
+        $("#cloud_statu_msg").hide();
+        $("#cloud_statu_msg").msg("close");
+        $("#cloud_status").html(cloud_status_text);
+        // $("#cloud_status").textarea("setValue", cloud_status_text);
+    }
+
+    /* ----------------------------------------------------------------------- */
+
+    /* --------------------------- 版本回退   ---------------------------------- */
+    fallback = function _fallback(index)
+    {
+        //表单html结构
+        var msgInHTML = "<div id='fallback'>" +
+                "</div>";
+
+        var store = $(ruleGrid).grid("getStore"),
+            store_data = store.data;
+
+        var dbname = store_data[index].dbname,
+            curr_version = store_data[index].current_version,
+            last_version = store_data[index].last_version;
+
+        //设置msg控件
+        fallbackMsg = $("<div id=\"fallback_msg\">").msg({
+            title:"是否将<b>[" + dbNameToStr[dbname] + "]</b><br>从当前版本<b>[" + curr_version + "]</b>回退到上一版本<b>[" + last_version + "]</b>",
+            type: "confirm",
+            innerHTML: msgInHTML,
+            okHandler:function(){
+                var tmpProxy = new $.su.Proxy();
+                var data = {
+                    signature_db: {
+                        sdb_fallback: {
+                            module: dbname
+                        }
+                    }
+                };
+
+                tmpProxy.action(data, function(data){},function(errcode){
+                    displayErrorCode(errcode);
+                },function(){});
+
+                // 标记全局应用信息可能需要更新
+                if(dbname == "app") {
+                    $.su.app_list.setUpdateFlag();
+                }
+            }
+        });
+
+        //设置msg控件的高度，避免覆盖错误提示信息
+        fallbackMsg.css('z-index', 998);
+
+        fallbackMsg.msg('show');
+    }
+
+    /* ----------------------------------------------------------------------- */
+
+    cloud_upgrade = function _cloud_upgrade(index)
+    {
+        var store = $(ruleGrid).grid("getStore"),
+            store_data = store.data;
+
+        var dbname = store_data[index].dbname,
+            can_install_version = store_data[index].can_install_version;
+
+        upgradeMsg = $("<div id=\"upgrade_msg\">").msg({
+            title:"是否将<b>[" + dbNameToStr[dbname] + "]</b>升级至<b>[" + can_install_version + "]</b>",
+            type: "confirm",
+            okHandler:function(){
+                var tmpProxy = new $.su.Proxy();
+                var data = {
+                    signature_db: {
+                        sdb_install: {
+                            module: dbname
+                        }
+                    }
+                };
+
+                tmpProxy.action(data, function(data){},function(errcode){
+                    displayErrorCode(errcode);
+                },function(){});
+
+                // 标记全局应用信息可能需要更新
+                if(dbname == "app") {
+                    $.su.app_list.setUpdateFlag();
+                }
+            }
+        });
+
+        upgradeMsg.css('z-index', 998);
+        upgradeMsg.msg('show');
+    }
+
+    /*------------------------ 本地升级表单和相关控件 ----------------------------*/
+    var reboot_time = 1000;
+    var query_interval = false;
+    var upgradeMsg;
+
+    alert_delete_downloaded_sdb = function _alert_delete(index)
+    {
+        var msgInHTML = "<div id='alert_delete'></div>";
+
+        var store = $(ruleGrid).grid("getStore"),
+            store_data = store.data;
+
+        var dbname = store_data[index].dbname,
+            can_install_version = store_data[index].can_install_version;
+
+        alertMsg = $("<div id=\"alert_delete_msg\">").msg({
+            title:"当前存在未安装的<b>[" + dbNameToStr[dbname] + "]</b>版本为<b>[" + can_install_version + "]</b>,\
+                  继续执行操作将删除该文件，是否继续升级",
+            type: "confirm",
+            okHandler:function(){
+                local_upgrade(dbname);
+            }
+        });
+
+        //设置msg控件的高度，避免覆盖错误提示信息
+        alertMsg.css('z-index', 998);
+
+        alertMsg.msg('show');
+    }
+
+    /* 本地升级超链接指向的函数
+     * 目的: 在弹窗中显示上传文件的表单
+     */
+    local_upgrade = function _local_upgrade(dbname)
+    {
+        //表单html结构
+        var msgInHTML = "<form id='db_upgrade'>" +
+            "<input id='file' name='image' type='file' />" +
+            "<button type='button' id='upgrade' name='upgrade'></button>" +
+            "</form>";
+        //设置msg控件
+        upgradeMsg = $("<div id=\"db_upgrade_msg\">").msg({
+            title:"<b>本地升级</b>",
+            type: "",
+            innerHTML: msgInHTML
+        });
+
+        //设置msg控件的高度，避免覆盖错误提示信息
+        upgradeMsg.css('z-index', 998);
+
+        var file_proxy = new $.su.Proxy();
+        //设置表单控件属性
+        $("#db_upgrade").form({
+            proxy: file_proxy,
+            formEnctype: "multipart/form-data",     //数据传输格式
+            traditional: true,
+            hiddenFrame: true,
+            fields: [
+                {name: "image"}
+            ],
+            fileUrlCb: function(){
+                return $.su.url(upload_url);
+            },
+            submitBtn: null
+        }).on("ev_loadData", function(e, data){
+        });
+
+        //设置文件上传控件
+        $("#file").file({
+            fieldLabel: $.su.CHAR.SIGNATURE_DB.FILE_NAME,
+            tips:"请上传<b>[" + dbNameToStr[dbname] + "]</b>bin文件",
+            allowBlank:false,
+            extension: "bin",   //添加限制文件后缀名
+            cls:"inline"
+        });
+
+        //设置提交按钮
+        $("button#upgrade").button({
+            text: $.su.CHAR.FIMWARE.UPGRADE,
+            cls:"m",
+            handler: function(){
+                if($("#db_upgrade").form('validate'))
+                {
+                    $("#upgrade_alert_cnt").msg('hideButtons');
+                    $("#upgrade_alert_cnt").msg("show");
+                    $('#upgrade_confirm_cnt').hide();
+
+                    var tmpProxy = new $.su.Proxy();
+                    var data = {
+                        signature_db: {
+                            sdb_local_upgrade: {
+                                module: dbname
+                            }
+                        }
+                    };
+                    tmpProxy.action(data, function(data){
+                        showWaitingBar();
+                        upload_url = data.url;
+                        clearUploadInterval();
+                        query_interval = setInterval(function(){getResult(dbname, data.check_url)},1000);
+                        $("#db_upgrade").form('submit',{}, function(data){
+                            hideWaitingBar();
+                        },function(errcode){            //错误时，
+                            if(query_interval)
+                            {
+                                clearInterval(query_interval);
+                                query_interval = false;
+                            }
+                            hideWaitingBar();
+                            displayErrorCode(errcode);
+                        },function(){
+                            hideWaitingBar();
+                        });
+                    },function(errcode){
+                        hideWaitingBar();
+                        displayErrorCode(errcode);
+                    },function(){
+                        hideWaitingBar();
+                    });
+
+                    // 标记全局应用信息可能需要更新
+                    if(dbname == "app") {
+                        $.su.app_list.setUpdateFlag();
+                    }
+                }
+                else
+                {
+                    return false;
+                }
+            },
+            cls: "submit inline"
+        });
+        upgradeMsg.msg('show');
+    }
+
+    $("#upgrade_alert_cnt").msg({
+        cls: 'l',
+        closeBtn: false,
+        type: "confirm"                 //该类型带yes或no
+    });
+
+
+    //设置升级时显示信息
+    var upgrade_pro_bar = $("input#upgrade_pro_bar").waitingbar({
+        fieldLabel: "文件正在上传，请不要切换界面",
+        barWidth: 320,
+        labelCls:"xxl",
+    });
+
+    $("#upgrade_confirm_content").html("请确认是否升级");    //确认的提示信息，显示
+
+    function hideWaitingBar() {
+        upgrade_pro_bar.waitingbar("stop");
+        upgrade_pro_bar.waitingbar("reset");
+        $("#upgrade_alert_cnt").msg('close');
+        upgradeMsg.msg('close');
+    }
+
+    function showWaitingBar() {
+        $("#upgrade_alert_cnt").msg('show');
+        upgrade_pro_bar.waitingbar("show");
+        upgrade_pro_bar.waitingbar("run");
+    }
+
+    function clearUploadInterval()
+    {
+        if(query_interval)
+        {
+            clearInterval(query_interval);
+            query_interval = false;
+        }
+    }
+
+    function getResult(dbname, check_url) {
+        var tmpProxy = new $.su.Proxy();
+        tmpProxy.query({system: {name: check_url}}, function(data){
+            data = data.system[check_url];
+            if(data.status == "1")
+            {
+                clearUploadInterval();
+                hideWaitingBar();
+            }
+        },function(errcode){
+            displayErrorCode(errorcode);
+        },function(){}
+        );
+    }
+
+    /*-------------------------------------------------------------------------*/
+
+     var signature_db_help = new $.su.Help({
+        container: "div#signature_db_help",
+        content: ["SIGNATURE_DB"] });
+
+    $(".func-container").show();
+});
+</script>
+</body>
+</html>

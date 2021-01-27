@@ -1,0 +1,409 @@
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
+<html xmlns="http://www.w3.org/1999/xhtml">
+<head>
+<meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
+<title>USER GROUP</title>
+<style type="text/css">
+</style>
+</head>
+
+<body>
+<div class="func-container">
+    <div id="usergroup-list">
+        <div id="usergroup-grid">
+        </div>
+    </div>
+
+	<div id = "own_editor">
+		<input class = "hidden" type = "text" id = "flag" name = "flag" value = "user">
+		<div id = "group_name">
+			<input id = "name" name = "name" >
+		</div>
+		<div id = "group_view">
+			<input id = "child_list" name = "child_list" >
+		</div>
+		<input class = "hidden" id = "ref" name = "ref">
+	</div>
+
+	<div id="link-detail-window">
+            <table class="link-detail-table detail">
+                <tr>
+                    <td class="detail-value">
+                    </td>
+                </tr>
+            </table>
+    </div>
+
+    <div id="usergroup-help"></div>
+</div>
+
+<script type="text/javascript">
+try{
+    $
+}catch(e){
+    location.href = "/";
+};
+
+$(document).ready(function(e){
+	var ruleEditItem=[];
+	var ruleAddItem=[];
+	var userItem = new Array();
+	var userItemInit = false;
+
+	$(".func-container").hide();
+
+	$("#usergroup-list").panel({
+		title: $.su.CHAR.USERGROUP.PANEL_LIST
+	});
+
+	var usergroupListProxy = new $.su.Proxy();
+
+    $("input#child_list").combobox({
+        fieldLabel: $.su.CHAR.USERGROUP.CHILD_LIST,
+        multiSelect: true,
+        items:[
+        	{name:"---",value:"---", selected:true}
+        ]
+    });
+
+    $("input#name").textbox({
+		fieldLabel: $.su.CHAR.USERGROUP.GROUP_COMMENT,
+		tips:"(1-50个字符)",
+		tipsCls:"s",
+		allowBlank:false,
+		maxLength:50,
+		vtype:"name"
+	});
+
+	$("input#ref").textbox({
+		fieldLabel: ""
+	});
+
+	var $linkDetail = $("#link-detail-window").msg({
+        closeBtn: true,
+        cls:"l",
+        title: "成员列表",
+        type: "window"
+    }).msg("hide");
+
+
+	var all_users = [];
+	var all_groups = [];
+	var all_selected = [];
+
+	function get_child_list_item(must_query, option, data)
+	{
+		function flush_list()
+		{
+			all_users = [];
+			all_groups = [];
+			all_selected = [];
+			var editRuleProxy = new $.su.Proxy({
+				async: false
+			});
+			editRuleProxy.query({"authentication":{"table":"userlist"}}, function(data){
+				for (var i=0; i<data.authentication.userlist.length; i++){
+					for (var j in data.authentication.userlist[i])
+					{
+						all_users.push({name:data.authentication.userlist[i][j].username, value:"u" + data.authentication.userlist[i][j].entry_id, selected: false});
+					}
+				}
+			});
+			editRuleProxy.query({"usergroup":{"table":"rule_group"}}, function(data){
+				for (var i=0; i<data.usergroup.rule_group.length; i++){
+					for (var j in data.usergroup.rule_group[i])
+					{
+						if (data.usergroup.rule_group[i][j].flag != "system"){
+							all_groups.push({name:data.usergroup.rule_group[i][j].name,value:"g" + data.usergroup.rule_group[i][j].entry_id, selected: false});
+							for(var x in data.usergroup.rule_group[i][j].child_list) {
+								all_selected.push(data.usergroup.rule_group[i][j].child_list[x]);
+							}
+						}
+					}
+				}
+			});
+		}
+
+		if(must_query == true || all_users.length == 0 || all_groups.length == 0) {
+			flush_list();
+		}
+
+		var all_unselected = [];
+		for(var i in all_users) {
+			if(all_selected.indexOf(all_users[i].value) == -1) {
+				all_unselected.push(all_users[i]);
+			}
+		}
+		for(var i in all_groups) {
+			if(all_selected.indexOf(all_groups[i].value) == -1) {
+				all_unselected.push(all_groups[i]);
+			}
+		}
+
+		if(option == "get_all_unselected") {
+			return all_unselected;
+		}
+
+		var editItem = [];
+		if (typeof(data.child_list) != "undefined" ){
+			for (var i=0; i<data.child_list.length; i++){
+				if(data.child_list[i].substr(0, 1) == 'u') {
+					for(var j in all_users) {
+						if(all_users[j].value == data.child_list[i]) {
+							editItem.push({name:all_users[j].name, value:all_users[j].value, selected: true});
+						}
+					}
+				}
+				else if(data.child_list[i].substr(0, 1) == 'g') {
+					for(var j in all_groups) {
+						if(all_groups[j].value == data.child_list[i]) {
+							editItem.push({name:all_groups[j].name, value:all_groups[j].value, selected:true});
+						}
+					}
+				}
+			}
+		}
+
+		if(option == "get_selected") {
+			return editItem;
+		}
+
+		for(var i in all_unselected) {
+			if(all_unselected[i].name != data.name || all_unselected[i].value.substr(0, 1) != 'g') {
+				editItem.push(all_unselected[i]);
+			}
+		}
+
+		if(option == "get_editItem") {
+			return editItem;
+		}
+		else {
+			return [];
+		}
+	}
+
+	var userGroupGrid = $("#usergroup-grid").grid({
+		maxRulesProperty: "max_group",
+        editor: {
+			validator:function()
+			{
+				var editor  = $(userGroupGrid.grid("getEditor"));
+				var ruleName = editor.find(".text-text[name=name]").textbox("getValue");
+
+				var store 	= userGroupGrid.grid("getStore");
+				var keyProperty = store.keyProperty;
+				var grid_array  = store.data;
+
+				var editingId = editor.editor("getEditingId");
+
+				if($.isArray(grid_array) && grid_array.length > 0)
+				{
+					for(var k = 0; k < grid_array.length;k++)
+					{
+						var data = grid_array[k];
+
+						if(data[keyProperty] == editingId)
+						{
+							continue;
+						}
+						else if(data["name"] == ruleName)
+						{
+							$($("div#usergroup-grid").grid("getEditor")).form('setError', "	用户组名称不能重复！");
+							return false;
+						}
+					}
+				}
+				return true;
+			},
+            content:"#own_editor",
+            fields: [
+				{name: "flag"},
+                {name: "name"},
+                {name: "child_list"},
+				{name: "ref"}
+            ]
+        },
+		store:{
+			proxy: usergroupListProxy,
+			fields: [
+				{name: "flag"},
+                {name: "child_list"},
+				{name: "name"},
+				{name: "ref"}
+			],
+			parseKey: {
+				moduleName: "usergroup",
+				pageSizeName: "rule_ipgroup_entry",
+				tableName: "rule_group"
+			},
+			autoLoad: true
+		},
+		paging_true:{},
+		columns: [
+			{
+				xtype: "checkcolumn"
+			},
+			{
+				xtype: "rownumberer"
+			},
+			{
+				text:"",
+				dataIndex: "flag",
+				hidden: true
+			},
+			{
+				text: $.su.CHAR.USERGROUP.GROUP_COMMENT,
+				xtype: "name",
+				width:50,
+				dataIndex: "name",
+				scan: {
+					cmp: $.search.compare.string
+				}
+			},
+            {
+                text: $.su.CHAR.USERGROUP.CHILD_LIST,
+                width: 150,
+                dataIndex: "child_list",
+				renderer:function (dd, index, data)
+				{
+					var get_selected = get_child_list_item(false, "get_selected", data);
+					var string = "";
+					for(var i=0;i < get_selected.length && i < 2;i++) {
+						if(string != "") {
+							string += ","
+						}
+						string += get_selected[i].name;
+					}
+					if(get_selected.length > 2) {
+						string += " <a href='javascript:void(0);' class='btn-detail' data-index='"+ index +"'>更多</a>";
+					}
+					return string;
+				}
+            },
+			{
+                xtype: "settings"
+            },
+			{
+				xtype: "globalSearch",
+				hidden: true,
+				columns: [
+					{
+						text: $.su.CHAR.USERGROUP.CHILD_LIST,
+						width: 150,
+						dataIndex: "child_list",
+						scan: {
+							type: "textbox",
+							vtype: "string"
+						}
+					},
+					{
+						text: $.su.CHAR.USERGROUP.GROUP_COMMENT,
+						width: 100,
+						dataIndex: "name",
+						scan: {
+							type: "textbox",
+							vtype: "string"
+						}
+					}
+				],
+				render_search: function(){
+				},
+				render_show: function(){
+				},
+				render_return: function(){
+				}
+			}
+		],
+		exportCfg:{
+			url: $.su.url.subs + $.su.url.stok + "/admin/usergroup/download_usergroups",
+			checkCallback: function(callback){
+				var exportCheckProxy = new $.su.Proxy();
+
+				exportCheckProxy.query({"usergroup":{"name":"download_status"}}, function(data){
+					data = data.usergroup.download_status;
+					if (data.status == "1")
+					{
+						callback(true);
+					}
+					else
+					{
+						callback(false);
+					}
+				});
+			}
+		},
+		importCfg:{
+			url: $.su.url.subs + $.su.url.stok + "/admin/usergroup/upload_usergroups"
+		},
+		operation: 'prompt|add|delete|search|searchAll|import|export'
+	}).on("ev_load", function(e, data, others){
+		if ( others ){
+			maxrules = others.max_group;
+		}
+		for (var i=0; i<data.length; i++){
+			if ( data[i].flag === "system" ){
+				$("div#usergroup-grid").grid('disableRow',i);
+			}
+		}
+    }).on("ev_formatEditData", function(e, data){
+		if(!data.child_list){
+			data.child_list = [];
+		}
+		if(typeof(data.child_list) == "string") {
+			data.child_list = [data.child_list];
+		}
+	}).on("ev_formatAddData", function(e, data){
+		if(!data.child_list){
+			data.child_list = [];
+		}
+		if(typeof(data.child_list) == "string") {
+			data.child_list = [data.child_list];
+		}
+	}).delegate('a.btn-detail', 'click', function(e){
+        var index = $(this).data('index');
+
+        var get_selected = get_child_list_item(false, "get_selected", userGroupGrid.grid("getStore").data[index]);
+		var string = "";
+		for(var i=0;i<get_selected.length;i++) {
+			string = string + get_selected[i].name + "<br/>";
+		}
+
+		$linkDetail.find(".detail-value").html(string).css({
+            "lineHeight":"20px",
+            "textAlign":"center",
+            "wordBreak":"break-all"
+        });
+        $linkDetail.msg('show');
+    });
+
+    var editor = $(userGroupGrid.grid("getEditor"));
+    editor.on("ev_startEdit", function(e, index, key){
+		var store 	= userGroupGrid.grid("getStore");
+		var grid_array  = store.data;
+
+		if (index == "add" ){
+			editor.find("#name").textbox("enableStyle");
+			editor.find("#ref").textbox("setValue", "0");
+
+			var all_unselected = get_child_list_item(true, "get_all_unselected", null);
+			var combobox = editor.find('.combobox-value[name=child_list]');
+			combobox.combobox('loadData', all_unselected);
+		}else{
+			editor.find("#name").textbox("disableStyle");
+
+			var editItem = get_child_list_item(true, "get_editItem", grid_array[index]);
+			var combobox = editor.find('.combobox-value[name=child_list]');
+			combobox.combobox('loadData',editItem);
+		}
+    })
+    var helpIpgroupGrid = new $.su.Help({
+        container: "div#usergroup-help",
+        content: ["USERGROUP_LIST"]
+	});/* TODO */
+
+	$(".func-container").show();
+});
+</script>
+</body>
+
+</html>

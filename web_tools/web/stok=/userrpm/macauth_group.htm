@@ -1,0 +1,1560 @@
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
+<html xmlns="http://www.w3.org/1999/xhtml">
+<head>
+<meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
+<title>MAC认证</title>
+<style type="text/css">
+	#mac-list-msg .panel-content-container{
+		overflow:auto;
+	}
+	#mac-list-edit-msg .panel-content-container{
+		overflow:auto;
+	}
+</style>
+</head>
+
+<body>
+	<div class="func-container">
+		<div id="ac_auth_mode_setting">
+			<form id="ac_auth_mode_settings">
+				<input id="auth_mode" name="auth_mode" value=""/>
+				</br>
+				<input id="global_submit" name="global_submit"/>
+			</form>
+			<div id="confirm-msg">
+				<p id='confirm_text'></p>
+			</div>
+		</div>
+		<div id="mac_group_list">
+			<div id="mac_group_list_grid" class="natSeries" style="display:none">
+			</div>
+			<div id="mac_ssid_group_list_grid" class="natSeries" style="display:none">
+			</div>
+		</div>
+
+		<div id="own_editor" style="display:none">
+			<input type="text" id="name" name="name">
+			<input type="text" id="vlan" name="vlan">
+			<input id="mac_map1" name="mac_id_map" value="" style="display:none"/>
+			<div class="widget-fieldlabel-wrap s"><label>生效MAC</label><span class="widget-separator">:</span></div>
+			<button type="button" id="default_set_mac1" name="default_set_mac"></button>
+			<input id="mac_note" name="note" value=""/>
+			<input id="type" name="type" value=""/>
+			<input id="status" name="enable" value=""/>
+			<div style="margin:10px 171px 0 0"><span id="mac_auth_group_notice" class=""></span></div>
+		</div>
+		<div id="own_editor1" style="display:none">
+			<input type="text" id="name1" name="name">
+            <input id="serv_id_map" name="serv_id_map" value="" style="display:none"/>
+            <input id="mac_map" name="mac_id_map" value="" style="display:none"/>
+			<div class="widget-fieldlabel-wrap s"><label>生效MAC</label><span class="widget-separator">:</span></div>
+			<button type="button" id="default_set_mac" name="default_set_mac"></button>
+			<input id="mac_note1" name="note" value=""/>
+			<input id="type1" name="type" value=""/>
+			<input id="status1" name="enable" value=""/>
+		</div>
+		<div id="mac-list-msg" style="height:650px;width:1000px;">
+			<div id="mac-list-grid"></div>
+		</div>
+		<div id="mac-list-edit-msg" style="height:710px;width:1000px;">
+			<div id="mac-list-edit-grid"></div>
+		</div>
+	 	<div id="mac_group_help"></div>
+	</div>
+<script type="text/javascript">
+//<![CDATA[
+try{
+    $
+}catch(e){
+    location.href = "/";
+};
+
+/* 把vlan string转化成二维数组，vlan从1开始。 */
+function strToArray(str){
+	if(typeof str != 'string') return false;
+
+	var strArray = [];
+
+	str = str.split(',');
+	for(var i=0;i<str.length;i++){
+		var vlan = /(^[\d]+$)|(^([\d]+)-([\d]+)$)/.exec(str[i]);
+		if(null == vlan) return false;
+		else if(vlan[1]){
+			strArray[Number(vlan[1])] = true;
+		}else if(vlan[2]){
+			var low = Number(vlan[3]);
+			var high = Number(vlan[4]);
+			if (low > high){
+				low = Number(vlan[4]);
+				high = Number(vlan[3]);
+			}
+			for(var p = Number(low); p <= Number(high); p ++){
+				strArray[p] = true;
+			}
+		}
+	}
+
+	return strArray;
+};
+
+function arrayToStr(mac_auth_grid)
+{
+	var first = undefined,
+		end = undefined,
+		val = undefined,
+		s = '';;
+
+	if(!$.isArray(mac_auth_grid))
+		return;
+
+	for(var j=0; j<mac_auth_grid.length; j++){
+		if(undefined == mac_auth_grid[j])
+			continue;
+		/* j为当前端口号 */
+		val = Number(j);
+
+		first = (first==undefined) ? val : first;
+		end = (end==undefined) ? val : end;
+
+		if((val == end) || (val == (end + 1))){
+			end = val;
+			continue;
+		}
+
+		s += ((first == end) ? (first + ',') : (first + '-' + end + ','));
+		first = end = val;
+	}
+
+	if(first != undefined)
+		s += ((first == end) ? (first + ',') : (first + '-' + end + ','));
+
+	return (s.slice(0, s.length-1) != undefined) ? s.slice(0, s.length-1) : '';
+}
+
+$(document).ready(function(e){
+	var bindSSIDProxyForEntryAsync = new $.su.Proxy({
+		async: false
+	});
+	var bindMACProxyForEntry = new $.su.Proxy({
+	});
+	var bindMACViewProxyForEntry = new $.su.Proxy({
+	});
+	var bindMACProxyForEntryAsync = new $.su.Proxy({
+		async: false
+	});
+	$("span#mac_auth_group_notice").html($.su.CHAR.MAC_AUTH.GROUP_NOTICE);
+
+	var ssid_list_combo_load = false;
+	$("#auth_mode").radio({
+        fieldLabel: $.su.CHAR.MAC_AUTH.MAC_AUTH_MODE,
+        columns: 2,
+		labelCls: 's',
+        items: [
+            {boxlabel: $.su.CHAR.MAC_AUTH.MAC_AUTH_MODE_SSID, inputValue: "ssid"},
+            {boxlabel: $.su.CHAR.MAC_AUTH.MAC_AUTH_MODE_VLAN, inputValue: "vlan"}
+        ]
+    });
+	var authParaProxy = new $.su.Proxy({
+	});
+	var wservListProxy = new $.su.Proxy({
+		async: false
+	});
+
+	var current_auth_mode = "vlan";
+	var firstLoad = true;
+    $("#ac_auth_mode_settings").form({
+        proxy: authParaProxy,
+		showPromptFail: false,
+        fields: [
+            {name: "auth_mode", mapping: "auth_mode"}
+        ],
+		parseKey:{
+			moduleName: "authentication",
+			sectionName: "macauth"
+		},
+        submitBtn: null
+    }).on("ev_loadData", function(e, localData){
+		if(localData == undefined || localData.auth_mode == undefined)return;
+        current_auth_mode    = localData.auth_mode;
+		if(firstLoad){
+			firstLoad = false;
+			initMacGroupGrid();
+			if(current_auth_mode == "ssid")
+			{
+				$("div#mac_ssid_group_list_grid").show();
+				$("div#mac_group_list_grid").hide();
+				var helpPortTrigger = new $.su.Help({
+					container: "div#mac_group_help",
+					content: ["MAC_AUTH_GROUP_GLOBAL_HELP","MAC_AUTH_GROUP_HELP_FOR_SSID"]
+				});
+			}
+			else
+			{
+				$("div#mac_ssid_group_list_grid").hide();
+				$("div#mac_group_list_grid").show();
+				var helpPortTrigger = new $.su.Help({
+					container: "div#mac_group_help",
+					content: ["MAC_AUTH_GROUP_GLOBAL_HELP","MAC_AUTH_GROUP_HELP"]
+				});
+			}
+		}
+    });
+    $("#ac_auth_mode_setting").panel({
+        title: $.su.CHAR.MAC_AUTH.GLOBAL_SET,
+        collapsible: false
+    });
+
+
+	$("#confirm_text").html($.su.CHAR.MAC_AUTH.CONFIRM_CONTENT);
+	var $confirmMsg = $("#confirm-msg").msg({
+		closeBtn: true,
+		cls:"",
+		type: 'confirm',
+		okHandler: function(){
+			$("#ac_auth_mode_settings").form('submit',{}, function(data){
+				$.su.menu.advanced.goTo("portal", "macauth");
+			});
+		}
+	}).msg("hide");
+
+
+	$('input#global_submit').button({
+		text: '设置',
+		cls: 'submit',
+		handler: function(){
+			auth_mode  = $('#auth_mode').radio('getValue');
+
+			if(auth_mode != current_auth_mode)
+			{
+				$confirmMsg.msg('show');
+			}
+			else
+			{
+				if ($.su.app && $.su.app.errorOperation && $.su.app.errorOperation.denied){
+					$.su.app.errorOperation.alert("配置未改变。");
+				}
+			}
+		}
+	});
+
+
+	$('div#mac_group_list').panel({
+		title: $.su.CHAR.MAC_AUTH.MAC_GROUP_LIST
+	});
+
+	$("input#name").textbox({
+		fieldLabel: $.su.CHAR.MAC_AUTH.MAC_GROUP_NAME,
+		allowBlank:false,
+		inputCls: 'xl',
+		labelCls: 's',
+		vtype: "string_visible_allow_blank",
+		maxLength:50,
+		tips: $.su.CHAR.MAC_AUTH.MAC_NAME_TIP
+	});
+	$("input#name1").textbox({
+		fieldLabel: $.su.CHAR.MAC_AUTH.MAC_GROUP_NAME,
+		allowBlank:false,
+		inputCls: 'xl',
+		labelCls: 's',
+		vtype: "string_visible_allow_blank",
+		maxLength:50,
+		tips: $.su.CHAR.MAC_AUTH.MAC_NAME_TIP
+	});
+	$("input#vlan").textbox({
+		fieldLabel: $.su.CHAR.MAC_AUTH.MAC_GROUP_VLAN_IDS,
+		vtype: "string_visible",
+		maxLength: 50,
+		allowBlank: true,
+		tips: $.su.CHAR.MAC_AUTH.MAC_GROUP_VLAN_IDS_TIP,
+		inputCls: 'xl',
+		labelCls: 's',
+		tipsCls: "xxl",
+		validator: function(vlan_str){
+			var vlan_array;
+
+			if (vlan_str == '')
+			{
+				return true;
+			}
+
+			if ($.su.vtype.types.number.regex.test(vlan_str))
+			{
+				if (!(0 <= vlan_str && 4095 > vlan_str)){
+					var str = $.su.CHAR.VTYPETEXT.NUMBER_MIN_MAX.replace("%min", "0").replace("%max", "4094");
+					return str;
+				}
+			}
+
+			vlan_array = strToArray(vlan_str);
+			if (false == vlan_array || vlan_array.length > 4095)
+			{
+				return false;
+			}
+			vlan_str = arrayToStr(vlan_array);
+			$("#vlan").textbox("setValue", vlan_str);
+			return true;
+		}
+	});
+	$("#serv_id_map").combobox({
+        fieldLabel: "生效SSID",
+        tipsCls: 's',
+		inputCls: 'xl',
+		labelCls: 's',
+        allowBlank: false,
+        maxLength: 50,
+        vtype: "name",
+		items: [
+            {value:"---", name: "---", selected: true}
+        ]
+    });
+	$('#serv_id_map').combobox("autoWidth");
+	$("#mac_map").textbox({
+		fieldLabel : "生效MAC",
+		inputCls: 'xl'
+	}).hide();
+	$("#mac_map1").textbox({
+		fieldLabel : "生效MAC",
+		inputCls: 'xl'
+	}).hide();
+	$("#default_set_mac").button({
+        text: "选择/查看生效MAC",
+        handler: function(){
+			bindMACProxyForEntryAsync.action({"authentication":{"init_bind_mac_tmp_file":null}},function(data){});
+			reloadBindMACGrid($("#default_set_mac").attr("operation"));
+			adaptMacEditGridSize();
+			// grid下的分页按钮变更为第一页
+			if (mac_bind_grid.grid("getPaging") != null)
+				$(mac_bind_grid.grid("getPaging")).paging("goToPage", 0);
+			$macListEditMsg.msg('show');
+        },
+        cls: 'inline'
+	});
+	$("#default_set_mac1").button({
+        text: "选择/查看生效MAC",
+        handler: function(){
+			bindMACProxyForEntryAsync.action({"authentication":{"init_bind_mac_tmp_file":null}},function(data){});
+			reloadBindMACGrid($("#default_set_mac1").attr("operation"));
+			adaptMacEditGridSize();
+
+			// grid下的分页按钮变更为第一页
+			if (mac_bind_grid.grid("getPaging") != null)
+				$(mac_bind_grid.grid("getPaging")).paging("goToPage", 0);
+
+			$macListEditMsg.msg('show');
+        },
+        cls: 'inline'
+    });
+	$("input#mac_note").textbox({
+		fieldLabel: $.su.CHAR.MAC_AUTH.MAC_GROUP_NOTE,
+		allowBlank:true,
+		inputCls: 'xl',
+		labelCls: 's',
+		vtype: "string_visible_allow_blank",
+		maxLength:50,
+		tips: $.su.CHAR.MAC_AUTH.MAC_GROUP_NOTE_TIP
+	});
+	$("input#mac_note1").textbox({
+		fieldLabel: $.su.CHAR.MAC_AUTH.MAC_GROUP_NOTE,
+		allowBlank:true,
+		inputCls: 'xl',
+		labelCls: 's',
+		vtype: "string_visible_allow_blank",
+		maxLength:50,
+		tips: $.su.CHAR.MAC_AUTH.MAC_GROUP_NOTE_TIP
+	});
+	$("#type").radio({
+        fieldLabel: $.su.CHAR.MAC_AUTH.MAC_GROUP_TYPE,
+		labelCls: 's',
+        columns: 2,
+        items: [
+            {boxlabel: '白名单', inputValue: "whitelist", checked: true},
+            {boxlabel: '黑名单', inputValue: "blacklist"}
+        ]
+    });
+	$("#type1").radio({
+        fieldLabel: $.su.CHAR.MAC_AUTH.MAC_GROUP_TYPE,
+		labelCls: 's',
+        columns: 2,
+        items: [
+            {boxlabel: '白名单', inputValue: "whitelist", checked: true},
+            {boxlabel: '黑名单', inputValue: "blacklist"}
+        ]
+    });
+	$("#status").radio({
+        fieldLabel: $.su.CHAR.MAC_AUTH.MAC_GROUP_STATUS,
+		labelCls: 's',
+        columns: 2,
+        items: [
+            {boxlabel: '启用', inputValue: "on", checked: true},
+            {boxlabel: '禁用', inputValue: "off"}
+        ]
+    });
+	$("#status1").radio({
+        fieldLabel: $.su.CHAR.MAC_AUTH.MAC_GROUP_STATUS,
+		labelCls: 's',
+        columns: 2,
+        items: [
+            {boxlabel: '启用', inputValue: "on", checked: true},
+            {boxlabel: '禁用', inputValue: "off"}
+        ]
+    });
+	var $macListMsg = $("#mac-list-msg").msg({
+        closeBtn: true,
+        cls: "m",
+        title: "生效MAC",
+        type: "window"
+    }).msg("hide");
+	var $macListEditMsg = $("#mac-list-edit-msg").msg({
+        closeBtn: true,
+        cls: "m",
+        title: "生效MAC",
+        type: "confirm",
+		yesText: "确定",
+		noText: "取消",
+		okHandler:function(){
+			bindMACProxyForEntryAsync.action({"authentication":{"update_bind_mac_tmp_file":null}},function(){});
+			bindMACProxyForEntryAsync.query({authentication:{"table":"all_mac_bind_list"}}, function(data){
+				$("#mac_map").textbox("setValue",data.authentication.all_mac_bind_list[0].all_mac_bind_list_0.mac_id_map);
+				$("#mac_map1").textbox("setValue",data.authentication.all_mac_bind_list[0].all_mac_bind_list_0.mac_id_map);
+			});
+			return true;
+		},
+		cancelHandler:function(){
+			return true;
+		}
+    }).msg("hide");
+	var macAuthGroupProxy = new $.su.Proxy({
+	});
+	var macAuthGroupProxyForSSID = new $.su.Proxy({
+	});
+	
+	function initMacGroupGrid(){
+		if(current_auth_mode == "vlan"){
+			var mac_auth_grid = $("div#mac_group_list_grid").grid({
+				store:{
+					proxy: macAuthGroupProxy,
+					autoLoad: true,
+					fields: [
+					{name: "id"},
+					{name: "name"},
+					{name: "vlan"},
+					{name: "mac_id_map"},
+					{name: "note"},
+					{name: "type"},
+					{name: "enable"}
+					],
+					parseKey:{
+						moduleName: "authentication",
+						tableName: "mac_auth_list",
+
+						pageSizeName: "mac_group_entry",
+						maxSizeTableName: "mac_auth",
+						maxSizeOptionName: "max_group",
+
+						setFilter:function(index, itemName, data){
+							var result = [];
+							if (!$.isArray(itemName))
+							{
+								itemName = [itemName]
+							}
+							for (var i = 0; i < itemName.length; i++)
+							{
+								result.push({"id": itemName[i].split("mac_auth_list_")[1]});
+							}
+							return result;
+						},
+						delFilter: function(itemNames, data, indexes){
+							var result = [];
+							for (var i = 0; i < indexes.length; i++)
+							{
+								result.push({"id": indexes[i].id});
+							}
+							return result;
+						}
+					},
+					keyProperty: ["id"]
+				},
+				editor: {
+					validator:function()
+					{
+						var editor  = $(mac_auth_grid.grid("getEditor"));
+						return true;
+					},
+					content: "#own_editor",
+
+					fields: [
+					{name: "id"},
+					{name: "name"},
+					{name: "vlan"},
+					{name: "mac_id_map"},
+					{name: "note"},
+					{name: "type"},
+					{name: "enable"}
+					]
+				},
+
+				paging_true:{},
+				columns: [
+					{
+						xtype: "checkcolumn",
+						width: $.su.CHAR.SETTING.MAC_AUTH.CHECK_COLUMN_WIDTH
+					},
+					{
+						xtype: "rownumberer",
+						width: $.su.CHAR.SETTING.MAC_AUTH.ROW_NUMBER_WIDTH
+					},
+					{
+						text: $.su.CHAR.MAC_AUTH.MAC_GROUP_NAME,
+						width: $.su.CHAR.SETTING.MAC_AUTH.MAC_GROUP_NAME_WIDTH,
+						dataIndex: "name",
+						scan: {
+							cmp: $.search.compare.string
+						}
+					},
+					{
+						text: $.su.CHAR.MAC_AUTH.MAC_GROUP_VLAN,
+						width: 90,
+						dataIndex: "vlan",
+						renderer: function(data){
+							if (data.toString() == "0")
+							{
+								data = '---';
+							}
+							return data;
+						},
+						scan: {
+							type: "textbox",
+							cmp: function(src, tar, index){
+								if (tar == '-' || tar == '--' || tar == '---'){
+									if (src == '0'){
+										return true;
+									}else{
+										return false;
+									}
+								}
+								var str_cmp = $.search.compare.string.call(this, src, tar, index);
+								if (!str_cmp){
+									//字义搜索，搜索某个数字
+									return $.search.compare.num_interval.call(this, src, tar, index);
+								}else{
+									return true;
+								}
+							},
+							check: function(value){
+								var pattern = /^\s*([-]{1,3})\s*$/;
+								var flag = true;
+								var vlan_array = strToArray(value);
+								if (false == vlan_array || vlan_array.length > 4095)
+								{
+									flag = false;
+								}
+								if (!flag && !pattern.exec(value)){
+									return "请输入正确的VLAN范围！";
+								}
+								return true;
+							}
+						}
+					},
+					{
+						text: "生效MAC",
+						width: 90,
+						dataIndex: "mac_id_map",
+						renderer: function(dd, index, data){
+							var reg = /^0*$/;
+							if(dd != "---" && !reg.test(dd))
+							{
+								return "<a href='javascript:void(0);' class='btn-detail' data-index='"+ index +"' data-type='mac'>查看</a>";
+							}
+							return "---";
+						}
+					},
+					{
+						text: $.su.CHAR.MAC_AUTH.MAC_GROUP_NOTE,
+						width: $.su.CHAR.SETTING.MAC_AUTH.MAC_GROUP_NOTE_WIDTH,
+						dataIndex: "note",
+						scan: {
+							cmp: $.search.compare.string
+						}
+					},
+					{
+						text: $.su.CHAR.MAC_AUTH.MAC_GROUP_TYPE,
+						width: $.su.CHAR.SETTING.MAC_AUTH.MAC_GROUP_TYPE_WIDTH,
+						dataIndex: "type",
+						renderer: function(data){
+							var result = $.su.CHAR.MAC_AUTH.MAC_GROUP_TYPE_WHITE;
+							switch (data.toString())
+							{
+								case 'whitelist':
+									break;
+								case 'blacklist':
+									result = $.su.CHAR.MAC_AUTH.MAC_GROUP_TYPE_BLACK;
+									break;
+								default:
+									break;
+							}
+							return result;
+						},
+						scan: {
+							type: "combobox",
+							cmp: $.search.compare.stringStrict,
+							items: [
+								{value:"whitelist", name:'白名单'},
+								{value:"blacklist", name:'黑名单'}
+							]
+						}
+					},
+					{
+						text: $.su.CHAR.MAC_AUTH.MAC_GROUP_STATUS,
+						width: $.su.CHAR.SETTING.MAC_AUTH.MAC_GROUP_STATUS_WIDTH,
+						dataIndex: "enable",
+						trueValue: "on",
+						falseValue: "off",
+						xtype: 'statuscolumn',
+						renderer: function(data){
+							var result = $.su.CHAR.MAC_AUTH.MAC_GROUP_STATUS_DISABLED;
+							switch (data.toString())
+							{
+								case '0':
+									break;
+								case '1':
+									result = $.su.CHAR.MAC_AUTH.MAC_GROUP_STATUS_ENABLED;
+									break;
+								default:
+									break;
+							}
+							return result;
+						}
+					},
+					{
+						width: $.su.CHAR.MAC_AUTH.SETTING_WIDTH,
+						xtype: "settings"
+					},
+					{
+						xtype: "globalSearch",
+						hidden: true,
+						columns: [
+							{
+								text: $.su.CHAR.MAC_AUTH.MAC_GROUP_NAME,
+								dataIndex: "name",
+								scan: {
+									type: "textbox",
+									vtype:"string"
+								}
+							},
+							{
+								text: $.su.CHAR.MAC_AUTH.MAC_GROUP_VLAN,
+								dataIndex: "vlan",
+								scan: {
+									type: "textbox",
+									vtype: "string",
+									check: function(value){
+										var pattern = /^\s*([-]{1,3})\s*$/;
+										var flag = true;
+										var vlan_array = strToArray(value);
+										if (false == vlan_array || vlan_array.length > 4095)
+										{
+											flag = false;
+										}
+										if (!flag && !pattern.exec(value)){
+											return "请输入正确的VLAN范围！";
+										}
+										return true;
+									},
+									real_value: $.search.real_value.vlan
+								}
+							},
+							{
+								text: $.su.CHAR.MAC_AUTH.MAC_GROUP_NOTE,
+								dataIndex: "note",
+								scan: {
+									type: "textbox",
+									vtype:"string"
+								}
+							},
+							{
+								text: $.su.CHAR.MAC_AUTH.MAC_GROUP_TYPE,
+								dataIndex: "type",
+								scan: {
+									type: "combobox",
+									vtype: "number",
+									items: [
+										{value:"whitelist", name:'白名单'},
+										{value:"blacklist", name:'黑名单'}
+									]
+								}
+							},
+							{
+								text: $.su.CHAR.MAC_AUTH.MAC_GROUP_STATUS,
+								dataIndex: "enable",
+								scan: {
+									type: "combobox",
+									vtype: "number",
+									items: [
+										{value:"on", name: "已启用"},
+										{value:"off", name: "已禁用"}
+									]
+								}
+							}
+						]
+					}
+				],
+				operation: "prompt|enable|disable|add|delete|search|searchAll"
+			}).on("ev_load", function(e,data, others){
+					if(others)
+					{
+						maxrules = others.max_rules;
+					}
+
+					for (var i=0; i<data.length; i++){
+
+					}
+			}).on("ev_operation", function(e, obj, action){
+				/*此处添加enable, disable代码*/
+				var selectedKeys = mac_auth_grid.grid("getSelected");
+				var store = mac_auth_grid.grid('getStore');
+				var data_len = store.data.length;
+				var data = store.data;
+				var data_key = [];
+				var onekey = {};
+				var result = {};
+				var _string = "";
+
+				if(selectedKeys.length === 0){
+					mac_auth_grid.get(0).noneSelectMsg_g.msg('show');
+					return;
+				}else{
+					mac_auth_grid.grid("runProgress");
+					$.su.loading.show();
+					
+					if (!$.isArray(selectedKeys))
+					{
+						selectedKeys = [selectedKeys];
+					}
+					var filter_data = [];
+					for(var j = 0; j < selectedKeys.length; j++){
+						var item_data = {}
+						item_data["id"] = selectedKeys[j];
+						filter_data[j] = item_data;
+					}	
+
+					var postData = {};
+					postData["authentication"] = {};
+					postData["authentication"]["table"] = "mac_auth_list";
+					postData["authentication"]["filter"] = {};
+					postData["authentication"]["filter"] = filter_data;
+					postData["authentication"]["para"] = {};
+					postData["authentication"]["para"]["enable"] = (action == "enable" ? "on" : "off");
+
+					macAuthGroupProxy.modify(postData, function(){
+							$("div.top-main").scrollTo(0);
+
+							reloadGrid(function(){
+								mac_auth_grid.grid("prompt", true);
+							});
+							setTimeout(function(){//延时时间根据各模块情况自行调整，与当前页条目数成正比
+								$.su.loading.hide();
+							}, data_len*0.3);
+					}, function(){
+						$("div.top-main").scrollTo(0);
+						$.su.loading.hide();
+						mac_auth_grid.grid("disGridChkbox");
+						mac_auth_grid.grid("prompt", false, "");
+					});
+				}
+			}).on("ev_statusChange", function(e){
+			}).on("ev_update", function(e){
+				var paging = mac_auth_grid.get(0).paging;
+				if (paging && paging.search && paging.params){
+					mac_auth_grid.grid("runProgress");
+					$.su.loading.show();
+					paging.params.pageNo = paging.currentPage;
+					reloadGrid(function(){
+						mac_auth_grid.grid("prompt", true);
+					});
+					setTimeout(function(){//延时时间根据各模块情况自行调整
+						$.su.loading.hide();
+					}, paging.numPerPage*0.3);
+				}
+			}).delegate('a.btn-detail', 'click', function(e){
+				var index = $(this).data('index');
+				var type = $(this).data('type');
+
+				if(type == "mac"){
+					showDetailForMac(mac_auth_grid.grid('getStore').data[index].id);
+				}
+			});
+
+
+			var editor = $("div#mac_group_list_grid").grid("getEditor");
+			$(editor).on("ev_startEdit", function(e, index, key){
+				var store = mac_auth_grid.grid("getStore");
+				$("#default_set_mac1").attr("operation","add");
+				$("#mac_map1").textbox("hide");
+				$("#own_editor").show();
+				if (store.getData(key) != undefined)
+				{
+					var	vlan_value = store.getData(key).vlan;
+
+					if (vlan_value.toString() == "0")
+					{
+						$("#vlan").textbox("setValue", "");
+					}
+				}
+
+				if (index == "add")
+				{
+					bindMACProxyForEntryAsync.action({"authentication":{"clear_bind_mac_tmp_file":{"entry_id":"add", "type":"mac"}}},function(){});
+					$("#mac_map1").textbox("reset");
+				}
+				else
+				{
+					var gridData = mac_auth_grid.grid("getStore").getData(key);
+					$("#default_set_mac1").attr("operation",gridData.id);
+					bindMACProxyForEntryAsync.action({"authentication":{"clear_bind_mac_tmp_file":{"entry_id":""+gridData.id}}},function(){});
+				}
+			});
+			function reloadGrid(callback){
+				var rd_store = mac_auth_grid.grid('getStore');
+
+				mac_auth_grid.grid("disGridChkbox");
+
+				if (callback){
+					callback.call();
+				}
+				rd_store.keyLength = 0;
+				var paging = mac_auth_grid.get(0).paging;
+				var params = {};
+				if (paging){
+					if (paging.search){
+						params = paging.params;
+					}
+				}
+				rd_store.load(params);
+			}
+		}
+		else{
+			var ssidList = [];
+			var ssidMap = [];
+			var ssidListProxy = new $.su.Proxy({
+				async: false
+			});
+			
+			ssidListProxy.query({"apmng_wserv":{"table":"wlan_serv"}},function(data){
+				var wrs = data.apmng_wserv.wlan_serv;
+				var ssidStr,encodeStr;
+				$.each(wrs, function(_, item){
+					for (var key in item)
+					{
+						ssidStr = item[key].ssid;
+						if($.su.func.isChinese(ssidStr)){
+							if(item[key].ssid_code_type=="1")encodeStr="[UTF-8]";
+							else if(item[key].ssid_code_type=="2")encodeStr="[GBK]";
+							else encodeStr="[UNKNOWN]";
+							ssidStr+=encodeStr;
+						}
+						ssidList.push({name:$.su.func.escapeHtml(ssidStr),value:item[key].serv_id});
+						ssidMap[item[key].serv_id] = item[key];
+					}
+				});
+			});
+			var mac_auth_grid_ssid = $("div#mac_ssid_group_list_grid").grid({
+				store:{
+					proxy: macAuthGroupProxyForSSID,
+					autoLoad: true,
+					fields: [
+						{name: "id"},
+						{name: "name"},
+						{name: "serv_id_map"},
+						{name: "mac_id_map"},
+						{name: "note"},
+						{name: "type"},
+						{name: "enable"}
+					],
+					parseKey:{
+						moduleName: "authentication",
+						tableName: "mac_auth_list",
+
+						pageSizeName: "mac_group_entry",
+						maxSizeTableName: "mac_auth",
+						maxSizeOptionName: "max_group",
+						setFilter:function(index, itemName, data){
+							var result = [];
+							if (!$.isArray(itemName))
+							{
+								itemName = [itemName];
+							}
+							for (var i = 0; i < itemName.length; i++)
+							{
+								result.push({"id": itemName[i].split("mac_auth_list_")[1]});
+							}
+							return result;
+						},
+						delFilter: function(itemNames, data, indexes){
+							var result = [];
+							for (var i = 0; i < indexes.length; i++)
+							{
+								result.push({"id": indexes[i].id});
+							}
+							return result;
+						}
+					},
+					keyProperty: ["id"]
+				},
+				editor: {
+					validator:function()
+					{
+						var editor  = $(mac_auth_grid_ssid.grid("getEditor"));
+						return true;
+					},
+					content: "#own_editor1",
+
+					fields: [
+						{name: "id"},
+						{name: "name"},
+						{name: "serv_id_map"},
+						{name: "mac_id_map"},
+						{name: "note"},
+						{name: "type"},
+						{name: "enable"}
+					]
+				},
+
+				paging_true:{},
+				columns: [
+					{
+						xtype: "checkcolumn",
+						width: $.su.CHAR.SETTING.MAC_AUTH.CHECK_COLUMN_WIDTH
+					},
+					{
+						xtype: "rownumberer",
+						width: $.su.CHAR.SETTING.MAC_AUTH.ROW_NUMBER_WIDTH
+					},
+					{
+						text: $.su.CHAR.MAC_AUTH.MAC_GROUP_NAME,
+						width: $.su.CHAR.SETTING.MAC_AUTH.MAC_GROUP_NAME_WIDTH,
+						dataIndex: "name",
+						scan: {
+							cmp: $.search.compare.string
+						}
+					},
+					{
+						text: $.su.CHAR.MAC_AUTH.MAC_BIND_SSID,
+						width: 90,
+						dataIndex: "serv_id_map",
+						renderer: function(dd, index, data){
+							if(ssidMap[dd]){
+								var ssidStr = $.su.func.escapeHtml(ssidMap[dd].ssid);
+								var encodeStr;
+								if($.su.func.isChinese(ssidStr)){
+									if(ssidMap[dd].ssid_code_type=="1")encodeStr="<font color=\"red\">[UTF-8]</font>";
+									else if(ssidMap[dd].ssid_code_type=="2")encodeStr="<font color=\"red\">[GBK]</font>";
+									else encodeStr="<font color=\"red\">[UNKNOWN]</font>";
+									ssidStr+=encodeStr;
+								}
+								return ssidStr;
+							}
+							return "---";
+						},
+						scan: {
+							type: "combobox",
+							cmp: $.search.compare.num,
+							items: ssidList
+						}
+					},
+					{
+						text: "生效MAC",
+						width: 90,
+						dataIndex: "mac_id_map",
+						renderer: function(dd, index, data){
+							var reg = /^0*$/;
+							if(dd != "---" && !reg.test(dd))
+							{
+								return "<a href='javascript:void(0);' class='btn-detail' data-index='"+ index +"' data-type='mac'>查看</a>";
+							}
+							return "---";
+						}
+					},
+					{
+						text: $.su.CHAR.MAC_AUTH.MAC_GROUP_NOTE,
+						width: $.su.CHAR.SETTING.MAC_AUTH.MAC_GROUP_NOTE_WIDTH,
+						dataIndex: "note",
+						scan: {
+							cmp: $.search.compare.string
+						}
+					},
+					{
+						text: $.su.CHAR.MAC_AUTH.MAC_GROUP_TYPE,
+						width: $.su.CHAR.SETTING.MAC_AUTH.MAC_GROUP_TYPE_WIDTH,
+						dataIndex: "type",
+						renderer: function(data){
+							var result = $.su.CHAR.MAC_AUTH.MAC_GROUP_TYPE_WHITE;
+							switch (data.toString())
+							{
+								case 'whitelist':
+									break;
+								case 'blacklist':
+									result = $.su.CHAR.MAC_AUTH.MAC_GROUP_TYPE_BLACK;
+									break;
+								default:
+									break;
+							}
+							return result;
+						},
+						scan: {
+							type: "combobox",
+							cmp: $.search.compare.stringStrict,
+							items: [
+								{value:"whitelist", name:'白名单'},
+								{value:"blacklist", name:'黑名单'}
+							]
+						}
+					},
+					{
+						text: $.su.CHAR.MAC_AUTH.MAC_GROUP_STATUS, 
+						width: $.su.CHAR.SETTING.MAC_AUTH.MAC_GROUP_STATUS_WIDTH,
+						dataIndex: "enable",
+						trueValue: "on",
+						falseValue: "off",
+						xtype: 'statuscolumn',
+						renderer: function(data){
+							var result = $.su.CHAR.MAC_AUTH.MAC_GROUP_STATUS_DISABLED;
+							switch (data.toString())
+							{
+								case 'off':
+									break;
+								case 'on':
+									result = $.su.CHAR.MAC_AUTH.MAC_GROUP_STATUS_ENABLED;
+									break;
+								default:
+									break;
+							}
+							return result;
+						}
+					},
+					{
+						width: $.su.CHAR.MAC_AUTH.SETTING_WIDTH,
+						xtype: "settings"
+					},
+					{
+						xtype: "globalSearch",
+						hidden: true,
+						columns: [
+							{
+								text: $.su.CHAR.MAC_AUTH.MAC_GROUP_NAME, 
+								dataIndex: "name",
+								scan: {
+									type: "textbox",
+									vtype:"string"
+								}
+							},
+							{
+								text: $.su.CHAR.MAC_AUTH.MAC_BIND_SSID, 
+								dataIndex: "serv_id_map",
+								scan: {
+									type: "combobox",
+									vtype: "number",
+									items: ssidList
+								}
+							},
+							{
+								text: $.su.CHAR.MAC_AUTH.MAC_GROUP_NOTE, 
+								dataIndex: "note",
+								scan: {
+									type: "textbox",
+									vtype:"string"
+								}
+							},
+							{
+								text: $.su.CHAR.MAC_AUTH.MAC_GROUP_TYPE, 
+								dataIndex: "type",
+								scan: {
+									type: "combobox",
+									vtype: "number",
+									items: [
+										{value:"whitelist", name:'白名单'},
+										{value:"blacklist", name:'黑名单'}
+									]
+								}
+							},
+							{
+								text: $.su.CHAR.MAC_AUTH.MAC_GROUP_STATUS, 
+								dataIndex: "enable",
+								scan: {
+									type: "combobox",
+									vtype: "number",
+									items: [
+										{value:"on", name: "已启用"},
+										{value:"off", name: "已禁用"}
+									]
+								}
+							}
+						]
+					}
+				],
+				operation: "prompt|enable|disable|add|delete|search|searchAll"
+			}).on("ev_load", function(e,data, others){
+					if(others)
+					{
+						maxrules = others.max_rules;
+					}
+					
+					var combobox = $(editor1).find('#serv_id_map');
+					combobox.combobox('loadData', ssidList);
+					
+			}).on("ev_operation", function(e, obj, action){
+				/*此处添加enable, disable代码*/
+				var selectedKeys = mac_auth_grid_ssid.grid("getSelected");
+				var store = mac_auth_grid_ssid.grid('getStore');
+				var data_len = store.data.length;
+				var data = store.data;
+				var data_key = [];
+				var onekey = {};
+				var result = {};
+				var _string = "";
+						
+				if(selectedKeys.length === 0){
+					mac_auth_grid_ssid.get(0).noneSelectMsg_g.msg('show');
+					return;
+				}else{
+					mac_auth_grid_ssid.grid("runProgress");
+					$.su.loading.show();
+					
+					if (!$.isArray(selectedKeys))
+					{	
+						selectedKeys = [selectedKeys];
+					}
+					var filter_data = [];
+					for(var j = 0; j < selectedKeys.length; j++){
+						var item_data = {}
+						item_data["id"] = selectedKeys[j];
+						filter_data[j] = item_data;
+					}		
+
+					var postData = {};
+					postData["authentication"] = {};
+					postData["authentication"]["table"] = "mac_auth_list";
+					postData["authentication"]["filter"] = {};
+					postData["authentication"]["filter"] = filter_data;
+					postData["authentication"]["para"] = {};
+					postData["authentication"]["para"]["enable"] = (action == "enable" ? "on" : "off");
+					
+					macAuthGroupProxyForSSID.modify(postData, function(){
+							$("div.top-main").scrollTo(0);
+					
+							reloadGrid1(function(){
+								mac_auth_grid_ssid.grid("prompt", true);
+							});
+							setTimeout(function(){//延时时间根据各模块情况自行调整，与当前页条目数成正比
+								$.su.loading.hide();
+							}, data_len*0.3);
+					}, function(){
+						$("div.top-main").scrollTo(0);
+						$.su.loading.hide();
+						mac_auth_grid_ssid.grid("disGridChkbox");
+						mac_auth_grid_ssid.grid("prompt", false, "");
+					});
+				}
+			}).on("ev_statusChange", function(e){
+			}).on("ev_update", function(e){
+				var paging = mac_auth_grid_ssid.get(0).paging;		
+				if (paging && paging.search && paging.params){
+					mac_auth_grid_ssid.grid("runProgress");
+					$.su.loading.show();
+					paging.params.pageNo = paging.currentPage;
+					reloadGrid1(function(){
+						mac_auth_grid_ssid.grid("prompt", true);
+					});
+					setTimeout(function(){//延时时间根据各模块情况自行调整
+						$.su.loading.hide();
+					}, paging.numPerPage*0.3);
+				}
+			}).delegate('a.btn-detail', 'click', function(e){
+				var index = $(this).data('index');
+				var type = $(this).data('type');
+				
+				if(type == "mac"){
+					showDetailForMac(mac_auth_grid_ssid.grid('getStore').data[index].id);
+				}
+			});
+			
+			var editor1 = $("div#mac_ssid_group_list_grid").grid("getEditor");
+			$(editor1).on("ev_startEdit", function(e, index, key){
+				var store = mac_auth_grid_ssid.grid("getStore");
+				var gridData = store.data;	
+
+				var macSsidBindListProxy = new $.su.Proxy({async: false});
+				var bindSsidList = []
+				var ssidListTmp = []
+				var auth_mode  = $('#auth_mode').radio('getValue');
+
+				if ("ssid" == auth_mode) {
+					macSsidBindListProxy.query({"authentication":{"table":"mac_auth_ssid_bind_list"}}, function(data){
+						var ssid_list_array = data.authentication.mac_auth_ssid_bind_list;
+						if (ssid_list_array) {
+							var cnt = 0
+							$.each(ssid_list_array, function(_, item){
+								for (var key in item)
+								{
+									bindSsidList[cnt] = item[key].serv_id;
+									cnt = cnt + 1;                   
+								}
+							});
+							
+							// 对于add操作，ssid下拉列表中只能选择未绑定的ssid
+							// 对于set操作，ssid下拉列表中可选择未绑定的ssid和该条目所绑定的ssid
+							// 所以对于set操作，将对应的serv_id从绑定列表中剔除
+							if ("add" != index) {
+								for (var i = 0; i < bindSsidList.length; i++) {
+									if (bindSsidList[i] == gridData[index].serv_id_map) {
+										bindSsidList.splice(i, 1)
+									}
+								}
+							}
+						}
+					});
+
+					var found = false;
+					for (var i = 0; i < ssidList.length; i++) {
+						found = false;
+						for (var j = 0; j < bindSsidList.length; j++) {
+							if (bindSsidList[j] == ssidList[i].value) {
+								found = true;
+								break;
+							}
+						}
+						if (false == found) {
+							ssidListTmp.push({name:ssidList[i].name, value:ssidList[i].value});
+						}
+					}
+
+					var combobox = $(editor1).find('#serv_id_map');
+					combobox.combobox('loadData', ssidListTmp);
+					if ("add" != index) {
+						combobox.combobox("setValue", gridData[index].serv_id_map)
+					}
+				}
+				
+				$("#serv_id_map").textbox("hide");
+				$("#mac_map").textbox("hide");
+				$("#own_editor1").show();
+				$("#serv_id_map").attr("operation","add");
+				$("#default_set_mac").attr("operation","add");
+				if (index == "add")
+				{
+					$("#serv_id_map").textbox("reset");
+					bindSSIDProxyForEntryAsync.action({"authentication":{"clear_bind_mac_tmp_file":{"entry_id":"add"}}},function(){});
+					$("#mac_map").textbox("reset");
+				}
+				else
+				{
+					var gridData = mac_auth_grid_ssid.grid("getStore").getData(key);
+					$("#default_set_mac").attr("operation",gridData.id);
+					bindSSIDProxyForEntryAsync.action({"authentication":{"clear_bind_mac_tmp_file":{"entry_id":""+gridData.id}}},function(){});
+				}
+			});
+			function reloadGrid1(callback){
+				var rd_store = mac_auth_grid_ssid.grid('getStore');
+				
+				mac_auth_grid_ssid.grid("disGridChkbox");
+
+				if (callback){
+					callback.call();
+				}
+				rd_store.keyLength = 0;
+				var paging = mac_auth_grid_ssid.get(0).paging;		
+				var params = {};
+				if (paging){
+					if (paging.search){
+						params = paging.params;
+					}
+				}
+				rd_store.load(params);
+			}
+		}
+	}
+	function adaptMacGridSize()
+	{
+		var height = document.documentElement.clientHeight * 0.6;
+		if(height < 400)height=400;
+		if(height > 1000)height=800;
+		var width = document.documentElement.clientWidth * 0.6;
+		if(width < 500)width=500;
+		if(width > 1200)width=1200;
+		$("#mac-list-msg").css({"height":height+"px","width":width+"px"});
+		$("#mac-list-msg .panel-content-container").css({"max-height":(height-196)+"px"});
+	}
+	function adaptMacEditGridSize()
+	{
+		var height = document.documentElement.clientHeight * 0.6;
+		if(height < 400)height=400;
+		if(height > 1000)height=800;
+		var width = document.documentElement.clientWidth * 0.6;
+		if(width < 500)width=500;
+		if(width > 1200)width=1200;
+		$("#mac-list-edit-msg").css({"height":height+"px","width":width+"px"});
+		$("#mac-list-edit-msg .panel-content-container").css({"max-height":(height-243)+"px"});
+	}
+	function showDetailForMac(id)
+	{
+		var html = "";
+		reloadViewMACGrid(id);
+		adaptMacGridSize();
+		if ($("#mac-list-grid").grid("getPaging") != null) {
+			$($("#mac-list-grid").grid("getPaging")).paging("goToPage", 0);
+		}
+		$macListMsg.msg('show');
+    }
+	
+	var mac_bind_grid = $("#mac-list-edit-grid").grid({
+		div_container: $("#mac-list-edit-msg"),
+		store:{
+			proxy: bindMACProxyForEntry,
+			fields: [
+				{name: "mac_id_map"},
+				{name: "id"},
+				{name: "name"},
+				{name: "mac"},
+				{name: "bind_status"}
+			],
+			formField: ["id"],
+			autoLoad: false,
+			parseKey:{
+				moduleName: "authentication",
+				tableName: "mac_bind_list",
+				pageSizeName: "mac_auth_entry",
+				maxSizeTableName: "mac_auth",
+				maxSizeOptionName: "max_mac",
+				getFilter: function(){
+					return [{entry_id: mac_bind_grid.grid('getStore').parseKey.entry_id}];
+				}
+			}
+		},
+		paging_true:{},
+		columns: [
+            {
+                xtype: 'checkcolumn',
+                width: $.su.CHAR.SETTING.WSERVMNGR.CHECK_COLUMN_WIDTH
+            },
+            {
+                xtype: 'rownumberer',
+                width: $.su.CHAR.SETTING.WSERVMNGR.ROW_NUMBER_WIDTH
+            },
+			{
+                text: '名称',
+                width: $.su.CHAR.SETTING.WSERVMNGR.SSID_WIDTH,
+                dataIndex: 'name',
+				scan: {
+					cmp: $.search.compare.string,
+					vtype: "string"
+				}
+			},
+			{
+                text: "MAC地址",
+                width: $.su.CHAR.SETTING.WSERVMNGR.DESCRIBLE_WIDTH,
+                dataIndex: 'mac',
+				scan: {
+					cmp: $.search.compare.string,
+					vtype: "string",
+					check: $.search.compare.mac
+				}
+            },
+			{
+				text: $.su.CHAR.WSERVMNGR.BIND_STATUS, 
+				width: $.su.CHAR.SETTING.WSERVMNGR.BIND_STATUS_WIDTH,
+				dataIndex: "bind_status",
+				renderer: function(data){
+                    var result;
+                    switch (data){
+                        case "1":
+							result = $.su.CHAR.WSERVMNGR.BINDED;
+                            break;
+                        case "0":
+                            result = "<font color='gray'>"+$.su.CHAR.WSERVMNGR.UNBINDED+"</font>";
+                            break;
+                        default :
+                            break;
+                    }
+                    return result;
+                },
+				scan: {
+					type: "combobox",
+					cmp: $.search.compare.num,
+					items:[
+						{value:0, name:$.su.CHAR.WSERVMNGR.UNBINDED},
+						{value:1, name:$.su.CHAR.WSERVMNGR.BINDED}
+					],
+					vtype: "number"
+				}
+			}
+		],
+		sec_mask:true,
+		operation: [
+            "prompt",
+			{
+                xtype: "button",
+                iconCls: "bind",
+				sec_mask: true,
+                text: $.su.CHAR.WSERVMNGR.BINDED,
+                handler: function(){
+                    var selectedKeys = mac_bind_grid.grid("getSelected");
+                    var store = mac_bind_grid.grid('getStore');									
+					var data_len = store.data.length;
+                    if(selectedKeys.length === 0){
+                        mac_bind_grid.get(0).noneSelectMsg_g.msg('show');
+                        return;
+                    }else{
+						mac_bind_grid.grid("runProgress");
+						$.su.loading.show();
+						
+						var post_data = {}
+						post_data["mac_id"] = store.formParams["id"]		
+						post_data["mac_id"] = post_data["mac_id"].split(',');
+						bindMACProxyForEntry.action({"authentication":{"bind_mac_for_entry":post_data}},function(){
+							reloadBindMACGrid($("#default_set_mac").attr("operation"), function(){
+								mac_bind_grid.grid("prompt", true);
+							});
+							setTimeout(function(){//延时时间根据各模块情况自行调整
+								$.su.loading.hide();
+							}, data_len*0.5);
+						},function(){
+							reloadBindMACGrid($("#default_set_mac").attr("operation"), function(){
+								mac_bind_grid.grid("prompt", true);
+							});
+							setTimeout(function(){//延时时间根据各模块情况自行调整
+								$.su.loading.hide();
+							}, data_len*0.5);
+						});
+                    }
+                }
+            },
+			{
+                xtype: "button",
+                iconCls: "unbind",
+                text: $.su.CHAR.WSERVMNGR.UNBIND,
+                handler: function(){
+                    var selectedKeys = mac_bind_grid.grid("getSelected");
+                    var store = mac_bind_grid.grid('getStore');
+					var data_len = store.data.length;
+                    if(selectedKeys.length === 0){
+                        mac_bind_grid.get(0).noneSelectMsg_g.msg('show');
+                        return;
+                    }else{
+						mac_bind_grid.grid("runProgress");
+						$.su.loading.show();
+						
+						var post_data = {}
+						post_data["mac_id"] = store.formParams["id"]						
+						post_data["mac_id"] = post_data["mac_id"].split(',');
+						bindMACProxyForEntry.action({"authentication":{"unbind_mac_for_entry":post_data}},function(){
+							reloadBindMACGrid($("#default_set_mac").attr("operation"), function(){
+								mac_bind_grid.grid("prompt", true);
+							});
+							setTimeout(function(){//延时时间根据各模块情况自行调整
+								$.su.loading.hide();
+							}, data_len*0.5);
+						},function(){
+							reloadBindMACGrid($("#default_set_mac").attr("operation"), function(){
+								mac_bind_grid.grid("prompt", true);
+							});
+							setTimeout(function(){//延时时间根据各模块情况自行调整
+								$.su.loading.hide();
+							}, data_len*0.5);
+						});
+                    }
+                }
+            },
+			"search"
+            ]
+	}).on("ev_load", function(e,data, others){
+			
+	});
+	var mac_view_grid = $("#mac-list-grid").grid({
+		store:{
+			proxy: bindMACViewProxyForEntry,
+			fields: [
+				{name: "id"},
+				{name: "name"},
+				{name: "mac"}
+			],
+			autoLoad: false,
+			parseKey:{
+				moduleName: "authentication",
+				tableName: "mac_bind_list_for_view",
+				pageSizeName: "mac_auth_entry",
+				maxSizeTableName: "mac_auth",
+				maxSizeOptionName: "max_mac",
+				getFilter: function(){
+					return [{entry_id: mac_view_grid.grid('getStore').parseKey.entry_id}];
+				}
+			}
+		},
+		paging_true:{},
+		columns: [
+            {
+                xtype: 'rownumberer',
+                width: $.su.CHAR.SETTING.WSERVMNGR.ROW_NUMBER_WIDTH
+            },
+			{
+                text: '名称',
+                width: $.su.CHAR.SETTING.WSERVMNGR.SSID_WIDTH,
+                dataIndex: 'name',
+				scan: {
+					cmp: $.search.compare.string,
+					vtype: "string"
+				}
+			},
+			{
+                text: "MAC地址",
+                width: $.su.CHAR.SETTING.WSERVMNGR.DESCRIBLE_WIDTH,
+                dataIndex: 'mac',
+				scan: {
+					cmp: $.search.compare.string,
+					vtype: "string",
+					check: $.search.compare.mac
+				}
+            }
+		],
+		sec_mask:true,
+		operation: [
+            "prompt",
+			"search"
+            ]
+	}).on("ev_load", function(e,data, others){
+			
+	});
+	function reloadBindMACGrid(id, callback){
+		var store = mac_bind_grid.grid('getStore');
+		mac_bind_grid.grid("disGridChkbox");
+		if (callback){
+			callback.call();
+		}
+		
+		var postData = {};
+		postData["table"] = "mac_bind_list";
+		postData["filter"] = {"entry_id":id};
+
+		store.keyLength = 0;
+		store.parseKey.entry_id = id;
+		store.load(postData);
+	}
+	function reloadViewMACGrid(id, callback){
+		var store = mac_view_grid.grid('getStore');
+		mac_view_grid.grid("disGridChkbox");
+		if (callback){
+			callback.call();
+		}
+		
+		var postData = {};
+		postData["table"] = "mac_bind_list";
+		postData["filter"] = {"entry_id":id};
+
+		store.keyLength = 0;
+		store.parseKey.entry_id = id;
+		var paging = mac_view_grid.get(0).paging;		
+		store.load(postData);
+	}
+});
+
+</script>
+</body>
+</html>

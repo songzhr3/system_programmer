@@ -1,0 +1,2452 @@
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN"
+		"http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
+<html xmlns="http://www.w3.org/1999/xhtml">
+<head>
+	<meta http-equiv="Content-Type" content="text/html; charset=utf-8"/>
+	<title>设置向导</title>
+</head>
+
+<body id="login-body">
+
+<!-- 设置向导 -->
+<div class="guide-main">
+	<div class="guide-title">快速配置</div>
+	<div class="guide-content">
+		<div class="step">
+			<ul>
+				<li class="step-name">1. 配置基本信息</li>
+				<li class="step-name">2. 配置系统时间</li>
+				<li class="step-name">3. 选择接入互联网方式</li>
+				<li class="step-name">4. 配置接入互联网参数</li>
+				<li class="step-name">5. 配置局域网接口</li>
+				<li class="step-name">6. 配置局域网DHCP服务</li>
+				<li class="step-name">7. 核对配置信息</li>
+				<li class="step-name">8. 智能配置</li>
+			</ul>
+		</div>
+		<div class="content">
+			<div class="step-content current" id="welcome">
+				<p class="title">欢迎使用快速配置</p>
+				<div>快速配置将帮助您完成基础配置并连接到互联网</div>
+			</div>
+			<div class="step-content" id="user-setting">
+				<p class="title">配置基本信息</p>
+				<div>请配置主机名称</div>
+				<input id="dev_alias"/>
+				<input id="change_pass" name="change_pass"/>
+				<input id="old_password"/>
+				<input id="password"/>
+				<input id="cfm_password"/>
+			</div>
+
+			<div class="step-content" id="time-setting">
+				<p class="title">配置系统时间</p>
+				<div id="time_cnt">
+					<form id="time_setting">
+						<input type="text"  id="time_current_time" name="current_time" value="" />
+						<input type="text"  id="time_set_type" name="type" value="" />
+						<div id="auto_cnt">
+							<input type="text"  id="time_set_zone" name="timezone" value="" />
+							<input type="text"  id="time_set_ntp1" name="pri_ntp" value="" />
+							<input type="text"  id="time_set_ntp2" name="snd_ntp" value="" />
+						</div>
+
+						<div id="manual_cnt">
+							<input type="text"  id="time_set_date" name="date" value="" />
+							<input type="text"  id="time_set_time" name="time" value="" />
+							<button type="button" id="get_sys_time" name="get_sys_time" value=""></button>
+						</div>
+					</form>
+				</div>
+			</div>
+
+			<div class="step-content" id="net-access">
+				<p class="title">选择接入互联网方式</p>
+				<div>请根据网络服务商提供给您的信息选择接入互联网方式</div>
+				<div class="net-radio">
+					<label class="radio-content" for="radio-static">
+						<input type="radio" name="net-radio" id="radio-static" value="static" checked/>
+						<span class="icon"></span>
+						<span class="text">静态IP</span>
+					</label>
+					<div class="desc">
+						如果您从网络服务商处获得一个IP地址或者IP地址段，请选择此连接类型
+					</div>
+				</div>
+				<div class="net-radio">
+					<label class="radio-content" for="radio-dhcp">
+						<input type="radio" name="net-radio" id="radio-dhcp" value="dhcp"/>
+						<span class="icon"></span>
+						<span class="text">DHCP</span>
+					</label>
+					<div class="desc">
+						如果您从网络服务商处自动获取IP地址，请选择此连接类型
+					</div>
+				</div>
+				<div class="net-radio">
+					<label class="radio-content" for="radio-pppoe">
+						<input type="radio" name="net-radio" value="pppoe" id="radio-pppoe"/>
+						<span class="icon"></span>
+						<span class="text">PPPoE</span>
+					</label>
+					<div class="desc">
+						如果您从网络服务商处获得一个用户名和密码，请选择此连接类型
+					</div>
+				</div>
+			</div>
+
+			<div class="step-content" id="net-param">
+				<div id="static">
+					<p class="title">配置接入互联网参数-静态IP</p>
+					<div>您需要填写以下参数来连接到互联网</div>
+					<div style="margin-bottom: 24px">如果您不知道下列信息，请联系您的网络服务商</div>
+
+					<input id="if_name" name="if_name"/>
+					<input id="ip" name="ip"/>
+					<input id="netmask" name="netmask"/>
+					<input id="gateway" name="gateway"/>
+					<input id="pri_dns" name="pri_dns"/>
+					<input id="snd_dns" name="snd_dns"/>
+				</div>
+				<div id="dhcp">
+					<p class="title">配置接入互联网参数-DHCP</p>
+					<div>上网接口将自动尝试从网络服务商处获取IP地址</div>
+					<input id="if_name_dhcp" name="if_name_dhcp">
+				</div>
+				<div id="pppoe">
+					<p class="title">配置接入互联网参数-PPPoE</p>
+					<div>请您输入网络服务商或网络管理员提供给您的PPPOE账户信息</div>
+					<input id="if_name_pppoe" name="if_name_pppoe"/>
+					<input id="username_pppoe" name="username_pppoe"/>
+					<input id="password_pppoe" name="password_pppoe"/>
+				</div>
+			</div>
+			<div class="step-content">
+				<p class="title">配置局域网接口</p>
+				<div>请配置局域网接口的网络信息</div>
+				<div style="margin-bottom: 24px">建议您使用私网地址（例如10.0.0.1或192.168.0.1)</div>
+				<input id="if_name_LAN" name="if_name_LAN"/>
+				<input id="ip_LAN" name="ip_LAN"/>
+				<input id="netmask_LAN" name="netmask_LAN"/>
+			</div>
+			<div class="step-content">
+				<p class="title">设置DHCP服务</p>
+				<input id="dhcp_enable" name="dhcp_enable" type="checkbox"/>
+
+				<div>请输入为局域网网络设备分配的IP地址段</div>
+				<input id="pool_start" name="pool_start"/>
+				<input id="pool_end" name="pool_end"/>
+			</div>
+			<div class="step-content" id="config-confirm">
+				<p class="title">核对配置信息</p>
+				<div id = "config_basic">
+					<div class="info-title">基本信息</div>
+					<div class="info dev_alias">
+						<span class="config-label">主机名称</span>
+						<span class="config-value"></span>
+					</div>
+					<div class="info change_pass">
+						<span class="config-label">是否修改管理员密码</span>
+						<span class="config-value"></span>
+					</div>
+					<div class="info username" id="password_param">
+						<span class="config-label">修改密码的管理员</span>
+						<span class="config-value"></span>
+					</div>
+				</div>
+				<div id = "config_time">
+					<div class="info-title">系统时间</div>
+					<div class="info time_set_type">
+						<span class="config-label">时间设置方式</span>
+						<span class="config-value"></span>
+					</div>
+					<div class="time-type auto">
+						<div class="info timezone">
+							<span class="config-label">时区</span>
+							<span class="config-value"></span>
+						</div>
+						<div class="info pri_ntp">
+							<span class="config-label">首选NTP服务器</span>
+							<span class="config-value"></span>
+						</div>
+						<div class="info snd_ntp">
+							<span class="config-label">备用NTP服务器</span>
+							<span class="config-value"></span>
+						</div>
+					</div>
+					<div class="time-type manual">
+						<div class="info date">
+							<span class="config-label">日期</span>
+							<span class="config-value"></span>
+						</div>
+						<div class="info time">
+							<span class="config-label">时间</span>
+							<span class="config-value"></span>
+						</div>
+					</div>
+				</div>
+				<div id = "config_wan">
+					<div class="info-title">接入互联网参数</div>
+					<div class="info proto">
+						<span class="config-label">连接方式</span>
+						<span class="config-value"></span>
+					</div>
+					<div class="proto-type static">
+						<div class="info if_name">
+							<span class="config-label">上网接口</span>
+							<span class="config-value"></span>
+						</div>
+						<div class="info ip">
+							<span class="config-label">IP地址</span>
+							<span class="config-value"></span>
+						</div>
+						<div class="info netmask">
+							<span class="config-label">子网掩码</span>
+							<span class="config-value"></span>
+						</div>
+						<div class="info gateway">
+							<span class="config-label">默认网关</span>
+							<span class="config-value"></span>
+						</div>
+						<div class="info pri_dns">
+							<span class="config-label">首选DNS服务器</span>
+							<span class="config-value"></span>
+						</div>
+						<div class="info snd_dns">
+							<span class="config-label">备用DNS服务器</span>
+							<span class="config-value"></span>
+						</div>
+					</div>
+					<div class="proto-type dhcp">
+						<div class="info if_name_dhcp">
+							<span class="config-label">上网接口</span>
+							<span class="config-value"></span>
+						</div>
+					</div>
+					<div class="proto-type pppoe">
+						<div class="info if_name_pppoe">
+							<span class="config-label">上网接口</span>
+							<span class="config-value"></span>
+						</div>
+						<div class="info username_pppoe">
+							<span class="config-label">用户名</span>
+							<span class="config-value"></span>
+						</div>
+						<div class="info password_pppoe">
+							<span class="config-label">密码</span>
+							<span class="config-value"></span>
+						</div>
+					</div>
+				</div>
+				<div id = "config_lan">
+					<div class="info-title">局域网参数</div>
+					<div class="info if_name_LAN">
+						<span class="config-label">LAN接口</span>
+						<span class="config-value"></span>
+					</div>
+					<div class="info ip_LAN">
+						<span class="config-label">IP地址</span>
+						<span class="config-value"></span>
+					</div>
+					<div class="info netmask_LAN">
+						<span class="config-label">子网掩码</span>
+						<span class="config-value"></span>
+					</div>
+				</div>
+				<div id = "config_dhcp">
+					<div class="info-title">局域网DHCP服务器参数</div>
+					<div class="info dhcp_enable">
+						<span class="config-label">启用局域网DHCP服务</span>
+						<span class="config-value"></span>
+					</div>
+					<div id = "dhcp_param">
+						<div class="info pool_start">
+							<span class="config-label">起始IP</span>
+							<span class="config-value"></span>
+						</div>
+						<div class="info pool_end">
+							<span class="config-label">结束IP</span>
+							<span class="config-value"></span>
+						</div>
+					</div>
+				</div>
+			</div>
+			<div class="step-content" id="smart-start">
+				<p class="title">智能配置</p>
+				<p>智能配置可以自动发现全网设备、生成拓扑图，通过一台设备配通整个网络，帮您更省力地实现全网一体化配置。</p><br/>
+				<p>点击以下按钮登录TP-LINK统一管理平台以开始使用智能配置。您也可以随时通过“系统 -&gt; 快速配置”进入此页面来重新开始智能配置。</p><br/>
+				<form id="clound_server_f">
+					<input id="servertype" name="servertype"/>
+					<input id="serveraddr" name="serveraddr" placeholder="IP地址或域名"/>
+					<input id="serverport" name="serverport" placeholder="请输入端口号"/>
+					<input id="access-serveraddr" name="access-serveraddr" placeholder="IP地址或域名"/>
+					<input id="access-serverport" name="access-serverport" placeholder="请输入端口号"/>
+					<input id="cloud-login-button" />
+				</form>
+				<br/><p>单击此按钮则表示您同意设备开启云管理功能以实现智能配置。如不同意，可点击右下角“跳过”按钮结束本步骤。</p><br/>
+				<div id="online-fail-alert">
+					<p id="online-fail-tips"></p>
+				</div>
+			</div>
+			<div class="step-content" id="finish">
+				<p class="title">快速接入向导完成</p>
+				<div style="font-weight: bold; margin-bottom: 24px">恭喜您！</div>
+				<div>您已经顺利完成快速接入互联网的配置</div>
+				<div>您可以通过WEB管理页面进行高级选项的配置</div>
+			</div>
+		</div>
+	</div>
+	<div class="guide-footer">
+		<input id="no-tip" name="no-tip"/>
+		<div class="footer-button">
+			<button type="button" id="prev" name="prev"></button>
+			<button type="button" id="next" name="next"></button>
+			<button type="button" id="skip" name="skip"></button>
+			<button type="button" id="quit" name="quit"></button>
+		</div>
+	</div>
+</div>
+
+<!--全局警告提示框-->
+<div id="global-warning-msg" class="hidden warning">
+	<h4 class="title">
+		<span class="icon"></span>
+		<span id="global-warning-title"></span>
+		<span class="text" id="global-warning-text"></span>
+	</h4>
+</div>
+
+<div id="cloud-login-msg">
+	<div id="cloud-login-form"></div>
+</div>
+<div id="cloud-site-show-msg">
+	<div id="cloud-site-show-form"></div>
+</div>
+<div id="cloud-site-add-msg">
+	<div id="cloud-site-add-form"></div>
+</div>
+<div id="cloud-tplink-id-msg">
+	<div id="cloud-tplink-id-form"></div>
+</div>
+
+<noscript>
+	<meta http-equiv="refresh" content="0; url=error.html"/>
+</noscript>
+
+<style>
+	.guide-main {
+		width: 960px;
+	}
+
+	.guide-title {
+		padding-left: 24px;
+		line-height: 40px;
+		background-color: #5680B0;
+		color: #FFF;
+		font-weight: bold;
+		font-size: 14px;
+	}
+
+	.guide-content{
+		height: 560px;
+	}
+
+	.guide-content .step {
+		background-color: #F2F2F2;
+		width: 260px;
+		float: left;
+		height: 100%;
+	}
+
+	.guide-content > .content {
+		margin-left: 260px;
+	}
+
+	.guide-content ul {
+		padding: 8px 0;
+	}
+
+	.guide-content .step ul li {
+		line-height: 40px;
+		color: #115b96;
+		padding-left: 34px;
+	}
+
+	.guide-content .step ul li.selected {
+		background-color: #5680B0;
+		color: #fff
+	}
+
+	.step-content {
+		display: none;
+		padding: 40px 24px 0;
+	}
+
+	.step-content.current {
+		display: block;
+	}
+
+	.step-content .title {
+		font-weight: bold;
+		font-size: 14px;
+		color: #115b96;
+		line-height: 32px;
+		border-bottom: 1px solid #999;
+		margin-bottom: 16px;
+	}
+
+	.guide-footer {
+		position: relative;
+	}
+
+	.guide-footer .footer-button {
+		position: absolute;
+		right: 0;
+		top: 0;
+	}
+
+	.guide-footer .button-container {
+		display: inline-block;
+		margin-left: 8px;
+	}
+
+	div.time-container div.time-wrap input.time-text {
+		width: 36px;
+	}
+
+	.net-radio {
+		margin-top: 40px;
+	}
+
+	.net-radio .radio-content input {
+		display: none;
+	}
+
+	.net-radio .radio-content input:checked  + span.icon {
+		background-position: -128px -74px;
+	}
+
+	.net-radio .radio-content input  + span.icon {
+		display: inline-block;
+		width: 13px;
+		height: 13px;
+		background: url(/web-static/themes/old/img/icons-02.png?random=20190827203753) no-repeat -92px -74px;
+		margin-right: 8px;
+	}
+
+	.net-radio .radio-content span.text {
+		color: #333;
+		font-weight: bold;
+	}
+
+	.net-radio .desc {
+		margin-top: 4px;
+		color: #666;
+	}
+
+	div.widget-container div.widget-fieldlabel-wrap.l {
+		width: 174px;
+	}
+
+	#config-confirm .info-title {
+		font-weight: bold;
+		font-size: 14px;
+	}
+	#config-confirm .info {
+		margin-left: 16px;
+	}
+
+	#config-confirm .config-label {
+		display: inline-block;
+		width: 120px;
+		margin-right: 24px;
+	}
+
+	.form-submit {
+		display: none;
+	}
+
+	div.widget-container div.widget-tips.m div.tips-content{
+		width: 120px;
+	}
+
+	#button-cloud-login-button {
+		background: #5680B0;
+		color: #fff;
+		padding: 4px 12px;
+		height: 32px;
+		margin-left: 70px;
+	}
+
+	#online-fail-alert {
+		color: #FF0000;
+	}
+</style>
+
+<script type="text/javascript">
+	//<![CDATA[
+	$(document).ready(function(e){
+		var step_basic = 0;
+		var step_time = 1;
+		var step_wantype = 2;
+		var step_wan = 3;
+		var step_lan = 4;
+		var step_dhcp = 5;
+		var step_commit = 6;
+		var step_smart_start = 7;
+		var config = {};
+		var origin_dev_alias;
+		var cur_username = localStorage.getItem("login_username") || "admin";
+		var cur_acount_secname;
+
+		var cur_dns=[];
+		var cur_napt=[];
+		var cur_pppoe=[];
+
+		var warningMsg = $("div#global-warning-msg").msg({
+			type: "alert",
+			global: true,
+			cls: "m",
+			closeBtn: false
+		});
+
+		var online_check_result = false;
+		var old_istart_server = {};
+		var new_istart_server;
+
+		/* 云登录 */
+		var cloud_login_msg = $("div#cloud-login-msg").msg({
+			type: "confirm",
+			global: true,
+			closeBtn:true,
+			title:"",
+			showHead:true,
+			cls: "l",
+			cancelHandler:function(){
+				$.su.mask.count = 0;
+				$.su.mask.hide();
+			}
+		});
+
+		$.su.cloud_login = {
+			"msg": cloud_login_msg,
+			"show": function(){
+				var me = this;
+				var cloud_login = $('#cloud-login-form');
+				var url = $.su.url('/userrpm/cloud_login.htm');
+				cloud_login.load(url, {}, function(){
+					me.msg.msg("show");
+				});
+			},
+			"hide": function(){
+				this.msg.msg("hide");
+			}
+		};
+		$.su.cloud_login.msg.msg("hideButtons");
+
+		/* 显示项目 */
+		var cloud_site_show_msg = $("div#cloud-site-show-msg").msg({
+			type: "confirm",
+			global: true,
+			closeBtn:true,
+			title:"",
+			showHead:true,
+			cls: "l",
+			cancelHandler:function(){
+				$.su.mask.count = 0;
+				$.su.mask.hide();
+			}
+		});
+
+		$.su.cloud_site_show = {
+			"msg": cloud_site_show_msg,
+			"show": function(){
+				var me = this;
+				var cloud_site_show = $('#cloud-site-show-form');
+				var url = $.su.url('/userrpm/cloud_site_show.htm');
+				cloud_site_show.load(url, {}, function(){
+					me.msg.msg("show");
+				});
+			},
+			"hide": function(){
+				this.msg.msg("hide");
+			}
+		};
+		$.su.cloud_site_show.msg.msg("hideButtons");
+
+		/* 添加项目 */
+		var cloud_site_add_msg = $("div#cloud-site-add-msg").msg({
+			type: "confirm",
+			global: true,
+			closeBtn:true,
+			title:"",
+			showHead:true,
+			cls: "l"
+		});
+
+		$.su.cloud_site_add = {
+			"msg": cloud_site_add_msg,
+			"show": function(){
+				var me = this;
+				var cloud_site_add = $('#cloud-site-add-form');
+				var url = $.su.url('/userrpm/cloud_site_add.htm');
+				cloud_site_add.load(url, {}, function(){
+					me.msg.msg("show");
+				});
+			},
+			"hide": function(){
+				this.msg.msg("hide");
+			}
+		};
+		$.su.cloud_site_add.msg.msg("hideButtons");
+
+		/* Cloud TP-LINK ID */
+		var cloud_tplink_id_msg = $("div#cloud-tplink-id-msg").msg({
+			type: "confirm",
+			global: true,
+			closeBtn:true,
+			title:"",
+			showHead:true,
+			cls: "l"
+		});
+
+		$.su.cloud_tplink_id = {
+			"msg": cloud_tplink_id_msg,
+			"show": function(){
+				var me = this;
+				var cloud_site_add = $('#cloud-tplink-id-form');
+				var url = $.su.url('/userrpm/cloud_tplink_id.htm');
+				cloud_site_add.load(url, {}, function(){
+					me.msg.msg("show");
+				});
+			},
+			"hide": function(){
+				this.msg.msg("hide");
+			}
+		};
+		$.su.cloud_tplink_id.msg.msg("hideButtons");
+
+		new $.su.Proxy({async: false}).query({
+			system:{"name":"sys"},
+			administrator:{"table":"account"},
+			online_check:{"table":"state"},
+			istart: {"name": "server"}
+		}, function(res) {
+			origin_dev_alias = config.dev_alias = res.system.sys.dev_alias;
+
+			//获取administrator section
+			var acounts = res.administrator.account;
+			for (var i = 0; i < acounts.length; i++) {
+				for (var k in acounts[i]){
+					if (acounts[i][k].username == cur_username){
+						cur_acount_secname = k;
+						break;
+					}
+				}
+				if (typeof(cur_acount_secname) != "undefined") break;
+			}
+
+			var items = res.online_check.state;
+			for (var key in items) {
+				if (items[key]["state"] == "up") {
+					online_check_result = true;
+				}
+			}
+
+			var server_data = res.istart.server;
+			if (server_data && server_data.server_type) {
+				old_istart_server.server_type = server_data.server_type;
+			} else {
+				old_istart_server.server_type = "public";
+			}
+			if (server_data && server_data.server_addr) {
+				old_istart_server.server_addr = server_data.server_addr;
+			} else {
+				old_istart_server.server_addr = "smbcloud.tp-link.com.cn";
+			}
+			if (server_data && server_data.server_port) {
+				old_istart_server.server_port = server_data.server_port;
+			} else {
+				old_istart_server.server_port = "443";
+			}
+			if (server_data && server_data.access_server_addr) {
+				old_istart_server.access_server_addr = server_data.access_server_addr;
+			}
+			if (server_data && server_data.access_server_port) {
+				old_istart_server.access_server_port = server_data.access_server_port;
+			} else {
+				old_istart_server.access_server_port = "60443";
+			}
+		});
+		if (typeof(cur_acount_secname) == "undefined") cur_acount_secname = "admin";
+
+		//跳转到首页
+		function goToHome(){
+			var home_sec = $.su.localResult.menu.advance_menu[0];
+
+			first_menu = home_sec.name;
+			second_menu = home_sec.children[0].name;
+			$.su.menu.advanced.goTo(first_menu, second_menu);
+		}
+
+		function goToIstart() {
+			$('.step li.selected').removeClass('selected');
+			$($('.step li').get(step_smart_start)).addClass('selected');
+
+			$('.step-content.current').removeClass('current');
+			$('.step-content#smart-start').addClass('current');
+
+			page_show();
+
+			$('.guide-footer #prev').button('disable');
+		}
+
+		if ($.su.istart_alert.user_acked == 1) {
+			$.su.istart_alert.user_acked = 0;
+			setTimeout(goToIstart, 0); /* Delay until initial rendering done */
+		}
+
+		//commit数据，发生错误返回fasle
+		function commit_modify(data, errTitle)
+		{
+			var hasError = false;
+			new $.su.Proxy({async: false}).modify(data, function() {}, function(err_code) {
+				$("span#global-warning-text").html($.su.CHAR.ERROR_CODE[err_code]);
+				$("span#global-warning-title").html(errTitle);
+				hasError = true;
+				if (warningMsg.is(":hidden")){
+					warningMsg.msg("show");
+				}
+			});
+
+			if (hasError) {$.su.loading.hide();return false;}
+			else return true;
+		}
+		function commit_add(data, errTitle)
+		{
+			var hasError = false;
+			new $.su.Proxy({async: false}).add(data, function() {}, function(err_code) {
+				$("span#global-warning-text").html($.su.CHAR.ERROR_CODE[err_code]);
+				$("span#global-warning-title").html(errTitle);
+				hasError = true;
+				if (warningMsg.is(":hidden")){
+					warningMsg.msg("show");
+				}
+			});
+
+			if (hasError) {$.su.loading.hide();return false;}
+			else return true;
+		}
+		function commit_action(data, errTitle)
+		{
+			var hasError = false;
+			new $.su.Proxy({async: false}).action(data, function() {}, function(err_code) {
+				$("span#global-warning-text").html($.su.CHAR.ERROR_CODE[err_code]);
+				$("span#global-warning-title").html(errTitle);
+				hasError = true;
+				if (warningMsg.is(":hidden")){
+					warningMsg.msg("show");
+				}
+			});
+
+			if (hasError) {$.su.loading.hide();return false;}
+			else return true;
+		}
+
+		//获取可用的接口名
+		function valid_object_name_get(cur_table, name)
+		{
+			var ifname_pool = {};
+			for(var i = 0 ; i < cur_table.length ; i++)
+			{
+				ifname_pool[cur_table[i].name] = cur_table[i].name;
+			}
+
+			for (var i = 0; i < 100; i++)
+			{
+				var is_exist = false;
+				for (var ifname in ifname_pool){
+					if (ifname === name + i){
+						is_exist = true;
+						break;
+					}
+				}
+				if (is_exist == false) return name + i;
+			}
+
+			//最多支持96个接口，所以不会执行到这里
+			return name;
+		}
+
+		$('#no-tip').checkbox({
+			items: [
+				{boxlabel: '下次登录不再提示', inputValue: "on"}
+			]
+		}).on("ev_change", function(e,oldval,newval){
+			if (newval[0] == "on"){
+				commit_modify({"system":{"sys":{"go_wizard":0}}}, "配置”下次登录不再显示“失败：");
+			}
+			else{
+				commit_modify({"system":{"sys":{"go_wizard":1}}}, "配置”下次登录不再显示“失败：");
+			}
+		});
+
+		//点击下一步、上一版、跳过后，显示页面
+		function page_show(){
+			//先恢复默认状态
+			$('button#skip').show();						//skip可能隐藏
+			$('.guide-footer #prev').button('enable');		//prev可能灰化
+			$('.guide-footer #next').button('enable');		//next可能灰化
+			$('.guide-footer #skip').button('enable');		//skip可能灰化
+			$('.guide-footer #quit').button('enable');		//quit可能灰化
+			$('button#next .button-text').text('下一步');	//next文字可能变化
+
+			//欢迎页
+			if ($('.step-content.current').attr('id') === 'welcome'){
+				$('button#skip').hide();
+				$('.guide-footer #prev').button('disable');
+				return;
+			}
+
+			//按钮显示
+			if ($('.guide-content li.selected').index() < $('.guide-content .step li').length &&
+					$('.guide-content li.selected').index() >= 0 &&
+					$('.guide-content li.selected').index() != step_commit) { //非提交页面都显示4个按钮
+				if ($('.guide-content li.selected').index() === step_basic) {
+					$("#dev_alias").textbox('setValue', config.dev_alias);
+				}
+				if ($('.guide-content li.selected').index() === step_wantype) {
+					$('.guide-footer #skip').button('disable');
+				}
+				if ($('.guide-content li.selected').index() === step_wan) {
+					$('#net-param >div').hide();
+					$('#net-param').find('#' + config.accessype).show();
+				}
+			}
+			else{
+				$('button#skip').hide();
+
+				if ($('.guide-content li.selected').index() === step_commit) { //提交时显示3个按钮，不可跳过
+					$('button#next .button-text').text('应用');
+				}
+
+				if ($('.step-content.current').attr('id') === 'finish') {
+					$('button#next .button-text').text('完成');
+					$('.guide-footer #prev').button('disable');
+					$('.guide-footer #quit').button('disable');
+				}
+			}
+
+			//动作 - 提交页面渲染
+			if ($('.guide-content li.selected').index() === step_commit) {
+				var accessype_obj = {
+					static: '静态IP',
+					dhcp: 'DHCP',
+					pppoe: 'PPPoE'
+				}
+				var time_style = {
+					manual: '手动获取',
+					auto: '通过网络获取'
+				}
+				var dhcp_enable_obj = {
+					on: '是',
+					off: '否'
+				};
+
+				for (var key in config) {
+					var obj = $('#config-confirm').find('.' + key + ' .config-value');
+					if (typeof(obj) != "undefined") obj.text(config[key])
+				}
+
+				//隐藏跳过的配置参数
+				if (config.skip_basic == 1) $("#config_basic").hide();
+				else{
+					$('#config-confirm .change_pass .config-value').text(config.change_pass ? '是' : '否');
+					$("#config_basic").show();
+					if (config.change_pass) $("#password_param").show();
+					else $("#password_param").hide();
+				}
+				if (config.skip_time == 1) $("#config_time").hide();
+				else{
+					$('#config-confirm .time .config-value').text(new Date(config.time * 1000).toLocaleTimeString());
+					$('#config-confirm .time-type').hide();
+					$('#config-confirm .time-type.' + config.type).show();
+					$('#config-confirm .time_set_type .config-value').text(time_style[config.type]);
+					$('#config-confirm .timezone .config-value').text(time_zone_obj[config.timezone]);
+					$("#config_time").show();
+				}
+				if (config.skip_wan == 1) $("#config_wan").hide();
+				else{
+					$('#config-confirm .proto-type').hide();
+					$('#config-confirm .proto .config-value').text(accessype_obj[config.accessype]);
+					$('#config-confirm .proto-type.' + config.accessype).show();
+					$("#config_wan").show();
+				}
+				if (config.skip_lan == 1) $("#config_lan").hide();
+				else $("#config_lan").show();
+				if (config.skip_dhcp == 1) $("#config_dhcp").hide();
+				else{
+					$('#config-confirm .dhcp_enable .config-value').text(dhcp_enable_obj[config.dhcp_enable]);
+					$("#config_dhcp").show();
+					if (config.dhcp_enable == "on") $("#dhcp_param").show();
+					else $("#dhcp_param").hide();
+				}
+			}
+
+			//动作 - 智能开局页面渲染
+			if ($('.guide-content li.selected').index() === step_smart_start) {
+				if (new_istart_server) {
+					if (new_istart_server.server_type) {
+						$("input#servertype").combobox("setValue", new_istart_server.server_type);
+					}
+					if (new_istart_server.server_addr) {
+						$("#serveraddr").textbox("setValue", new_istart_server.server_addr);
+					}
+					if (new_istart_server.server_port) {
+						$("input#serverport").textbox("setValue", new_istart_server.server_port);
+					}
+					if (new_istart_server.access_server_addr) {
+						$("input#access-serveraddr").textbox("setValue", new_istart_server.access_server_addr);
+					}
+					if (new_istart_server.access_server_port) {
+						$("input#access-serverport").textbox("setValue", new_istart_server.access_server_port);
+					}
+				} else {
+					if (old_istart_server.server_type) {
+						$("input#servertype").combobox("setValue", old_istart_server.server_type);
+					}
+					if (old_istart_server.server_addr) {
+						$("input#serveraddr").textbox("setValue", old_istart_server.server_addr);
+					}
+					if (old_istart_server.server_port) {
+						$("input#serverport").textbox("setValue", old_istart_server.server_port);
+					}
+					if (old_istart_server.access_server_addr) {
+						$("input#access-serveraddr").textbox("setValue", old_istart_server.access_server_addr);
+					}
+					if (old_istart_server.access_server_port) {
+						$("input#access-serverport").textbox("setValue", old_istart_server.access_server_port);
+					}
+				}
+				if (online_check_result == false) {
+					$('#cloud-login-button').button("disable");
+					$("#online-fail-tips").html("<font color='red'>网络连接失败，无法登录商云。请前往\""
+					 + "<a id='interface_url' style='cursor: pointer;font-weight:bold' "
+					 + "onclick=\"$.su.menu.advanced.goTo('network', 'interface');\">"
+					 + "网络 -> 接口设置"
+					 + "</a> \"检查和设置确保连接网络。</font>");
+					$("#online-fail-alert").show();
+				} else {
+					$('#cloud-login-button').button("enable");
+					$("#online-fail-alert").hide();
+				}
+			}
+		}
+
+		//准备页面，设置边框
+		function page_prepare(next){
+			//点击完成后，无需再准备页面
+			if ($('.step-content.current').attr('id') === 'finish') return;
+
+			if (next){
+				if ($('.step li.selected').length) {
+					$('.step li.selected').removeClass('selected').next().addClass('selected');
+				} else {
+					$('.step li:first').addClass('selected');
+				}
+				$('.step-content.current').removeClass('current').next().addClass('current');
+
+				//如果跳过LAN设置，则不应该显示dhcp
+				if ($('.guide-content li.selected').index() === step_dhcp && config.skip_lan == 1)
+				{
+					config.skip_dhcp = 1;
+					page_prepare(true);
+				}
+			}else{
+				if ($('.step li.selected').index() > 0) {
+					$('.step li.selected').removeClass('selected').prev().addClass('selected');
+					$('.step-content.current').removeClass('current').prev().addClass('current');
+				}
+				else if ($('.step li.selected').index() == 0){
+					$('.step li.selected').removeClass('selected');
+					$('.step-content.current').removeClass('current').prev().addClass('current');
+				}
+				//如果跳过LAN设置，则不应该显示dhcp
+				if ($('.guide-content li.selected').index() === step_dhcp && config.skip_lan == 1)
+				{
+					config.skip_dhcp = 1;
+					page_prepare(false);
+				}
+			}
+		}
+
+		$('.guide-footer #prev').button({
+			text: '上一步',
+			handler: function(){
+				page_prepare(false);
+				page_show();
+			}
+		});
+		$('.guide-footer #prev').button('disable');
+
+		$('.guide-footer #next').button({
+			text: '下一步',
+			handler: function(){
+				// 翻页之前收集配置内容
+				if ($('.guide-content li.selected').index() === step_basic) {
+					config.skip_basic = 0;
+					congig = {};
+					if (!$("#dev_alias").textbox('validate')) {
+						return;
+					}
+					config.dev_alias = $("#dev_alias").textbox('getValue');
+					config.change_pass = false;
+					if ($('#change_pass').checkbox('getValue').length) {
+						if(!$("#old_password").password('validate') ||
+							!$("#password").password('validate') ||
+							!$("#cfm_password").password('validate') ) {
+							return;
+						}
+						config.change_pass = true;
+						config.username = cur_username;
+						config.old_password = $("#old_password").textbox('getValue');
+						config.password = $("#password").textbox('getValue');
+					}
+				}
+
+				if ($('.guide-content li.selected').index() === step_time) {
+					config.skip_time = 0;
+					var time_data = $("form#time_setting").form("serialize");
+					$.extend(config, time_data);
+				}
+
+				if ($('.guide-content li.selected').index() === step_wantype) {
+					config.accessype = $('input:radio[name="net-radio"]:checked').val();
+				}
+
+				if ($('.guide-content li.selected').index() === step_wan) {
+					config.skip_wan = 0;
+					if (config.accessype === 'static') {
+						var if_name = $("#if_name").combobox('getValue');
+						if (!$("#if_name").combobox('validate') || !$("#ip").textbox('validate') ||
+							!$("#netmask").textbox('validate') || !$("#gateway").textbox('validate') ||
+							!$("#pri_dns").textbox('validate') || !$("#snd_dns").textbox('validate'))  {
+							return;
+						}
+						config.if_name = if_name;
+						config.ip = $("#ip").textbox('getValue');
+						config.netmask = $("#netmask").textbox('getValue');
+						config.gateway = $("#gateway").textbox('getValue');
+						config.pri_dns = $("#pri_dns").textbox('getValue');
+						config.snd_dns = $("#snd_dns").textbox('getValue');
+					} else if (config.accessype === 'dhcp') {
+						if (!$("#if_name_dhcp").combobox('validate'))  {
+							return;
+						}
+						config.if_name_dhcp = $("#if_name_dhcp").combobox('getValue');
+					} else {
+						if (!$("#if_name_pppoe").combobox('validate') ||
+							!$("#username_pppoe").textbox('validate') ||
+							!$("#password_pppoe").password('validate'))  {
+							return;
+						}
+						config.if_name_pppoe = $("#if_name_pppoe").combobox('getValue');
+						config.username_pppoe = $("#username_pppoe").textbox('getValue');
+						config.password_pppoe = $("#password_pppoe").password('getValue');
+					}
+				}
+
+				if ($('.guide-content li.selected').index() === step_lan) {
+					config.skip_lan = 0;
+					if (!$("#if_name_LAN").combobox('validate') ||
+						!$("#ip_LAN").textbox('validate') ||
+						!$("#netmask_LAN").textbox('validate'))  {
+						return;
+					}
+					config.if_name_LAN = $("#if_name_LAN").combobox('getValue');
+					config.ip_LAN = $("#ip_LAN").textbox('getValue');
+					config.netmask_LAN = $("#netmask_LAN").textbox('getValue');
+				}
+
+				if ($('.guide-content li.selected').index() === step_dhcp) {
+					config.skip_dhcp = 0;
+					config.dhcp_enable = $("#dhcp_enable").checkbox('getValue').length ? 'on' : 'off';
+
+					if (config.dhcp_enable == 'on') {
+						if (!$("#pool_start").textbox('validate') ||
+								!$("#pool_end").textbox('validate'))  {
+							return;
+						}
+
+						config.pool_start = $("#pool_start").textbox('getValue');
+						config.pool_end = $("#pool_end").textbox('getValue');
+					}
+				}
+
+				//提交按钮则提交数据
+				if ($('.guide-content li.selected').index() === step_commit) {
+					$('.guide-footer #next').button('disable');
+					$.su.loading.show();
+					if (config.skip_basic == 0 && origin_dev_alias != config.dev_alias) {
+						var data = {
+							system: {
+								sys: {
+									dev_alias: config.dev_alias
+								}
+							}
+						}
+						if (!commit_modify(data,'配置主机名称失败：')) return;
+						origin_dev_alias = config.dev_alias;
+					}
+
+					if (config.skip_basic == 0 && config.change_pass) {
+						var data = {administrator: {}}
+						data.administrator[cur_acount_secname] = {
+							username: config.username,
+							old_password: $.su.orgAuthPwd(config.old_password),
+							password: config.password
+						};
+						if (!commit_modify(data,'修改管理员用户名密码失败：')) return;
+					}
+
+					if (config.skip_time == 0)
+					{
+						var data;
+						if (config.type == 'manual') {
+							data = {
+								system: {
+									time_type: {
+										type: "manual"
+									},
+									system_time: {
+										date: config.date,
+										time:config.time
+									}
+								}
+							}
+						} else {
+							data = {
+								system: {
+									time_type: {type:"auto"},
+									ntp: {
+										timezone: config.timezone,
+										pri_ntp: config.pri_ntp,
+										snd_ntp: config.snd_ntp
+									}
+								}
+							}
+						}
+						if (!commit_modify(data,'配置系统时间失败：')) return;
+					}
+
+					if (config.skip_wan == 0)
+					{
+						var data;
+						if (config.accessype == 'static') {
+							config.if_name_WAN = config.if_name[0];
+							data = {
+								network:{
+									table:"if_info",
+									filter:[{if_name: [config.if_name_WAN]}],
+									para: {
+										if_type: if_type_obj[config.if_name_WAN],
+										proto: "static",
+										ip: config.ip,
+										netmask: config.netmask,
+										gateway: config.gateway || '0.0.0.0',
+										pri_dns: config.pri_dns,
+										snd_dns: config.snd_dns,
+										mtu:"1500"
+									}
+								}
+							}
+						} else if (config.accessype == 'dhcp') {
+							config.if_name_WAN = config.if_name_dhcp[0];
+							data = {
+								network: {
+									table: "if_info",
+									filter: [{"if_name": [config.if_name_WAN]}],
+									para: {
+										if_type: if_type_obj[config.if_name_WAN],
+										proto: "dhcp",
+										ip: "0.0.0.0",
+										netmask: "0.0.0.0",
+										gateway: "0.0.0.0",
+										pri_dns: "0.0.0.0",
+										snd_dns: "0.0.0.0",
+										mtu:"1500"
+									}
+								}
+							}
+						} else {
+							config.if_name_WAN = valid_object_name_get(cur_pppoe, "guideWan");
+							data = {
+								network: {
+									table: "if_info",
+									para: {
+										if_type: "pppoe",
+										if_name: config.if_name_WAN,
+										proto: "pppoe",
+										ip: "0.0.0.0",
+										netmask: "0.0.0.0",
+										gateway: "0.0.0.0",
+										up_speed: 125000,
+										down_speed: 125000,
+										mtu: "1492",
+										pri_dns: "0.0.0.0",
+										snd_dns: "0.0.0.0",
+										comment: "",
+										mngt_enable: "off",
+										bindif: config.if_name_pppoe[0],
+										untag: "0",
+										username: config.username_pppoe,
+										password: config.password_pppoe,
+										service: "",
+										linktype: "auto",
+										is_user_dns:""
+									}
+								}
+							}
+						}
+						if ((config.accessype == 'static') || (config.accessype == 'dhcp')){
+							if (!commit_modify(data,'配置接入互联网参数失败：')) return;
+						}else{
+							if (!commit_add(data,'配置接入互联网参数失败：')) return;
+						}
+
+						//设置其他配置，保证能上网
+						if (!commit_modify({"security_policy":{"security_policy_default":{"action":"custom"}}},'配置接入互联网的安全策略失败：')) return;
+
+						var napt_exist_flag = 0;
+						if(cur_napt.length > 0)
+						{
+							for(var i = 0 ; i < cur_napt.length ; i++)
+							{
+								if(cur_napt[i].name.substr(0, 8) == "guideNat" && cur_napt[i].ip == "0.0.0.0/0" && cur_napt[i]['if'] == config.if_name_WAN && cur_napt[i].enable == "on")
+								{
+									napt_exist_flag = 1;
+									break;
+								}
+							}
+						}
+
+						var guideNatName = valid_object_name_get(cur_napt, "guideNat");
+						if(napt_exist_flag != 1)
+						{
+							if (!commit_add({"nat":{"table":"rule_napt","para":{"name":guideNatName,"ip":"0.0.0.0/0","if":config.if_name_WAN,"enable":"on","comment":"快速配置"}}},'配置接入互联网的NAT策略失败：')) return;
+						}
+					}
+
+					if (config.skip_lan == 0)
+					{
+						//设置LAN的情况下，尝试添加DNS代理
+
+						var dns_exist_flag = 0;
+						if (cur_dns.length > 0)
+						{
+							for (var i=0; i<cur_dns.length; i++)
+							{
+								if (cur_dns[i].service_if == config.if_name_LAN[0])
+								{
+									dns_exist_flag = 1;
+									break;
+								}
+							}
+						}
+
+						var guideDnsName = valid_object_name_get(cur_dns, "guideDnsProxy");
+						if (1 != dns_exist_flag)
+						{
+							if (!commit_add({"dns":{"table":"rule","para":{"name":guideDnsName,"service_if":config.if_name_LAN[0],"out_if":"auto"}}},'配置接入互联网的DNS策略失败：')) return;
+						}
+
+						var LAN_data = {
+							network: {
+								table: "if_info",
+								filter: [{"if_name": config.if_name_LAN}],
+								para: {
+									if_type: if_type_obj[config.if_name_LAN[0]],
+									proto: "static",
+									ip: config.ip_LAN,
+									netmask: config.netmask_LAN,
+									gateway: "0.0.0.0",
+									pri_dns: "0.0.0.0",
+									snd_dns: "0.0.0.0",
+									mtu: "1500"
+								}
+							}
+						}
+						if (!commit_modify(LAN_data,'配置局域网接口失败：')) return;
+
+						if (config.skip_dhcp == 0 && config.dhcp_enable == 'on')
+						{
+							var dhcp_data = {
+								dhcpd: {
+									table: "dhcpd_list",
+									para: {
+										interface: config.if_name_LAN[0],
+										pool_start: config.pool_start,
+										pool_end: config.pool_end,
+										lease_time: "7200",
+										gateway: config.ip_LAN || "",	//dhcp服务器的网关和dns都设置为LAN口地址
+										domain: "",
+										pri_dns: config.ip_LAN || "",
+										snd_dns: config.ip_LAN || "",
+										enable: "on",
+										option138: "",
+										option60: ""
+									}
+								}
+							}
+							if (!commit_add(dhcp_data,'配置DHCP服务失败：')) return;
+						}
+					}
+
+					if (!commit_action({fw_policy_manager: {submit_pol_db: null}}, '提交策略失败：')) return;
+
+					$.su.loading.hide();
+					$('.guide-footer #next').button('enable');
+				}
+
+				if ($('.guide-content li.selected').index() === step_smart_start) {
+					new_istart_server = {};
+					new_istart_server.servertype = $("input#servertype").combobox("getValue")[0];
+					new_istart_server.serveraddr = $("input#serveraddr").textbox("getValue");
+					new_istart_server.serverPort = $("input#serverport").textbox("getValue");
+					new_istart_server.accessServeraddr = $("input#access-serveraddr").textbox("getValue");
+					new_istart_server.accessServerPort = $("input#access-serverport").textbox("getValue");
+				}
+
+				if ($('.step-content.current').attr('id') === 'finish') {
+					goToHome();
+				}
+
+				//点击下一步按钮后的修改页面显示
+				page_prepare(true);
+
+				//显示页面
+				page_show();
+			}
+		});
+
+		$('.guide-footer #skip').button({
+			text: '跳过',
+			handler: function(){
+				if ($('.guide-content li.selected').index() == step_basic) config.skip_basic = 1;
+				else if ($('.guide-content li.selected').index() == step_time) config.skip_time = 1;
+				else if ($('.guide-content li.selected').index() == step_wan) config.skip_wan = 1;
+				else if ($('.guide-content li.selected').index() == step_lan) config.skip_lan = 1;
+				else if ($('.guide-content li.selected').index() == step_dhcp) config.skip_dhcp = 1;
+
+				//点击下一步按钮后的修改页面显示
+				page_prepare(true);
+
+				//显示页面
+				page_show();
+			}
+		});
+		$('button#skip').hide();
+
+		$('.guide-footer #quit').button({
+			text: '取消',
+			handler: function(){
+				goToHome();
+			}
+		});
+
+		$("#dev_alias").textbox({
+			fieldLabel: "主机名称",
+			inputCls:"xl"
+		});
+
+		$('#change_pass').checkbox({
+			fieldLabel:  '修改管理员密码',
+			cls: "inline",
+			items: [
+				{boxlabel: '是', inputValue: "on", uncheckedValue: "off"}
+			]
+		}).on("ev_change", function(e,oldval,newval){
+			if (newval[0] == "on"){
+				$('.step-content #username').textbox('enable');
+				$('.step-content #password').textbox('enable');
+				$('.step-content #cfm_password').textbox('enable');
+				$('.step-content #old_password').textbox('enable');
+			} else {
+				$('.step-content #username').textbox('disable');
+				$('.step-content #password').textbox('disable');
+				$('.step-content #cfm_password').textbox('disable');
+				$('.step-content #old_password').textbox('disable');
+			}})
+
+
+		$('.step-content #username').textbox({
+			fieldLabel: "用户名",
+			tips: $.su.CHAR.ACCOUNT_LIST.ACCOUNT_TIPS,
+			allowBlank: false,
+			vtype:"ascii_visible",
+			minLength:1,
+			maxLength:15,
+			inputCls:"xl"
+		})
+
+		var passwordCheck = function(new_pwd, cfm_val){
+
+			if(cfm_val == new_pwd){
+				return true;
+			}else{
+				cfm_pwd.password("setError", "两次输入的密码不一致！");
+				return false;
+			};
+		};
+
+		$(".step-content #password").password({
+			fieldLabel: "新密码",
+			tips: $.su.CHAR.ACCOUNT_LIST.NEW_PWD_TIPS,
+			vtype:"ascii_visible",
+			inputCls:"xl",
+	       		minLength:8,
+	        	maxLength:15,
+	        	validator:function(val){
+	            if (val == '') {
+	                return "该项不能为空";
+	            }
+	            if(val.length < 8 || val.length > 15){
+	                return "密码长度最少为8位,最多为15位";
+	            }else
+	            {
+	                var regNumber = /\d+/; //验证0-9的任意数字最少出现1次。
+	                var regLowerString = /[a-z]+/; //验证小写26个字母任意字母最少出现1次。
+	                var regUpperString = /[A-Z]+/; //验证大写26个字母任意字母最少出现1次。
+
+	                if (! regNumber.test(val)){
+	                    return $.su.CHAR.ACCOUNT_LIST.NEW_PWD_NUM_ERR;
+	                }
+	                if (! regUpperString.test(val)){
+	                    return $.su.CHAR.ACCOUNT_LIST.NEW_PWD_UPSTR_ERR;
+	                }
+	                if (! regLowerString.test(val)){
+	                    return $.su.CHAR.ACCOUNT_LIST.NEW_PWD_LOWSTR_ERR;
+	                }
+	            }
+	            return true;
+	        },
+		}).on("ev_change", function(item, data){
+			$(".step-content #cfm_password").password('setNormal');
+
+			var new_pwd = $(".step-content #password").password("getValue");
+			var cfm_val = $(".step-content #cfm_password").password("getValue");
+			if ( cfm_val){
+				passwordCheck(new_pwd, cfm_val);
+			}
+		}).on("ev_validatechange", function(item, data){
+			var new_pwd = $(".step-content #password").password("getValue");
+			var cfm_val = $(".step-content #cfm_password").password("getValue");
+
+			if( cfm_val=='' ){
+				return true;
+			}else{
+				passwordCheck(new_pwd, cfm_val);
+			};
+		});
+
+		var cfm_pwd = $(".step-content #cfm_password").password({
+			fieldLabel: "确认密码",
+			vtype:"ascii_visible",
+			inputCls:"xl",
+			showLevel:false,
+	        minLength:8,
+	        maxLength:15,
+	        validator:function(val){
+	            if (val == '') {
+	                return "该项不能为空";
+	            }
+	            if(val.length < 8 || val.length > 15){
+	                return "密码长度最少为8位,最多为15位";
+	            }
+	            return true;
+	        }
+		}).on("ev_change ev_validatechange", function(){
+			var new_pwd = $(".step-content #password").password("getValue");
+			var cfm_val = $(".step-content #cfm_password").password("getValue");
+
+			if (new_pwd == ""){
+				if ( cfm_val == "" ){
+					//$("#pwd_status").status("setNormal");
+				}else{
+					if (!passwordCheck(new_pwd, cfm_val)){
+						$(".step-content #cfm_password").password("setError");
+					};
+				}
+			}else{
+				if (!passwordCheck(new_pwd, cfm_val)){
+					$(".step-content #cfm_password").password("setError");
+				}
+			}
+		});
+
+		$(".step-content #old_password").password({
+			fieldLabel: '旧密码',
+			allowBlank: false,
+			vtype:"ascii_visible",
+			showLevel:false,
+	        minLength:5,
+	        maxLength:15,
+	        validator:function(val){
+	            if (val == '') {
+	                return "该项不能为空";
+	            }
+	            if(val.length < 5 || val.length > 15){
+	                return "旧密码长度最少为5位,最多为15位";
+	            }
+
+	            // 检查是否合法
+	            var doProxy = new $.su.Proxy({async: false});
+	            var filter = {};
+	            var postData = {}
+	            filter["username"] = cur_username;
+	            filter["password"] = val;
+	            postData['administrator'] = {'webpasswd_check': filter};
+	            var is_password_ok = true;
+	            doProxy.action(postData, function(data){
+	            	if(data['administrator'] == "false") is_password_ok = false;
+	            });
+	            if(is_password_ok == false) {
+	            	return "旧密码错误";
+	            }
+	            return true;
+	        },
+			inputCls:"xl"
+		});
+
+		$('.step-content #username').textbox('disable');
+		$('.step-content #password').textbox('disable');
+		$('.step-content #cfm_password').textbox('disable');
+		$('.step-content #old_password').textbox('disable');
+
+		var sysTimeHash = "";
+		var startTimeHash = "";
+		var endTimeHash = "";
+		var sysTimeYear = "2013";
+
+		window.timeSystem = 0;
+
+		function parseFormat(value, width)
+		{
+			var value = value.toString();
+			while (value.length < width) value = "0" + value;
+			return value;
+		}
+
+		$("div#time_cnt").panel({
+			title: $.su.CHAR.TIME_SETTING.TITLE,
+			collapsible: false
+		});
+
+		$("#auto_cnt").fieldset({
+			fields: [
+				{name: "timezone"},
+				{name: "pri_ntp"},
+				{name: "snd_ntp"}
+			]
+		});
+
+		$("#auto_cnt").fieldset("hide");
+
+		$("#manual_cnt").fieldset({
+			fields: [
+				{name: "date"},
+				{name: "time"}
+			]
+		});
+
+		$("#manual_cnt").fieldset("show");
+
+		$("#time_current_time").textbox({
+			fieldLabel: $.su.CHAR.TIME_SETTING.CURRENT_TIME,
+			readOnly:true
+		});
+
+		$("#time_set_type").radio({
+			fieldLabel: $.su.CHAR.TIME_SETTING.SET_TIME,
+			items:[
+				{boxlabel: $.su.CHAR.TIME_SETTING.AUTOMATIC, inputValue: "auto", id:"radio-1"},
+				{boxlabel: $.su.CHAR.TIME_SETTING.MANUAL, inputValue: "manual", id:"radio-2"}
+			],
+			columns:2
+		}).on("ev_change", function(e, oldValue, newValue){
+			if(newValue == "auto")
+			{
+				$("#auto_cnt").fieldset("show");
+				$("#manual_cnt").fieldset("hide");
+				$("p.note").show();
+			}
+			else
+			{
+				$("#auto_cnt").fieldset("hide");
+				$("#manual_cnt").fieldset("show");
+				$("p.note").hide();
+			}
+		})
+
+		var time_zone_obj = {
+			"0" : $.su.CHAR.TIME_ZONE.ENIWETOK,
+			"60": $.su.CHAR.TIME_ZONE.MIDWAY_ISLAND_SAMOA,
+			"120": $.su.CHAR.TIME_ZONE.HAWAII,
+			"180": $.su.CHAR.TIME_ZONE.ALASKA,
+			"240": $.su.CHAR.TIME_ZONE.PACIFIC_TIME,
+			"300": $.su.CHAR.TIME_ZONE.MOUNTAIN_TIME,
+			"360": $.su.CHAR.TIME_ZONE.CENTRAL_TIME,
+			"420": $.su.CHAR.TIME_ZONE.EASTERN_TIME,
+			"450": $.su.CHAR.TIME_ZONE.CARACAS,
+			"480": $.su.CHAR.TIME_ZONE.ATLANTIC_TIME,
+			"510": $.su.CHAR.TIME_ZONE.NEWFOUNDLAND,
+			"540": $.su.CHAR.TIME_ZONE.BRASILIA_BUENOS_AIRES,
+			"600": $.su.CHAR.TIME_ZONE.MID_ATLANTIC,
+			"660": $.su.CHAR.TIME_ZONE.AZORES_CAPE_VERDE_IS,
+			"720": $.su.CHAR.TIME_ZONE.GREENWICH_MEAN_TIME,
+			"780": $.su.CHAR.TIME_ZONE.BERLIN_STOCKHOLM,
+			"840": $.su.CHAR.TIME_ZONE.ATHENS_HELSINKI,
+			"900": $.su.CHAR.TIME_ZONE.BAGHDAD_KUWAIT,
+			"930": $.su.CHAR.TIME_ZONE.TEHERAN,
+			"960": $.su.CHAR.TIME_ZONE.ABU_DHABI,
+			"990": $.su.CHAR.TIME_ZONE.KABUL,
+			"1020": $.su.CHAR.TIME_ZONE.ISLAMABAD_KARACHI,
+			"1050": $.su.CHAR.TIME_ZONE.MADRAS_CALCUTTA,
+			"1065": $.su.CHAR.TIME_ZONE.KATMANDU,
+			"1080": $.su.CHAR.TIME_ZONE.ALMA_ATA_DHAKA,
+			"1110": $.su.CHAR.TIME_ZONE.RANGOON,
+			"1140": $.su.CHAR.TIME_ZONE.BANGKOK_JAKARTA_HANOI,
+			"1200": $.su.CHAR.TIME_ZONE.BEIJING_HONGKONG,
+			"1260": $.su.CHAR.TIME_ZONE.TOKYO_OSAKA_SAPPORO,
+			"1290": $.su.CHAR.TIME_ZONE.ADELAIDE,
+			"1320": $.su.CHAR.TIME_ZONE.BRISBANE_CANBERRA,
+			"1380": $.su.CHAR.TIME_ZONE.MAGADAN_SOLOMAN_IS,
+			"1440": $.su.CHAR.TIME_ZONE.FIJI_KAMCHATKA,
+			"1500": $.su.CHAR.TIME_ZONE.NUKU
+		}
+
+		var time_zone_items = [];
+		for(var key in time_zone_obj) {
+			time_zone_items.push({
+				value: key,
+				name: time_zone_obj[key]
+			})
+		}
+
+		$("input#time_set_zone").combobox({
+			fieldLabel: $.su.CHAR.TIME_SETTING.ZONE,
+			inputCls:'xxxxl',
+			items: time_zone_items
+		}).on("ev_change", function(e, oldValue, newValue){
+			if(oldValue.length != 0)
+			{
+				var old_hour = $("input#time_set_time").time("getHour");
+				var old_min = $("input#time_set_time").time("getMin");
+				var old_total_min = parseInt(old_hour*60,10)+parseInt(old_min,10);
+				var new_total_min = old_total_min + parseInt(newValue,10) - parseInt(oldValue,10);
+
+				if (new_total_min < 0)
+				{
+					new_total_min = 24 * 60 + new_total_min;
+				}
+
+				var min_new = new_total_min%60;
+				var hour_temp = parseInt(new_total_min/60, 10);
+				var hour_new = hour_temp > 24 ? hour_temp - 24 : hour_temp;
+				if((hour_new == 24) && (min_new > 0))
+				{
+					hour_new = 0;
+				}
+
+				if(hour_new < 0)
+				{
+					if(hour_new == 0)
+					{
+						hour_new = 23;
+					}
+					else
+					{
+						hour_new += 24;
+					}
+				}
+
+				if(min_new < 0)
+				{
+					min_new += 60;
+				}
+
+				if(min_new < 10)
+				{
+					min_new = "0" + min_new;
+				}
+
+				if(hour_new < 10)
+				{
+					hour_new = "0" + hour_new;
+				}
+
+				var new_time_str  = hour_new.toString() +":"+ min_new.toString() +":"+ $("input#time_set_time").time("getSec");
+				$("input#time_set_time").time("setValue", new_time_str);
+			}
+		});
+
+		$("input#time_set_date").textbox({
+			fieldLabel: $.su.CHAR.TIME_SETTING.DATE,
+			vtype:"date",
+			allowBlank:false,
+			inputCls:"xl",
+			tips: $.su.CHAR.TIME_SETTING.DATEFORMAT
+		});
+
+		$("input#time_set_time").time({
+			fieldLabel: $.su.CHAR.TIME_SETTING.TIME,
+			inputCls:"xl",
+			tips: $.su.CHAR.TIME_SETTING.TIMEFORMAT,
+			setValueCb: function(data){
+				if (!isNaN(data)){
+					var timezone = $("#time_set_zone").val();
+					var offset_GMT = new Date().getTimezoneOffset();
+					var datNum = new Date(data * 1000 + offset_GMT * 60 * 1000 + (timezone - 720) * 60 * 1000);
+					var hour = datNum.getHours();
+					var minute = datNum.getMinutes();
+					var second = datNum.getSeconds();
+					if (hour < 10){hour = "0"+hour;}
+					if (minute < 10){minute = "0"+minute;}
+					if (second < 10){second = "0"+second;}
+					var time = hour + ":" + minute + ":" + second;
+
+					return time;
+				}
+				else
+				{
+					return data;
+				}
+			},
+			getValueCb: function(data){
+				var date = $("input#time_set_date").val();
+				var time = data;
+
+				var dataArray = date.split("/");
+				var Year = dataArray[0];
+				var Month = dataArray[1];
+				var Day = dataArray[2];
+
+
+				dataArray = time.split(":");
+				var Hour = dataArray[0];
+				var Minute = dataArray[1];
+				var Second = dataArray[2];
+				var diff_hour = parseInt((localData.timezone / 60), 10) - 12;
+				var diff_minute = localData.timezone % 60;
+				if ((diff_hour < 0) && (diff_minute > 0)) {
+					diff_hour = diff_hour + 1;
+					diff_minute = diff_minute - 60;
+				}
+				var datNum = new Date(Date.UTC(Year, Month-1, Day, Hour-diff_hour, Minute-diff_minute, Second));
+				var slong = parseInt(datNum.getTime()/1000, 10);
+
+				return slong;
+			}
+		});
+
+		$("input#time_set_ntp1").textbox({
+			fieldLabel: $.su.CHAR.TIME_SETTING.NTP1,
+			vtype:"string_ip_all_domain_no_loop",
+			allowBlank:false,
+			inputCls:"xl"
+		});
+
+		$("input#time_set_ntp2").textbox({
+			fieldLabel: $.su.CHAR.TIME_SETTING.NTP2,
+			vtype:"string_ip_all_domain_no_loop",
+			inputCls:"xl",
+			allowBlank:true,
+			tips: $.su.CHAR.TIME_SETTING.OPTIONAL
+		});
+
+		$("button#getGmt").button({
+			text:$.su.CHAR.TIME_SETTING.AUTOMATIC_BTN,
+			cls: "inline-block",
+			handler:function(){
+				$("button#getGmt").button("disable");
+				$("form#time_setting").form("submit", {operation:"gmt"},function(data){
+					localData = data;
+					isTimeChange = true;
+				},function(errorcode){
+				},null, false);
+			},
+			fieldLabel:null
+		});
+
+		$("button#get_sys_time").button({
+			text:$.su.CHAR.TIME_SETTING.GET_SYS_TIME,
+			cls: "inline-block",
+			handler:function(){
+				var now = new Date();
+				var year = now.getFullYear();
+				var month = now.getMonth() + 1;
+				var day = now.getDate();
+				var hour = now.getHours();
+				var minute = now.getMinutes();
+				var second = now.getSeconds();
+				if (month < 10){month = "0"+month;}
+				if (day < 10){day = "0"+day;}
+				if (hour < 10){hour = "0"+hour;}
+				if (minute < 10){minute = "0"+minute;}
+				if (second < 10){second = "0"+second;}
+
+				$("#time_set_time").time("setValue", hour+":"+minute+":"+second)
+				$("#time_set_date").textbox("setValue", year+"/"+month+"/"+day)
+
+				$("form#time_setting").form("submit", {operation:"get_sys_time"},function(data){
+					if (data.time && data.date) //get
+					{
+						localData = data;
+					}
+					else //set
+					{
+						localData.date = year + "/" + month + "/" + day;
+						localData.time = $("input#time_set_time").time("getValue");
+					}
+					isTimeChange = true;
+				},function(errorcode){
+				},null, false);
+			},
+			fieldLabel:null
+		});
+
+		var isInit = true;
+		var localData = null;
+		var isTimeChange = false;
+		var timeSettingTimeout = null;
+		var refresh = function (){
+			// 每5秒同步一下当前时间
+			if (localData.time % 5 == 0)
+				get_current_time();
+
+			//var localData = data;
+			var d = localData.date;
+			var t = localData.time;
+			var timezone = $("#time_set_zone").val();
+			var offset_GMT = new Date().getTimezoneOffset();
+			var datNum = new Date(t * 1000 + offset_GMT * 60 * 1000 + (timezone - 720) * 60 * 1000);
+			var year = datNum.getFullYear();
+			var month = datNum.getMonth() + 1;
+			var day = datNum.getDate();
+			var hour = datNum.getHours();
+			var min = datNum.getMinutes();
+			var second = datNum.getSeconds();
+			//秒数补0
+			if (hour < 10){hour = "0"+hour;}
+			if (min < 10){min = "0"+min;}
+			if (second < 10){second = "0"+second;}
+			localData.date = year + "/" + month + "/" + day;
+			var str = localData.date + " " + hour + ":" + min + ":" + second;
+			$("#time_current_time").textbox("setValue", str);
+			clearTimeout(timeSettingTimeout);
+			if(!$("form#time_setting").length){
+				return;
+			}
+			timeSettingTimeout = setTimeout(function() {
+				localData.time++;
+				if(!isTimeChange){
+
+				}else{
+					isTimeChange = false;
+				}
+				refresh(localData);
+			}, 1000);
+		}
+
+		var time_form = $("form#time_setting").form({
+			proxy: {},
+			fields: [
+				{name: "type", mapping: "type", sectionName: "time_type"},
+				{name: "timezone", mapping: "timezone", sectionName: "ntp"},
+				{name: "date", mapping: "date", sectionName: "system_time"},
+				{name: "time", mapping: "time", sectionName: "system_time"},
+				{name: "pri_ntp", mapping: "pri_ntp", sectionName: "ntp"},
+				{name: "snd_ntp", mapping: "snd_ntp", sectionName: "ntp"}
+				//{name: "gmt_status", mapping: "gmt_status", sectionName: "ntp"}
+			],
+			parseKey: {
+				moduleName:"system",
+				sectionName:["ntp", "time_type", "system_time"]
+			},
+			submitBtn: "default",
+			transParams: function(params){
+				for (var name in params)
+				{
+					if (name == "time")
+					{
+						params[name] = $("input#time_set_time").time("getValue");
+					}else if (name == "date")
+					{
+						params[name] = $("input#time_set_date").textbox("getValue");
+					}
+				}
+
+				return params;
+			}
+		}).on("ev_loadData", function(e, data){
+			if (data.time && data.date)
+			{
+				localData = data;
+			}
+			else
+			{
+				var sysTimeProxy = new $.su.Proxy({
+					async: false
+				});
+				sysTimeProxy.query({"system":{"name":"system_time"}},function(data){
+					var time_content = data.system.system_time;
+					$("input#time_set_date").textbox("setValue", time_content.date);
+				});
+				var date = $("#time_set_date").val();
+				var time = $("#time_set_time").val();
+				var timezone = $("#time_set_zone").val();
+				var dataArray = date.split("/");
+				var Year = dataArray[0];
+				var Month = dataArray[1];
+				var Day = dataArray[2];
+
+				dataArray = time.split(":");
+				var Hour = dataArray[0];
+				var Minute = dataArray[1];
+				var Second = dataArray[2];
+				var diff_hour = parseInt((timezone / 60), 10) - 12;
+				var diff_minute = timezone % 60;
+				if ((diff_hour < 0) && (diff_minute > 0)) {
+					diff_hour = diff_hour + 1;
+					diff_minute = diff_minute - 60;
+				}
+				var datNum = new Date(Date.UTC(Year, Month-1, Day, Hour-diff_hour, Minute-diff_minute, Second));
+				var slong = parseInt(datNum.getTime()/1000, 10);
+				localData.date = Year + "/" + Month + "/" + Day;
+				localData.time = slong;
+				localData.timezone = timezone;
+			}
+
+			var itemProxy = new $.su.Proxy({async: false});
+			itemProxy.query(
+				{
+					"dns":{"table":"rule"},
+					"nat":{"table":"rule_napt"},
+					"network":{"table":"if"}
+				}, function(data){
+				for (var i=0; i<data.dns.rule.length; i++)
+				{
+					for (var j in data.dns.rule[i])
+					{
+						cur_dns.push({name:data.dns.rule[i][j].name, service_if:data.dns.rule[i][j].service_if,out_if:data.dns.rule[i][j].out_if});
+					}
+				}
+
+				for (var i=0; i<data.nat.rule_napt.length; i++){
+					for (var j in data.nat.rule_napt[i])
+					{
+						cur_napt.push({name: data.nat.rule_napt[i][j].name, ip: data.nat.rule_napt[i][j].ip, 'if': data.nat.rule_napt[i][j]['if'], enable: data.nat.rule_napt[i][j].enable, comment: data.nat.rule_napt[i][j].comment});
+					}
+				}
+
+				for (var i=0; i<data.network["if"].length; i++){
+					for (var j in data.network["if"][i])
+					{
+						cur_pppoe.push({name: data.network["if"][i][j].if_name});
+					}
+				}
+
+			});
+
+			if(isInit){
+				refresh();
+				isInit = false;
+			}
+			isTimeChange = true;
+		});
+
+		var timeout_afterset = 0;
+		function get_current_time()
+		{
+			var sysTimeProxy = new $.su.Proxy({authSessionsDataFlag:true} /*Fix #318258*/);
+			sysTimeProxy.query({"system":{"name":"system_time"}},function(data){
+				var time_content = data.system.system_time;
+				localData.date = time_content.date;
+				localData.time = time_content.time;
+				localData.timezone = $("#time_set_zone").val();
+			});
+		}
+
+		$("#if_name").combobox({
+			fieldLabel: '上网接口',
+			labelCls:'l',
+			allowBlank:false,
+			items:[
+				{value: "---", name: "---", selected: true}
+			]
+		})
+
+		var bridged_interface=[];
+		var interfaceItemWAN=[];
+		var interfaceItemLAN=[];
+		var if_type_obj = {};
+		new $.su.Proxy({async: false}).query({"network":{table: "if","filter":[{"t_isbridged":"1"}]}}, function(data){
+			var data = data.network["if"];
+			for (j=0; j<data.length; j++)
+			{
+				for (var key in data[j])
+				{
+					bridged_interface[j] = data[j][key].if_name;
+				}
+			}
+		});
+
+		new $.su.Proxy({async: false}).query({"network":{table: "if",
+				filter:[{if_type:"physical"},{if_type:"ethernet"},{if_type:"bridge"}]}}, function(data){
+			var data = data.network["if"];
+			for (j=0; j<data.length; j++)
+			{
+				for (var key in data[j])
+				{
+					var is_bridge_port = false;
+					for (var k in bridged_interface)
+					{
+						if (bridged_interface[k] == data[j][key].if_name)
+						{
+							is_bridge_port = true;
+							break;
+						}
+					}
+					if (!is_bridge_port)
+					{
+						//网桥接口不能作为互联网接口
+						if (data[j][key].if_type != "bridge")
+							interfaceItemWAN.push({name:data[j][key].if_name,value:data[j][key].if_name});
+						interfaceItemLAN.push({name:data[j][key].if_name,value:data[j][key].if_name});
+						if_type_obj[data[j][key].if_name] = data[j][key].if_type;
+					}
+				}
+			}
+		});
+
+		function validatorIpConflict(interface_name, interface_ip) {
+			var cur_interface = {};
+			var interfaceProxy = new $.su.Proxy({
+				async: false
+			});
+			interfaceProxy.query({"network":{"table":"interface"}}, function(data){
+				data = data["network"]["interface"];
+				for (var i=0; i<data.length; i++){
+					for (var j in data[i]){
+						if(data[i][j].t_isbridged != 1) {
+							cur_interface[data[i][j].t_name] = data[i][j].ipaddr;
+						}
+					}
+				}
+			});
+			for(inf in cur_interface){
+				if(interface_name != inf && cur_interface[inf] == interface_ip){
+					$("span#global-warning-text").html('IP地址与已配置接口 ' + inf + ' 存在IP地址冲突');
+					if (warningMsg.is(":hidden")){
+						warningMsg.msg("show");
+					}
+					return false;
+				}
+			}
+			return true;
+		}
+
+		$("#if_name").combobox('loadData',interfaceItemWAN);
+		if(interfaceItemWAN.length == 0) {
+			$("#if_name").combobox("setTips", "所有接口已经被桥接，无法配置");
+		}
+
+		$('#static #ip').textbox({
+			fieldLabel: 'IP地址',
+			allowBlank: false,
+			vtype: "ip",
+			maxLength: 15,
+			validator: function(v) {
+				var interface_name = $("#if_name").combobox("getValue");
+				if(typeof(interface_name) != 'undefined' && interface_name.length > 0) {
+					if(validatorIpConflict(interface_name, v) == false) {
+						return false;
+					}
+				}
+				return true;
+			}
+		});
+
+		$('#static #netmask').textbox({
+			fieldLabel: "子网掩码",
+			allowBlank: false,
+			vtype: "netmask",
+			maxLength:15,
+			validator: function(v) {
+				v = v.replace(/(^\s*)|(\s*$)/g,'');
+				if(v == "255.255.255.254")
+				{
+					return "子网掩码不能是255.255.255.254。";
+				}
+				return true;
+			}
+		});
+
+		$('#static #gateway').textbox({
+			fieldLabel: '默认网关',
+			allowBlank: true,
+			textFormat: $.su.format.ip,
+			vtype: 'ip',
+			maxLength:15,
+			tips: $.su.CHAR.INTERFACE.OPTIONAL
+		});
+
+		$('#pri_dns').textbox({
+			fieldLabel: $.su.CHAR.INTERFACE.DNS1,
+			vtype: "ip",
+			maxLength: 15,
+			tips: $.su.CHAR.INTERFACE.OPTIONAL,
+			validator: function(v){
+				var backup_dns = $('#snd_dns').textbox("getValue");
+				if(v == backup_dns)
+				{
+					return "主备DNS服务器不能相同。";
+				}
+				return true;
+			},
+			getValueCb:function(value){
+				return value==""?"0.0.0.0":value;
+			},
+			setValueCb:function(value){
+				return value=="0.0.0.0"?"":value;
+			}
+		});
+		$('#static #snd_dns').textbox({
+			fieldLabel: $.su.CHAR.INTERFACE.DNS2,
+			vtype: "ip",
+			tips: $.su.CHAR.INTERFACE.OPTIONAL,
+			maxLength: 15,
+			validator: function(v){
+				var main_dns = $('#pri_dns').textbox("getValue");
+				if(v == main_dns)
+				{
+					return "主备DNS服务器不能相同。";
+				}
+				return true;
+			},
+			getValueCb:function(value){
+				return value==""?"0.0.0.0":value;
+			},
+			setValueCb:function(value){
+				return value=="0.0.0.0"?"":value;
+			}
+		});
+
+		$('#if_name_dhcp').combobox({
+			fieldLabel: '上网接口',
+			labelCls:'l',
+			allowBlank:false,
+			items:[
+				{value: "---", name: "---", selected: true}
+			]
+		})
+
+		$("#if_name_dhcp").combobox('loadData',interfaceItemWAN);
+		if(interfaceItemWAN.length == 0) {
+			$("#if_name_dhcp").combobox("setTips", "所有接口已经被桥接，无法配置");
+		}
+
+		$('#if_name_pppoe').combobox({
+			fieldLabel: '上网接口',
+			labelCls:'l',
+			allowBlank:false,
+			items:[
+				{value: "---", name: "---", selected: true}
+			]
+		})
+
+		$("#if_name_pppoe").combobox('loadData',interfaceItemWAN);
+		if(interfaceItemWAN.length == 0) {
+			$("#if_name_pppoe").combobox("setTips", "所有接口已经被桥接，无法配置");
+		}
+
+		$("#username_pppoe").textbox({
+			fieldLabel: '用户名',
+			// labelCls: 's',
+			maxLength: 64,
+			allowBlank: false,
+			vtype: 'string_visible_allow_blank'
+		});
+
+		$("#password_pppoe").password({
+			fieldLabel: "密码",
+			vtype: "ascii_visible",
+			maxLength: 128,
+			allowBlank: false,
+			showLevel: false,
+		});
+
+		$('#if_name_LAN').combobox({
+			fieldLabel: 'LAN接口',
+			labelCls:'l',
+			allowBlank:false,
+			items:[
+				{value: "---", name: "---", selected: true}
+			],
+			validator: function(v){
+				var if_name;
+				if (config.accessype === 'static') {
+					if_name = config.if_name;
+				} else if (config.accessype === 'pppoe') {
+					if_name = config.if_name_pppoe;
+				} else {
+					if_name = config.if_name_dhcp;
+				}
+				if (!v.length) {
+				   return 'LAN接口不能为空'
+				}
+				if (config.skip_wan == 0 && v[0] == if_name[0])
+				{
+					$("span#global-warning-text").html('LAN接口不能和上网接口相同');
+					if (warningMsg.is(":hidden")){
+						warningMsg.msg("show");
+					}
+					return false;
+				}
+				return true;
+			}
+		})
+
+		$("#if_name_LAN").combobox('loadData',interfaceItemLAN);
+
+		$('#ip_LAN').textbox({
+			fieldLabel: 'IP地址',
+			allowBlank: false,
+			vtype: "ip",
+			maxLength: 15,
+			validator: function(v) {
+				if(config.ip && $.su.func.isSameNet(config.ip, v, config.netmask) == true && config.skip_lan == 0) {
+					return "LAN接口和上网接口网段相同";
+				}
+				var interface_name = $("#if_name_LAN").combobox("getValue");
+				if(typeof(interface_name) != 'undefined' && interface_name.length > 0) {
+					if(validatorIpConflict(interface_name, v) == false) {
+						return false;
+					}
+				}
+				return true;
+			}
+		});
+
+		$('#netmask_LAN').textbox({
+			fieldLabel: "子网掩码",
+			allowBlank: false,
+			vtype: "netmask",
+			maxLength:15,
+			validator: function(v) {
+				v = v.replace(/(^\s*)|(\s*$)/g,'');
+				if(v == "255.255.255.254")
+				{
+					return "子网掩码不能是255.255.255.254。";
+				}
+				return true;
+			}
+		});
+
+		$('#dhcp_enable').checkbox({
+			items: [
+				{boxlabel: '启用局域网DHCP服务', inputValue: "on", uncheckedValue: "off"}
+			]
+		}).on("ev_change", function(e,oldval,newval){
+			if (newval[0] == "on"){
+				$('#pool_start').textbox('enable');
+				$('#pool_end').textbox('enable');
+			}
+			else {
+				$('#pool_start').textbox('disable');
+				$('#pool_end').textbox('disable');
+			}
+		})
+
+		$('#pool_start').textbox({
+			fieldLabel: '起始IP',
+			allowBlank: false,
+			textFormat: $.su.format.ip,
+			vtype:"ip",
+			maxLength:15,
+			validator: function(v){
+				var lan_ip = $("#ip_LAN").textbox('getValue');
+				var lan_mask = $("#netmask_LAN").textbox('getValue');
+				if(lan_ip == v) {
+					return "与局域网接口的IP地址冲突";
+				}
+				if($.su.func.isSameNet(lan_ip, v, lan_mask) == false) {
+					return "与局域网接口的IP地址不在同一网段";
+				}
+				return true;
+			}
+		});
+
+		$('#pool_end').textbox({
+			fieldLabel: '结束IP',
+			allowBlank: false,
+			textFormat: $.su.format.ip,
+			vtype:"ip",
+			maxLength:15,
+			validator: function(v){
+				var lan_ip = $("#ip_LAN").textbox('getValue');
+				var lan_mask = $("#netmask_LAN").textbox('getValue');
+				if(lan_ip == v) {
+					return "与局域网接口的IP地址冲突";
+				}
+				if($.su.func.isSameNet(lan_ip, v, lan_mask) == false) {
+					return "与局域网接口的IP地址不在同一网段";
+				}
+				var start = $("#pool_start").textbox('getValue');
+				if(start != ""){
+					if($.su.func.ipToInt(start) > $.su.func.ipToInt(v)) {
+						return "结束IP地址应大于起始IP地址";
+					}
+				}
+				return true;
+			}
+		});
+
+		$('#pool_start').textbox('disable');
+		$('#pool_end').textbox('disable');
+
+		$("input#servertype").combobox({
+			allowBlank: false,
+			fieldLabel: "云类型",
+			items: [
+				/* {value: "user_define", name: "TP-LINK本地NMS管理平台"}, */
+				{value: "public", name: "TP-LINK商用网络云平台", selected: true}
+			]
+		}).on("ev_change", function(e, oldValue, newValue) {
+			if (newValue == "public" || newValue == "0") {
+				$("#serveraddr").textbox("hide");
+				$("#serverport").textbox("hide");
+				$("#access-serveraddr").textbox("hide");
+				$("#access-serverport").textbox("hide");
+
+				if (online_check_result == false) {
+					$('#cloud-login-button').button("disable");
+					$("#online-fail-tips").html("<font color='red'>网络连接失败，无法登录商云。请前往\""
+						+ "<a id='interface_url' style='cursor: pointer;font-weight:bold' "
+						+ "onclick=\"$.su.menu.advanced.goTo('basic-setting', 'interface');\">"
+						+ "基本设置 -> 接口设置"
+						+ "</a> \"检查和设置确保连接网络。</font>");
+					$("#online-fail-alert").show();
+				} else {
+					$('#cloud-login-button').button("enable");
+					$("#online-fail-alert").hide();
+				}
+			} else {
+				$("#serveraddr").textbox("show");
+				$("#serverport").textbox("show");
+				$("#access-serveraddr").textbox("show");
+				$("#access-serverport").textbox("show");
+				$("#online-fail-alert").hide();
+				$('#cloud-login-button').button("enable");
+			}
+		});
+
+		$("input#serveraddr").textbox({
+			allowBlank: false,
+			fieldLabel: "Web服务器地址",
+			vtype: "string_ip_all_domain",
+			maxLength:253
+		}).textbox("hide");
+
+		$("input#serverport").textbox({
+			allowBlank: false,
+			fieldLabel: "Web服务器端口",
+			validator: function(v){
+				var ret = new $.su.vtype({vtype: "number", min: 1, max: 65535}).validate(v);
+				if (ret == true) {
+					var numInt = parseInt(v);
+					$("#serverport").textbox("setValue", numInt.toString());
+				}
+				return ret;
+			}
+		}).textbox("hide");
+
+		$("input#access-serveraddr").textbox({
+			allowBlank: false,
+			vtype: "string_ip_all_domain",
+			fieldLabel: "接入服务器地址",
+			maxLength:253
+		}).textbox("hide");
+
+		$("input#access-serverport").textbox({
+			allowBlank: false,
+			fieldLabel: "接入服务器端口",
+			validator: function(v){
+				var ret = new $.su.vtype({vtype: "number", min: 1, max: 65535}).validate(v);
+				if (ret == true) {
+					var numInt = parseInt(v);
+					$("#access-serverport").textbox("setValue", numInt.toString());
+				}
+				return ret;
+			}
+		}).textbox("hide");
+
+		$('#cloud-login-button').button({
+			text: '登录TP-LINK统一管理平台',
+			handler: function() {
+				var servertype = $("#servertype").combobox("getValue")[0];
+				var serveraddr = $("#serveraddr").textbox("getValue");
+				var serverPort = $("#serverport").textbox("getValue");
+				var accessServeraddr = $("#access-serveraddr").textbox("getValue");
+				var accessServerPort = $("#access-serverport").textbox("getValue");
+
+				function startIstart() {
+					var serverProxy = new $.su.Proxy();
+					var serverData = {};
+					serverData.server_type = servertype;
+					serverData.server_addr = serveraddr;
+					serverData.server_port = serverPort;
+					serverData.access_server_addr = accessServeraddr;
+					serverData.access_server_port = accessServerPort;
+
+					if (servertype == "public") {
+						serverData = {};
+						serverData.server_type = "public";
+						serverData.server_addr = "smbcloud.tp-link.com.cn";
+						serverData.server_port = "443";
+					} else {
+						if (!$("#serveraddr").textbox("validate") || !$("#serveraddr").textbox("validate") || !$("#access-serveraddr").textbox("validate") || !$("#access-serveraddr").textbox("validate")) {
+							return;
+						}
+					}
+					$.su.loading.hide();
+					serverProxy.action({"istart": {"cloud_server_set": serverData}}, function (data, others, status, xhr) {
+						$.su.cloud_login.show();
+					});
+				}
+
+				var cloudMngtProxy = new $.su.Proxy();
+				cloudMngtProxy.modify({"cloud_config":{"conf_mngt":{"mngt_switch":"1","config_save_type":""},"cloud_type":{"cloud_type":servertype,"config_save_type":""}} }, function(error, others) {
+					if (parseInt(error.error_code) == 0) {
+						if (servertype == "user_define") {
+							var localcloudproxy = new $.su.Proxy({});
+							localcloudproxy.modify({"cloud_config":{"tums_info":{"server":accessServeraddr,"port":accessServerPort}}},
+								function(){setTimeout(startIstart, 3000)}, function(){$.su.loading.hide()}, function(){$.su.loading.hide()});
+						} else {
+							/* dev_discover takes some time to start */
+							setTimeout(startIstart, 3000);
+						}
+					} else {
+						$.su.loading.hide();
+					}
+				},
+				function(){$.su.loading.hide()},
+				function(){$.su.loading.hide()});
+
+				$.su.loading.show();
+			}
+		});
+	});
+</script>
+</body>
+</html>

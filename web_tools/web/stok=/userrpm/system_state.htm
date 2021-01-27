@@ -1,0 +1,815 @@
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
+<html xmlns="http://www.w3.org/1999/xhtml">
+<head>
+    <meta http-equiv="Content-Type" content="text/html; charset=utf-8"/>
+    <style type="text/css">
+        #sys_state_refresh{
+            margin: 10px;
+            min-width: 64px;
+            height: 22px;
+        }
+
+        .func-container{
+            height: 950px;
+        }
+    </style>
+    <title>SystemState</title>
+</head>
+
+<body>
+<div class="func-container">
+
+    <div id="version" style="margin-left:15px;">
+        <div id="version_hard">硬件版本：</div>
+        <div id="version_soft">软件版本：</div>
+    </div>
+
+    <div id="system_time">
+        <div id="system_time_date"></div>
+        <div id="time_wrapper">
+            <span id="current_time"></span>
+            <span id="run_time"></span>
+        </div>
+        <div id="system_run_time"></div>
+    </div>
+
+    <div id="CPU_usage">
+        <div class="system_cpu" id="memUsage">
+            <span class="usage_percent"></span>
+
+            <div class="outer">
+                <div class="inner"></div>
+            </div>
+            <span class="cpu_label">内存</span>
+        </div>
+
+        <div class="system_cpu" id="cpuUsage">
+            <span class="usage_percent"></span>
+
+            <div class="outer">
+                <div class="inner"></div>
+            </div>
+            <span class="cpu_label">CPU</span>
+        </div>
+
+        <div style="margin-left:150px;display:inline;">
+            <div id="line_chart" style="width:580px;height:220px"></div>
+        </div>
+
+    </div>
+
+    <div id="quick_show" style="display:none">
+	<div style="height: 135px">
+        <div class="itemList">
+            <a class="add_btn" title="增加"></a>
+
+            <div class="itemList_title">
+                <h4 class="item_title"></h4>
+
+                <div class="display_shut">
+                    <a class="display_shut item_close" title="删除"></a>
+                </div>
+            </div>
+        </div>
+        <div class="itemList">
+            <a class="add_btn" title="增加"></a>
+
+            <div class="itemList_title">
+                <h4 class="item_title"></h4>
+
+                <div class="display_shut">
+                    <a class="display_shut item_close" title="删除"></a>
+                </div>
+            </div>
+        </div>
+        <div class="itemList">
+            <a class="add_btn" title="增加"></a>
+
+            <div class="itemList_title">
+                <h4 class="item_title"></h4>
+
+                <div class="display_shut">
+                    <a class="display_shut item_close" title="删除"></a>
+                </div>
+            </div>
+        </div>
+        <div class="itemList">
+            <a class="add_btn" title="增加"></a>
+
+            <div class="itemList_title">
+                <h4 class="item_title"></h4>
+
+                <div class="display_shut">
+                    <a class="display_shut item_close" title="删除"></a>
+                </div>
+            </div>
+        </div>
+		<button id="sys_state_refresh" type="button" class="button-button">刷新</button>
+	</div>
+        <div id="dialog_add_interface">
+            <h5>添加接口</h5>
+            <a class="display_shut" title="删除"></a>
+
+            <div id="combobox_if">
+                <input id="add_if" type="text" placeholder="请输入接口名"/>
+                <ul id="if_list"></ul>
+            </div>
+            <button id="btn_cancel" type="button" class="editor-btn btn-submit button-button"><span
+                    class="button-text text">取消</span>
+            </button>
+            <button id="btn_apply" type="button" class="editor-btn btn-submit button-button"><span
+                    class="button-text text">确定</span>
+            </button>
+        </div>
+    </div>
+</div>
+
+<script type="text/javascript">
+
+//<![CDATA[
+try {
+    $
+} catch (e) {
+    location.href = "/";
+}
+;
+$(document).ready(function (e) {
+    var fastViewUrl = "./pages/userrpm/sys_state_fast_view.html",
+        quickShowUrl = $.su.url("/admin/interface?form=quickshow"),
+        quickShowAllInterfaceUrl = $.su.url("/admin/interface?form=status2"),
+        version = "/admin/firmware?form=upgrade";
+    var interface_list = new Array();
+    // 设备的接口快速显示是否支持IPv6
+    var g_support_ipv6 = false;
+
+	var if_hide = "<%=if_hide%>";
+	if_hide = (if_hide == "0");
+	
+    var $sysTime = $("#system_time"),
+            $date = $("#system_time_date"),
+            $time = $("#current_time"),
+            $runTime = $("#system_run_time");
+
+    var timeSystem = 0;
+
+    $("#sys_state_refresh").on("click", function(){
+        $("a.nav[data-name=status]").click();
+    });
+
+    (function setVersion() {
+        var statusProxy = new $.su.Proxy({
+            async: false
+        });
+        statusProxy.query({
+            "firmware":{
+                "name":"config"
+            },
+            "network": {
+                "name": [
+                    "if_info_capability"
+                ]
+            }
+        }, function(data){
+            if (data.network.if_info_capability.table_support != "0") {
+                var version = data.network.if_info_capability.version;
+                if (version.startsWith("1") || version.startsWith("2")) {
+                    g_support_ipv6 = (data.network.if_info_capability.ip6addr_get_response_attr == "1");
+                }
+                else {
+                    g_support_ipv6 = false;
+                }
+            }
+
+			data = data["firmware"]["config"];
+            var $hard = $("#version_hard"),
+                $soft = $("#version_soft");
+            $hard.text($hard.text() + data["model"] + " " + data["hardware_version"]);
+            $soft.text($soft.text() + data["firmware_version"]);
+        });
+    })();
+
+    function format(num, places) {
+        if (!places) places = 2;
+
+        var strNum = num.toString(),
+                zeroNum = places - strNum.length;
+
+        while (zeroNum--) {
+            strNum = "0" + strNum;
+        }
+        return strNum;
+    }
+
+    function showTime(time) {
+        var currentTime = new Date();
+		time = parseInt(time, 10);
+		time = time * 1000; // SLP协议获取到的时间为秒数，故需要进行毫秒的转换
+		currentTime.setTime(time);
+        var str = format(currentTime.getHours()) + ":" +
+                  format(currentTime.getMinutes());
+        $time.html(str);
+    }
+
+    function showRuntime(second){
+        clearInterval(timeSystem);
+        /*时间的进位计算*/
+        var min  = 0,
+            hour = 0,
+            day  = 0;
+
+        if(second > 60){
+            min = parseInt(second / 60);
+            second = second % 60;
+        }
+        if(min && min > 60){
+            hour = parseInt(min / 60);
+            min = min % 60;
+        }
+        if(hour && hour > 24){
+            day = parseInt(hour / 24);
+            hour = hour % 24;
+        }
+
+        /*首次执行*/
+        if(59 == second){
+            second = 0;
+            min++;
+        }else{
+            second++;
+        }
+        if(60 == min){
+            min = 0;
+            hour++;
+        }
+        if(24 == hour){
+            hour = 0;
+            day++;
+        }
+        var str = "系统已运行：" + day + "天" + hour + "小时" + min + "分" + second + "秒";
+        $runTime.html(str);
+        /*循环执行*/
+        timeSystem = setInterval(function(){
+            /*秒数进位*/
+            if(59 == second){
+                second = 0;
+                min++;
+            }else{
+                second++;
+            }
+            if(60 == min){
+                min = 0;
+                hour++;
+            }
+            if(24 == hour){
+                hour = 0;
+                day++;
+            }
+            var str = "系统已运行：" + day + "天" + hour + "小时" + min + "分" + second + "秒";
+            $runTime.html(str);
+        }, 1*1000);
+    }
+
+    var weekDayObj = {
+        "Mon": $.su.CHAR.DATE.MON,
+        "Tue": $.su.CHAR.DATE.TUES,
+        "Wed": $.su.CHAR.DATE.WED,
+        "Thu": $.su.CHAR.DATE.THUR,
+        "Fri": $.su.CHAR.DATE.FRI,
+        "Sat": $.su.CHAR.DATE.SAT,
+        "Sun": $.su.CHAR.DATE.SUN
+    }
+    function showDate(date, weekDay) {
+
+		//console.log(date);
+
+        var datePattern = /^([0-9]*)\/([0-9]*)\/([0-9]*)$/,
+                dateArray = date.match(datePattern),
+                year = format(dateArray[1], 4),
+                month = format(dateArray[2]),
+                day = format(dateArray[3]);
+
+        var html = "今天是" + year + "年" +
+                month + "月" +
+                day + "日" +
+                " " + weekDayObj[weekDay];
+
+        $date.html(html);
+    }
+
+    var timeProxy = new $.su.Proxy({
+        async: false,
+		authSessionsDataFlag:true
+    });
+
+
+    /*首次加载立刻执行*/
+    timeProxy.query({"system":{"name":"system_time"}}, function(data){
+		data = data["system"]["system_time"];
+		
+        showDate(data.date, data.day);
+        showTime(data.time);
+        showRuntime(data.run);
+    });
+
+    /*设置获取数据的时间间隔*/
+    if(window.timeInter){
+        clearTimeout(window.timeInter);
+    }
+
+	function refreshTimeHandle(){
+        if (!$.contains(document, $("#memUsage").get(0))){
+            //clearTimeout(window.timeInter);
+            return;
+        }
+        timeProxy.query({"system":{"name":"system_time"}}, function(data){
+			data = data["system"]["system_time"];
+            showDate(data.date, data.day);
+            showTime(data.time);
+            showRuntime(data.run);
+
+			window.timeInter = setTimeout(refreshTimeHandle, 10000);
+        });
+	}
+
+    window.timeInter = setTimeout(refreshTimeHandle, 10000);
+
+	$sysTime.panel({
+		title: "系统时间"
+	});
+
+	$("#system_time").find(".panel-content").css("marginLeft","-25px");
+
+    var $CPU = $("#CPU_usage"),
+		$systemCPUs = $(".system_cpu"),
+		$chart = $("#line_chart");
+
+    $CPU.panel({
+        title: "资源利用率"
+    });
+
+    var cpuProxy = new $.su.Proxy({
+       // url: $.su.url("/admin/sys_status?form=cpu_log"),
+        async: true,
+		authSessionsDataFlag:true
+    });
+
+    var usageProxy = new $.su.Proxy({
+        //url: $.su.url("/admin/sys_status?form=cpu_usage"),
+        async: true,
+		authSessionsDataFlag:true
+    });
+
+    var memProxy = new $.su.Proxy({
+		//url: $.su.url("/admin/sys_status?form=mem_usage"),
+        async: true,
+		authSessionsDataFlag:true
+    });
+
+    var quickShowUrlProxy = new $.su.Proxy({
+        //url: quickShowUrl
+    });
+
+    var quickShowAllInterfaceUrlProxy = new $.su.Proxy({
+        //url: quickShowAllInterfaceUrl
+    });
+    /*修改柱形图颜色*/
+    function changeColor(num , id){
+        if(num <= 60){
+            $(id).find(".inner:eq(0)").css("background","#0099cc");
+        }else if(num > 60 && num <= 80){
+            $(id).find(".inner:eq(0)").css("background","#ff9900");
+        }else if(num > 80){
+            $(id).find(".inner:eq(0)").css("background","#ff0000");
+        }
+    }
+    /*首次加载立刻执行*/
+    cpuProxy.query({"system":{"name":"cpu_log"}}, function(data){
+        var cpuLogAvg = avgCpuLog(data.system.cpu_log);
+        drawChart(cpuLogAvg);
+    });
+
+    usageProxy.query({"system":{"name":"cpu_usage"}}, function(data){
+		data = data.system.cpu_usage;
+        var cpuSum = 0;
+        var cpuCount = 0;
+        for(var i in data){
+            cpuSum += parseInt(data[i]);
+            cpuCount++;
+        }
+
+        var cpuAvg = parseInt(cpuSum  / cpuCount);
+        $("#cpuUsage").find(".usage_percent").html(cpuAvg.toString() + "%");
+        $("#cpuUsage").find(".inner:eq(0)").height(cpuAvg);
+        changeColor(cpuAvg, "#cpuUsage");
+
+    });
+
+    memProxy.query({"system":{"name":"mem_usage"}}, function(data){
+		data = data["system"]["mem_usage"];
+        $("#memUsage").find(".usage_percent").html(data.mem.toString() + "%");
+        $("#memUsage").find(".inner:eq(0)").height(data.mem);
+        changeColor(data.mem, "#memUsage");
+    });
+
+    /*设置获取数据的时间间隔*/
+    if(window.lineChartInterval){
+        clearTimeout(window.lineChartInterval);
+    }
+
+	function lineChartRefreshHandle(){
+        if (!$.contains(document, $("#memUsage").get(0))){
+            return;
+        }
+
+		var refreshCount = 3;
+
+        cpuProxy.query({"system":{"name":"cpu_log"}}, function(data){
+            var cpuLogAvg = avgCpuLog(data.system.cpu_log);
+            drawChart(cpuLogAvg);
+
+			refreshCount--;
+			if (refreshCount == 0)
+			{
+				clearTimeout(lineChartRefreshHandle);
+				window.lineChartInterval = setTimeout(lineChartRefreshHandle, 3000);
+			}
+        });
+
+        usageProxy.query({"system":{"name":"cpu_usage"}}, function(data){
+			data = data.system.cpu_usage;
+            var cpuSum = 0;
+            var cpuCount = 0;
+            for(var i in data){
+                    cpuSum += parseInt(data[i]);
+                    cpuCount++;
+            }
+
+            var cpuAvg = parseInt(cpuSum  / cpuCount);
+            $("#cpuUsage").find(".usage_percent").html(cpuAvg.toString() + "%");
+            $("#cpuUsage").find(".inner:eq(0)").height(cpuAvg);
+            changeColor(cpuAvg, "#cpuUsage");
+
+			refreshCount--;
+			if (refreshCount == 0)
+			{
+				clearTimeout(lineChartRefreshHandle);
+				window.lineChartInterval = setTimeout(lineChartRefreshHandle, 3000);
+			}
+        });
+
+        memProxy.query({"system":{"name":"mem_usage"}}, function(data){
+			data = data["system"]["mem_usage"];
+            $("#memUsage").find(".usage_percent").html(data.mem.toString() + "%");
+            $("#memUsage").find(".inner:eq(0)").height(data.mem);
+            changeColor(data.mem, "#memUsage");
+
+			refreshCount--;
+			if (refreshCount == 0)
+			{
+				clearTimeout(lineChartRefreshHandle);
+				window.lineChartInterval = setTimeout(lineChartRefreshHandle, 3000);
+			}
+        });
+	}
+
+    window.lineChartInterval = setTimeout(lineChartRefreshHandle, 3000);
+
+    var $quickShow = $("#quick_show"),
+            $dialog = $("#dialog_add_interface"),
+            $input = $("#add_if"),
+            $combo = $("#combobox_if"),
+            $list = $("#if_list");
+	if(!if_hide){
+		$quickShow.show();
+	}
+    //get show data
+    var $itemLists = $quickShow.find(".itemList");
+
+    $quickShow.on("click", ".display_shut .item_close",function (e) {
+        removeShowItem($(e.target).parent().parent().parent());
+    });
+
+    (function initCombobox() {
+        $quickShow.on("click", "a.add_btn", function (e) {
+            $dialog.data("container", $(e.target).parent());
+            showAddIfDialog();
+        });
+
+        $combo.on("click", "li", function(e){
+            var index = parseInt($(e.target).attr("value")),
+                    value = $list.data("ifList")[index].t_name;
+
+            $input.val(value);
+        });
+
+        $combo.on("dblclick", "li", function(e){
+            $("#btn_apply").trigger("click");
+        });
+
+        $input.on("keyup", function(){
+            var val = $input.val(),
+                    ifList = $list.data("ifList");
+
+            if(val === null){
+                return;
+            }
+
+            $list.find("li").hide();
+            for(var i in ifList){
+                var str = ifList[i].t_name;
+                if(str.length < val.length){
+                    continue;
+                }
+
+                if(str.substring(0, val.length).toUpperCase() == val.toUpperCase()){
+                    $list.find('li[value="'+ i +'"]').show();
+                }
+            }
+        });
+
+        $("#btn_apply").on("click", function(){
+            var value = $input.val(),
+                ifList = $list.data("ifList"),
+                    selectedInterface = null;
+
+            for(var i in ifList){
+                if(ifList[i].t_name == value){
+                    selectedInterface = ifList[i];
+                    break;
+                }
+            }
+
+            if(selectedInterface){
+                var postData = {
+						"interface":{
+							"table": "quick_show",
+							"para":{
+								"name": [value]
+							}
+                        }
+                    };
+                quickShowUrlProxy.add(postData, function(data){
+                    setShowItem($dialog.data("container"), selectedInterface);
+                    add_interface(value);
+                    /*alert("添加成功");*/
+                    hideAddIfDialog();
+                });
+            }else{
+                alert("接口不存在！");
+            }
+
+
+        });
+
+        $("#btn_cancel").on("click", function(){
+            hideAddIfDialog();
+        });
+
+        $dialog.find("a.display_shut").on("click", function(){
+            hideAddIfDialog();
+        });
+
+    })();
+	if(!if_hide){
+		quickShowUrlProxy.query({
+			"interface":{
+				"name": "quick_show"
+			}
+		}, function (data) {
+			var dataSource = data.interface.quick_show;
+
+			/* 预处理 */
+			for (var index = 0; index < dataSource.length; index++)
+			{
+				for (var tempData in dataSource[index])
+				{
+					dataSource[index] = dataSource[index][tempData];
+				}
+			}
+
+			//console.log(dataSource);
+			//dataSource = dataSource.concat(data.result.vpn, data.result.normal);
+			for (var i in dataSource) {
+				if (i > 3) {
+					break;
+                }
+                if(dataSource[i].t_name != undefined) {
+                    setShowItem($itemLists.eq(i), dataSource[i]);
+                    interface_list.push(dataSource[i].t_name);
+                }
+			}
+			$quickShow.panel({
+				title: "快速显示"
+			});
+		});
+	}
+    function setShowItem($container, data) {
+        var html = "";
+
+        function addItem(key, value) {
+            if (value === undefined || value === null || value == "") {
+                value = "----";
+            }
+            html += '<p class="display_index"><label class="label_display">' + key + '</label>';
+            html += '<span class="value_display">' + value + '</span></p>';
+        }
+
+        addItem("接口名称：", data.t_name);
+        var typetransfer = {
+            physical: "物理接口",
+            bridge: "网桥接口",
+            ethernet: "Ethernet",
+            pppoe: "PPPoE",
+            l2tp: "L2TP",
+            pptp: "PPTP",
+            none: "NONE"
+
+        };
+        addItem("接口类型：", typetransfer[data.t_type]? typetransfer[data.t_type] : "NONE" );
+		addItem("接口状态：", data.t_isup ? "已连接" : "未连接");
+        addItem("IPv4地址：", data.ipaddr ? data.ipaddr+"/"+data.netmask : "---");
+
+        addItem("网关地址(IPv4)：", data.gwaddr);
+        if (g_support_ipv6) {
+            addItem("IPv6地址：", data.ip6addr? data.ip6addr+"/"+data.prefixlen : "---");
+            addItem("网关地址(IPv6)：", data.ip6gw);
+        }
+
+        $container.append(html).data("interface", data);
+        $container.find(".itemList_title").show();
+        $container.find(".add_btn").hide();
+    }
+
+	function find_interface(ifName){
+		for (var i in interface_list){
+			if(ifName == interface_list[i])
+			{
+				return true;
+			}
+		}
+		return false;
+	}
+	function add_interface(ifName){
+		if(!find_interface(ifName))
+		{
+			interface_list.push(ifName);
+			return true;
+		}
+		return false;
+	}
+	function remove_interface(ifName){
+		var res = [];
+		for (var i in interface_list){
+			if(ifName != interface_list[i])
+			{
+				res.push(interface_list[i]);
+			}
+		}
+		interface_list = res;
+    }
+
+    function removeShowItem($container) {
+        var ifData = $container.data("interface");
+        if (!ifData) {
+            return;
+        }
+
+        var postData = {
+			"interface":{
+				"table":"quick_show",
+				"filter":{
+					"name": ifData.t_name
+				}
+			}
+        };
+
+        quickShowUrlProxy.del(postData, function (data) {
+            $container.data("interface", null);
+            $container.find(".itemList_title").hide();
+            $container.find(".add_btn").show();
+            $container.find("p.display_index").remove();
+            remove_interface(ifData.t_name);
+        });
+    }
+
+    function showAddIfDialog() {
+        quickShowAllInterfaceUrlProxy.query(
+            {
+                "interface":{
+					"table": "interface"
+                }
+            },
+            function (data) {
+			data = data.interface.interface;
+
+			for (var index = 0; index < data.length; index++)
+			{
+				for (var tempData in data[index])
+				{
+					data[index] = data[index][tempData];
+				}
+			}
+
+            var ifList = [];
+
+            pushIfName(data);
+            initComboContent(ifList);
+            $dialog.show();
+
+            function pushIfName(dataSource) {
+                if ($.isArray(dataSource)) {
+                    for (var ifName in dataSource) {
+                        if(!find_interface(dataSource[ifName].t_name)){
+                            ifList.push(dataSource[ifName]);
+                        }
+                    }
+                }
+            }
+        });
+    }
+
+    function hideAddIfDialog(){
+        $input.val(null);
+        $dialog.hide();
+    }
+
+    function initComboContent(ifList){
+        var listHtml = "";
+        for(var name in ifList){
+            listHtml += '<li value="'+name+'">' + ifList[name].t_name + '</li>';
+        }
+        $list.html(listHtml);
+        $list.data("ifList", ifList);
+    }
+
+    function avgCpuLog(data) {
+        var seqLen = data.core1.length;
+        var cpuCount = 0;
+        var cpuLogAvg = {
+            core: []
+        }
+        for (var cpuIndex in data) {
+            for (var i=0; i < seqLen; i++) {
+                cpuLogAvg.core[i] = (cpuLogAvg.core[i] || 0) + data[cpuIndex][i];
+            }
+            cpuCount++;
+        }
+        //console.log("Cpu core count is " + cpuCount);
+        for (var i=0; i < seqLen; i++) {
+            cpuLogAvg.core[i] = parseInt(cpuLogAvg.core[i] / cpuCount);
+        }
+        //console.log("Why this: " + cpuLogAvg.core);
+        return cpuLogAvg;
+    }
+
+    function drawChart(data){
+        var timeInterval = 60, //两条数据间隔60s
+                totalTime = 3600;
+
+        (function dataTransform(d){
+            function transform(array){
+                var temp = [],
+                        num = totalTime / timeInterval;
+                for(var i=0; i < num - array.length; i++){
+                    temp.push([i, 0]);
+                }
+
+                for(var i=0; i< array.length; i++){
+                    temp.push([i + num - array.length, array[i]]);
+                }
+                return temp;
+            }
+            for(var cpuIndex in d){
+                d[cpuIndex] = transform(d[cpuIndex]);
+            }
+        })(data);
+        $.plot($chart,[
+            {
+                label: "CPU使用记录",
+                data: data.core
+            }
+        ], {
+            legend :{
+                position: "nw"
+            },
+            xaxis:{
+                min: 0,
+                max: 60,
+                show:false
+            },
+            yaxis:{
+                min: 0,
+                max: 100
+            },
+            grid:{
+                color:"#cccccc"
+            }
+        });
+    }
+});
+
+//]]>
+</script>
+</body>
+
+</html>

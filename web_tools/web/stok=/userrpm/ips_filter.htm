@@ -1,0 +1,569 @@
+<!DOCTYPE html
+    PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
+<html xmlns="http://www.w3.org/1999/xhtml">
+
+<head>
+    <meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
+    <title>IPS Signature Filters</title>
+    <style type="text/css">
+        .top {
+            min-width: 1460px !important;
+        }
+
+        .top-main .top-content {
+            min-width: 1385px !important;
+        }
+
+        .checkbox-label, .radio-label {
+            min-width: 110px;
+        }
+    </style>
+</head>
+
+<body>
+    <div class="func-container">
+        <div id="ipsfilter_rule_list">
+            <div id="ipsfilter_rule_grid"></div>
+        </div>
+
+        <div id="ipsfilter_preview_msg">
+            <div>
+                <div id="ipsfilter_preview_grid"></div>
+            </div>
+        </div>
+
+        <div id="ipsfilter_detail_msg">
+            <div class="detail-value"></div>
+        </div>
+
+        <div id="ipsfilter_help"></div>
+    </div>
+
+    <hr/><div class="notice"><p id="caution"/></div>
+
+    <script src="../web-static/js/ips/ips-common.js?random=20201217044300" type="text/javascript"></script>
+
+<script type="text/javascript">
+try {
+    $
+} catch (e) {
+    location.href = "/";
+};
+
+$(document).ready(function (e) {
+    var g_current_app_category = {};
+    var g_current_classification = {};
+    var g_current_classification_boxitems = {};
+    var g_current_override_action = "";
+    var g_editor_fixed = false;
+
+    $("#caution").text($.su.CHAR.IPS_FILTER.DEFAULT_ENTRY_NOTES);
+
+    $("#ipsfilter_rule_list").panel({
+        title: $.su.CHAR.IPS_FILTER.FILTER_LIST,
+        collapsible: false
+    });
+
+    var previewMsg = $("#ipsfilter_preview_msg").msg({
+        cls: 'l',
+        closeBtn: true,
+        type: "alert",
+        okHandler: function () {
+            previewMsg.msg('hide');
+        },
+        cancelHandler: function () {
+            previewMsg.msg('hide');
+        }
+    }).on("ev_fade_in", function(){
+        // ev_fade_in动画效果后重新计算表格对齐
+        previewMsg.css({
+            'max-height': '640px',
+            'overflow-y': 'scroll'
+        });
+        previewMsg.msg("setPosition", "center", "center");
+    });
+
+    var detailMsg = $("#ipsfilter_detail_msg").msg({
+        cls: 'l',
+        closeBtn: true,
+        type: "alert",
+        okHandler: function () {
+            detailMsg.msg('hide');
+        },
+        cancelHandler: function () {
+            detailMsg.msg('hide');
+        }
+    });
+
+    var ruleGrid;
+    function initGrid() { /* Had to delay cuz checkbox entries can not be modified on the fly */
+        ruleGrid = $("#ipsfilter_rule_grid").grid({
+            editor: {
+                content: "default",
+                fields: [
+                    { name: "name" },
+                    { name: "target" },
+                    { name: "severity" },
+                    { name: "os" },
+                    { name: "app" },
+                    { name: "proto" },
+                    { name: "threat_type" },
+                    { name: "action" },
+                    { name: "comment" }
+                ]
+            },
+            store: {
+                proxy: new $.su.Proxy(),
+                fields: [
+                    { name: "name" },
+                    { name: "target" },
+                    { name: "severity" },
+                    { name: "os" },
+                    { name: "app" },
+                    { name: "proto" },
+                    { name: "threat_type" },
+                    { name: "action" },
+                    { name: "comment" },
+                    { name: "type" }
+                ],
+                parseKey: {
+                    moduleName: "ips",
+                    tableName: "signature_filter",
+                    pageSizeName: "ips_filter_entry"
+                }
+            },
+            paging_true: {},
+            columns: [
+                {
+                    xtype: "checkcolumn",
+                    width: $.su.CHAR.SETTING.IPS_FILTER.CHECK_COLUMN_WIDTH
+                },
+                {
+                    xtype: "rownumberer",
+                    width: $.su.CHAR.SETTING.IPS_FILTER.ROW_NUMBER_WIDTH
+                },
+                {
+                    text: $.su.CHAR.IPS_FILTER.NAME,
+                    width: $.su.CHAR.SETTING.IPS_FILTER.NAME_WIDTH,
+                    dataIndex: "name",
+                    editor: {
+                        xtype: "textbox",
+                        allowBlank: false,
+                        vtype: "string_visible_allow_blank",
+                        maxLength: 32,
+                        minLength: 1
+                    }
+                },
+                {
+                    text: $.su.CHAR.IPS_FILTER.TARGET,
+                    dataIndex: "target",
+                    editor: {
+                        xtype: "checkbox",
+                        allowBlank: false,
+                        hasSelectAll: true,
+                        columns: 5,
+                        items: g_current_classification_boxitems["target"],
+                        vtype: "string_visible_allow_blank"
+                    },
+                    renderer: function (data) {
+                        return translateCriteria(data, g_current_classification, 5, "target").join("、") || "---";
+                    }
+                },
+                {
+                    text: $.su.CHAR.IPS_FILTER.SEVERITY,
+                    width: $.su.CHAR.SETTING.IPS_FILTER.MAX_CONN_WIDTH,
+                    dataIndex: "severity",
+                    editor: {
+                        xtype: "checkbox",
+                        allowBlank: false,
+                        hasSelectAll: true,
+                        columns: 5,
+                        items: g_current_classification_boxitems["severity"],
+                        vtype: "string_visible_allow_blank"
+                    },
+                    renderer: function (data) {
+                        return translateCriteria(data, g_current_classification, 5, "severity").join("、") || "---";
+                    }
+                },
+                {
+                    text: $.su.CHAR.IPS_FILTER.OS,
+                    width: $.su.CHAR.SETTING.IPS_FILTER.MAX_CONN_WIDTH,
+                    dataIndex: "os",
+                    editor: {
+                        xtype: "checkbox",
+                        allowBlank: false,
+                        hasSelectAll: true,
+                        columns: 5,
+                        items: g_current_classification_boxitems["os"],
+                        vtype: "string_visible_allow_blank"
+                    },
+                    renderer: function (dd, index, data) {
+                        if ("" == dd || typeof dd == "undefined") {
+                            return "---";
+                        }
+                        var translated = translateCriteria(dd, g_current_classification, 4, "os");
+
+                        switch (translated.length) {
+                            case 0:
+                                return "---";
+                            case 1:
+                                return translated[0];
+                            case 2:
+                                return translated[0] + "</br>" + translated[1];
+                            default:
+                                return translated[0] + "…&nbsp&nbsp" + "<br/><a href='javascript:void(0);' class='btn-misc-detail btn-detail' data-field='os' data-index='" + index + "'>更多</a>";
+                        }
+                    }
+                },
+                {
+                    text: $.su.CHAR.IPS_FILTER.APP,
+                    width: $.su.CHAR.SETTING.IPS_FILTER.MAX_CONN_WIDTH,
+                    dataIndex: "app",
+                    editor: {
+                        xtype: "tree",
+                        placeholder: $.su.CHAR.IPS_FILTER.TYPE_TO_SEARCH,
+                        minExpandLevel: 1,
+                        maxWidth: 480,
+                        maxHeight: 250,
+                        type: "editorTree",
+                        source: $.su.tree.convertSlpTreeData(g_current_app_category, "name", "cn_name", "app", "app_cn_name"),
+                        /* 只允许返回第二级节点，待后端筛选完成后接受第一级节点 */
+                        nodeShallGet: function (node) { return node.isSelected() && node.type == "level2"}
+                    },
+                    renderer: function (dd, index, data) {
+                        if ("" == dd || typeof dd == "undefined") {
+                            return "---";
+                        }
+                        var translated = translateAppName(dd, g_current_app_category, 4);
+
+                        switch (translated.length) {
+                            case 0:
+                                return "---";
+                            case 1:
+                                return translated[0];
+                            case 2:
+                                return translated[0] + "</br>" + translated[1];
+                            default:
+                                return translated[0] + "…&nbsp&nbsp" + "<a href='javascript:void(0);' class='btn-app-detail btn-detail' data-index='" + index + "'>更多</a>";
+                        }
+                    }
+                },
+                {
+                    text: $.su.CHAR.IPS_FILTER.PROTO,
+                    width: $.su.CHAR.SETTING.IPS_FILTER.MAX_CONN_WIDTH,
+                    dataIndex: "proto",
+                    editor: {
+                        xtype: "checkbox",
+                        allowBlank: false,
+                        hasSelectAll: true,
+                        columns: 4,
+                        items: g_current_classification_boxitems["proto"],
+                        vtype: "string_visible_allow_blank"
+                    },
+                    renderer: function (dd, index, data) {
+                        if ("" == dd || typeof dd == "undefined") {
+                            return "---";
+                        }
+                        var translated = translateCriteria(dd, g_current_classification, 4, "proto");
+
+                        switch (translated.length) {
+                            case 0:
+                                return "---";
+                            case 1:
+                                return translated[0];
+                            case 2:
+                                return translated[0] + "</br>" + translated[1];
+                            default:
+                                return translated[0] + "…&nbsp&nbsp" + "<br/><a href='javascript:void(0);' class='btn-misc-detail btn-detail' data-field='proto' data-index='" + index + "'>更多</a>";
+                        }
+                    }
+                },
+                {
+                    text: $.su.CHAR.IPS_FILTER.THREAT_TYPE,
+                    width: $.su.CHAR.SETTING.IPS_FILTER.MAX_CONN_WIDTH,
+                    dataIndex: "threat_type",
+                    editor: {
+                        xtype: "checkbox",
+                        allowBlank: false,
+                        hasSelectAll: true,
+                        columns: 4,
+                        items: g_current_classification_boxitems["threat_type"],
+                        vtype: "string_visible_allow_blank"
+                    },
+                    renderer: function (dd, index, data) {
+                        if ("" == dd || typeof dd == "undefined") {
+                            return "---";
+                        }
+                        var translated = translateCriteria(dd, g_current_classification, 4, "threat_type");
+
+                        switch (translated.length) {
+                            case 0:
+                                return "---";
+                            case 1:
+                                return translated[0];
+                            case 2:
+                                return translated[0] + "</br>" + translated[1];
+                            default:
+                                return translated[0] + "…&nbsp&nbsp" + "<br/><a href='javascript:void(0);' class='btn-misc-detail btn-detail' data-field='threat_type' data-index='" + index + "'>更多</a>";
+                        }
+                    }
+                },
+                {
+                    text: $.su.CHAR.IPS_FILTER.ACTION,
+                    width: $.su.CHAR.SETTING.IPS_FILTER.MAX_CONN_WIDTH,
+                    dataIndex: "action",
+                    editor: {
+                        xtype: "radio",
+                        allowBlank: false,
+                        vtype: "string_visible_allow_blank",
+                        columns: 3,
+                        items: [
+                            { boxlabel: $.su.CHAR.IPS_FILTER.DEFAULT_ACTION, inputValue: 'default', checked: true },
+                            { boxlabel: $.su.CHAR.IPS_FILTER.ALLOW, inputValue: 'allow' },
+                            { boxlabel: $.su.CHAR.IPS_FILTER.BLOCK, inputValue: 'block' }
+                        ]
+                    },
+                    renderer: function (text, idx, data) {
+                        var map = {
+                            'default': $.su.CHAR.IPS_FILTER.DEFAULT_ACTION,
+                            'allow': $.su.CHAR.IPS_FILTER.ALLOW,
+                            'block': $.su.CHAR.IPS_FILTER.BLOCK
+                        };
+                        return map[text];
+                    }
+                },
+                {
+                    text: $.su.CHAR.IPS_FILTER.COMMENT,
+                    width: $.su.CHAR.SETTING.IPS_FILTER.MAX_CONN_WIDTH,
+                    dataIndex: "comment",
+                    hidden: true,
+                    editor: {
+                        xtype: "textbox"
+                    }
+                },
+                {
+                    text: $.su.CHAR.IPS_FILTER.FILTER_RESULT,
+                    width: $.su.CHAR.SETTING.IPS_FILTER.MAX_CONN_WIDTH,
+                    dataIndex: "results",
+                    editor: {
+                        xtype: "button",
+                    },
+                    renderer: function (dd, idx) {
+                        return "<a href='javascript:void(0);' class='btn-preview btn-detail' data-index='" + idx + "'>" + $.su.CHAR.IPS_FILTER.VIEW + "</a>";
+                    }
+                },
+                {
+                    xtype: "settings",
+                    width: $.su.CHAR.SETTING.IPS_FILTER.SETTING_WIDTH,
+                    renderer: function (btn, dd, idx, data) { return data.type != "system" || btn != "delete"; }
+                }
+            ],
+            operation: 'add|delete'
+        }).delegate('a.btn-preview', 'click', function (e) {
+            var index = $(this).data('index');
+            var data;
+            if (index != undefined) {
+                /* Do not modify data from store */
+                data = $.extend({}, ruleGrid.grid("getStore").getDataByIndex(parseInt(index)));
+            } else {
+                data = $(ruleGrid.grid("getEditor")).find("td.editor-container").form("serialize");
+            }
+            showFilterResult(data.name + "的过滤结果", data);
+        }).delegate("a.btn-misc-detail", "click", function (e) {
+            var index = $(this).data('index');
+            var field = $(this).data('field');
+            var data = ruleGrid.grid("getStore").getDataByIndex(parseInt(index));
+            showDetail(data.name + "的" + $.su.CHAR.IPS_FILTER[field.toUpperCase()],
+                translateCriteria(data[field], g_current_classification, -1, field));
+        }).delegate("a.btn-app-detail", "click", function (e) {
+            var index = $(this).data('index');
+            var data = ruleGrid.grid("getStore").getDataByIndex(parseInt(index));
+            showDetail(data.name + "的" + $.su.CHAR.IPS_FILTER.APP,
+                translateAppName(data.app, g_current_app_category, -1));
+        }).on("ev_startEdit", function (e, editingIndex, editingId) {
+            if (!g_editor_fixed) {
+                var btn = $("button[name=results]");
+                btn.button("setText", $.su.CHAR.IPS_FILTER.VIEW);
+                btn.on("click", function (e) {
+                    var data = $(ruleGrid.grid("getEditor")).find("td.editor-container").form("serialize");
+                    data.app = treeNodesToAppArray($("input[name=app]").tree("getSelectedNode"));
+                    showFilterResult((data.name || "新签名过滤器") + "的过滤结果", data)
+                });
+                g_editor_fixed = true;
+            }
+
+            var data;
+            if (editingIndex != "add")
+                data = ruleGrid.grid("getStore").getDataByIndex(parseInt(editingIndex));
+            if (data && data.type == "system") {
+                $("input[name=name]").textbox("setReadonly");
+                $("input[name=target]").checkbox("disableAllItem");
+                $("input[name=severity]").checkbox("disableAllItem");
+                $("input[name=os]").checkbox("disableAllItem");
+                $("input[name=proto]").checkbox("disableAllItem");
+                $("input[name=app]").tree("disable");
+                $("input[name=threat_type]").checkbox("disableAllItem");
+                $("input[name=comment]").textbox("setReadonly");
+            } else {
+                $("input[name=name]").textbox("removeReadonly");
+                $("input[name=target]").checkbox("enableAllItem");
+                $("input[name=severity]").checkbox("enableAllItem");
+                $("input[name=os]").checkbox("enableAllItem");
+                $("input[name=proto]").checkbox("enableAllItem");
+                $("input[name=app]").tree("enable");
+                $("input[name=proto]").checkbox("enableAllItem");
+                $("input[name=threat_type]").checkbox("enableAllItem");
+                $("input[name=comment]").textbox("removeReadonly");
+            }
+        })
+    }
+
+    var previewGrid = $("#ipsfilter_preview_grid").grid({
+        editor: {
+            fields: [
+                { name: "sid" },
+                { name: "name" },
+                { name: "action" }
+            ]
+        },
+        store: {
+            proxy: new $.su.Proxy(),
+            keyProperty: "sid",
+            fields: [
+                { name: "sid" },
+                { name: "name" },
+                { name: "action" }
+            ],
+            parseKey: {
+                moduleName: "ips",
+                tableName: "signature",
+                pageSizeName: "ips_filter_preview_entry"
+            }
+        },
+        paging_true: {},
+        columns: [
+            {
+                text: $.su.CHAR.IPS_FILTER.SID,
+                width: 15,
+                dataIndex: "sid"
+            },
+            {
+                text: $.su.CHAR.IPS_FILTER.TITLE,
+                width: 60,
+                dataIndex: "name"
+            },
+            {
+                text: $.su.CHAR.IPS_FILTER.ACTION,
+                width: 15,
+                dataIndex: "action",
+                renderer: function (text, idx, data) {
+                    var map = {
+                        'default': $.su.CHAR.IPS_FILTER.DEFAULT_ACTION,
+                        'allow': $.su.CHAR.IPS_FILTER.ALLOW,
+                        'block': $.su.CHAR.IPS_FILTER.BLOCK
+                    };
+                    if (g_current_override_action != text && g_current_override_action != "default") {
+                        return map[g_current_override_action] + "<br/><font color=red>（被覆盖）</font>";
+                    } else {
+                        return map[text] || text;
+                    }
+                }
+            }
+        ]
+    });
+
+    function showDetail(title, lines) {
+        var content = "";
+
+        for (var i = 0; i < lines.length; i++) {
+            if (i == lines.length - 1) {
+                content += lines[i] + "</br>";
+            } else {
+                content += lines[i] + "&nbsp&nbsp&nbsp&nbsp" + lines[i + 1] + "</br>";
+                i++;
+            }
+        }
+        detailMsg.find(".detail-value").html(content).css({
+            "lineHeight": "20px",
+            "textAlign": "center",
+            "wordBreak": "break-all"
+        });
+        detailMsg.msg('setTitle', title);
+        detailMsg.msg('show');
+    }
+
+    var resultProxy = new $.su.Proxy();
+    function showFilterResult(title, settings) {
+        g_current_override_action = settings.action;
+        var allowed_queries = ["target", "severity", "os", "app", "proto", "threat_type"];
+        for (var k in settings) {
+            if (allowed_queries.indexOf(k) == -1) {
+                delete settings[k];
+            }
+        }
+
+        $.su.loading.show();
+        previewGrid.grid("getStore").loadData([], {count: 0}); /* Avoid showing data from previous result */
+        previewGrid.grid("getStore").parseKey.getFilter = function() {return [settings]};
+        previewGrid.grid("getStore").load(undefined,
+            function() {$.su.loading.hide(); previewMsg.msg('show');},
+            function() {$.su.loading.hide();},
+            function() {$.su.loading.hide();});
+        previewMsg.msg('setTitle', title);
+    }
+
+    function setupCheckboxSelection() {
+        for (var k in g_current_classification) {
+            var field = k;
+            var data = g_current_classification[field];
+
+            if (g_current_classification_boxitems[field] == undefined) {
+                g_current_classification_boxitems[field] = [];
+            }
+
+           if (data.values) {
+               for (var i = 0; i < data.values.length; i++) {
+                   g_current_classification_boxitems[field].push(
+                       {boxlabel: data.cn_values[i], inputValue: data.values[i]})
+               }
+           }
+        }
+    }
+
+    function treeNodesToAppArray(nodes) {
+        var res = [];
+        for (var i = 0; i < nodes.length; i++) {
+            var sel = nodes[i];
+            if (sel.type == "level2") {
+                res.push(sel.key);
+            }
+        }
+        return res;
+    }
+
+    /* Now collect what we need */
+    $.su.loading.show();
+    var filtersProxy = new $.su.Proxy();
+    filtersProxy.query({
+        ips: {
+            table: ["signature_classification", "signature_app_category"]
+        }
+    }, function (data) {
+        slpClassificationToObject(data.ips.signature_classification, g_current_classification);
+        setupCheckboxSelection();
+        g_current_app_category = data.ips.signature_app_category;
+        initGrid();
+        ruleGrid.grid("getStore").load();
+        $.su.loading.hide();
+    }, function () {$.su.loading.hide();}, function () {$.su.loading.hide();});
+
+    var helpFilter = new $.su.Help({
+        container: "div#ipsfilter_help",
+        content: ["IPS_FILTER_LIST"]
+    });
+
+});
+</script>
+</body>
+
+</html>

@@ -1,0 +1,342 @@
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
+<html xmlns="http://www.w3.org/1999/xhtml">
+<head>
+<meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
+<title>diagnostic_info</title>
+</head>
+
+<body>
+<div class="func-container">
+	<div id="dia_enable_panel">
+        <div id="intro1"></div>
+    	<form id="dia_enable">
+			<input id="enable" name="enable"/>
+		</form>
+	</div>
+	 <div id="aplog_collect" style="display:none">
+	    <form id="aplog_settings">
+            <input id="ac_log_switch" name="ac_log_switch" />
+			<input id="ac_log_level" name="ac_log_level" />
+			<input id="remote_server_switch" name="remote_server_switch" />
+			<input id="remote_log_level" name="remote_log_level" />
+			<input id="remote_report_interval" name="remote_report_interval" />
+			<input id="remote_server" name="remote_server" />
+		</form>
+	 </div>
+    <div id="dia_info_panel">
+        <div id="intro2"></div>
+        <form id="dia_info"></form>
+        <button type="button" id="dia_download"></button>
+    </div>
+
+    <div id="clear_cnt" style="display:none">
+		<form id="clear-setting">
+			<p id="clearNote" name="clearNote"  class="note first-line"></p>
+			<button type="button" id="clear_ap" name="clear_ap"></button>
+		</form>
+    </div>
+
+    <div id="clear_confirm_cnt" style="display:none">
+        <h4 class="title">
+            <span class="icon" ></span>
+            <span class="text" id="confirm_str"></span>
+        </h4>
+    </div>
+
+	<div id="help_diagnostic_info"></div>
+</div>
+
+<script type="text/javascript">
+try{
+    $
+}catch(e){
+    location.href = "/";
+};
+
+$(document).ready(function(e){
+	var DIA_ENABLE_PROXY = new $.su.Proxy();
+	var DIA_INFO_PROXY = new $.su.Proxy();
+	var DIA_APLOG_PROXY = new $.su.Proxy(); 
+	var aplog_support = "<%=aplog_support%>";
+	aplog_support = (aplog_support == "1");
+	var clear_diagnose_data_support = "<%=clear_diagnose_data_support%>";
+	clear_diagnose_data_support = (clear_diagnose_data_support !== "0");
+	
+    $("#intro1").text($.su.CHAR.DIA_INFO.INTRO1);
+    $("#intro2").text($.su.CHAR.DIA_INFO.INTRO2);
+	$("#dia_enable_panel").panel({
+		title: $.su.CHAR.DIA_INFO.FUNCTION
+	});
+
+	$("#enable").checkbox({
+        fieldLabel:$.su.CHAR.DIA_INFO.FUNCTION,
+        items:[
+			{boxlabel: $.su.CHAR.DIA_INFO.ENABLE, inputValue:"on", uncheckedValue:"off"}
+        ]
+    })
+
+
+    var dia_enable_form = $("#dia_enable").form({
+        proxy: DIA_ENABLE_PROXY,
+        fields: [
+			{name: "enable"}
+        ],
+		parseKey: {
+			moduleName:"system",
+			sectionName:"fault_diagnose"
+		},
+        submitBtn:"default"
+    }).on("ev_loadData", function(e, data){
+		if (data.auth_code != undefined)
+		{
+			console.log(data.auth_code)
+		}
+    });
+	if(aplog_support){
+		$("#aplog_collect").panel({
+			title: $.su.CHAR.AC_APDB_DIAGNOSE.APLOG_COLLECT,
+			collapsible: false
+		}).show();
+		$("#ac_log_switch").checkbox({
+			items:[{
+				boxlabel:$.su.CHAR.AC_APDB_DIAGNOSE.APLOG_TO_DEVICE,inputValue:"on",uncheckedValue: "off"
+			}]
+		}).on("ev_change", function(e, oldValue, newValue){
+			var val = (newValue[0]=="ac_log_switch"||newValue[0]=="on") ? "on" : "off";
+			switch(val)
+			{
+				case "on":
+					$("#ac_log_level").combobox("enable");
+					break;
+				case "off":
+					$("#ac_log_level").combobox("disable");
+					break;
+			}
+		});
+		$("#ac_log_level").combobox({
+			fieldLabel: $.su.CHAR.AC_APDB_DIAGNOSE.APLOG_LEVEL,
+			allowBlank: false,
+			multiSelect: false ,  
+			tips: $.su.CHAR.AC_APDB_DIAGNOSE.APLOG_LEVEL_TIP,
+			items:[
+					{name:$.su.CHAR.SYSLOG.EMERGENCY,value:"0"},
+					{name:$.su.CHAR.SYSLOG.ALERT,value:"1"},
+					{name:$.su.CHAR.SYSLOG.CRITICAL,value:"2"},
+					{name:$.su.CHAR.SYSLOG.ERROR,value:"3"},
+					{name:$.su.CHAR.SYSLOG.WARNING,value:"4"},
+					{name:$.su.CHAR.SYSLOG.NOTICE,value:"5"},
+					{name:$.su.CHAR.SYSLOG.INFO,value:"6"},
+					{name:$.su.CHAR.SYSLOG.DEBUG,value:"7"}
+				]
+		});
+		$("#remote_server_switch").checkbox({
+			items:[{
+				boxlabel:$.su.CHAR.AC_APDB_DIAGNOSE.APLOG_TO_LOG_SERVER,inputValue:"on",uncheckedValue: "off"
+			}]
+		}).on("ev_change", function(e, oldValue, newValue){
+			var val = (newValue[0]=="remote_server_switch"||newValue[0]=="on") ? "on" : "off";
+			switch(val)
+			{
+				case "on":
+					$("#remote_log_level").combobox("enable");
+					$("#remote_report_interval").textbox("enable");
+					$("#remote_server").textbox("enable");
+					break;
+				case "off":
+					$("#remote_log_level").combobox("disable");
+					$("#remote_report_interval").textbox("disable");
+					$("#remote_server").textbox("disable");
+					break;
+			}
+		});
+		$("#remote_log_level").combobox({
+			fieldLabel: $.su.CHAR.AC_APDB_DIAGNOSE.APLOG_LEVEL,
+			allowBlank: false,
+			multiSelect: false ,  
+			tips: $.su.CHAR.AC_APDB_DIAGNOSE.APLOG_LEVEL_TIP,
+			items:[
+					{name:$.su.CHAR.SYSLOG.EMERGENCY,value:"0"},
+					{name:$.su.CHAR.SYSLOG.ALERT,value:"1"},
+					{name:$.su.CHAR.SYSLOG.CRITICAL,value:"2"},
+					{name:$.su.CHAR.SYSLOG.ERROR,value:"3"},
+					{name:$.su.CHAR.SYSLOG.WARNING,value:"4"},
+					{name:$.su.CHAR.SYSLOG.NOTICE,value:"5"},
+					{name:$.su.CHAR.SYSLOG.INFO,value:"6"},
+					{name:$.su.CHAR.SYSLOG.DEBUG,value:"7"}
+				]
+		});
+		var REPORT_INTERVAL_MAX = 600;
+		var REPORT_INTERVAL_MIN = 20;
+		$("#remote_report_interval").textbox({
+			fieldLabel: $.su.CHAR.AC_APDB_DIAGNOSE.APLOG_INTERVAL,
+			allowBlank:false,
+			vtype: {
+				vtype: "number",
+				max: REPORT_INTERVAL_MAX,
+				min: REPORT_INTERVAL_MIN
+			},
+			tips:"("+REPORT_INTERVAL_MIN+"-"+REPORT_INTERVAL_MAX+"秒)",
+			maxLength: REPORT_INTERVAL_MAX.toString().length
+		});
+		$("#remote_server").textbox({
+			fieldLabel: $.su.CHAR.AC_APDB_DIAGNOSE.APLOG_SERVER,
+			allowBlank:false,
+			vtype:"ip_all",
+			maxLength: 39
+		});
+		var apLogForm = $("#aplog_settings").form({
+			proxy: DIA_APLOG_PROXY,
+			autoLoad:true,
+			fields: [
+				{name:"ac_log_switch",mapping:"ac_log_switch"},
+				{name:"ac_log_level",mapping:"ac_log_level"},
+				{name:"remote_server_switch",mapping:"remote_server_switch"},
+				{name:"remote_log_level",mapping:"remote_log_level"},
+				{name:"remote_report_interval",mapping:"remote_report_interval"},
+				{name:"remote_server",mapping:"remote_server"}
+			],
+			parseKey: {
+				moduleName:"apmng_set",
+				sectionName:"aplog_setting"
+			},
+			submitBtn:"default"
+		});
+	}
+    $("#dia_info_panel").panel({
+        title: $.su.CHAR.DIA_INFO.INFO
+    });
+
+    // 增加导出诊断信息进度条
+    var query_interval = 0;
+	var get_ret = false;
+	var msgInHTML =	"<input id=\"export_pro_bar\" type=\"text\" />";
+	var export_pro_cnt_msg = $("<div id=\"export_pro_cnt\" class=\"reboot-loading-msg hidden\">").msg({
+		cls: 'warning reboot-confirm-size',
+		type: "alert",
+		closeBtn: false,
+		innerHTML: msgInHTML
+	});
+
+	var export_pro_bar  = export_pro_cnt_msg.find('input#export_pro_bar').waitingbar({
+		barWidth: 320,
+		fieldLabel: "正在导出诊断信息，请稍候",
+		labelCls:"xxl"
+    }).waitingbar("stop");
+
+    function hideWaitingBar() {
+		export_pro_bar.waitingbar("stop");
+		export_pro_bar.waitingbar("reset");
+		export_pro_cnt_msg.msg('close');
+	}
+
+	function showWaitingBar() {
+		export_pro_cnt_msg.msg('show');
+		export_pro_cnt_msg.msg('hideButtons');
+		export_pro_bar.waitingbar("show");
+		export_pro_bar.waitingbar("run");
+	}
+
+	function getResult() {
+		if(get_ret == false) {
+			var exportCheckProxy = new $.su.Proxy();
+			exportCheckProxy.query({
+				system: {
+					name: "download_fault_diagnose_status"
+				}
+			}, function(data) {
+				data = data.system.download_fault_diagnose_status;
+				if (data.status == "1") {
+					clearInterval(query_interval);
+					hideWaitingBar();
+					get_ret = true;
+				}
+			})
+		}
+    }
+
+    var dia_info_form = $("#dia_info").form({
+        proxy: DIA_INFO_PROXY,
+        submitBtn:null,
+        autoLoad:false,
+        formEnctype: "multipart/form-data",
+        traditional: true,
+        hiddenFrame: true
+    });
+
+    $("#dia_download").button({
+        text: $.su.CHAR.DIA_INFO.DOWNLOAD,
+        handler:function(){
+            showWaitingBar();
+            location.href = $.su.url("/admin/system/download_fault_diagnose");
+            clearInterval(query_interval);
+            get_ret = false;
+            query_interval = setInterval(getResult, 1000);
+        }
+    });
+	if(clear_diagnose_data_support){
+		$("#clear_cnt").panel({
+			title: $.su.CHAR.AC_APDB_DIAGNOSE.CLEAR,
+			collapsible: false
+		}).show();
+		$("button#clear_ap").button({
+			text: $.su.CHAR.AC_APDB_DIAGNOSE.CLEAR,
+			cls: "submit",
+			handler: function(){
+				$("#clear_confirm_cnt").msg('show');
+			}
+		});
+		$("#clear-setting").form({
+			proxy:{timeout: 720*1000},
+			autoLoad: false,
+			submitBtn: null,
+			promptTextSuccessed: $.su.CHAR.AC_APDB_DIAGNOSE.CLEAR_SUC,
+			promptTextFailed: $.su.CHAR.AC_APDB_DIAGNOSE.CLEAR_FAIL
+		});
+		$("#clear_confirm_cnt").msg({
+			okHandler:function(){
+				var proxy = new $.su.Proxy();
+				var data = {};
+
+				var diag_type = $("#diag_type").val();
+
+				data.system = {
+					"clear_diagnose_data": null
+				};
+
+				proxy.action(data, function(data){
+					$("#clear-setting").form("prompt", true);
+				}, function() {
+					$("#clear-setting").form("prompt", false);
+				}, function() {
+					$("#clear-setting").form("prompt", false);
+				});
+
+				$("#clear_confirm_cnt").msg('close');
+				return false;
+			},
+			cancelHandler:function(){
+				return true;
+			},
+			cls: 'warning reboot-confirm-size',
+			closeBtn: false,
+			type: "confirm"
+		});
+		$("p#clearNote").html($.su.CHAR.AC_APDB_DIAGNOSE.CLEAR_NOTE);
+		$("#confirm_str").html($.su.CHAR.AC_APDB_DIAGNOSE.CONFIRM_CONTENT);
+	}
+	$("p#backupNote").html($.su.CHAR.AC_APDB_DIAGNOSE.BACKUP_NOTE);
+
+    var dia_info_help = new $.su.Help({
+		container: "div#help_diagnostic_info",
+		content: ["DIA_ENABLE"],
+		afterLoad: function(){
+			if (!aplog_support) $('#help_aplog_collect').hide();
+			if(!clear_diagnose_data_support) $('#help_clear_diagnose_data').hide();
+		}
+	});
+
+});
+</script>
+</body>
+
+</html>

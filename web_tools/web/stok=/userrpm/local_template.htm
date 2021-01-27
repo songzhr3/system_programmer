@@ -1,0 +1,66 @@
+<html>
+
+<head>
+<meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
+<title>Wportal</title>
+<link type="text/css" href="../web-static/js/cloud/style.min.css?random=20201217044300" rel="stylesheet" />
+<script type="text/javascript">
+	function GetQueryString(name)
+	{
+		var reg = new RegExp("(^|&)"+ name +"=([^&]*)(&|$)");
+		var r = window.location.search.substr(1).match(reg);
+		if(r!=null)return  unescape(r[2]); return null;
+	}
+</script>
+
+
+<script type="text/javascript" src="../web-static/js/cloud/jquery.js?random=20201217044300"></script>
+<script type="text/javascript" src="../web-static/js/cloud/cwm-device.js?random=20201217044300"></script>
+</head>
+
+<body>
+<div id="portal-wrapper"></div>
+<script>
+	//console.log(window.location.href.indexOf('portalPageId='), window.location.href.length);
+	if(window.location.href.indexOf('portalPageId=') != -1){
+		var id = window.location.href.substr(window.location.href.indexOf('portalPageId=')+13);
+	}else{
+		id = 0
+	}
+	
+	if (id){
+		window.portal = $('#portal-wrapper').portal({
+			portalPageId: id,
+			forDevice: true,
+            commit: false,
+			cb: function() {
+				window.parent[callback]();
+			},
+			authType: "web,onekey,sms,wechat"
+		});
+	}
+	else{
+		//console.log("here")
+		window.portal = $('#portal-wrapper').portal({
+			forDevice: true,
+            commit: false,
+			cb: function() {
+				window.parent[callback]();
+			},
+			authType: "web"
+		});
+	}
+	var callback;
+	function commit(cb) {
+		//portal.commit();
+		callback = cb;
+		return $('#portal-wrapper').portal('commit');
+	}
+	
+	function getConfig() {
+		return $('#portal-wrapper').portal('getConfig');
+	}
+</script>
+
+</body>
+</html>

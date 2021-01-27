@@ -1,0 +1,811 @@
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
+<html xmlns="http://www.w3.org/1999/xhtml">
+    <head>
+        <meta content="text/html; charset=utf-8" http-equiv="Content-Type"/>
+        <title>
+            EMAIL_SECURITY
+        </title>
+        <style type="text/css">
+        </style>
+    </head>
+    <body>
+        <div class="func-container">
+            <div id="rule_list">
+                <div id="emailfilter_rule_grid">
+                </div>
+            </div>
+            <div id="own_editor">
+                <input id="name" name="name"/>
+
+                <input id="radio_smtp_method" name="smtp_method"/>
+                <input id="checkbox_sender_black_list_smtp" name="has_sender_black_list_smtp"/>
+                <textarea id="sender_black_list_smtp" name="sender_black_list_smtp"></textarea>
+                <input id="checkbox_sender_white_list_smtp" name="has_sender_white_list_smtp"/>
+                <textarea id="sender_white_list_smtp" name="sender_white_list_smtp"></textarea>
+                <input id="checkbox_receiver_black_list_smtp" name="has_receiver_black_list_smtp"/>
+                <textarea id="receiver_black_list_smtp" name="receiver_black_list_smtp"></textarea>
+                <input id="checkbox_receiver_white_list_smtp" name="has_receiver_white_list_smtp"/>
+                <textarea id="receiver_white_list_smtp" name="receiver_white_list_smtp"></textarea>
+
+                <input id="radio_pop3_method" name="pop3_method"/>
+                <input id="checkbox_sender_black_list_pop3" name="has_sender_black_list_pop3"/>
+                <textarea id="sender_black_list_pop3" name="sender_black_list_pop3"></textarea>
+                <input id="checkbox_sender_white_list_pop3" name="has_sender_white_list_pop3"/>
+                <textarea id="sender_white_list_pop3" name="sender_white_list_pop3"></textarea>
+                <input id="checkbox_receiver_black_list_pop3" name="has_receiver_black_list_pop3"/>
+                <textarea id="receiver_black_list_pop3" name="receiver_black_list_pop3"></textarea>
+                <input id="checkbox_receiver_white_list_pop3" name="has_receiver_white_list_pop3"/>
+                <textarea id="receiver_white_list_pop3" name="receiver_white_list_pop3"></textarea>
+
+                <input id="radio_imap_method" name="imap_method"/>
+                <input id="checkbox_sender_black_list_imap" name="has_sender_black_list_imap"/>
+                <textarea id="sender_black_list_imap" name="sender_black_list_imap"></textarea>
+                <input id="checkbox_sender_white_list_imap" name="has_sender_white_list_imap"/>
+                <textarea id="sender_white_list_imap" name="sender_white_list_imap"></textarea>
+                <input id="checkbox_receiver_black_list_imap" name="has_receiver_black_list_imap"/>
+                <textarea id="receiver_black_list_imap" name="receiver_black_list_imap"></textarea>
+                <input id="checkbox_receiver_white_list_imap" name="has_receiver_white_list_imap"/>
+                <textarea id="receiver_white_list_imap" name="receiver_white_list_imap"></textarea>
+
+                <input id="comment" name="comment"/>
+            </div>
+        </div>
+        <div id="link-detail-window">
+            <table class="link-detail-table detail">
+                <tr>
+                    <td class="detail-value">
+                    </td>
+                </tr>
+            </table>
+        </div>
+        <div class="notice">
+            <p id="caution">
+            </p>
+        </div>
+        <div id="emailfilter_help">
+        </div>
+        <script type="text/javascript">
+            try{
+        $
+    }catch(e){
+        location.href="../web-static//";
+    };
+
+$(document).ready(function(e){
+    $(".func-container").hide();
+
+    $("div#rule_list").panel({
+        title:$.su.CHAR.EMAILFILTERCONF.RULE_LIST,
+        collapsible: false
+    });
+
+    var MAX_EMAIL_LIST_LENGTH = 254;
+    var MAX_EMAIL_LENGTH = 320;
+    var MAX_EMAIL_PER_LIST = 10;
+
+    function inital_one_protocol(protocol, protocol_name)
+    {
+        var sender_black_list = $("#sender_black_list_" + protocol).textarea({
+            fieldLabel: $.su.CHAR.EMAILFILTERCONF.SENDER_BLACK_LIST,
+            tips:"多个账号以换行或者分号隔开",
+            allowBlank: false,
+            //vtype:"ascii_visible",
+            inputCls:"long",
+            setValueCb: function(data){
+                var dataString = data.join("\n");
+                return dataString;
+            },
+            getValueCb: function(data){
+                var tmp = data.replace(/\s/g,"\n")
+                var dataArray = tmp.split(/;|\n/);
+
+                for (var i = 0; i < dataArray.length; i++)
+                {
+                    if (dataArray[i] == "")
+                    {
+                        dataArray.splice(i , 1);
+                        i--;
+                    }
+                }
+                return dataArray;
+            }
+        });
+
+        var sender_white_list = $("#sender_white_list_" + protocol).textarea({
+            fieldLabel: $.su.CHAR.EMAILFILTERCONF.SENDER_WHITE_LIST,
+            tips:"多个账号以换行或者分号隔开",
+            allowBlank: false,
+            //vtype:"ascii_visible",
+            inputCls:"long",
+            setValueCb: function(data){
+                var dataString = data.join("\n");
+                return dataString;
+            },
+            getValueCb: function(data){
+                var tmp = data.replace(/\s/g,"\n")
+                var dataArray = tmp.split(/;|\n/);
+
+                for (var i = 0; i < dataArray.length; i++)
+                {
+                    if (dataArray[i] == "")
+                    {
+                        dataArray.splice(i , 1);
+                        i--;
+                    }
+                }
+                return dataArray;
+            }
+        });
+
+        var receiver_black_list = $("#receiver_black_list_" + protocol).textarea({
+            fieldLabel: $.su.CHAR.EMAILFILTERCONF.RECEIVER_BLACK_LIST,
+            tips:"多个账号以换行或者分号隔开",
+            allowBlank: false,
+            //vtype:"ascii_visible",
+            inputCls:"long",
+            setValueCb: function(data){
+                var dataString = data.join("\n");
+                return dataString;
+            },
+            getValueCb: function(data){
+                var tmp = data.replace(/\s/g,"\n")
+                var dataArray = tmp.split(/;|\n/);
+
+                for (var i = 0; i < dataArray.length; i++)
+                {
+                    if (dataArray[i] == "")
+                    {
+                        dataArray.splice(i , 1);
+                        i--;
+                    }
+                }
+                return dataArray;
+            }
+        });
+
+        var receiver_white_list = $("#receiver_white_list_" + protocol).textarea({
+            fieldLabel: $.su.CHAR.EMAILFILTERCONF.RECEIVER_WHITE_LIST,
+            tips:"多个账号以换行或者分号隔开",
+            allowBlank: false,
+            //vtype:"ascii_visible",
+            inputCls:"long",
+            setValueCb: function(data){
+                var dataString = data.join("\n");
+                return dataString;
+            },
+            getValueCb: function(data){
+                var tmp = data.replace(/\s/g,"\n")
+                var dataArray = tmp.split(/;|\n/);
+
+                for (var i = 0; i < dataArray.length; i++)
+                {
+                    if (dataArray[i] == "")
+                    {
+                        dataArray.splice(i , 1);
+                        i--;
+                    }
+                }
+                return dataArray;
+            }
+        });
+
+        var checkbox_sender_black_list = $("input#checkbox_sender_black_list_" + protocol).checkbox({
+            items: [{boxlabel: $.su.CHAR.EMAILFILTERCONF.HAS_SENDER_BLACK_LIST, name:"has_sender_black_list_" + protocol, inputValue: "enable", uncheckedValue: "disable"}],
+            defaultValue:["disable"]
+        }).on("ev_change", function (e, oldValue, newValue) {
+            var val = newValue[0];
+            if(val == "enable" || val == "has_sender_black_list_" + protocol)
+            {
+                sender_black_list.textarea('show');
+                sender_black_list.textarea('enable');
+            }
+            else
+            {
+                sender_black_list.textarea('hide');
+                sender_black_list.textarea('disable');
+            }
+        });
+
+        var checkbox_sender_white_list = $("input#checkbox_sender_white_list_" + protocol).checkbox({
+            items: [{boxlabel: $.su.CHAR.EMAILFILTERCONF.HAS_SENDER_WHITE_LIST, name:"has_sender_white_list_" + protocol, inputValue: "enable", uncheckedValue: "disable"}],
+            defaultValue:["disable"]
+        }).on("ev_change", function (e, oldValue, newValue) {
+            var val = newValue[0];
+            if(val == "enable" || val == "has_sender_white_list_" + protocol)
+            {
+                sender_white_list.textarea('show');
+                sender_white_list.textarea('enable');
+            }
+            else
+            {
+                sender_white_list.textarea('hide');
+                sender_white_list.textarea('disable');
+            }
+        });
+
+        var checkbox_receiver_black_list = $("input#checkbox_receiver_black_list_" + protocol).checkbox({
+            items: [{boxlabel: $.su.CHAR.EMAILFILTERCONF.HAS_RECEIVER_BLACK_LIST, name:"has_receiver_black_list_" + protocol, inputValue: "enable", uncheckedValue: "disable"}],
+            defaultValue:["disable"]
+        }).on("ev_change", function (e, oldValue, newValue) {
+            var val = newValue[0];
+            if(val == "enable" || val == "has_receiver_black_list_" + protocol)
+            {
+                receiver_black_list.textarea('show');
+                receiver_black_list.textarea('enable');
+            }
+            else
+            {
+                receiver_black_list.textarea('hide');
+                receiver_black_list.textarea('disable');
+            }
+        });
+
+        var checkbox_receiver_white_list = $("input#checkbox_receiver_white_list_" + protocol).checkbox({
+            items: [{boxlabel: $.su.CHAR.EMAILFILTERCONF.HAS_RECEIVER_WHITE_LIST, name:"has_receiver_white_list_" + protocol, inputValue: "enable", uncheckedValue: "disable"}],
+            defaultValue:["disable"]
+        }).on("ev_change", function (e, oldValue, newValue) {
+            var val = newValue[0];
+            if(val == "enable" || val == "has_receiver_white_list_" + protocol)
+            {
+                receiver_white_list.textarea('show');
+                receiver_white_list.textarea('enable');
+            }
+            else
+            {
+                receiver_white_list.textarea('hide');
+                receiver_white_list.textarea('disable');
+            }
+        });
+
+        $("input#radio_" + protocol + "_method").radio({
+            fieldLabel: protocol_name,
+            columns:2,
+            allowBlank: false,
+            items:[
+                  {boxlabel:$.su.CHAR.EMAILFILTERCONF.ACCEPT,name: protocol + "_method",inputValue:'accept'},
+                  {boxlabel:$.su.CHAR.EMAILFILTERCONF.FORBIDDEN,name: protocol + "_method",inputValue:'drop'}
+            ]
+        }).on("ev_change", function(e, oldValue, newValue) {
+            if(newValue == "accept")
+            {
+                checkbox_receiver_white_list.checkbox("setValue", "disable");
+                checkbox_sender_white_list.checkbox("setValue", "disable");
+
+                checkbox_receiver_white_list.checkbox("hide");
+                checkbox_sender_white_list.checkbox("hide");
+                checkbox_receiver_black_list.checkbox("show");
+                checkbox_sender_black_list.checkbox("show");
+            }
+            else
+            {
+                checkbox_receiver_black_list.checkbox("setValue", "disable");
+                checkbox_sender_black_list.checkbox("setValue", "disable");
+
+                checkbox_receiver_white_list.checkbox("show");
+                checkbox_sender_white_list.checkbox("show");
+                checkbox_receiver_black_list.checkbox("hide");
+                checkbox_sender_black_list.checkbox("hide");
+            }
+        });
+    }
+
+    inital_one_protocol("smtp", $.su.CHAR.EMAILFILTERCONF.SMTP_METHOD);
+    inital_one_protocol("pop3", $.su.CHAR.EMAILFILTERCONF.POP3_METHOD);
+    inital_one_protocol("imap", $.su.CHAR.EMAILFILTERCONF.IMAP_METHOD);
+
+    $("input#name").textbox({
+        fieldLabel:$.su.CHAR.EMAILFILTERCONF.NAME,
+        tips:"(1-28个字符)",
+        allowBlank:false,
+        maxLength:28,
+        vtype:"name"
+    });
+
+    $("input#comment").textbox({
+        fieldLabel:$.su.CHAR.EMAILFILTERCONF.COMMENT,
+        tips:"(可选,0-50个字符)",
+        allowBlank:true,
+        maxLength:50
+    });
+
+    var $linkDetail = $("#link-detail-window").msg({
+        closeBtn: true,
+        cls:"l",
+        title: "邮箱地址列表",
+        type: "window"
+    }).msg("hide");
+
+    function showDetail(data, protocol){
+        var method = data[protocol + "_method"];
+        var sender = [];
+        var senderNote = "<b>发件人</b></br>";
+        var receiver = [];
+        var receiverNote = "<b>收件人</b></br>";
+        var string = ""
+
+        if(method == "accept") {
+            if(data["has_sender_black_list_" + protocol] == "enable")
+                sender = data["sender_black_list_" + protocol];
+            if(data["has_receiver_black_list_" + protocol] == "enable")
+                receiver = data["receiver_black_list_" + protocol];
+            string = "黑名单";
+        }
+        else if(method == "drop") {
+            if(data["has_sender_white_list_" + protocol] == "enable")
+                sender = data["sender_white_list_" + protocol];
+            if(data["has_receiver_white_list_" + protocol] == "enable")
+                receiver = data["receiver_white_list_" + protocol];
+            string = "白名单";
+        }
+
+        if(typeof(sender) == "undefined" || sender.length == 0) {
+            senderNote += "---";
+        }
+        else {
+            for(var i = 0; i < sender.length; i++){
+                senderNote += sender[i] + "</br>";
+            }
+        }
+        if(typeof(receiver) == "undefined" || receiver.length == 0) {
+            receiverNote += "---";
+        }
+        else {
+            for(var i = 0; i < receiver.length; i++){
+                receiverNote += receiver[i] + "</br>";
+            }
+        }
+
+        $linkDetail.find(".detail-value").html(senderNote + "</br>" + receiverNote).css({
+            "lineHeight":"20px",
+            "textAlign":"center",
+            "wordBreak":"break-all"
+        });
+        $linkDetail.msg('setTitle', string);
+        $linkDetail.msg('show');
+    }
+
+    function textSelect(o, a, b)
+    {
+        var a = parseInt(a, 10), b = parseInt(b, 10);
+        if(o.createTextRange)
+        {//IE浏览器
+            var range = o.createTextRange();
+            range.moveStart("character", a);
+            range.moveEnd("character",b);
+            range.select();
+        }else
+        {
+            o.setSelectionRange(a, b);
+            o.focus();
+        }
+
+    }
+
+    function getArrayStrLen(a)
+    {
+        var strLen = 0;
+
+        if (!$.isArray(a))
+        {
+            a = [a];
+        }
+
+        for (var i = 0; i < a.length; i++)
+        {
+            strLen += a[i].length + strLen;
+        }
+
+        return strLen;
+    }
+
+    function showBlackWhiteColumn(index, data, protocol)
+    {
+        var method = data[protocol + "_method"];
+        var string = "";
+        if(method == "accept") {
+            if(data["has_sender_black_list_" + protocol] == "enable" || data["has_receiver_black_list_" + protocol] == "enable") string = "黑名单";
+        }
+        else if(method == "drop") {
+            if(data["has_sender_white_list_" + protocol] == "enable" || data["has_receiver_white_list_" + protocol] == "enable") string = "白名单";
+        }
+        else {
+            return "---";
+        }
+
+        if(string != "")
+            return "<a href='javascript:void(0);' class='btn-detail-" + protocol + "' data-index='"+ index +"'>" + string + "</a>";
+        else
+            return "---";
+    }
+
+    var ruleListProxy = new $.su.Proxy({
+    });
+
+    var ruleGrid = $("#emailfilter_rule_grid").grid({
+        maxRulesProperty: "max_rules",
+        editor:{
+            content:"#own_editor",
+            fields:[
+                {name:"name"},
+                {name:"smtp_method"},
+                {name:"pop3_method"},
+                {name:"imap_method"},
+                {name:"has_sender_black_list_smtp"},
+                {name:"sender_black_list_smtp"},
+                {name:"has_sender_white_list_smtp"},
+                {name:"sender_white_list_smtp"},
+                {name:"has_receiver_black_list_smtp"},
+                {name:"receiver_black_list_smtp"},
+                {name:"has_receiver_white_list_smtp"},
+                {name:"receiver_white_list_smtp"},
+                {name:"has_sender_black_list_pop3"},
+                {name:"sender_black_list_pop3"},
+                {name:"has_sender_white_list_pop3"},
+                {name:"sender_white_list_pop3"},
+                {name:"has_receiver_black_list_pop3"},
+                {name:"receiver_black_list_pop3"},
+                {name:"has_receiver_white_list_pop3"},
+                {name:"receiver_white_list_pop3"},
+                {name:"has_sender_black_list_imap"},
+                {name:"sender_black_list_imap"},
+                {name:"has_sender_white_list_imap"},
+                {name:"sender_white_list_imap"},
+                {name:"has_receiver_black_list_imap"},
+                {name:"receiver_black_list_imap"},
+                {name:"has_receiver_white_list_imap"},
+                {name:"receiver_white_list_imap"},
+                {name:"comment"}
+            ],
+            validator:function(){
+                var name=$("#name").textbox('getValue');
+                var nameList = $("#emailfilter_rule_grid").grid('getStore').data;
+                var editingId = $($("#emailfilter_rule_grid").grid('getEditor')).editor("getEditingId");
+                var modify_flag = 0;
+                for(var i=0;i<nameList.length;i++){
+                    if(editingId == nameList[i].key)
+                    {
+                        modify_flag = 1;
+                        continue;
+                    }
+
+                    if(name == nameList[i].name)
+                    {
+                        $("#name").textbox("setError", "您输入的名称已经存在，请重新输入")
+                        return false;
+                    }
+                }
+
+                var addressSet = new Set();
+                var emailProxy = new $.su.Proxy({async: false});
+                emailProxy.query({"sec_content_conf":{"table":"email_filter_conf"}}, function(data){
+                    for (var i=0; i<data.sec_content_conf.email_filter_conf.length; i++)
+                        for (var j in data.sec_content_conf.email_filter_conf[i])
+                        {
+                            var entry = data.sec_content_conf.email_filter_conf[i][j];
+                            if(entry.name != $("input#name").textbox("getValue"))
+                            {
+                                function getOneProtocolList(protocol)
+                                {
+                                    if(entry["has_receiver_white_list_" + protocol] == "enable") {
+                                        var list = entry["receiver_white_list_" + protocol];
+                                        $.map(list, function(d, index){
+                                            addressSet.add(d);
+                                        });
+                                    }
+                                    if(entry["has_receiver_black_list_" + protocol] == "enable") {
+                                        var list = entry["receiver_black_list_" + protocol];
+                                        $.map(list, function(d, index){
+                                            addressSet.add(d);
+                                        });
+                                    }
+                                    if(entry["has_sender_white_list_" + protocol] == "enable") {
+                                        var list = entry["sender_white_list_" + protocol];
+                                        $.map(list, function(d, index){
+                                            addressSet.add(d);
+                                        });
+                                    }
+                                    if(entry["has_sender_black_list_" + protocol] == "enable") {
+                                        var list = entry["sender_black_list_" + protocol];
+                                        $.map(list, function(d, index){
+                                            addressSet.add(d);
+                                        });
+                                    }
+                                }
+                                getOneProtocolList("smtp");
+                                getOneProtocolList("pop3");
+                                getOneProtocolList("imap");
+                            }
+                        }
+                });
+
+                function testEmailTextarea(list)
+                {
+                    var extList = list.textarea("getValue");
+                    var errBegin = -1;
+                    var errEnd = -1;
+                    var reg =  new RegExp(/^[a-zA-Z0-9_.-]+@[a-zA-Z0-9-]+(\.[a-zA-Z0-9-]+)*\.[a-zA-Z0-9]{2,6}$/);
+                    var isValid = true;
+                    var tmpExt = [];
+                    var errString = "";
+
+                    $(extList).each(function(i, obj)
+                    {
+                        if(!reg.test(obj))
+                        {
+                            isValid = false;
+                            errBegin = getArrayStrLen(tmpExt);
+                            errEnd = errBegin + obj.length + 1;
+                            errString = "输入的邮箱格式不正确";
+                            return;
+                        }
+
+                        if(obj.length > MAX_EMAIL_LENGTH)
+                        {
+                            isValid = false;
+                            errBegin = getArrayStrLen(tmpExt);
+                            errEnd = errBegin + obj.length + 1;
+                            errString = "输入的邮箱长度超过" + MAX_EMAIL_LENGTH;
+                            return;
+                        }
+
+                        tmpExt.push(obj);
+                        addressSet.add(obj);
+                    });
+
+                    $(extList).each(function(i1, obj1){
+                        $(extList).each(function(i2, obj2){
+                            if(i1 != i2 && obj1 == obj2){
+                                errString = "重复的输入";
+                                isValid = false;
+                            }
+                        });
+                    });
+
+                    if(extList.length > MAX_EMAIL_PER_LIST)
+                    {
+                        errString = "输入的邮箱超过"+MAX_EMAIL_PER_LIST+"个";
+                        isValid = false;
+                    }
+
+                    if(addressSet.size > MAX_EMAIL_LIST_LENGTH)
+                    {
+                        errString = "所有配置文件中输入的邮箱超过"+MAX_EMAIL_LIST_LENGTH+"个";
+                        isValid = false;
+                    }
+
+                    if(isValid)
+                    {
+                        list.textarea("setValue",tmpExt);
+                        return true;
+                    }else
+                    {
+                        textSelect($("textarea").get(0), errBegin, errEnd);
+                        list.textarea("setError", errString);
+                        $("div.textarea-container").find("div.widget-error-tips").css("margin-top", "200px");
+                        return false;
+                    }
+                }
+
+                function testOneProtocol(protocol)
+                {
+                    var has_sender_black_list = $("#checkbox_sender_black_list_" + protocol).checkbox("getValue");
+                    var has_sender_white_list = $("#checkbox_sender_white_list_" + protocol).checkbox("getValue");
+                    var has_receiver_black_list = $("#checkbox_receiver_black_list_" + protocol).checkbox("getValue");
+                    var has_receiver_white_list = $("#checkbox_receiver_white_list_" + protocol).checkbox("getValue");
+                    if(has_sender_black_list[0] == "enable" || has_sender_black_list[0] == "has_sender_black_list_" + protocol)
+                    {
+                        if(testEmailTextarea($("#sender_black_list_" + protocol)) == false) return false;
+                    }
+                    if(has_sender_white_list[0] == "enable" || has_sender_white_list[0] == "has_sender_white_list_" + protocol)
+                    {
+                        if(testEmailTextarea($("#sender_white_list_" + protocol)) == false) return false;
+                    }
+                    if(has_receiver_black_list[0] == "enable" || has_receiver_black_list[0] == "has_receiver_black_list_" + protocol)
+                    {
+                        if(testEmailTextarea($("#receiver_black_list_" + protocol)) == false) return false;
+                    }
+                    if(has_receiver_white_list[0] == "enable" || has_receiver_white_list[0] == "has_receiver_white_list_" + protocol)
+                    {
+                        if(testEmailTextarea($("#receiver_white_list_" + protocol)) == false) return false;
+                    }
+                }
+
+                if(testOneProtocol("smtp") == false) return false;
+                if(testOneProtocol("pop3") == false) return false;
+                if(testOneProtocol("imap") == false) return false;
+
+                return true;
+            },
+            transParams: function(params){
+                for (var name in params)
+                {
+                    if (name == "sender_black_list")
+                    {
+                        params[name] = $("textarea#sender_black_list").textarea("getValue");
+                    }
+                    if (name == "sender_white_list")
+                    {
+                        params[name] = $("textarea#sender_white_list").textarea("getValue");
+                    }
+                    if (name == "receiver_black_list")
+                    {
+                        params[name] = $("textarea#receiver_black_list").textarea("getValue");
+                    }
+                    if (name == "receiver_white_list")
+                    {
+                        params[name] = $("textarea#receiver_white_list").textarea("getValue");
+                    }
+                }
+                return params;
+            }
+        },
+        store:{
+            proxy:ruleListProxy,
+            fields:[
+                {name:"name"},
+                {name:"smtp_method"},
+                {name:"pop3_method"},
+                {name:"imap_method"},
+                {name:"has_sender_black_list_smtp"},
+                {name:"sender_black_list_smtp"},
+                {name:"has_sender_white_list_smtp"},
+                {name:"sender_white_list_smtp"},
+                {name:"has_receiver_black_list_smtp"},
+                {name:"receiver_black_list_smtp"},
+                {name:"has_receiver_white_list_smtp"},
+                {name:"receiver_white_list_smtp"},
+                {name:"has_sender_black_list_pop3"},
+                {name:"sender_black_list_pop3"},
+                {name:"has_sender_white_list_pop3"},
+                {name:"sender_white_list_pop3"},
+                {name:"has_receiver_black_list_pop3"},
+                {name:"receiver_black_list_pop3"},
+                {name:"has_receiver_white_list_pop3"},
+                {name:"receiver_white_list_pop3"},
+                {name:"has_sender_black_list_imap"},
+                {name:"sender_black_list_imap"},
+                {name:"has_sender_white_list_imap"},
+                {name:"sender_white_list_imap"},
+                {name:"has_receiver_black_list_imap"},
+                {name:"receiver_black_list_imap"},
+                {name:"has_receiver_white_list_imap"},
+                {name:"receiver_white_list_imap"},
+                {name:"comment"}
+            ],
+            parseKey: {                 /* 此处在store中增加parseKey，便于store对象在底层对数据进行预处理，以实现SLP数据结构和SU数据结构的转变 */
+                moduleName:"sec_content_conf",      /* 此处的moduleName和tableName分别指数据块名和对应请求的table名 */
+                pageSizeName: "email_filter_conf_entry",
+                tableName:"email_filter_conf"
+            },
+            autoLoad:false,
+            isAppointIndex: true,
+            appointIndex: 0
+        },
+        paging_true:{
+            insertTofirst: true
+        },
+        columns:[
+            {
+                xtype: "checkcolumn"
+            },
+            {
+                xtype: "rownumberer"
+            },
+            {
+                text:$.su.CHAR.EMAILFILTERCONF.NAME,
+                width:100,
+                dataIndex:"name"
+            },
+            {
+                text:$.su.CHAR.EMAILFILTERCONF.SMTP_METHOD,
+                width:50,
+                dataIndex:"smtp_method",
+                renderer:function(val){
+                    if(val == "accept")
+                    {
+                        return $.su.CHAR.EMAILFILTERCONF.ACCEPT;
+                    }
+                    else{
+                        return $.su.CHAR.EMAILFILTERCONF.FORBIDDEN;
+                    }
+                }
+            },
+            {
+                text:$.su.CHAR.EMAILFILTERCONF.SMTP_LIST,
+                width:120,
+                dataIndex:"smtp_list",
+                renderer:function(dd, index, data){
+                    return showBlackWhiteColumn(index, data, "smtp");
+                }
+            },
+            {
+                text:$.su.CHAR.EMAILFILTERCONF.POP3_METHOD,
+                width:50,
+                dataIndex:"pop3_method",
+                renderer:function(val){
+                    if(val == "accept")
+                    {
+                        return $.su.CHAR.EMAILFILTERCONF.ACCEPT;
+                    }
+                    else{
+                        return $.su.CHAR.EMAILFILTERCONF.FORBIDDEN;
+                    }
+                }
+            },
+            {
+                text:$.su.CHAR.EMAILFILTERCONF.POP3_LIST,
+                width:120,
+                dataIndex:"pop3_list",
+                renderer:function(dd, index, data){
+                    return showBlackWhiteColumn(index, data, "pop3");
+                }
+            },
+            {
+                text:$.su.CHAR.EMAILFILTERCONF.IMAP_METHOD,
+                width:50,
+                dataIndex:"imap_method",
+                renderer:function(val){
+                    if(val == "accept")
+                    {
+                        return $.su.CHAR.EMAILFILTERCONF.ACCEPT;
+                    }
+                    else{
+                        return $.su.CHAR.EMAILFILTERCONF.FORBIDDEN;
+                    }
+                }
+            },
+            {
+                text:$.su.CHAR.EMAILFILTERCONF.IMAP_LIST,
+                width:120,
+                dataIndex:"imap_list",
+                renderer:function(dd, index, data){
+                    return showBlackWhiteColumn(index, data, "imap");
+                }
+            },
+            {
+                xtype:"comment",
+                dataIndex:"comment"
+            },
+            {
+                xtype: "settings"
+            }
+        ],
+        operation:"prompt|add|delete"
+    }).delegate('a.btn-detail-smtp', 'click', function(e){
+        var index = $(this).data('index');
+        showDetail(ruleGrid.grid("getStore").data[index], "smtp");
+    }).delegate('a.btn-detail-pop3', 'click', function(e){
+        var index = $(this).data('index');
+        showDetail(ruleGrid.grid("getStore").data[index], "pop3");
+    }).delegate('a.btn-detail-imap', 'click', function(e){
+        var index = $(this).data('index');
+        showDetail(ruleGrid.grid("getStore").data[index], "imap");
+    });
+
+    var emailFilterEditor = $(ruleGrid.grid('getEditor'));
+    emailFilterEditor.on('ev_startEdit', function(e, index, key){
+        if(index == 'add')
+        {
+            // 默认动作是禁止
+            $("#radio_smtp_method").radio('setValue',"drop");
+            $("#radio_pop3_method").radio('setValue',"drop");
+            $("#radio_imap_method").radio('setValue',"drop");
+        }
+    });
+
+    function web_init()
+    {
+        $('div#rule_list').show();
+        ruleGrid.grid("getStore").load();
+    }
+    web_init();
+
+    var helpImb = new $.su.Help({
+        container: "div#emailfilter_help",
+        content: ["EMAILFILTER_CONF"]
+    });
+    $(".func-container").show();
+});
+        </script>
+    </body>
+</html>

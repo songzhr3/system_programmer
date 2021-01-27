@@ -1,0 +1,817 @@
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
+<html xmlns="http://www.w3.org/1999/xhtml">
+<head>
+<meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
+<title>Security Policy</title>
+<style type="text/css">
+    .top{
+        min-width: 1500px !important;
+    }
+    .top-content{
+        width: 1375px !important;
+        min-width: 1405px !important;
+    }
+
+    #app-list{
+        border: 1px solid #d9d9d9;
+        width: 800px;
+        max-height: 320px;
+        overflow-y: auto;
+        margin:10px 0px;
+    }
+    #app-list .widget-container{
+        margin: 3px 0;
+    }
+    #app-list-table td{
+        text-align: left;
+        overflow: hidden;
+    }
+    .app-category{
+        background-color: #FAFAFA;
+    }
+</style>
+</head>
+
+<body>
+<div class="func-container">
+    <div id="server_ca_cert">
+        <div id="server_ca_cert_grid">
+        </div>
+    </div>
+
+    <!--
+    <div id="own_editor">
+        <input id="rule_name" name="name" />
+        <p id="identify_info">识别信息</p>
+        <input id="public_name" name="public_name" />
+        <input id="ip_address" name="ip_address" />
+        <input id="domain" name="domain" />
+        <input id="email" name="email" />
+        <input id="country" name="country" />
+        <input id="state_province" name="state_province" />
+        <input id="location" name="location" />
+        <input id="department" name="department" />
+        <input id="organization" name="organization" />
+        <p id="key_options">密钥选项</p>
+        <input id="key_type" name="key_type" />
+        <input id="key_length" name="key_length" />
+        <input id="certificate_note" name="certificate_note" />
+    </div>
+    -->
+
+    <div id="server_ca_cert_help">
+    </div>
+</div>
+
+<script type="text/javascript">
+try{
+    $
+}catch(e){
+    location.href = "/";
+};
+
+$(document).ready(function(e){
+    $(".func-container").hide();
+
+    /*var countryItem=[];
+    var certNoteArr = {
+        trust:$.su.CHAR.SSL_CERTIFICATE.TRUST_CERTIFICATE,
+        untrust:$.su.CHAR.SSL_CERTIFICATE.UNTRUST_CERTIFICATE
+    };
+
+    //查询显示下划列表中的内容,国家
+    var itemProxy = new $.su.Proxy({async: false});
+    itemProxy.query(
+        {
+            app_library_conf:{table:"catalogue_list"}
+        }, function(data){
+
+    });*/
+
+    var server_ca_cert_proxy = new $.su.Proxy();
+    /* --------------------------- editor --------------------------------------------*/
+    /*$("#server_ca_cert").panel({
+        title: $.su.CHAR.SERVER_CA_CERT.PANEL,
+        collapsible: false
+    });
+
+    $("#rule_name").textbox({
+        fieldLabel:$.su.CHAR.SSL_CERTIFICATE.NAME,
+        allowBlank:false,
+        maxLength:50,
+        inputCls:"xxxl",
+        vtype:"name"
+    });
+
+    $("#public_name").textbox({
+        fieldLabel:$.su.CHAR.SSL_CERTIFICATE.PUBLIC_NAME,
+        allowBlank:true,
+        maxLength:50,
+        inputCls:"xxxl",
+    });
+
+    $("#ip_address").textbox({
+        fieldLabel:$.su.CHAR.SSL_CERTIFICATE.IP_ADDRESS,
+        allowBlank:true,
+        maxLength:50,
+        inputCls:"xxxl",
+    });
+
+    $("#domain").textbox({
+        fieldLabel:$.su.CHAR.SSL_CERTIFICATE.DOMAIN,
+        allowBlank:true,
+        maxLength:50,
+        inputCls:"xxxl",
+    });
+
+    $("#email").textbox({
+        fieldLabel:$.su.CHAR.SSL_CERTIFICATE.EMAIL,
+        allowBlank:true,
+        maxLength:50,
+        inputCls:"xxxl",
+    });
+
+    $("#country").combobox({
+        fieldLabel:$.su.CHAR.SSL_CERTIFICATE.COUNTRY,
+        inputCls:"xxl",
+    });
+
+    $("#country").css('width', '800px');
+
+    $("#state_province").textbox({
+        fieldLabel:$.su.CHAR.SSL_CERTIFICATE.STATE_PROVINCE,
+        allowBlank:true,
+        maxLength:50,
+        inputCls:"xxxl",
+    });
+
+    $("#location").textbox({
+        fieldLabel:$.su.CHAR.SSL_CERTIFICATE.LOCATION,
+        allowBlank:true,
+        maxLength:50,
+        inputCls:"xxxl",
+    });
+
+    $("#department").textbox({
+        fieldLabel:$.su.CHAR.SSL_CERTIFICATE.DEPARTMENT,
+        allowBlank:true,
+        maxLength:50,
+        inputCls:"xxxl",
+    });
+
+    $("#organization").textbox({
+        fieldLabel:$.su.CHAR.SSL_CERTIFICATE.ORGANIZATION,
+        allowBlank:true,
+        maxLength:50,
+        inputCls:"xxxl",
+    });
+
+    $("#key_type").textbox({
+        fieldLabel:$.su.CHAR.SSL_CERTIFICATE.KEY_TYPE,
+        allowBlank:true,
+        maxLength:50,
+        inputCls:"xxxl",
+    });
+
+    $("#key_length").textbox({
+        fieldLabel:$.su.CHAR.SSL_CERTIFICATE.KEY_LENGTH,
+        allowBlank:true,
+        maxLength:50,
+        inputCls:"xxxl",
+    });
+
+    $("#certificate_note").radio({
+        fieldLabel:$.su.CHAR.SSL_CERTIFICATE.CERTIFICATE_NOTE,
+        allowBlank: false,
+        columns:2,
+        items: [
+            { boxlabel: $.su.CHAR.SSL_CERTIFICATE.TRUST_CERTIFICATE, inputValue: 'trust', checked: true },
+            { boxlabel: $.su.CHAR.SSL_CERTIFICATE.UNTRUST_CERTIFICATE, inputValue: 'untrust' },
+        ],
+        inputCls:"xxxl",
+    });*/
+
+    /* -------------------------download msg ------------------------------------ */
+    /*function hideWaitingBar() {
+        //backcfg_pro_bar.waitingbar("stop");
+        //backcfg_pro_bar.waitingbar("reset");
+        //backcfg_pro_cnt_msg.msg('close');
+    }
+
+    function showWaitingBar() {
+        //backcfg_pro_cnt_msg.msg('show');
+        //backcfg_pro_cnt_msg.msg('hideButtons');
+        //backcfg_pro_bar.waitingbar("show");
+        //backcfg_pro_bar.waitingbar("run");
+    }
+
+    function getResult() {
+        if(get_ret == false) {
+            var exportCheckProxy = new $.su.Proxy();
+            exportCheckProxy.query({
+                system: {
+                    name: "ssl_cert_download_status"
+                }
+            }, function(data) {
+                data = data.system.ssl_cert_download_status;
+                if (data.status == "1") {
+                    clearInterval(query_interval);
+                    hideWaitingBar();
+                    get_ret = true;
+                }
+            })
+        }
+    }
+
+    var DOWNLOAD_URL = "";
+
+    var download_msg_html = '<form id="download-form">'
+                            + "<input id=\"downloadSSL-file-format\" name=\"downloadSSL-file-format\"/>"
+                            + "<input id=\"downloadSSL-password\" name=\"downloadSSL-password\"/>"
+                            + "<input id=\"downloadSSL-password-confirm\" name=\"downloadSSL-password-confirm\"/>"
+                            + "</form>";
+
+
+    //渲染msg里组件函数，通过grid的download_msg参数传入
+    var download_render_func = function _msg_func()
+    {
+        var tmp_down_proxy = new $.su.Proxy();
+        $('#download-form').form({
+            proxy: {},//tmp_down_proxy,
+            formEnctype: "multipart/form-data",     //数据传输格式
+            traditional: true,
+            hiddenFrame: true,
+            autoLoad: false,
+            fileUrlCb: function(){
+                return $.su.url.subs + $.su.url.stok + DOWNLOAD_URL;  //
+            }
+        });
+
+        $('#downloadSSL-file-format').combobox({
+            fieldLabel: "文件格式",
+            alwaysTrigger: true,
+            items:[
+                {value: "pkcs12", name: "以PKCS12格式导出证书", selected: true},
+                {value: "cer", name: "以CER格式导出证书"},
+                {value: "pem", name: "以PEM格式导出证书"}
+            ]
+        }).on("ev_change", function(e, oldValue, newValue){
+            if("cer" === newValue[0]){
+                $("#downloadSSL-password").password("hide");
+                $("#downloadSSL-password-confirm").password("hide");
+                // password插件，allowblank为true时，在password为空时，不进行validator检测
+                // 设置一个无效值，保证通过allowblank验证
+                $("#downloadSSL-password").password("setValue", "123");
+                $("#downloadSSL-password-confirm").password("setValue", "123");
+            }else{
+                $("#downloadSSL-password").password("show");
+                $("#downloadSSL-password-confirm").password("show");
+            }
+        });
+
+        SSLPasswordCheck = function(password, password_confirm){
+            if(password_confirm === password){
+                return true;
+            }else{
+                $("#downloadSSL-password-confirm").password("setError", "两次输入的密码不一致");
+                return false;
+            }
+        };
+
+        $("#downloadSSL-password").password({
+            fieldLabel: "密码",
+            vtype:"password",
+            maxLength:18,
+            tips: "密码长度为6至18个字符，是数字、字母、符号的组合",
+            cls:"s",
+            allowBlank: false,
+            validator:function(v){
+                if("cer" === $("#downloadSSL-file-format").combobox("getValue")[0])
+                {
+                    //console.log("cer no password");
+                    return true;
+                }
+
+                if (v.indexOf(" ") >= 0) {
+                    return $.su.CHAR.VTYPETEXT.PWD;
+                }
+                else if (v.length < 6) {
+                    return "密码长度为6至18个字符，是数字、字母、符号的组合";
+                }
+                return true;
+            },
+            showLevel:false
+        }).on("ev_change", function(item, data){
+            $("#downloadSSL-password-confirm").password('setNormal');
+
+            var password = $("#downloadSSL-password").password("getValue");
+            var password_confirm = $("#downloadSSL-password-confirm").password("getValue");
+            if (password_confirm){
+                SSLPasswordCheck(password, password_confirm);
+            }
+        }).on("ev_validatechange", function(item, data){
+            var password = $("#downloadSSL-password").password("getValue");
+            var password_confirm = $("#downloadSSL-password-confirm").password("getValue");
+
+            if(password_confirm) {
+                SSLPasswordCheck(password, password_confirm);
+            }
+            return true;
+        });
+
+        $("#downloadSSL-password-confirm").password({
+            fieldLabel: "确认密码",
+            vtype:"password",
+            maxLength:18,
+            cls:"s",
+            allowBlank: false,
+            validator:function(v){
+                if("cer" === $("#downloadSSL-file-format").combobox("getValue")[0])
+                {
+                    //console.log("cer no password");
+                    return true;
+                }
+
+                if (v.indexOf(" ") >= 0) {
+                    return $.su.CHAR.VTYPETEXT.PWD;
+                }
+                else if (v.length < 6) {
+                    return "密码长度为6至18个字符，是数字、字母、符号的组合";
+                }
+                return true;
+            },
+            showLevel:false
+        }).on("ev_validatechange", function(){
+            var password = $("#downloadSSL-password").password("getValue");
+            var password_confirm = $("#downloadSSL-password-confirm").password("getValue");
+
+            if (password === ""){
+                if (password_confirm) {
+                    SSLPasswordCheck(password, password_confirm);
+                }
+            }else{
+                SSLPasswordCheck(password, password_confirm);
+            }
+        });
+
+
+
+    };*/
+
+    var msg_okHandler = function _msg_okHandler(){
+        var file_format = $("#downloadSSL-file-format").combobox("getValue")[0],
+            password = $("#downloadSSL-password").password("getValue"),
+            password_confirm = $("#downloadSSL-password-confirm").password("getValue");
+
+        //console.log(file_format);
+        //console.log(password);
+        //console.log(password_confirm);
+
+        var msg = $(this).get(0),
+            cur_index = msg.index;
+
+        var store = $(ruleGrid).grid("getStore"),
+            data = store.data;
+
+        if(null == cur_index || cur_index >= store.data.length)
+        {
+            return false;
+        }
+
+        /*if ($("input#downloadSSL-password").password("validate") &&
+            $("input#downloadSSL-password-confirm").password("validate") &&
+            SSLPasswordCheck(password, password_confirm))
+        {
+            //console.log("ok");
+            var download_proxy = new $.su.Proxy();
+            var data = {
+                system: {
+                    ssl_cert_download: {
+                        file_format: file_format,
+                        password: password,
+                        item_name: data[cur_index].itemName
+                    }
+                }
+            };
+            download_proxy.action(data, function(data){
+                DOWNLOAD_URL = data.url;
+
+                showWaitingBar();
+                $("#download-form").form('submit', {});
+
+                clearInterval(query_interval);
+                get_ret = false;
+                query_interval = setInterval(getResult, 1000);
+            });
+            return true;
+        }*/
+        return false;
+    };
+
+
+
+    /* -----------------------upload msg -------------------------------*/
+    var uploadMsg;
+    var query_interval = 0;
+
+    var upload_msgInHTML = "<form id='cert_upload'>" +
+            // "<input id='upload_cert_type' name='upload_cert_type' />" +
+            "<input id='upload_ca_cert' name='upload_ca_cert' type='file' />" +
+            "<input id='upload_password' name='upload_password' />" +
+            /*"<input id='upload_key_file' name='upload_key_file' type='file' />" +
+            "<input id='upload_cert_note' name='upload_cert_note' />" +
+            "<div id='tips' name='tips'></div>" + */
+            "</form>";
+
+    var upload_okHandler = function(){
+        var //cer_type = $("#upload_cert_type").combobox("getValue")[0],
+            password = $("#upload_password").password("getValue"),
+            //trust_flag = $("#upload_cert_note").radio("getValue"),
+            certName = $("#upload_ca_cert").file("getValue");
+        if( $("#cert_upload").form('validate'))
+        {
+            var tmpProxy = new $.su.Proxy();
+            var data = {
+                certificate: {
+                    cert_upload: {
+                        module   : "cert",
+                        sec_type : "server_ca_cert",
+                        cert_name: certName,
+                        password : password/*,
+                        upload_cert_note: trust_flag*/
+                    }
+                }
+            };
+
+            tmpProxy.action(data, function(data){
+                upload_url = data.url;
+                check_intf = data.check_url;
+                $("#cert_upload").form('submit',{}, function(data){
+                    totalTime = Number(data.upload_result.wait_time || totalTime);  //后端返回等待时间
+                    percentPersecond = 1 / totalTime;
+                    //clearInterval(query_interval);
+                    //query_interval = setInterval(getResult_up,1000); //时间比较短，不用进度条
+                    // Refresh grid after upload action succeed.
+                    $("#server_ca_cert_grid").grid("getStore").load();
+                },function(errcode){            //错误时，
+                    if ($.su.app && $.su.app.errorOperation && $.su.app.errorOperation.denied){
+                        errcode = errcode || -50904;
+                        $.su.app.errorOperation.denied(errcode);
+                    }
+                },function(){
+                    uploadMsg.msg('hide');
+                });
+            });
+        }
+        else
+        {
+            return false;
+        }
+    };
+
+    var upload_msgRenderFunc = function _upload_msgRenderFunc()
+    {
+        //设置msg控件的高度，避免覆盖错误提示信息
+        var file_proxy = new $.su.Proxy();
+        //设置表单控件属性
+        $("#cert_upload").form({
+            proxy: file_proxy,
+            formEnctype: "multipart/form-data",     //数据传输格式
+            traditional: true,
+            hiddenFrame: true,
+            showHead: true,
+            closeBtn: true,
+            fileUrlCb: function(){
+                return $.su.url(upload_url);
+            },
+            validator: function(){
+                /*
+                var cer_type = $("#upload_cert_type").combobox("getValue")[0],
+                    upload_key_file_name = $("#upload_key_file").file("getValue");
+
+                if("no_pem" === cer_type && "" === upload_key_file_name)
+                {
+                    $("#upload_key_file").file("setError", "请添加密钥文件");
+                    return false;
+                }
+                */
+                return true;
+            }
+        });
+
+        //设置文件上传控件
+        $("#upload_ca_cert").file({
+            fieldLabel        : $.su.CHAR.SSL_CERTIFICATE.CERT_NAME,
+            allowBlank        : false,
+            extension         : "cer,der,pem,crt,p12,pfx",   //添加限制文件后缀名
+            extensionErrorText: $.su.CHAR.SERVER_CA_CERT.ERROR_TEXT.CA_CERT_SUFFIX
+        });
+/*
+        $("#upload_key_file").file({
+            fieldLabel: $.su.CHAR.SSL_CERTIFICATE.KEY_FILE,
+            allowBlank: true,
+            extension: "key"   //添加限制文件后缀名
+        });
+
+        $("#upload_key_file").file('hide');
+
+        $("#upload_cert_type").combobox({
+            fieldLabel:$.su.CHAR.SSL_CERTIFICATE.CERT_TYPE,
+            inputCls:"xl",
+            allowBlank: false,
+            items: [
+                {value:'have_pem', name:$.su.CHAR.SSL_CERTIFICATE.CERT_HAVE_PEM, selected: true},
+                {value:'no_pem', name:$.su.CHAR.SSL_CERTIFICATE.CERT_NO_PEM},
+            ]
+        }).on("ev_change", function(me, oldValue, newValue){
+            if(newValue[0] === 'have_pem')
+            {
+                $("#upload_key_file").file('hide');
+            }
+            else
+            {
+                $("#upload_key_file").file('show');
+            }
+        });
+*/
+
+        $("#upload_password").password({
+            fieldLabel  : $.su.CHAR.SSL_CERTIFICATE.PASSWORD,
+            allowBlank  : true,
+            maxLength   : 18,
+            cls         : "inline",
+            showLevel   : false,
+            allowVisible: true
+        });
+/*
+        $("#upload_cert_note").radio({
+            fieldLabel:$.su.CHAR.SSL_CERTIFICATE.CERTIFICATE_NOTE,
+            allowBlank: false,
+            columns:2,
+            items: [
+                { boxlabel: $.su.CHAR.SSL_CERTIFICATE.TRUST_CERTIFICATE, inputValue: 'trust', checked: true },
+                { boxlabel: $.su.CHAR.SSL_CERTIFICATE.UNTRUST_CERTIFICATE, inputValue: 'untrust' },
+            ],
+        });
+
+        $("#tips").text("提示：当需要标记证书可信时，请指定校验服务器证书所使用的CA证书，即服务器CA证书。");
+*/
+    }
+
+/*
+    var detail_fields = [
+        {
+            key: "name",
+            fieldLabel: $.su.CHAR.SSL_CERTIFICATE.NAME,
+            index: 0,
+            rows: 1
+        },
+        {
+            key: "public_name",
+            fieldLabel: $.su.CHAR.SSL_CERTIFICATE.PUBLIC_NAME,
+            index: 1,
+            rows: 1
+        },
+        {
+            key: "ip_address",
+            fieldLabel: $.su.CHAR.SSL_CERTIFICATE.IP_ADDRESS,
+            index: 2,
+            rows: 1
+        },
+        {
+            key: "domain",
+            fieldLabel: $.su.CHAR.SSL_CERTIFICATE.DOMAIN,
+            index: 3,
+            rows: 1
+        },
+        {
+            key: "email",
+            fieldLabel: $.su.CHAR.SSL_CERTIFICATE.EMAIL,
+            index: 4,
+            rows: 1
+        },
+        {
+            key: "country",
+            fieldLabel: $.su.CHAR.SSL_CERTIFICATE.COUNTRY,
+            index: 5,
+            rows: 1
+        },
+        {
+            key: "state_province",
+            fieldLabel: $.su.CHAR.SSL_CERTIFICATE.STATE_PROVINCE,
+            index: 6,
+            rows: 1
+        },
+        {
+            key: "location",
+            fieldLabel: $.su.CHAR.SSL_CERTIFICATE.LOCATION,
+            index: 7,
+            rows: 1
+        },
+        {
+            key: "department",
+            fieldLabel: $.su.CHAR.SSL_CERTIFICATE.DEPARTMENT,
+            index: 8,
+            rows: 1
+        },
+        {
+            key: "organization",
+            fieldLabel: $.su.CHAR.SSL_CERTIFICATE.ORGANIZATION,
+            index: 9,
+            rows: 1
+        },
+    ];*/
+/* ----------------------------- grid -------------------------------*/
+       var CA_CERT_MIN = 0;
+       var CA_CERT_MAX = 32;
+       var ruleGrid = $("#server_ca_cert_grid").grid({
+        /*editor:{
+            content:"#own_editor",
+            fields:[
+                {name: "name"},
+                {name: "public_name"},
+                {name: "ip_address"},
+                {name: "domain"},
+                {name: "email"},
+                {name: "country"},
+                {name: "state_province"},
+                {name: "location"},
+                {name: "department"},
+                {name: "organization"},
+                {name: "key_type"},
+                {name: "key_length"},
+                {name: "certificate_note"},
+            ],
+            validator:function(){
+                var name=$("#rule_name").textbox('getValue');
+                var nameList = $("#server_ca_cert_grid").grid('getStore').data;
+                var editingId = $($("#server_ca_cert_grid").grid('getEditor')).editor("getEditingId");
+                var modify_flag = 0;
+                for(var i=0;i<nameList.length;i++){
+                    //如果是修改，则跳过;不检测重名
+                    if(editingId == nameList[i].key)
+                    {
+                        modify_flag = 1;
+                        continue;
+                    }
+
+                    if(name == nameList[i].name)
+                    {
+                        $($("#server_ca_cert_grid").grid("getEditor")).form('setError',"您输入的名称已经存在，请重新输入");
+                        return false;
+                    }
+                }
+                return true;
+            }
+        },*/
+        store:{
+            proxy:server_ca_cert_proxy,
+            fields:[
+                {name: "name"}/*,
+                {name: "public_name"},
+                {name: "ip_address"},
+                {name: "domain"},
+                {name: "email"},
+                {name: "country"},
+                {name: "state_province"},
+                {name: "location"},
+                {name: "department"},
+                {name: "organization"},
+                {name: "key_type"},
+                {name: "key_length"},
+                {name: "certificate_note"},*/
+            ],
+            parseKey:{
+                moduleName: "certificate",
+                tableName: "server_ca_cert",
+                pageSizeName: "server_ca_cert_entry"
+            },
+            autoLoad:true
+        },
+        paging_true:{},
+        //主表格，格式设置
+        columns:[
+             {
+                xtype: "checkcolumn",
+                width: 32
+            },
+            {
+                xtype: "rownumberer",
+                width: 30
+            },
+            {
+                text:$.su.CHAR.SSL_CERTIFICATE.NAME,
+                width:40,
+                dataIndex:"name"
+            },
+            /*{
+                text:$.su.CHAR.SSL_CERTIFICATE.DESC,
+                width:60,
+            },
+            {
+                text:$.su.CHAR.SSL_CERTIFICATE.CERTIFICATE_NOTE,
+                width:60,
+                dataIndex:"certificate_note",
+                renderer:function(dd, index, data){
+                    return certNoteArr[data.certificate_note];
+                }
+            },
+            {
+                text:"查看详细",
+                width:30,
+                xtype: "query_detail",
+            },
+            {
+                text:"下载",
+                width:30,
+                xtype: "download",
+            },
+            {
+                xtype: "settings",
+                width: $.su.CHAR.SETTING.IMB.SETTING_WIDTH
+            }*/
+        ],
+        operation:"prompt|delete|upload",//"prompt|add|delete|upload",
+        /*download_msg:{
+            title: $.su.CHAR.SSL_CERTIFICATE.DOWNLOAD,
+            msgInHTML: download_msg_html,
+            msgRenderFunc: download_render_func,
+            okHandler: msg_okHandler,
+        },*/
+        upload_msg:{
+            title: $.su.CHAR.SSL_CERTIFICATE.UPLOAD,
+            msgInHTML: upload_msgInHTML,
+            msgRenderFunc: upload_msgRenderFunc,
+            okHandler: upload_okHandler,
+        }/*,
+        query_detail_msg:{
+            title: $.su.CHAR.SSL_CERTIFICATE.QUERY_CERT_DETAIL,
+            fields: detail_fields
+        }*/
+    /*}).on("ev_insert",function(){
+        ruleGrid.grid("getStore").load();*/
+    }).on("ev_remove", function(){
+        ruleGrid.grid("getStore").load();
+    /*}).on("ev_update", function(){
+         ruleGrid.grid("getStore").load();
+    }).on("ev_formatEditData", function(e, data){
+        //避免传给后台数据类型不一致，导致错误
+
+    }).on("ev_startEdit", function(e, index, key){
+        if (index != "add"){
+            set_item_disable();
+        }else{
+            set_item_enable();
+        }*/
+    });
+
+
+
+    /* --------------------- FUNCTION ----------------------*/
+/*
+    function set_item_disable()
+    {
+        $("#name").textbox("disableStyle");
+        $("#identify_info").hide();
+        $("#public_name").textbox("hide");
+        $("#ip_address").textbox("hide");
+        $("#domain").textbox("hide");
+        $("#email").textbox("hide");
+        $("#country").combobox("hide");
+        $("#state_province").textbox("hide");
+        $("#location").textbox("hide");
+        $("#department").textbox("hide");
+        $("#organization").textbox("hide");
+        $("#key_options").hide();
+        $("#key_type").textbox("hide");
+        $("#key_length").textbox("hide");
+    }
+
+    function set_item_enable()
+    {
+        $("#name").textbox("enableStyle");
+        $("#identify_info").show();
+        $("#public_name").textbox("show");
+        $("#ip_address").textbox("show");
+        $("#domain").textbox("show");
+        $("#email").textbox("show");
+        $("#country").combobox("show");
+        $("#state_province").textbox("show");
+        $("#location").textbox("show");
+        $("#department").textbox("show");
+        $("#organization").textbox("show");
+        $("#key_options").show();
+        $("#key_type").textbox("show");
+        $("#key_length").textbox("show");
+    }
+*/
+    /* --------------- HELP ------------------*/
+    var server_ca_cert_help = new $.su.Help({
+        container: "div#server_ca_cert_help",
+        content: ["CA_CERTIFICATE"] });
+
+    $(".func-container").show();
+});
+</script>
+</body>
+</html>

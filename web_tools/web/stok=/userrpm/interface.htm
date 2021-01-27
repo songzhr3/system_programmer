@@ -1,0 +1,2614 @@
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
+<html xmlns="http://www.w3.org/1999/xhtml">
+<head>
+    <meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
+    <title>Interface</title>
+    <style type="text/css">
+        .interface-operation{
+            text-align: left;
+        }
+        #ip-type{
+            height: 32px;
+        }
+        #ip-type-label{
+            display: inline-block;
+            line-height: 32px;
+            padding-bottom: 22px;
+        }
+        .m-toggle {
+            display: inline-block;
+            margin-left: 105px;
+            overflow: hidden;
+        }
+
+        .m-toggle li:first-child {
+            border-radius: 2px 0 0 2px;
+        }
+
+        .m-toggle li:last-child {
+            border-right-width: 1px;
+        }
+
+        .m-toggle li.selected {
+            background-color: #5680B0;
+            border-color: #5680B0;
+            color: #fff;
+        }
+        .m-toggle li {
+            float: left;
+            border: 1px solid #B4B5B8;
+            border-right-width: 0;
+            padding: 8px 15.5px;
+            cursor:pointer;
+        }
+    </style>
+</head>
+
+<body>
+<div class="func-container">
+    <div id="own-editor">
+        <input id="interface-type" name="if_type"/>
+        <input id="interface-name" name="if_name"/>
+        <input id="bind-interface" name="bindif" class="conficting excluding-physic"/>
+        <input id="link-mode" name="proto" class="conficting ethernet-widgets bridged-physical-disable "/>
+        <div id="ip-type">
+            <label id="ip-type-label">IP协议类型:</label>
+            <ul class="m-toggle f-ib">
+                <li name="v4mode" class="selected">IPv4</li>
+                <li name="v6mode">IPv6</li>
+            </ul>
+        </div>
+
+        <!--<input id="ipv4-enable" name="ipv4_enable" class="hidden"/>-->
+        <input id="ipv6-enable" name="ipv6_enable" class="v6mode v6widgets-common"/>
+
+        <input id="pppoe-sharev4" name="pppoe_sharev4" class="v6mode pppoev6"/>
+        <input id="username6" name="username6" class="v6mode pppoev6"/>
+        <input id="password6" name="password6" class="v6mode pppoev6"/>
+
+
+<!--        <input id="proto6" name="proto6" class="v6mode dhcpv6 eui64 manual"/>-->
+        <input id="staticv6-mode" name="ip6ifaceid" class="v6mode eui64 manual"/>
+        <input id="prefix-if" name="prefix_if" class="v6mode eui64"/>
+        <input id="prefix" name="prefix" class="v6mode eui64"/>
+
+
+        <input id="ip-config" name="ip_config" class="v6mode pppoev6 dhcpv6"/>
+        <input id="pd-mode" name="pd_mode" class="v6mode pppoev6 dhcpv6"/>
+
+        <input id="static-ipv6" name="ip6addr" class="v6mode eui64 manual pppoe-static"/>
+        <input id="prefixlen" name="prefixlen" class="v6mode manual pppoe-static"/>
+        <input id="ip6gw" name="ip6gw" class="v6mode eui64 manual"/>
+
+        <input id="pri-dnsv6" name="pri_dns6" class="v6mode v6widgets-common pppoe-static"/>
+        <input id="snd-dnsv6" name="snd_dns6" class="v6mode v6widgets-common pppoe-static"/>
+
+        <input id="service6" name="service6" class="v6mode pppoev6"/>
+
+        <input id="mtu6" name="mtu6" class="v6mode v6widgets-common"/>
+
+
+
+        <!--<input id="link-status" name="t_isup"/>-->
+
+        <input id="interface-vlanid" name="vlanid" class="conficting excluding-physic ethernet-widgets v4mode"/>
+        <input id="set-vlantag" name="untag" class="conficting excluding-physic ethernet-widgets v4mode"/>
+
+        <input id="static-ip" name="ip" class="conficting ethernet-widgets static-widgets bridged-physical-disable v4mode"/>
+        <input id="static-mask" name="netmask" class="conficting ethernet-widgets static-widgets bridged-physical-disable v4mode"/>
+        <input id="static-gateway" name="gateway" class="conficting ethernet-widgets static-widgets bridged-physical-disable v4mode"/>
+        <input id="dhcp-hostname" name="hostname" class="conficting ethernet-widgets dhcp-widgets bridged-physical-disable v4mode"/>
+        <input id="username" name="username" class="conficting pppoe-widgets v4mode"/>
+        <input id="password" name="password" class="conficting pppoe-widgets v4mode"/>
+
+
+        <input id="echo-interval" name="lcpechointerval" class="hidden" value="2" />
+        <input id="echo-retry" name="lcpechofailure" class="hidden" value="5" />
+        <input id="interface-mtu" name="mtu" class="bridged-physical-disable v4mode"/>
+        <input id="service-name" name="service" class="conficting pppoe-widgets v4mode"/>
+        <input id="main-dns" name="pri_dns" class="bridged-physical-disable v4mode"/>
+        <input id="backup-dns" name="snd_dns" class="bridged-physical-disable v4mode"/>
+
+
+        <div id="space-line" style="height: 12px"></div>
+        <input id="link-type" name="linktype" class="conficting pppoe-widgets "/>
+        <input id="time-object" name="timeobj" class="conficting pppoe-widgets v4mode"/>
+        <input id="interface-up-bandwidth" name="up_speed" class="bridged-physical-disable"/>
+        <input id="interface-down-bandwidth" name="down_speed" class="bridged-physical-disable"/>
+        <input id="interface-mac" name="mac" class="conficting ethernet-widgets bridged-physical-disable"/>
+        <!--<input id="dobalance" name="balance" class="bridged-physical-disable"/>-->
+        <input id="comment" name="comment" class="bridged-physical-disable"/>
+        <input id="mngt_enable" name="mngt_enable" class="bridged-physical-disable"/>
+        <input id="is_user_dns" name="is_user_dns" class="hidden"/>
+		<input id="peerdns6" name="peerdns6" class="hidden"/>
+    </div>
+    <div id="interface-list">
+        <div id="port-indicator-wrapper" class="inline-block">
+            <div id="port-indicator"></div>
+        </div>
+        <form id="phyif-form">
+            <input id="phyif-list" name="phyif" value=""/>
+        </form>
+        <div id="interface-grid">
+        </div>
+    </div>
+    <div id="link-alert" class="warning">
+        <h4 class="title">
+            <span class="icon"></span>
+            <span class="text"></span>
+        </h4>
+    </div>
+    <div id="link-detail-window">
+        <table class="link-detail-table detail">
+            <tr>
+                <td class="detail-key" id="link-detail-key-name" style="width: 120px"></td>
+                <td class="detail-value" id="link-detail-value-name"></td>
+            </tr>
+            <tr>
+                <td class="detail-key" id="link-detail-key-status"></td>
+                <td class="detail-value" id="link-detail-value-status"></td>
+            </tr>
+            <tr id="link-detail-uptime">
+                <td class="detail-key" id="link-detail-key-uptime"></td>
+                <td class="detail-value" id="link-detail-value-uptime"></td>
+            </tr>
+            <tr>
+                <td class="detail-key" id="link-detail-key-mode"></td>
+                <td class="detail-value" id="link-detail-value-mode"></td>
+            </tr>
+            <tr>
+                <td class="detail-key" id="link-detail-key-ip"></td>
+                <td class="detail-value" id="link-detail-value-ip"></td>
+            </tr>
+            <tr>
+                <td class="detail-key" id="link-detail-key-mask"></td>
+                <td class="detail-value" id="link-detail-value-mask"></td>
+            </tr>
+            <tr>
+                <td class="detail-key" id="link-detail-key-gateway"></td>
+                <td class="detail-value" id="link-detail-value-gateway"></td>
+            </tr>
+            <tr>
+                <td class="detail-key" id="link-detail-key-dns"></td>
+                <td class="detail-value" id="link-detail-value-dns"></td>
+            </tr>
+            <tr>
+                <td class="detail-key" id="link-detail-key-snd_dns"></td>
+                <td class="detail-value" id="link-detail-value-snd_dns"></td>
+            </tr>
+
+            <tr>
+                <td class="detail-key" id="link-detail-key-status6"></td>
+                <td class="detail-value" id="link-detail-value-status6"></td>
+            </tr>
+            <tr>
+                <td class="detail-key" id="link-detail-key-ip6addr"></td>
+                <td class="detail-value" id="link-detail-value-ip6addr"></td>
+            </tr>
+            <tr>
+                <td class="detail-key" id="link-detail-key-prefixlen"></td>
+                <td class="detail-value" id="link-detail-value-prefixlen"></td>
+            </tr>
+            <tr>
+                <td class="detail-key" id="link-detail-key-ip6gw"></td>
+                <td class="detail-value" id="link-detail-value-ip6gw"></td>
+            </tr>
+            <tr>
+                <td class="detail-key" id="link-detail-key-pri_dns6"></td>
+                <td class="detail-value" id="link-detail-value-pri_dns6"></td>
+            </tr>
+            <tr>
+                <td class="detail-key" id="link-detail-key-snd_dns6"></td>
+                <td class="detail-value" id="link-detail-value-snd_dns6"></td>
+            </tr>
+
+            <tr id="link-detail-mac">
+                <td class="detail-key" id="link-detail-key-mac"></td>
+                <td class="detail-value" id="link-detail-value-mac"></td>
+            </tr>
+        </table>
+    </div>
+    <div id="unlink_alert">
+        <h4 class="title"  id="unlink_confirm">
+            <span class="icon"></span>
+            <span class="text" id="unlink_confirm_content"></span>
+        </h4>
+    </div>
+
+    <div id="interface-help"></div>
+</div>
+
+<script type="text/javascript">
+    //<![CDATA[
+    try{
+        $
+    }catch(e){
+        location.href = "/";
+    };
+
+    $(document).ready(function(e){
+        var PrefixItems = [];
+        var PrefixNames = [];
+        var IF_INFO = {
+            TYPE: {
+                PHY: "physical",
+                ETH: "ethernet",
+                PPPOE: "pppoe",
+                BRIDGE: "bridge"
+            },
+            STATUS: {
+                UP: "up",
+                DOWN: "down"
+            },
+            LINK_MODE: {
+                DHCP: "dhcp",
+                STATIC: "static"
+            },
+            ACTION: {
+                UP: 1,
+                DOWN: 0
+            }
+        };
+
+        var maxInfo = {
+            "physicalMax":5,
+            "bridgeMax":16,
+            "staticMax":64,
+            "dhcpMax":64,
+            "pppoeMax":64
+        };
+
+        var if_has_disabled = false;
+        var proxy = new $.su.Proxy({});
+
+        var $confictWidgets = $(".conficting"),
+            $physicExcludes = $(".excluding-physic"),
+            $pppoeWidgets = $(".pppoe-widgets"),
+            $ethernetWidgets = $(".ethernet-widgets"),
+            $dhcpWidgets = $(".dhcp-widgets"),
+            $staticWidgets = $(".static-widgets"),
+            $bridgePhysicals = $(".bridged-physical-disable");
+
+        var $pppoev6 = $(".pppoev6");
+        var $v6widgets = $(".v6mode");
+        var $v6widgetsCommon = $(".v6widgets-common");
+        var $dhcpv6 = $(".dhcpv6");
+        var $eui64 = $(".eui64");
+        var $manual =$(".manual");
+        var $pppoeStatic = $(".pppoe-static");
+
+        var firstLoad = true;
+        var statusData = {};
+        var gothers = {};
+        var insert = true;      /* whether insert a new item or modify a old item */
+        var maxmtu = 1500;
+        var ispppoe = false;
+        var bridges = {};
+        var phy_if_count = 5;
+        var iseditingv4 = true;
+        var v6Enable = 'off';
+        var pppoeSharev4 ='off';
+        var staticv6Mode="eui64";
+        var prefixIf = '---';
+        var IpConfig = 'auto';
+        var linkmodeValue = 'static';
+        var cur_if_name = "";
+
+        function showWidgets($list){
+            if(!$list || !$list.length){
+                return;
+            }
+            $list.each(function(i, o){
+                $(o)[o.xtype]('enable')[o.xtype]('show');
+            });
+        }
+
+        function hideWidgets($list){
+            if(!$list || !$list.length){
+                return;
+            }
+            $list.each(function(i, o){
+                if($(o).get(0).xtype!==undefined){
+                    //comboBox没有xtype
+                    $(o)[o.xtype]('disable')[o.xtype]('hide');
+                }
+            });
+        }
+
+        function enableIfVisible($target) {
+            // 如果可视则将可编辑状态改为可编辑
+            if($target.closest('.widget-container').css('display') !== 'none' ){
+                let tar = $target[0];
+                $(tar)[tar.xtype]('enable');
+            }
+        }
+
+        var Bridge_Proxy = new $.su.Proxy({});
+
+        // 接口列表初始化，并绑定切换接口事件
+        var $phyifList = $('#phyif-list').combobox({
+            labelCls:"s",
+            fieldLabel: '选择物理接口',
+            items: [{name: '---', value: '---'}]
+        }).on("ev_change", function(e, oldValue, newValue){
+            var phyif = newValue[0];
+            reloadGrid(phyif, function(dt){
+                refreshStatus();
+
+                var ifArray = interfaceGrid.grid('getStore').data;
+
+                for (var i = 0; i < ifArray.length; i++)
+                {
+                    if (ifArray[i]["if_name"] == phyif)
+                    {
+                        var bindif = ifArray[i].bindif;
+                        $('#port-indicator').find('.port-indicate-icon').removeClass('upport-indicate-icon').each(function(i, o){
+                            var $o = $(o);
+                            if($o.data('name') == phyif){
+                                $o.addClass('upport-indicate-icon');
+                            }
+                            else if ('LAN' == phyif && (-1 != $.inArray($o.data('name'), bindif)))
+                            {
+                                $o.addClass('upport-indicate-icon');
+                            }
+                        });
+                    }
+                }
+            });
+            $('.panel-tbar-container .btn-add').removeClass('proxy-disabled');
+        });
+
+        var $phyifForm = $('#phyif-form').form({
+            proxy: new $.su.Proxy(),
+            autoLoad: true,
+            fields: [
+                {name: "phyif", mapping: "phyif"}
+            ]
+        });
+
+        // 填充接口列表
+        proxy.query({network: {table: "if"}}, function(data){
+            if (data.error_code != ENONE)
+            {
+                return;
+            }
+
+            var ifs = data.network["if"],
+                phyifItems = [],
+                zif,
+                html = "";
+
+            var i = 0;
+            $.each(ifs, function(_, item){
+                for (var key in item)
+                {
+                    zif = {name: item[key].if_name, value: item[key].if_name};
+                    switch(item[key].if_type)
+                    {
+                        case IF_INFO.TYPE.BRIDGE:
+                            phyifItems.push(zif);
+                            bridges[item[key].if_name] = item[key].if_name;
+                            break;
+                        case IF_INFO.TYPE.PHY:
+                            phyifItems.push(zif);
+                            html += '<div class="port-icon-wrapper inline-block">' +
+                                '<span class="port-icon-index inline-block">'+ (i++ + 1) +'</span>' +
+                                '<span class="port-indicate-icon inline-block" data-name="'+ item[key].if_name +'"></span>' +
+                                '</div>';
+                            break;
+                        default:
+                            break;
+                    }
+                }
+            });
+
+            phy_if_count = i;
+            phyifItems[0].selected = true;
+            $phyifList.combobox('loadData', phyifItems);
+            $('#port-indicator').html(html).find('.port-indicate-icon:eq(0)').addClass('upport-indicate-icon');
+            $.each(bridges, function(i, o){
+                $('#port-indicator').find('.port-indicate-icon').each(function(k, icon){
+                    var $icon = $(icon);
+                    if($icon.data('name') == i){
+                        $icon.addClass('bridge-' + i);
+                    }
+                });
+            });
+            reloadGrid(phyifItems[0].name);
+        });
+
+        // 将ipv6 所有的接口联动逻辑封装成一个函数
+        function changeV6Wigets(){
+            // console.log(iseditingv4,ispppoe,proto6,staticv6Mode,v6Enable,'iseditingv4,ispppoe,proto6,staticv6Mode,v6Enable')
+            if(iseditingv4){
+                $('.v4mode').closest('.widget-container.disabled').css('display','none');
+            }else{
+                // hide 所有v6
+                hideWidgets($v6widgets);
+                // 展示v6公共
+                showWidgets($v6widgetsCommon);
+
+                if(ispppoe){
+                    showWidgets($pppoev6);
+                    if(IpConfig === 'static'){
+                        // pppoe模式下，选择static后相当于手动，所以允许输入子网前缀长度。
+                        showWidgets($pppoeStatic);
+                        hideWidgets($('#pd-mode'));
+
+                    }
+                }else {
+                    //todo !!!!!!!!!
+                    if(linkmodeValue==='dhcp'){
+                        showWidgets($dhcpv6);
+                    }else if(linkmodeValue === 'static'){
+                        if(staticv6Mode==='eui64'){
+                            showWidgets($eui64);
+                        }else if(staticv6Mode==='manual'){
+                            showWidgets($manual);
+                        }
+                    }
+
+                }
+
+                //配置ipv6桥模式了的接口禁用配置ipv6
+                var tmpProxy = new $.su.Proxy({async: false});
+                var tmpWAN = '';
+                var tmpLAN = '';
+                tmpProxy.query({"network":{"table": "bridge_v6"}}, function(data){
+                    if("on" == data.network.bridge_v6.enable){
+                        tmpWAN = data.network.bridge_v6.ipv6_WAN;
+                        tmpLAN = data.network.bridge_v6.ipv6_LAN;
+                    }
+                });
+
+                var ifs = interfaceGrid.grid('getStore').data
+                for(var i = 0; i < ifs.length; i++){
+                    if(tmpWAN == ifs[i].if_name || tmpLAN == ifs[i].if_name){
+                        $interfaceEditor.find('#ipv6-enable').radio('disable');
+			break;
+                    }
+                }
+
+                // 是否开启IPv6影响v6下所有参数可编辑状态
+                if(v6Enable === 'on'){
+                    enableIfVisible($interfaceEditor.find('#pppoe-sharev4'));
+                    enableIfVisible($interfaceEditor.find('#username6'));
+                    enableIfVisible($interfaceEditor.find('#password6'));
+                    // enableIfVisible($interfaceEditor.find('#proto6'));
+                    enableIfVisible($interfaceEditor.find('#staticv6-mode'));
+                    enableIfVisible($interfaceEditor.find('#prefix-if'));
+                    enableIfVisible($interfaceEditor.find('#prefix'));
+                    enableIfVisible($interfaceEditor.find('#static-ipv6'));
+                    enableIfVisible($interfaceEditor.find('#ip6gw'));
+                    enableIfVisible($interfaceEditor.find('#ip-config'));
+                    enableIfVisible($interfaceEditor.find('#pd-mode'));
+                    enableIfVisible($interfaceEditor.find('#pri-dnsv6'));
+                    enableIfVisible($interfaceEditor.find('#snd-dnsv6'));
+                    enableIfVisible($interfaceEditor.find('#service6'));
+                    enableIfVisible($interfaceEditor.find('#mtu6'));
+                    enableIfVisible($interfaceEditor.find('#prefixlen'));
+
+
+                    //todo !!!
+                    if(linkmodeValue==='static'&& staticv6Mode === 'eui64' && !ispppoe){
+                        //为了防止干扰ppposeStatic状态下的可编辑性，判断条件要加上！ispppoe
+                        $interfaceEditor.find('#static-ipv6').textbox('disable');
+                        $interfaceEditor.find('#ip6gw').textbox('disable');
+                        $interfaceEditor.find('#pri-dnsv6').textbox('disable');
+                        $interfaceEditor.find('#snd-dnsv6').textbox('disable');
+                        if(prefixIf !== undefined && prefixIf !== '---' && prefixIf !== ''){
+                            if (typeof($('#prefix')[0]) != "undefined")
+                                $('#prefix')[0].setAttribute("readonly","readonly");
+                        }
+                        else
+                        {
+                            if (typeof($('#prefix')[0]) != "undefined")
+                                $('#prefix')[0].removeAttribute("readonly");
+                        }
+                    }
+                    if(pppoeSharev4 === 'on'){
+						$interfaceEditor.find('#password6').password('disable');
+                        $interfaceEditor.find('#username6').textbox('disable');
+                    }
+
+                }else if(v6Enable === 'off'){
+                    $interfaceEditor.find('#pppoe-sharev4').checkbox('disable');
+                    $interfaceEditor.find('#username6').textbox('disable');
+                    $interfaceEditor.find('#password6').password('disable');
+                    // $interfaceEditor.find('#proto6').combobox('disable');
+                    $interfaceEditor.find('#staticv6-mode').radio('disable');
+                    $interfaceEditor.find('#prefix-if').combobox('disable');
+                    $interfaceEditor.find('#prefix').textbox('disable');
+                    $interfaceEditor.find('#static-ipv6').textbox('disable');
+                    $interfaceEditor.find('#ip6gw').textbox('disable');
+                    $interfaceEditor.find('#ip-config').radio('disable');
+                    $interfaceEditor.find('#pd-mode').radio('disable');
+                    $interfaceEditor.find('#pri-dnsv6').textbox('disable');
+                    $interfaceEditor.find('#snd-dnsv6').textbox('disable');
+                    $interfaceEditor.find('#service6').textbox('disable');
+                    $interfaceEditor.find('#mtu6').textbox('disable');
+                    $interfaceEditor.find('#prefixlen').textbox('disable');
+                }
+
+                // ipv6地址获取协议的可选项
+                if(ispppoe){
+                    //理应动态IP时候不允许出现静态IP这个参数可选项，但是只有pppoe模式下才会有非动态IP且该选项可编辑。所以直接用pppoe判断
+                    if(v6Enable === 'on'){
+                        $('#ip-config').radio("enableItem",['static']);
+                    }
+                }else {
+                    $('#ip-config').radio("disableItem",['static']);
+                    if($('#ip-config') && $('#ip-config').radio("getValue")==='static'){
+                        $('#ip-config').radio("setValue",'auto');
+                    }
+                }
+            }
+        }
+
+        $('#interface-type').combobox({
+            fieldLabel: $.su.CHAR.INTERFACE.IFTYPE,
+            alwaysTrigger: true,
+            items:[
+                {value:IF_INFO.TYPE.PHY, name: "物理接口", selected: true},
+                {value:IF_INFO.TYPE.BRIDGE, name: "网桥接口"},
+                {value:IF_INFO.TYPE.ETH, name: "Ethernet"},
+                {value:IF_INFO.TYPE.PPPOE, name: "PPPoE"}
+            ]
+        }).on("ev_change", function(e, oldValue, newValue) {
+            var value = newValue[0],
+                $editor = $(interfaceGrid.grid("getEditor")),
+                $linkMode = $editor.find("#link-mode"),
+                $linkType = $editor.find("#link-type"),
+                $bindIf = $editor.find('#bind-interface'),
+                items = [],
+                data = interfaceGrid.grid('getStore').data;
+            //$('#dobalance').checkbox('setValue', '0')
+            $('#mngt_enable').checkbox('setValue', 'off')
+
+            ispppoe = false;
+            if (value === IF_INFO.TYPE.ETH) {
+				showWidgets($physicExcludes);
+            	showWidgets($ethernetWidgets);
+                hideWidgets($pppoeWidgets);
+                if (!iseditingv4) {
+                    $('#ip-type li:first-child').trigger('click');
+                }
+
+                var linkModeValue = $linkMode.combobox('getValue');
+                if (linkModeValue.length === 0) {
+                    linkModeValue = 'static';
+                }
+                $linkMode.combobox("setValue", linkModeValue);
+                items.length = 0;
+                $.each(data, function (i, el) {
+                    if (el.if_type === IF_INFO.TYPE.PHY || el.if_type === IF_INFO.TYPE.BRIDGE) {
+                        items.push({name: el.if_name, value: el.if_name, selected: true});
+                        return false;
+                    }
+                });
+                if ($bindIf.length > 0) {
+                    $bindIf.combobox('loadData', items);
+                }
+
+            } else if (value === "pppoe") {
+                ispppoe = true;
+				showWidgets($physicExcludes);
+                showWidgets($pppoeWidgets);
+                hideWidgets($ethernetWidgets);
+                if (!iseditingv4) {
+                     $('#ip-type li:first-child').trigger('click');
+                }
+                //$('#dobalance').checkbox('setValue', '1')
+                var linkTypeValue = $linkType.combobox('getValue');
+                if (linkTypeValue.length === 0) {
+                    linkTypeValue = 'auto';
+                }
+                $linkType.combobox("setValue", linkTypeValue);
+                items.length = 0;
+                $.each(data, function (i, el) {
+                    if (el.if_type === IF_INFO.TYPE.PHY || el.if_type === IF_INFO.TYPE.BRIDGE || el.if_type === IF_INFO.TYPE.ETH) {
+                        items.push({name: el.if_name, value: el.if_name});
+                    }
+                });
+                items[0].selected = true;
+                if ($bindIf.length > 0) {
+                    var bindifValue = $bindIf.combobox('getValue');
+                    $bindIf.combobox('loadData', items);
+                    if (bindifValue.length == 1) {
+                        $bindIf.combobox('setValue', bindifValue);
+                    }
+                }
+            } else if (value === IF_INFO.TYPE.PHY || value === IF_INFO.TYPE.BRIDGE) {
+                if (iseditingv4) {
+                    showWidgets($ethernetWidgets);
+                    hideWidgets($physicExcludes);
+                    hideWidgets($pppoeWidgets);
+                } else {
+                    changeV6Wigets();
+                }
+                var linkModeValue = $linkMode.combobox('getValue');
+                if(linkModeValue.length === 0){
+                    linkModeValue = 'static';
+                }
+                $linkMode.combobox("setValue", linkModeValue);
+                maxmtu = 1500;
+                maxmtu6 =1500;
+                maxmtu = maxmtu < 576? 576 : maxmtu;
+                maxmtu6 = maxmtu6 < 1280? 1280 : maxmtu6;
+                $('#interface-mtu').textbox('setTips', "（576-" + maxmtu + "）")
+                $('#mtu6').textbox('setTips', "（1280-" + maxmtu6 + "）");
+            }
+
+
+            if (value == IF_INFO.TYPE.ETH || value == IF_INFO.TYPE.PPPOE) {
+                var bindifValuex = $bindIf.combobox('getValue');
+                var alldata = interfaceGrid.grid('getStore').data;
+                maxmtu = 1500;
+                maxmtu6 = 1500;
+                for (var k = 0; k < alldata.length; k++) {
+                    if (bindifValuex[0] == alldata[k].if_name) {
+                        maxmtu = alldata[k].mtu ? alldata[k].mtu : 1500;
+                        maxmtu6 = alldata[k].mtu6 ? alldata[k].mtu6 : 1500;
+                        break;
+                    }
+                }
+                if (ispppoe)
+                {
+                    maxmtu = maxmtu - 8;
+                    maxmtu6 = maxmtu6 - 8;
+                }
+                maxmtu = maxmtu < 576? 576 : maxmtu;
+                maxmtu6 = maxmtu6 < 1280? 1280 : maxmtu6;
+                $('#interface-mtu').textbox('setTips', "（576-" + maxmtu + "）");
+                $('#mtu6').textbox('setTips', "（1280-" + maxmtu6 + "）");
+                if (insert == true)
+				{
+                    $('#interface-mtu').textbox('setValue', maxmtu);
+                    $('#mtu6').textbox('setValue', maxmtu6);
+				}
+            }
+        });
+        $('#interface-name').textbox({
+            fieldLabel: $.su.CHAR.INTERFACE.IFNAME,
+            allowBlank: false,
+            maxLength: 11,
+            tips: $.su.CHAR.INTERFACE.IFNAMETIPS,
+            validator: function(v) {
+                var reg = new RegExp(/^\d/);
+				var reg_ipv6 = new RegExp(/[6]$/);
+                if(new $.su.vtype('name').validate(v) !== true || reg.test(v) || reg_ipv6.test(v))
+                {
+                    return $.su.CHAR.INTERFACE.WRONG_NAME;
+                }
+                if (v.length > 11)
+                {
+                    return $.su.CHAR.INTERFACE.WRONG_NAME_LENGTH;
+                }
+                return true;
+            }
+        });
+        /*$('#link-status').textbox({
+            fieldLabel: "连接状态",
+            readOnly: true
+        });*/
+        $('#bind-interface').combobox({
+            fieldLabel: $.su.CHAR.INTERFACE.BINDIF,
+            items:[
+                {value:"---", name: "---"}
+            ]
+        }).on("ev_change", function(e, oldValue, newValue){
+            var value = newValue[0];
+            var data = interfaceGrid.grid('getStore').data;
+            maxmtu = 1500;
+
+            for (var k = 0; k < data.length; k++) {
+                if (value == data[k].if_name) {
+                    maxmtu = data[k].mtu ? data[k].mtu : 1500;
+                    break;
+                }
+            }
+
+            if (ispppoe)
+                maxmtu = maxmtu - 8;
+            maxmtu = maxmtu < 576? 576 : maxmtu;
+            $('#interface-mtu').textbox('setTips', "（576-" + maxmtu + "）");
+            if (insert == true)
+                $('#interface-mtu').textbox('setValue', maxmtu);
+
+        });
+        //
+        // $("#ipv4-enable").radio({
+        //     fieldLabel: $.su.CHAR.INTERFACE.ENABLE,
+        //     columns: 1,
+        //     items:[
+        //         {boxlabel: $.su.CHAR.INTERFACE.ENABLE_ON, name:'ipv4_enable', inputValue:'on',checked:true}
+        //     ]
+        // }).on('ev_change', function(e, oldValue, newValue){});
+
+        $('#ipv6-enable').radio({
+            fieldLabel: $.su.CHAR.INTERFACE.ENABLE,
+            columns: 2,
+            items:[
+                {boxlabel: $.su.CHAR.INTERFACE.ENABLE_ON, name:'ipv6_enable', inputValue:'on'},
+                {boxlabel: $.su.CHAR.INTERFACE.ENABLE_OFF, name:'ipv6_enable', inputValue:'off',checked : true}
+            ]
+        }).on('ev_change', function(e, oldValue, newValue){
+            v6Enable = newValue;
+            changeV6Wigets();
+        });
+
+        $('#pppoe-sharev4').checkbox({
+            fieldLabel: $.su.CHAR.INTERFACE.PPPOESHAREV4,
+            items: [
+                {boxlabel: "", inputValue:'on', uncheckedValue:'off'}
+            ]
+        }).on('ev_change', function(e, oldValue, newValue){
+            pppoeSharev4 = newValue[0] === 'on'? 'on' : 'off';
+            changeV6Wigets();
+        });
+        $('#username6').textbox({
+            fieldLabel: $.su.CHAR.INTERFACE.USERNAME,
+            allowBlank: false,
+            maxLength: 64,
+            validator: function(v)
+            {
+                if(new $.su.vtype({vtype:'string_visible_username'}).validate(v) !== true)
+                {
+                    return $.su.CHAR.L2TP_CLIENT.WRONG_NAME;
+                }
+                if (v.indexOf(" ") >= 0 || v.indexOf("\\") >= 0)
+                {
+                    return $.su.CHAR.L2TP_CLIENT.WRONG_NAME;
+                }
+                if (v.length > 64)
+                {
+                    return $.su.CHAR.L2TP_CLIENT.WRONG_NAME_LENGTH;
+                }
+                return true;
+            }
+        });
+        $('#password6').password({
+            fieldLabel: $.su.CHAR.INTERFACE.PASSWORD,
+            allowBlank: false,
+            maxLength: 128,
+            showLevel: false,
+            vtype: "password",
+            validator: function(v)
+            {
+                if(new $.su.vtype({vtype:'password'}).validate(v) !== true)
+                {
+                    return $.su.CHAR.INTERFACE.WRONG_NAME;
+                }
+                if (v.indexOf(" ") >= 0)
+                {
+                    return $.su.CHAR.INTERFACE.WRONG_NAME;
+                }
+                if (v.length > 128)
+                {
+                    return $.su.CHAR.INTERFACE.WRONG_NAME_LENGTH;
+                }
+                return true;
+            }
+        });
+        // $('#proto6').combobox({
+        //     fieldLabel: $.su.CHAR.INTERFACE.LINKTYPE,
+        //     alwaysTrigger: true,
+        //     items:[
+        //         {value:"staticv6", name: $.su.CHAR.INTERFACE.STATICIP, selected: true},
+        //         {value:"dhcpv6", name: "DHCP"}
+        //     ]
+        // }).on("ev_change", function(e, oldValue, newValue){
+        //     var value = newValue[0];
+        //     if(value === "staticv6"){
+        //         proto6 = "staticv6";
+        //         changeV6Wigets();
+        //     }else if(value === "dhcpv6"){
+        //         proto6 = "dhcpv6";
+        //         changeV6Wigets();
+        //     }
+        // });
+        $('#staticv6-mode').radio({
+            fieldLabel: $.su.CHAR.INTERFACE.STATICV6MODE,
+            columns: 2,
+            items:[
+                {boxlabel: $.su.CHAR.INTERFACE.EUI64, name:'ip6ifaceid', inputValue:'eui64',checked : true},
+                {boxlabel: $.su.CHAR.INTERFACE.MANUAL, name:'ip6ifaceid', inputValue:'manual'}
+            ]
+        }).on('ev_change', function(e, oldValue, newValue){
+            var value = newValue;
+            if(value === "eui64"){
+                staticv6Mode = "eui64";
+                $('#static-ipv6').textbox("setValue",'');
+                changeV6Wigets();
+            }else if(value === "manual"){
+                staticv6Mode = "manual";
+                $('#static-ipv6').textbox("setValue",'');
+                changeV6Wigets();
+            }
+        });
+        $('#prefix-if').combobox({
+            fieldLabel: $.su.CHAR.INTERFACE.PREFIXIF,
+            alwaysTrigger: true,
+            items:[
+                {value:"", name: "---"}
+            ]
+        }).on("ev_change", function(e, oldValue, newValue){
+            prefixIf = newValue[0];
+            if(PrefixItems){
+                PrefixItems.forEach(function (o,index) {
+                    if(o.name === prefixIf){
+                        $('#prefix').textbox("setValue",o.value);
+                    }
+                    else if(o.name == "---")
+                    {
+                        $('#prefix').textbox("setValue", "");
+                    }
+                })
+
+            }
+            changeV6Wigets();
+        });
+        $('#prefix').textbox({
+            fieldLabel: $.su.CHAR.INTERFACE.PREFIX,
+            allowBlank: true,
+            vtype: "ipv6",
+            maxLength: 39
+        });
+        $('#static-ipv6').textbox({
+            fieldLabel: $.su.CHAR.INTERFACE.IPADDRV6,
+            allowBlank: false,
+            vtype: "ipv6",
+            maxLength: 39
+        });
+        $('#ip6gw').textbox({
+            fieldLabel: $.su.CHAR.INTERFACE.GATEWAY,
+            vtype: "ipv6",
+            maxLength: 39,
+            tips: $.su.CHAR.INTERFACE.OPTIONAL
+        });
+        $('#ip-config').radio({
+            fieldLabel: $.su.CHAR.INTERFACE.IPCONFIG,
+            columns: 4,
+            items:[
+                {boxlabel: $.su.CHAR.INTERFACE.IPCONFIGAUTO, name:'ip_config', inputValue:'auto'},
+                {boxlabel: "DHCPv6", name:'ip_config', inputValue:'dhcpv6'},
+                {boxlabel: "SLAAC", name:'ip_config', inputValue:'slaac'},
+                {boxlabel: $.su.CHAR.INTERFACE.IPCONFIGSTATIC, name:'ip_config', inputValue:'static'}
+            ],
+            value:'auto'
+        }).on('ev_change', function(e, oldValue, newValue){
+            IpConfig = newValue;
+            changeV6Wigets();
+        });
+        $('#pd-mode').radio({
+            fieldLabel: $.su.CHAR.INTERFACE.PDMODE,
+            columns: 2,
+            items:[
+                {boxlabel: $.su.CHAR.INTERFACE.PDMODEPREFIX, name:'pd_mode', inputValue:'prefix',checked : true},
+                {boxlabel: $.su.CHAR.INTERFACE.PDMODENONTEMP, name:'pd_mode', inputValue:'non_temp'}
+            ]
+        }).on('ev_change', function(e, oldValue, newValue){});
+        $('#pri-dnsv6').textbox({
+            fieldLabel: $.su.CHAR.INTERFACE.DNS1,
+            vtype: "ipv6",
+            maxLength: 39,
+            tips: $.su.CHAR.INTERFACE.OPTIONAL,
+            validator: function(v){
+                var backup_dns = $('#snd-dnsv6').textbox("getValue");
+                if(v == backup_dns)
+                {
+                    return "主备DNS服务器不能相同。";
+                }
+                return true;
+            }
+        });
+        $('#snd-dnsv6').textbox({
+            fieldLabel: $.su.CHAR.INTERFACE.DNS2,
+            vtype: "ipv6",
+            maxLength: 39,
+            tips: $.su.CHAR.INTERFACE.OPTIONAL,
+            validator: function(v){
+                var main_dns = $('#pri-dnsv6').textbox("getValue");
+                if(v == main_dns)
+                {
+                    return "主备DNS服务器不能相同。";
+                }
+                return true;
+            }
+        });
+        $('#service6').textbox({
+            fieldLabel: $.su.CHAR.INTERFACE.SERVICENAME,
+            tips: $.su.CHAR.INTERFACE.SERVICEOPTIONAL,
+            maxLength:128,
+            validator: function(v) {
+                if(new $.su.vtype('string_visible_username').validate(v) === false)
+                {
+                    return $.su.CHAR.INTERFACE.WRONG_NAME;
+                }
+                if (v.indexOf(" ") >= 0)
+                {
+                    return $.su.CHAR.INTERFACE.WRONG_NAME;
+                }
+                if (v.length > 128)
+                {
+                    return $.su.CHAR.INTERFACE.WRONG_NAME_LENGTH;
+                }
+                return true;
+            }
+        });
+        $('#mtu6').textbox({
+            fieldLabel: "MTU",
+            value: "1500",
+            tips: $.su.CHAR.INTERFACE.MTU6OPTIONAL,
+            vtype: {
+                vtype: "number",
+                max: 1500,
+                min: 1280
+            }
+        });
+        $('#prefixlen').textbox({
+            fieldLabel: $.su.CHAR.INTERFACE.PREFIXLEN,
+            maxLength:3,
+            vtype: {
+                vtype: "number",
+                max: 128,
+                min: 3
+            },
+            allowBlank: false
+        })
+
+        $('#link-mode').combobox({
+            fieldLabel: $.su.CHAR.INTERFACE.LINKTYPE,
+            alwaysTrigger: true,
+            items:[
+                {value:"static", name: $.su.CHAR.INTERFACE.STATICIP, selected: true},
+                {value:"dhcp", name: "DHCP"}
+            ]
+        }).on("ev_change", function(e, oldValue, newValue){
+            var value = newValue[0],
+                $editor = $(interfaceGrid.grid("getEditor"));
+            linkmodeValue = value;
+            if(value === "static"){
+                showWidgets($staticWidgets);
+                hideWidgets($dhcpWidgets);
+                changeV6Wigets();
+            }else if(value === "dhcp"){
+                showWidgets($dhcpWidgets);
+                hideWidgets($staticWidgets);
+                changeV6Wigets();
+            }
+        });
+
+        $('#set-vlantag').checkbox({
+            fieldLabel: null,
+            cls: "inline",
+            items: [
+                {boxlabel: $.su.CHAR.INTERFACE.SETVLANTAG, inputValue:'1', uncheckedValue:'0'}
+            ]
+        });
+
+        $('#interface-vlanid').textbox({
+            cls: "inline-block",
+            fieldLabel: $.su.CHAR.INTERFACE.VLANID,
+            allowBlank: false,
+            vtype:{
+                vtype:"number",
+                min:1,
+                max:4094
+            }
+        });
+        $('#interface-vlanid').closest('.widget-container').css('margin-top','5px');
+
+        $('#static-ip').textbox({
+            fieldLabel: $.su.CHAR.INTERFACE.IPADDR,
+            allowBlank: true,
+            validator: function(v) {
+            if(v == "0.0.0.0"){
+                return true;
+            }
+				return new $.su.vtype('ip').validate(v);
+			}
+        });
+        $('#static-mask').textbox({
+            fieldLabel: $.su.CHAR.INTERFACE.NETMASK,
+            allowBlank: true,
+            validator: function(v) {
+            if(v == "0.0.0.0"){
+                return true;
+            }
+            return new $.su.vtype('netmask').validate(v);
+			}
+        });
+        $('#static-gateway').textbox({
+            fieldLabel: $.su.CHAR.INTERFACE.GATEWAY,
+            vtype: "ip",
+            tips: $.su.CHAR.INTERFACE.OPTIONAL
+        });
+        $('#dhcp-hostname').textbox({
+            fieldLabel: $.su.CHAR.INTERFACE.HOSTNAME,
+            vtype: "string_visible",
+            tips: $.su.CHAR.INTERFACE.OPTIONAL
+        });
+        $('#interface-mtu').textbox({
+            fieldLabel: "MTU",
+            value: "1500",
+            tips: $.su.CHAR.INTERFACE.MTUOPTIONAL,
+            vtype: {
+                vtype: "number",
+                max: 1500,
+                min: 576
+            }
+        });
+        $('#main-dns').textbox({
+            fieldLabel: $.su.CHAR.INTERFACE.DNS1,
+            vtype: "ip",
+            tips: $.su.CHAR.INTERFACE.OPTIONAL,
+            validator: function(v){
+                var backup_dns = $('#backup-dns').textbox("getValue");
+                if(v == backup_dns)
+                {
+                    return "主备DNS服务器不能相同。";
+                }
+                return true;
+            }
+        });
+        $('#backup-dns').textbox({
+            fieldLabel: $.su.CHAR.INTERFACE.DNS2,
+            vtype: "ip",
+            tips: $.su.CHAR.INTERFACE.OPTIONAL,
+            validator: function(v){
+                var main_dns = $('#main-dns').textbox("getValue");
+                if(v == main_dns)
+                {
+                    return "主备DNS服务器不能相同。";
+                }
+                return true;
+            }
+        });
+        $('#interface-mac').textbox({
+            fieldLabel: $.su.CHAR.INTERFACE.MACADDR,
+            value: "00-00-00-00-00-00",
+            vtype: "mac",
+            maxLength: 17,
+            allowBlank: false
+        });
+
+        /*
+        $('#dobalance').checkbox({
+            fieldLabel: $.su.CHAR.INTERFACE.BALANCE,
+            items: [
+                {boxlabel: "", inputValue:'1', uncheckedValue:'0', checked:true}
+            ]
+        });
+        $("#dobalance").checkbox('setValue', '1');
+
+        $("#dobalance").checkbox('hide');
+        */
+
+        $("#mngt_enable").checkbox({
+            fieldLabel: $.su.CHAR.INTERFACE.MNGT_IFACE,
+            items: [
+                {boxlabel: "", inputValue:'on', uncheckedValue:'off'}
+            ]
+        });
+        $("#mngt_enable").checkbox('setValue', 'off');
+
+        $('#interface-up-bandwidth').textbox({
+            fieldLabel: $.su.CHAR.INTERFACE.UPLINK,
+            allowBlank: false,
+            value: "1000000",
+            tips: "Kbps（100-1000000）",
+            vtype: {
+                vtype: "number",
+                max: 1000000,
+                min: 100
+            }
+        });
+        $('#interface-down-bandwidth').textbox({
+            fieldLabel: $.su.CHAR.INTERFACE.DOWNLINK,
+            allowBlank: false,
+            value: "1000000",
+            tips: "Kbps（100-1000000）",
+            vtype: {
+                vtype: "number",
+                max: 1000000,
+                min: 100
+            }
+        });
+        //hideWidgets($('#interface-up-bandwidth'))
+        //hideWidgets($('#interface-down-bandwidth'))
+        $('#username').textbox({
+            fieldLabel: $.su.CHAR.INTERFACE.USERNAME,
+            allowBlank: false,
+            maxLength: 64,
+            validator: function(v)
+            {
+                if(new $.su.vtype({vtype:'string_visible_username'}).validate(v) !== true)
+                {
+                    return $.su.CHAR.L2TP_CLIENT.WRONG_NAME;
+                }
+                if (v.indexOf(" ") >= 0 || v.indexOf("\\") >= 0)
+                {
+                    return $.su.CHAR.L2TP_CLIENT.WRONG_NAME;
+                }
+                if (v.length > 64)
+                {
+                    return $.su.CHAR.L2TP_CLIENT.WRONG_NAME_LENGTH;
+                }
+                return true;
+            }
+        });
+        $('#password').password({
+            fieldLabel: $.su.CHAR.INTERFACE.PASSWORD,
+            allowBlank: false,
+            maxLength: 128,
+            showLevel: false,
+            vtype: "password",
+            validator: function(v)
+            {
+                if(new $.su.vtype({vtype:'password'}).validate(v) !== true)
+                {
+                    return $.su.CHAR.INTERFACE.WRONG_NAME;
+                }
+                if (v.indexOf(" ") >= 0)
+                {
+                    return $.su.CHAR.INTERFACE.WRONG_NAME;
+                }
+                if (v.length > 128)
+                {
+                    return $.su.CHAR.INTERFACE.WRONG_NAME_LENGTH;
+                }
+                return true;
+            }
+        });
+        $('#time-object').combobox({
+            fieldLabel: $.su.CHAR.INTERFACE.TIMEOBJ,
+            allowBlank: false,
+            alwaysTrigger: true,
+            items:[
+                {value:"Any", name: "Any", selected: true}
+            ]
+        });
+        /*$('#dial-type').combobox({
+            fieldLabel: $.su.CHAR.INTERFACE.IFDIALTYPE,
+            items:[
+                {value:"static-ip", name: $.su.CHAR.INTERFACE.STATICIP, selected: true},
+                {value:"dhcp", name: "DHCP"}
+            ]
+        });*/
+        $('#link-type').combobox({
+            fieldLabel: $.su.CHAR.INTERFACE.LINKTYPE,
+            alwaysTrigger: true,
+            items:[
+                {value:"auto", name: $.su.CHAR.INTERFACE.AUTOLINK, selected: true},
+                {value:"manual", name: $.su.CHAR.INTERFACE.MANUALLINK},
+                {value:"time", name: $.su.CHAR.INTERFACE.TIMELINK}
+            ]
+        }).on("ev_change", function(e, oldValue, newValue){
+            var value = newValue[0],
+                $timeObj = $('#time-object');
+            if(value === "time"){
+                showWidgets($timeObj);
+            }else{
+                hideWidgets($timeObj);
+            }
+        });
+        /*$('#echo-interval').textbox({
+            fieldLabel: $.su.CHAR.INTERFACE.CHECKINTERVAL,
+            tips: $.su.CHAR.INTERFACE.LCPINTERVALOPTIONAL,
+            value: "2",
+            vtype: {
+                vtype: "number",
+                max: 60,
+                min: 1
+            }
+        });
+        $('#echo-retry').textbox({
+            fieldLabel: $.su.CHAR.INTERFACE.CHECKRETRYTIMES,
+            tips: $.su.CHAR.INTERFACE.LCPRETRYOPTIONAL,
+            value: "5",
+            vtype: {
+                vtype: "number",
+                max: 10,
+                min: 1
+            }
+        });*/
+        $('#service-name').textbox({
+            fieldLabel: $.su.CHAR.INTERFACE.SERVICENAME,
+            tips: $.su.CHAR.INTERFACE.SERVICEOPTIONAL,
+            maxLength:128,
+            validator: function(v) {
+                if(new $.su.vtype('string_visible_username').validate(v) === false)
+                {
+                    return $.su.CHAR.INTERFACE.WRONG_NAME;
+                }
+                if (v.indexOf(" ") >= 0)
+                {
+                    return $.su.CHAR.INTERFACE.WRONG_NAME;
+                }
+                if (v.length > 128)
+                {
+                    return $.su.CHAR.INTERFACE.WRONG_NAME_LENGTH;
+                }
+                return true;
+            }
+        });
+
+        $("#comment").textbox({
+            fieldLabel:"备注",
+            tips:"（可选,50个字符）",
+            maxLength: 50,
+            allowBlank:true
+        })
+
+        $("#interface-list").panel({
+            title: $.su.CHAR.INTERFACE.IFSETTING,
+            collapsible: false
+        });
+
+        $('#ip-type').find('li').click(function () {
+            var el = $(this).addClass('selected');
+            el.siblings().removeClass('selected');
+            var typeArr = ["v6mode", "v4mode"];
+            var current = el.attr('name');
+            // for (var type in typeArr) {
+            //     if (type !== current) {
+            //         $('.' + typeArr[type]).closest('.widget-container').hide();
+            //     }
+            //     $('.' + current).closest('.widget-container').show();
+            // }
+            if(current=== 'v4mode'){
+                iseditingv4 = true;
+                $('.v4mode').closest('.widget-container').show();
+                $('.v6mode').closest('.widget-container').hide();
+                changeV6Wigets();
+            }else if(current=== 'v6mode'){
+                iseditingv4 = false;
+                $('.v4mode').closest('.widget-container').hide();
+                changeV6Wigets();
+            }
+
+        });
+        hideWidgets($('.v6mode'));
+
+
+        var $linkAlert = $("#link-alert").msg({
+            closeBtn: true,
+            cls:"grid-popup-msg",
+            type: "alert"
+        }).msg("hide");
+
+        var $linkDetail = $("#link-detail-window").msg({
+            closeBtn: true,
+            cls:"l",
+            title: "连接状态信息",
+            type: "window"
+        }).msg("hide");
+        $linkDetail.find("#link-detail-key-name").text("接口名称：");
+        $linkDetail.find("#link-detail-key-status").text("连接状态：");
+        $linkDetail.find("#link-detail-key-uptime").text("在线时长：");
+        $linkDetail.find("#link-detail-key-mode").text("连接方式：");
+        $linkDetail.find("#link-detail-key-ip").text("IP地址：");
+        $linkDetail.find("#link-detail-key-mask").text("子网掩码：");
+        $linkDetail.find("#link-detail-key-gateway").text("网关地址：");
+        $linkDetail.find("#link-detail-key-dns").text("首选DNS服务器：");
+        $linkDetail.find("#link-detail-key-snd_dns").text("备用DNS服务器：");
+
+        $linkDetail.find("#link-detail-key-status6").text('IPv6连接状态：');
+        $linkDetail.find("#link-detail-key-ip6addr").text("IPv6地址：");
+        $linkDetail.find("#link-detail-key-prefixlen").text("子网前缀长度：");
+        $linkDetail.find("#link-detail-key-ip6gw").text("IPv6网关地址：");
+        $linkDetail.find("#link-detail-key-pri_dns6").text("IPv6首选DNS服务器：");
+        $linkDetail.find("#link-detail-key-snd_dns6").text("IPv6备用DNS服务器：");
+
+        $linkDetail.find("#link-detail-key-mac").text("MAC地址：");
+
+    var $unlinkAlert = $("#unlink_alert").msg({
+        okHandler:function(){
+            $("#unlink_alert").msg("close");
+            connectProxy.action({
+                    network: {
+                        change_if_status: {
+                            if_name: cur_if_name,
+                            connect: IF_INFO.ACTION.DOWN
+                        }
+                    }
+                }, function(data){
+                    refreshStatus();
+            });
+            return false;
+        },
+        cancelHandler:function(){
+            return true;
+        },
+        cls: 'warning reboot-confirm-size',
+        closeBtn: false,
+        type: "confirm"
+    }).msg("hide");
+
+        var connectProxy = new $.su.Proxy();
+        var disconnectProxy = new $.su.Proxy();
+
+        var interfaceListProxy = new $.su.Proxy({});
+
+        var interfaceGrid = $("#interface-grid").grid({
+            maxRulesProperty: "total_max",
+            editor: {
+                validator: function()
+                {
+                    var $editor = $(interfaceGrid.grid("getEditor"));
+                    var store   = interfaceGrid.grid("getStore");
+                    var grid_array  = store.data;
+                    var editingId = $editor.editor("getEditingId");
+                    var keyProperty = store.keyProperty;
+                    var ifname = $editor.find("#interface-name").textbox("getValue");
+                    var vlanid = $editor.find("#interface-vlanid").textbox("getValue");
+                    var ifmac = $editor.find("#interface-mac").textbox("getValue");
+                    var ifip = $editor.find("#static-ip").textbox("getValue");
+                    var iftype = $editor.find("#interface-type").textbox("getValue");
+                    var bindif = $editor.find("#bind-interface").combobox("getValue");
+                    var linkmode = $editor.find("#link-mode").combobox("getValue");
+                    var ifnames = [];
+                    var bindifx = {};
+                    var orig_linkmode = "unknown";
+                    var INTERFACE_NAME_BAN_LIST = [
+                        "VPN",
+                        "NORMAL",
+                        "SETTING",
+                        "LOOPBACK",
+                        "LOCAL",
+                        "MAIN",
+                        "DEFAULT",
+                        "UNSPEC",
+                        "GE1","GE2","GE3","GE4","GE5",
+                        "GLOBAL",
+                        "ONLINE_CHECK",
+                        "RESERVED",
+                        "VALUES"
+                    ];
+                    var isBaned = false;
+                    var isModified = false;
+                    if("add" == editingId){
+                        isModified = true;
+                    }else{
+                        $(grid_array).each(function(i, obj){
+                            if(obj.key == editingId){
+                                if(obj.if_name != ifname){
+                                    isModified = true;
+                                    return false;
+                                }
+                            }
+                        });
+                    }
+                    $(INTERFACE_NAME_BAN_LIST).each(function(i, obj){
+                        if(obj == ifname.toUpperCase()){
+                            isBaned = true;
+                            return false;
+                        }
+                    });
+
+                    if (isBaned && isModified)
+                    {
+                        $editor.find("#interface-name").textbox("setError","\"" + ifname + "\"为系统保留接口名称，请更换接口名称后重试！");
+                        //$($("div#interface-grid").grid("getEditor")).form('setError', "\"" + ifname + "\"为系统保留接口名称，请更换接口名称后重试！");
+                        return false;
+                    }
+
+                    if($.isArray(grid_array) && grid_array.length > 0)
+                    {
+                        for(var k = 0; k < grid_array.length;k++)
+                        {
+                            var data = grid_array[k];
+
+                            if(data[keyProperty] == editingId)
+                            {
+                                orig_linkmode = data["proto"];
+                                if (iftype == "bridge" &&
+                                    data["bindif"] &&
+                                    $.isArray(data["bindif"])) {
+                                    for (var ci = 0; ci < data["bindif"].length; ci++) {
+                                        bindifx[data["bindif"][ci]] = true;
+                                    }
+                                }
+                                continue;
+                            }
+                            else
+                            {
+                                if((data["if_name"] == ifname))
+                                {
+                                    $($("div#interface-grid").grid("getEditor")).form('setError', "接口名称冲突");
+                                    return false;
+                                }
+
+                                if(data["mac"] && data["mac"] != "00-00-00-00-00-00" && (data["mac"].toUpperCase() == ifmac.toUpperCase()))
+                                {
+                                    $($("div#interface-grid").grid("getEditor")).form('setError', "MAC地址冲突");
+                                    return false;
+                                }
+
+                                if((data['vlanid'] == vlanid) && ('ethernet' == iftype))
+                                {
+                                    /* only check vlanid when modify or insert an ehthernet type interface */
+                                    $($("div#interface-grid").grid("getEditor")).form('setError', "Vlan ID 冲突");
+                                    return false;
+                                }
+
+                                /*
+                                if(((iftype == "ethernet" || iftype == "physical") && linkmode != "dhcp") && iftype != "pppoe" && (data['ip'] == ifip))
+                                {
+                                    $($("div#interface-grid").grid("getEditor")).form('setError', "IP 地址冲突");
+                                    return false;
+                                }*/
+
+                                ifnames[data['if_name']] = data['if_name'];
+                            }
+                        }
+                    }
+
+                    /*var statusProxy = new $.su.Proxy({
+                         url: URL_STATUS,
+                         async: false
+                     });*/
+                    var ip = $("#static-ip").textbox("getValue");
+                    /*var netmask = $("#static-mask").textbox("getValue");*/
+                    /*
+                    if (linkmode == "static") {
+                    for(var i = 0; i < ipmaskAarray.length; i++){
+                        var ipmask = getNetAddr(ipmaskAarray[i].ip, ipmaskAarray[i].netmask);
+                        var netAddr = getNetAddr(ip, ipmaskAarray[i].netmask);
+                        /*if(ipmaskAarray[i].ip == oldip && ipmaskAarray[i].netmask == oldNetMask){
+                            continue;
+                        }*/
+                    /*
+					if(ipmaskAarray[i].name == ifname){
+                        continue;
+                    }
+                    if(netAddr == ipmask){
+                        $interfaceEditor.form("setError", $.su.CHAR.INTERFACE.IP_SAME_RANGE);
+                        return false;
+                    }
+                }
+				}
+                */
+
+                    var success = true;
+                    /*statusProxy.read({}, function(data)*/
+                    {
+                        var bindifs = {};
+                        for (var k = 0, lenK = data.length; k < lenK; k++)
+                        {
+                            if (data[k].if_type == IF_INFO.TYPE.BRIDGE)
+                            {
+                                var in_bridge = false;
+                                if (data[k].if_name == ifname)
+                                {
+                                    in_bridge = true;
+                                }
+                                for (var i = 0, lenI = data[k]["bindif"].length; i < lenI; i++)
+                                {
+                                    var bridge_bindif = data[k]["bindif"][i];
+                                    if (bridge_bindif == bindif)
+                                    {
+                                        in_bridge = true;
+                                    }
+                                    bindifs[bridge_bindif] = bridge_bindif;
+                                }
+                                bindifs[data[k].if_name] = data[k].if_name;
+                                if (in_bridge || data[k].if_name == bindif)
+                                {
+                                    break;
+                                }
+                                bindifs = {};
+                            }
+                        }
+
+                        for (var k = 0, lenK = data.length; k < lenK; k++){
+                            element = data[k];
+                            if (!ifnames[element['if_name']]){
+                                if (true == insert && element['if_name'] == ifname)
+                                {
+                                    $($("div#interface-grid").grid("getEditor")).form('setError', "接口名称冲突");
+                                    success = false;
+                                    return success;
+                                }
+                                if (element['if_type'] == IF_INFO.TYPE.PPPOE || (false == insert && element['if_name'] == ifname)){
+                                    /* if modify an old item, stop compare to self-data on the server */
+                                    continue;
+                                }
+                                if (iftype == IF_INFO.TYPE.PPPOE){
+                                    continue;
+                                }
+                                if (element['mac'] && (element['mac'].toUpperCase() == ifmac.toUpperCase())){
+                                    if ((bindifx[element['if_name']] && iftype == IF_INFO.TYPE.BRIDGE) || bindifs[element.if_name] ||
+                                        (bindifs[element.bindif] && bindifs[bindif[0]]))
+                                    {
+                                        continue;
+                                    }
+                                    $($("div#interface-grid").grid("getEditor")).form('setError', "MAC 地址冲突");
+                                    success = false;
+                                    return success;
+                                }
+                                if ((iftype == IF_INFO.TYPE.ETH || iftype == IF_INFO.TYPE.PHY) && linkmode == IF_INFO.LINK_MODE.DHCP){
+                                    continue;
+                                }
+
+                                /*
+                                if (element['ip'] == ifip){
+                                    $($("div#interface-grid").grid("getEditor")).form('setError', "Ip 地址冲突");
+                                    success = false;
+                                    return success;
+                                }*/
+                            }
+                        }
+
+                        /*
+                        TO DO：VPN相关接口处理
+                        if (data['vpn'] && data['vpn'].length > 0)
+                        {
+                            for (var k = 0; k < data['vpn'].length; k++){
+                                element = data['vpn'][k];
+                                if (!ifnames[element['if_name']]){
+                                    if (true == insert && element['if_name'] == ifname)
+                                    {
+                                        $($("div#interface-grid").grid("getEditor")).form('setError', "接口名称冲突");
+                                        success = false;
+                                        return success;
+                                    }
+                                }
+                            }
+                        }
+                        */
+
+                    }/*)*/;
+                    if (false == success){
+                        return false;
+                    }
+
+                    var pppoe_num = 0,
+                        static_num = 0,
+                        dhcp_num = 0;
+
+                    for (var i = 0, len = grid_array.length; i < len; i++)
+                    {
+                        if (grid_array[i].if_type == IF_INFO.TYPE.PPPOE)
+                        {
+                            pppoe_num++;
+                        }
+                        else
+                        {
+                            if (grid_array[i].proto == IF_INFO.LINK_MODE.DHCP)
+                            {
+                                dhcp_num++;
+                            }
+                            else if (grid_array[i].proto == IF_INFO.LINK_MODE.STATIC)
+                            {
+                                static_num++;
+                            }
+                        }
+                    }
+
+                    if (insert == true)
+                    {
+                        success = true;
+
+                        {
+                            others = gothers;
+                            if (iftype == IF_INFO.TYPE.PPPOE){
+                                var pppoe_max = maxInfo.pppoeMax;
+                                if (pppoe_num + 1 > pppoe_max){
+                                    $($("div#interface-grid").grid("getEditor")).form('setError', "pppoe接口数已达到上限");
+                                    success = false;
+                                }
+                                return success;
+                            }
+                            else{
+                                var iflink_mode = $editor.find("#link-mode").combobox("getValue")
+                                if (iflink_mode == 'static'){
+                                    var static_max = maxInfo.staticMax;
+                                    if (static_num + 1 > static_max){
+                                        $($("div#interface-grid").grid("getEditor")).form('setError', "static接口数已达到上限");
+                                        success = false;
+                                    }
+                                    return success;
+                                }
+                                else if (iflink_mode == 'dhcp'){
+                                    var dhcp_max = maxInfo.dhcpMax;
+                                    if (dhcp_num + 1 > dhcp_max){
+                                        $($("div#interface-grid").grid("getEditor")).form('setError', "dhcp接口数已达到上限");
+                                        success = false;
+                                    }
+                                    return success;
+                                }
+                            }
+                            return success;
+                        };
+
+                        if (false == success){
+                            return false;
+                        }
+                    }
+                    else {
+                        if (iftype != IF_INFO.TYPE.PPPOE) {
+                            if (orig_linkmode != linkmode) {
+                                if (linkmode == IF_INFO.LINK_MODE.STATIC) {
+                                    var static_num = gothers['static_num'];
+                                    var static_max = maxInfo.staticMax;
+                                    if (static_num + 1 > static_max){
+                                        $($("div#interface-grid").grid("getEditor")).form('setError', "static接口数已达到上限");
+                                        return false;
+                                    }
+                                }
+                                else if (linkmode == "dhcp") {
+                                    var dhcp_num = gothers['dhcp_num'];
+                                    var dhcp_max = gothers['dhcp_max'];
+                                    if (dhcp_num + 1 > dhcp_max){
+                                        $($("div#interface-grid").grid("getEditor")).form('setError', "dhcp接口数已达到上限");
+                                        return false;
+                                    }
+                                }
+                            }
+                        }
+                    }
+
+
+                    if (if_has_disabled) {
+                        //$("input#interface-type").prop("disabled", false);
+                        //$("input#interface-name").prop("disabled", false);
+                    }
+                    return true;
+                },
+                content:"#own-editor",
+                fields: [
+                    {name: "if_type"},
+                    {name: "if_name"},
+                    {name: "bindif"},
+
+                    {name: "vlanid"},
+                    {name: "untag"},
+                    {name: "proto"},
+                    {name: "ip"},
+                    {name: "netmask"},
+                    {name: "gateway"},
+
+                    {name: "hostname"},
+
+                    {name: "username"},
+                    {name: "password"},
+                    {name: "t_dialtype"},
+                    {name: "linktype"},
+                    {name: "timeobj"},
+                    //{name: "lcpechointerval"},
+                    //{name: "lcpechofailure"},
+                    {name: "service"},
+
+                    {name: "mtu"},
+                    {name: "pri_dns"},
+                    {name: "snd_dns"},
+                    {name: "up_speed"},
+                    {name: "down_speed"},
+
+                    {name: "mac"},
+                    //{name: "balance"},
+                    {name: "mngt_enable"},
+                    {name: "t_reference"},
+                    {name: "t_issys"},
+
+                    {name: "comment"},
+                    {name: "is_user_dns"},
+					{name: "peerdns6"},
+                    // {name: "ipv4_enable"},
+                    // ipv6
+                    {name: "ipv6_enable"},
+                    {name: "pppoe_sharev4"},
+                    {name: "username6"},
+                    {name: "password6"},
+                    {name: "ip6ifaceid"},
+                    {name: "prefix_if"},
+                    {name: "prefix"},
+                    {name: "ip6addr"},
+                    {name: "prefixlen"},
+                    {name: "ip6gw"},
+                    {name: "ip_config"},
+                    {name: "pd_mode"},
+                    {name: "pri_dns6"},
+                    {name: "snd_dns6"},
+                    {name: "service6"},
+                    {name: "mtu6"}
+                ]
+            },
+            store:{
+                proxy: interfaceListProxy,
+                fields: [
+                    // ---- 通用字段
+                    {name: "link_status"},
+					{name: "link_status6"},
+                    {name: "uptime"},
+                    {name: "if_type"},
+                    {name: "if_name"},
+                    {name: "proto"},
+                    {name: "ip", dataFormat: function(data){return (data == "0.0.0.0") ? "" : data;},
+                        sendDataFormat: function(data){return data ? data : "0.0.0.0";}
+                    },
+                    {name: "netmask", dataFormat: function(data){return (data == "0.0.0.0") ? "" : data;},
+                        sendDataFormat: function(data){return data ? data : "0.0.0.0";}
+                    },
+                    {name: "gateway", dataFormat: function(data){return (data == "0.0.0.0") ? "" : data;},
+                        sendDataFormat: function(data){return data ? data : "0.0.0.0";}
+                    },
+                    {name: "up_speed", dataFormat: function(data){ return 8 * data;},
+                        sendDataFormat: function(data){ return data / 8; }},
+                    {name: "down_speed", dataFormat: function(data){ return 8 * data;},
+                        sendDataFormat: function(data){ return data / 8; }},
+                    {name: "mtu"},
+                    {name: "pri_dns", dataFormat: function(data){return (data == "0.0.0.0") ? "" : data;},
+                        sendDataFormat: function(data){return data ? data : "0.0.0.0";}
+                    },
+                    {name: "snd_dns", dataFormat: function(data){return (data == "0.0.0.0") ? "" : data;},
+                        sendDataFormat: function(data){return data ? data : "0.0.0.0";}
+                    },
+                    {name: "comment"},
+                    // 是否开启管理端口
+                    {name: "mngt_enable"},
+                    {name: "mac"},
+                    {name: "hostname"},
+                    // 接口是否已加入网桥
+                    {name: "isbridged"},
+
+                    // ---- 虚拟vlan网口独有字段
+                    // vlan绑定的基础接口
+                    //{name: "if_type"},
+                    {name: "bindif"},
+                    {name: "vlanid"},
+                    {name: "untag"},
+
+                    // ---- PPPoE接口独有字段
+                    //{name: "if_type"},
+                    //{name: "bindif"},
+                    {name: "username"},
+                    {name: "password"},
+                    {name: "service"},
+                    {name: "linktype"},
+                    {name: "timeobj"},
+                    {name: "is_user_dns"},
+					{name: "peerdns6"},
+                    // {name: "ipv4_enable"},
+                    // ipv6 新增字段
+                    {name: "ipv6_enable"},
+                    {name: "pppoe_sharev4"},
+                    {name: "username6"},
+                    {name: "password6"},
+                    {name: "ip6ifaceid"},
+                    {name: "prefix_if"},
+                    {name: "prefix"},
+                    {name: "ip6addr",dataFormat: function(data){return data ? data : "";}},
+                    {name: "prefixlen"},
+                    {name: "ip6gw",dataFormat: function(data){return data ? data : "";}},
+                    {name: "ip_config"},
+                    {name: "pd_mode"},
+                    {name: "pri_dns6"},
+                    {name: "snd_dns6"},
+                    {name: "service6"},
+                    {name: "mtu6"}
+
+                    //{name: "status_ip"},
+                    //{name: "status_netmask"},
+                    //{name: "status_gateway"},
+                    //{name: "t_dialtype"},
+                    // {name: "lcpechointerval"},
+                    // {name: "lcpechofailure"},
+                    //{name: "t_isup"},
+                    //{name: "balance"},
+                    //{name: "t_reference"},
+                    //{name: "t_issys"},
+                ],
+                parseKey: {
+                    moduleName: "network",
+                    tableName:  "if_info",
+                    getFilter: function(index, itemNames, data){
+                        var phyif = $('#phyif-list').combobox('getValue')[0];
+                        return [
+                            {base_name: [phyif]}
+                        ];
+                    },
+                    setFilter: function(index, itemName, data){
+                        return [
+                            {if_name: [itemName]}
+                        ];
+                    },
+                    delFilter: function(itemNames, data){
+                        itemNames = $.isArray(itemNames) ? itemNames : [itemNames];
+
+                        return [
+                            {if_name: itemNames}
+                        ];
+                    }
+                },
+                autoLoad: false
+            },
+            columns: [
+                {
+                    xtype: "checkcolumn",
+                    width: 20/*$.su.CHAR.SETTING.VPN_USER.CHECK_COLUMN_WIDTH*/
+                },
+                {
+                    xtype: "rownumberer",
+                    width: 20/*$.su.CHAR.SETTING.VPN_USER.ROW_NUMBER_WIDTH*/
+                },
+                {
+                    text: $.su.CHAR.INTERFACE.IFTYPE,
+                    width: 30,
+                    dataIndex: "if_type",
+                    renderer: function(v){
+                        var interfaceType = v;
+                        switch (v){
+                            case IF_INFO.TYPE.PHY:
+                                interfaceType = '物理接口';
+                                break;
+                            case IF_INFO.TYPE.BRIDGE:
+                                interfaceType = '网桥接口';
+                                break;
+                            case IF_INFO.TYPE.ETH:
+                                interfaceType = 'Ethernet';
+                                break;
+                            case IF_INFO.TYPE.PPPOE:
+                                interfaceType = 'PPPoE';
+                                break;
+                            default :
+                                break;
+                        }
+                        return interfaceType;
+                    }
+                },
+                {
+                    text: $.su.CHAR.INTERFACE.IFNAME,
+                    width: 30,
+                    dataIndex: "if_name"
+                },
+                {
+                    text: $.su.CHAR.INTERFACE.IFSTATUS,
+                    width: 30,
+                    dataIndex: "link_status",
+                    renderer: function(dd, index, data){
+                        return (data.link_status == IF_INFO.STATUS.UP ? "已连接" : "未连接" )
+                            + "&nbsp;<a href='javascript:void(0);' class='btn-detail' data-index='"+ index +"'>详细</a>";
+                    }
+                },
+                {
+                    text: 'IP地址/子网掩码（或前缀长度）',
+                    width: 120,
+                    dataIndex: "ip",
+                    renderer: function(dd, index, data){
+                        return '<span>'+"IPv4： "+(typeof(data.ip) == "undefined" ? "":data.ip)+(typeof(data.netmask) == "undefined" ? "" : "/"+data.netmask)+'</span>'
+                            +'<br>'+'<span>'+"IPv6： "+data.ip6addr+(typeof(data.prefixlen) == "undefined" ? "" : "/"+data.prefixlen)+'</span>';
+                    }
+                },
+                {
+                    text: $.su.CHAR.INTERFACE.GATEWAY,
+                    width: 100,
+                    dataIndex: "gateway",
+					renderer: function(dd, index, data){
+                        return '<span>'+"IPv4： "+(typeof(data.gateway) == "undefined" ? "":data.gateway)+'</span>'
+                            +'<br>'+'<span>'+"IPv6： "+data.ip6gw+'</span>';
+                    }
+                },
+                {
+                    xtype:"comment",
+                    dataIndex:"comment",
+                    width:50,
+                    hidden:true
+                },
+                {
+                    width: 50,
+                    text: $.su.CHAR.INTERFACE.OPERATION,
+                    dataIndex: "none",
+                    renderer: function(dd, index, data){
+                        var inHTML="<div class=\"button-container interface-operation\" style=\"text-align:center\">";
+                        inHTML +=	"<a href=\"javascript:void(0);\" data-index=\""+index+"\" data-key=\""+data.key+"\" title=\""+ $.su.CHAR.OPERATION.EDIT +"\" class=\"grid-content-btn grid-content-btn-edit btn-edit\">";
+                        inHTML +=		"<span class=\"icon\"></span>";
+                        inHTML +=		"<span class=\"text\">"+$.su.CHAR.OPERATION.EDIT+"</span>";
+                        inHTML +=	"</a>";
+                        if(data.if_type !== IF_INFO.TYPE.PHY && data.if_type !== IF_INFO.TYPE.BRIDGE){
+                            inHTML += 	"<a href=\"javascript:void(0);\" data-index=\""+index+"\" data-key=\""+data.key+"\" title=\""+ $.su.CHAR.OPERATION.DELETE +"\" class=\"grid-content-btn grid-content-btn-delete btn-delete\">";
+                            inHTML +=		"<span class=\"icon\"></span>";
+                            inHTML += 		"<span class=\"text\">"+$.su.CHAR.OPERATION.DELETE+"</span>";
+                            inHTML += 	"</a>";
+                        }
+                        if(/*((data.if_type == 'pppoe' && data.linktype == 'manual') ||
+                            (data.if_type == 'ethernet' && data.proto == 'dhcp') ||
+                            (data.if_type == 'physical' && data.proto == 'dhcp') ||
+                            (data.if_type == 'bridge' && data.proto == 'dhcp')) &&*/
+                            data.link_status == IF_INFO.STATUS.DOWN){
+                            inHTML += 	"<a href=\"javascript:void(0);\" data-index=\""+index+"\" data-key=\""+data.key+"\" title=\""+ $.su.CHAR.OPERATION.CONNECT +"\" class=\"grid-content-btn grid-content-btn-link btn-link\">";
+                            inHTML +=		"<span class=\"icon\"></span>";
+                            inHTML += 		"<span class=\"text\">"+$.su.CHAR.OPERATION.CONNECTED+"</span>";
+                            inHTML += 	"</a>";
+                        }
+                        if(/*((data.if_type == 'pppoe' && data.linktype == 'manual') ||
+                            (data.if_type == 'ethernet' && data.proto == 'dhcp') ||
+                            (data.if_type == 'physical' && data.proto == 'dhcp') ||
+                            (data.if_type == 'bridge' && data.proto == 'dhcp')) &&*/
+                            data.link_status == IF_INFO.STATUS.UP){
+                            inHTML += 	"<a href=\"javascript:void(0);\" data-index=\""+index+"\" data-key=\"key-"+index+"\" title=\""+ $.su.CHAR.OPERATION.DISCONNECT +"\" class=\"grid-content-btn grid-content-btn-unlink btn-unlink\">";
+                            inHTML +=		"<span class=\"icon\"></span>";
+                            inHTML += 		"<span class=\"text\">"+$.su.CHAR.OPERATION.DISCONNECTED+"</span>";
+                            inHTML += 	"</a>";
+                        }
+                        inHTML +="</div>";
+                        return inHTML;
+                    }
+                }
+            ],
+            operation: [
+                "prompt",
+                "add",
+                "delete"
+            ]
+        }).on("ev_load", function(e,data, others){
+            if (firstLoad){
+                var timeItem=[];
+                var timeProxy = new $.su.Proxy();
+
+                timeProxy.query({time_mngt: {table: "time_obj"}}, function(data){
+                    var items = data.time_mngt.time_obj;
+
+                    for (var i = 0, len = items.length; i < len; i++)
+                    {
+                        for (var key in items[i])
+                        {
+                            timeItem.push({name:items[i][key]["name"], value: items[i][key]["name"]});
+                        }
+                    }
+                    var $editor = $(interfaceGrid.grid("getEditor"));
+                    var combobox = $editor.find('.combobox-value[name=timeobj]');
+                    combobox.combobox('loadData',timeItem);
+                });
+            }
+            if(firstLoad){
+                //refreshStatus(10000);
+                refreshStatus();
+                firstLoad = false;
+            }
+            /*用于指定某一行不能被selected*/
+            var tr = interfaceGrid.find("tr.grid-content-tr.grid-content-tr-key-0");
+            tr.addClass("unavailable");
+            /*用于隐藏指定行的checkbox*/
+            var td = $(tr).find("td.grid-content-td.grid-content-td-0");
+            $(td).find("span.icon").replaceWith("<span></span>");
+            var phyif = $('#phyif-list').combobox('getValue')[0];
+            Bridge_Proxy.query({
+                network: {
+                    table: "if_info",
+                    filter: [ {base_name: $.isArray(phyif) ? phyif : [phyif] } ]
+                }
+            },function(data){
+                var ifs = data.network.if_info;
+                for (var i = 0, len = ifs.length; i < len; i++)
+                {
+                    for (var key in ifs[i])
+                    {
+                        if (ifs[i][key]["isbridged"] && ifs[i][key]["isbridged"] == 1)
+                        {
+                            $(".operation-btn.btn-add").hide();
+                            $(".operation-btn.btn-delete").hide();
+                            return;
+                        }
+                    }
+                }
+
+                $(".operation-btn.btn-add").show();
+                $(".operation-btn.btn-delete").show();
+            });
+
+        }).on("ev_insert", function(e, index, data){
+            var phyif = $('#phyif-list').combobox('getValue')[0];
+            reloadGrid(phyif);
+        }).on("ev_remove", function(e, keys){
+            var phyif = $('#phyif-list').combobox('getValue')[0];
+            reloadGrid(phyif);
+            $('.panel-tbar-container .btn-add').removeClass('proxy-disabled');
+        }).delegate('a.btn-detail', 'click', function(e){
+            var index = $(this).data('index');
+            showDetail(interfaceStore.data[index].if_name);
+        }).delegate('a.btn-link', 'click', function(e){
+            var index = $(this).data('index'),
+                data = interfaceStore.getDataByIndex(index);
+
+            connectProxy.action({
+                network: {
+                    change_if_status: {
+                        if_name: data.if_name,
+                        connect: IF_INFO.ACTION.UP
+                    }
+                }
+            }, function(data){
+                setTimeout(refreshStatus, 5000);
+            });
+        }).delegate('a.btn-unlink', 'click', function(e){
+            var index = $(this).data('index'),
+            data = interfaceStore.getDataByIndex(index);
+            cur_if_name = data.if_name;
+            /*断开管理接口时需要确认操作*/
+            if ("on" == data.mngt_enable){
+                $unlinkAlert.msg("show");
+            }
+            else{
+                connectProxy.action({
+                        network: {
+                            change_if_status: {
+                                if_name: cur_if_name,
+                                connect: IF_INFO.ACTION.DOWN
+                            }
+                        }
+                    }, function(data){
+                        refreshStatus();
+                });
+            }
+        }).on("ev_update", function(e, index, data){
+            var phyif = $('#phyif-list').combobox('getValue')[0];
+            reloadGrid(phyif,function(){
+                $('.grid-content-btn-edit').removeClass('proxy-disabled');
+                $('.panel-tbar-container .btn-add').removeClass('proxy-disabled');
+            });
+        });
+
+        function macCaculate(macList, originMac, num, step){
+            if(!step){
+                step = 5;
+            }
+            originMac = originMac.replace(/-/g, "");
+            var macHex = parseInt(originMac, 16);
+            macHex = macHex + step * num ;
+            var macString = macHex.toString(16).toUpperCase();
+            if(macString.length != 12){
+                for(var i = 12 - macString.length; i > 0; i--){
+                    macString = "0" + macString;
+                }
+            }
+            var returnString = "";
+            for(var i = 0; i < 12; i = i + 2){
+                if(12 == i+2){
+                    returnString += macString.substr(i, 2);
+                    break;
+                }
+                returnString += macString.substr(i, 2) + "-";
+            }
+
+            for(var i = 0; i < macList.length; i++){
+                if(returnString == macList[i].mac){
+                    return macCaculate(macList, originMac, num+1, step);
+                }
+            }
+
+            return returnString;
+        }
+
+        var interfaceStore = interfaceGrid.grid('getStore');
+        var $interfaceEditor = $(interfaceGrid.grid('getEditor'));
+        var oldip = "0.0.0.0";
+        var oldNetMask = "0.0.0.0";
+        $interfaceEditor.on('ev_startEdit', function(e, index, key){
+            ispppoe = false;
+            insert = true;
+            iseditingv4 = false;
+            changeV6Wigets();
+            $('#ip-type li:first-child').trigger('click');
+            oldip = $("#static-ip").textbox("getValue");
+            oldNetMask = $("#static-mask").textbox("getValue");
+
+            if(index == 'add'){
+                var phy_if = $("#phyif-form").form("serialize")["phyif"];
+                if (bridges[phy_if] == phy_if)
+                {
+                    $interfaceEditor.find('#interface-type').combobox('loadData', [
+                        {value:"ethernet", name: "Ethernet"}
+                    ]).combobox('enable').combobox('setValue', 'ethernet');
+                    $interfaceEditor.find('#interface-name').textbox('enable');
+                }
+                else
+                {
+                    $interfaceEditor.find('#interface-type').combobox('loadData', [
+                        {value:"ethernet", name: "Ethernet"},
+                        {value:"pppoe", name: "PPPoE"}
+                    ]).combobox('enable').combobox('setValue', 'ethernet');
+                    $interfaceEditor.find('#interface-name').textbox('enable');
+                }
+                var data = interfaceStore.data[0];
+                /*
+                if(data && (data.if_type === 'physical' || data.if_type === 'bridge')){
+                    $interfaceEditor.find('#interface-mac').textbox('setValue', data.mac);
+
+                }
+                */
+                var macCount = interfaceStore.data.length;
+                $interfaceEditor.find('#interface-mac').textbox('setValue',  macCaculate(interfaceStore.data, data.mac, macCount, phy_if_count));
+                $bridgePhysicals.each(function(i, o){
+                    $(o)[o.xtype]('enable');
+                });
+                var $linkMode = $interfaceEditor.find('#link-mode');
+                var linkModeValue = $linkMode.combobox('getValue');
+                if(linkModeValue.length === 0){
+                    linkModeValue = 'static';
+                }
+                $linkMode.combobox("setValue", linkModeValue);
+                $interfaceEditor.find('#password').password('setValue', '');
+                maxmtu = data.mtu ? data.mtu : 1500;
+                maxmtu = maxmtu < 576? 576 : maxmtu;
+                $('#interface-mtu').textbox('setTips', "（576-" + maxmtu + "）");
+                $('#interface-mtu').textbox('setValue', maxmtu);
+                if (data.if_name.substring(0,3) === '10G') {
+                    $('#interface-up-bandwidth').textbox({
+                        fieldLabel: $.su.CHAR.INTERFACE.UPLINK,
+                        allowBlank: false,
+                        value: 10000000,
+                        tips: "Kbps（100-10000000）",
+                        vtype: {
+                            vtype: "number",
+                            max: 10000000,
+                            min: 100
+                        }
+                    });
+                    $('#interface-down-bandwidth').textbox({
+                        fieldLabel: $.su.CHAR.INTERFACE.DOWNLINK,
+                        allowBlank: false,
+                        value: 10000000,
+                        tips: "Kbps（100-10000000）",
+                        vtype: {
+                            vtype: "number",
+                            max: 10000000,
+                            min: 100
+                        }
+                    });
+                } else {
+                    $('#interface-up-bandwidth').textbox({
+                        fieldLabel: $.su.CHAR.INTERFACE.UPLINK,
+                        allowBlank: false,
+                        value: 1000000,
+                        tips: "Kbps（100-1000000）",
+                        vtype: {
+                            vtype: "number",
+                            max: 1000000,
+                            min: 100
+                        }
+                    });
+                    $('#interface-down-bandwidth').textbox({
+                        fieldLabel: $.su.CHAR.INTERFACE.DOWNLINK,
+                        allowBlank: false,
+                        value: 1000000,
+                        tips: "Kbps（100-1000000）",
+                        vtype: {
+                            vtype: "number",
+                            max: 1000000,
+                            min: 100
+                        }
+                    });
+                }
+            }else{
+                insert = false;
+                var data = interfaceStore.getData(key);
+                $interfaceEditor.find('#interface-type').combobox('loadData', [
+                    {value:"physical", name: "物理接口"},
+                    {value:"bridge", name: "网桥接口"},
+                    {value:"ethernet", name: "Ethernet"},
+                    {value:"pppoe", name: "PPPoE"}
+                ]).combobox('setValue', data.if_type).combobox('disable');
+                $interfaceEditor.find('#interface-name').textbox('disable');
+                if(data.if_type === IF_INFO.TYPE.PHY && data.isbridged == 1){
+                    $bridgePhysicals.each(function(i, o){
+                        $(o)[o.xtype]('disable');
+                    });
+                }else{
+                    $bridgePhysicals.each(function(i, o){
+                        $(o)[o.xtype]('enable');
+                    });
+                    $interfaceEditor.find('#interface-type').combobox('setValue', data.if_type);
+                    if(data.if_type !== 'pppoe'){
+                        var $linkMode = $interfaceEditor.find('#link-mode');
+                        var linkModeValue = $linkMode.combobox('getValue');
+                        if(linkModeValue.length === 0){
+                            linkModeValue = 'static';
+                        }
+                        $linkMode.combobox("setValue", linkModeValue);
+                    }
+                }
+
+                if (data.mngt_enable == "on"){
+                    $interfaceEditor.find('#mngt_enable').checkbox('setValue', "on");
+                }
+                else{
+                    $interfaceEditor.find('#mngt_enable').checkbox('setValue', "off");
+                }
+
+                if(data.if_type === 'pppoe')
+                    ispppoe = true;
+
+                if (data.if_type !== IF_INFO.TYPE.PHY && data.if_type !== IF_INFO.TYPE.BRIDGE) {
+                    var alldata = interfaceGrid.grid('getStore').data;
+                    maxmtu = 1500;
+                    for (var k = 0; k < alldata.length; k++) {
+                        if (data.bindif == alldata[k].if_name) {
+                            maxmtu = alldata[k].mtu ? alldata[k].mtu : 1500;
+                            break;
+                        }
+                    }
+                    if (ispppoe)
+                        maxmtu = maxmtu - 8; /* ethernet link data len minus pppoe header len */
+                }
+                else {
+                    maxmtu = 1500;
+                }
+                maxmtu = maxmtu < 576? 576 : maxmtu;
+                $('#interface-mtu').textbox('setTips', "（576-" + maxmtu + "）");
+
+                if (data.mtu == false)
+                    $('#interface-mtu').textbox('setValue', maxmtu);
+                if ((typeof(data.bindif)!="undefined" && data.bindif[0].substring(0,3) === '10G') ||
+                    (typeof(data.bindif)=="undefined" && data.if_name.substring(0,3) === '10G')) {
+                    $('#interface-up-bandwidth').textbox({
+                        fieldLabel: $.su.CHAR.INTERFACE.UPLINK,
+                        allowBlank: false,
+                        tips: "Kbps（100-10000000）",
+                        vtype: {
+                            vtype: "number",
+                            max: 10000000,
+                            min: 100
+                        }
+                    });
+                    $('#interface-down-bandwidth').textbox({
+                        fieldLabel: $.su.CHAR.INTERFACE.DOWNLINK,
+                        allowBlank: false,
+                        tips: "Kbps（100-10000000）",
+                        vtype: {
+                            vtype: "number",
+                            max: 10000000,
+                            min: 100
+                        }
+                    });
+                } else {
+                    $('#interface-up-bandwidth').textbox({
+                        fieldLabel: $.su.CHAR.INTERFACE.UPLINK,
+                        allowBlank: false,
+                        tips: "Kbps（100-1000000）",
+                        vtype: {
+                            vtype: "number",
+                            max: 1000000,
+                            min: 100
+                        }
+                    });
+                    $('#interface-down-bandwidth').textbox({
+                        fieldLabel: $.su.CHAR.INTERFACE.DOWNLINK,
+                        allowBlank: false,
+                        tips: "Kbps（100-1000000）",
+                        vtype: {
+                            vtype: "number",
+                            max: 1000000,
+                            min: 100
+                        }
+                    });
+                }
+                //$interfaceEditor.find('#interface-up-bandwidth').textbox('setValue', 1000000);
+                //$interfaceEditor.find('#interface-down-bandwidth').textbox('setValue', 1000000);
+            }
+
+            var phyif = $('#phyif-list').combobox('getValue')[0];
+            var list = interfaceStore.data;
+
+            for(var i = 0, len = list.length; i < len; i++){
+                var data_tmp = list[i];
+                if(data_tmp.isbridged && data_tmp.isbridged == 1){
+                    $interfaceEditor.find(".editor-btn.btn-submit.button-button").button("disable");
+                    $interfaceEditor.form("setError", $.su.CHAR.INTERFACE.HAS_BEEN_BRIDGED);
+                    return;
+                }
+                $interfaceEditor.find(".editor-btn.btn-submit.button-button").button("enable");
+            };
+
+            if (data.is_user_dns == "0"){
+                $('#main-dns').textbox('setValue', "");
+                $('#backup-dns').textbox('setValue', "");
+            }
+
+			if(data.peerdns6 == "1")
+			{
+				$('#pri-dnsv6').textbox("setValue", "");
+				$('#snd-dnsv6').textbox("setValue", "");
+			}
+        });
+
+        $interfaceEditor.on("ev_formatEditData", function(e, data){
+            if ($("#interface-type").val() == IF_INFO.TYPE.PPPOE)
+            {
+                data.proto = "pppoe";
+            }
+            data.if_name = $("#interface-name").val();
+            data.if_type = $("#interface-type").val();
+        }).on("ev_formatAddData", function(e, data){
+            if ($("#interface-type").val() == IF_INFO.TYPE.PPPOE)
+            {
+                data.proto = "pppoe";
+            }
+        });
+
+        function getNetAddr(ip, netmask){
+            var ip = ip || "0.0.0.0";
+            var netmask = netmask || "0.0.0.0";
+
+            if(ip == "0.0.0.0" || netmask == "0.0.0.0"){
+                return "0.0.0.0";
+            }
+
+            var ipArr = ip.split(".");
+            var maskArr = netmask.split(".");
+            var netStr = "";
+
+            for(var i = 0; i < 4; i++){
+                ipArr[i] = parseInt(ipArr[i]);
+                maskArr[i] =  parseInt(maskArr[i]);
+                netStr += (ipArr[i]&maskArr[i]);
+                if(i == 3){
+                    continue;
+                }
+                netStr += ".";
+            }
+            return netStr;
+        }
+
+        function reloadGrid(phyif, callback){
+            var data = {};
+            if($interfaceEditor.editor('isEditing')){
+                $interfaceEditor.editor('cancelEdit');
+            }
+            interfaceStore.keyLength = 0;
+            $('.grid-content-btn-edit').addClass('proxy-disabled');
+            $('.panel-tbar-container .btn-add').addClass('proxy-disabled');
+            interfaceStore.load(
+                {filter:{ base_name: $.isArray(phyif) ? phyif : [phyif] }} , callback);
+        }
+
+        var statusProxy = new $.su.Proxy({});
+
+        var ipmaskAarray = [];
+        function refreshStatus(interval){
+            if(!$.contains(document, interfaceGrid[0])){
+                return;
+            }
+
+            if ($(interfaceGrid).grid("getEditor").editing == true) {
+                setTimeout(function () {
+                    if (!$.contains(document, interfaceGrid[0])) {
+                        return;
+                    }
+                    refreshStatus(interval);
+                }, interval);
+            } else {
+                var phyif = $('#phyif-list').combobox("getValue");
+                interfaceStore.keyLength = 0;
+                if($('.grid-content-btn-edit').hasClass('proxy-disabled')){
+                    return ;
+                }
+
+                $('.grid-content-btn-edit').addClass('proxy-disabled');
+                $('.panel-tbar-container .btn-add').addClass('proxy-disabled');
+                interfaceStore.load(
+                    { filter: { base_name: $.isArray(phyif) ? phyif : [phyif] } },
+                    function () {
+                        $('.grid-content-btn-edit').removeClass('proxy-disabled');
+                        $('.panel-tbar-container .btn-add').removeClass('proxy-disabled');
+                        if (interval) {
+                            setTimeout(function () {
+                                if (!$.contains(document, interfaceGrid[0])) {
+                                    return;
+                                }
+                                refreshStatus(interval);
+                            }, interval);
+                        }
+                    });
+            }
+        }
+        $(interfaceStore).on("ev_insert", function(e, index, key, multi_editing){
+            setTimeout(refreshStatus, 5000);
+        });
+
+        $(interfaceStore).on("ev_linked", function(e, index, key, multi_editing){
+            setTimeout(refreshStatus, 5000);
+        });
+        /*refresh_status*/
+        function time_format(t_second){
+            var day = 0;
+            var hour = 0;
+            var minute = 0;
+            var second = 0;
+            if(t_second >= 0){
+                day = parseInt(t_second / 86400);
+                t_second = t_second - day * 86400;
+                hour = parseInt(t_second / 3600);
+                t_second = t_second - hour * 3600;
+                minute = parseInt(t_second / 60);
+                t_second = t_second - minute * 60;
+                second = parseInt(t_second);
+            }else{
+                return "未知";
+            }
+
+            return day + "天" + hour + "小时" + minute + "分钟" + second + "秒";
+        }
+
+        function showDetail(if_name){
+            if(!if_name){
+                return;
+            }
+            var data,
+                list = interfaceStore.data;
+
+            for (var i = 0, len = list.length; i < len; i++)
+            {
+                if (list[i].if_name == if_name)
+                {
+                    data = list[i];
+                    break;
+                }
+            }
+
+            if(!data){
+                return;
+            }
+            $linkDetail.find("#link-detail-value-name").text(data.if_name);
+            $linkDetail.find("#link-detail-value-status").text(data.link_status == IF_INFO.STATUS.UP ? "已连接":"未连接");
+            var linkmap = {
+                "static": $.su.CHAR.INTERFACE.STATICIP,
+                "dhcp"	:"DHCP",
+                "auto"	:$.su.CHAR.INTERFACE.AUTOLINK,
+                "manual":$.su.CHAR.INTERFACE.MANUALLINK,
+                "time"	:$.su.CHAR.INTERFACE.TIMELINK
+            }
+
+
+            if (data.if_type != IF_INFO.TYPE.PPPOE)
+                $linkDetail.find("#link-detail-uptime").hide();
+            else {
+                if(data.uptime){
+                    $linkDetail.find("#link-detail-value-uptime").text(time_format(data.uptime));
+                }else{
+                    $linkDetail.find("#link-detail-value-uptime").text(time_format(0));
+                }
+                $linkDetail.find("#link-detail-uptime").show();
+            }
+
+            var linktype
+            if (data.proto == 'pppoe')
+            {
+                linktype = data.linktype
+            }
+            else
+            {
+                linktype = data.proto
+            }
+            $linkDetail.find("#link-detail-value-mode").text(linkmap[linktype]? linkmap[linktype] : "---");
+            $linkDetail.find("#link-detail-value-ip").text(data.ip?data.ip: "---");
+            $linkDetail.find("#link-detail-value-mask").text(data.netmask?data.netmask: "---");
+            $linkDetail.find("#link-detail-value-gateway").text(data.gateway?data.gateway: "---");
+            $linkDetail.find("#link-detail-value-dns").text(data.pri_dns?data.pri_dns: "---");
+            $linkDetail.find("#link-detail-value-snd_dns").text(data.snd_dns?data.snd_dns: "---");
+
+            $linkDetail.find("#link-detail-value-status6").text(data.link_status6 == IF_INFO.STATUS.UP ? "已连接":"未连接");
+            $linkDetail.find("#link-detail-value-ip6addr").text(data.ip6addr?data.ip6addr: "---");
+            $linkDetail.find("#link-detail-value-prefixlen").text(data.prefixlen?data.prefixlen: "0");
+            $linkDetail.find("#link-detail-value-ip6gw").text(data.ip6gw?data.ip6gw: "---");
+            $linkDetail.find("#link-detail-value-pri_dns6").text(data.pri_dns6?data.pri_dns6: "---");
+            $linkDetail.find("#link-detail-value-snd_dns6").text(data.snd_dns6?data.snd_dns6: "---");
+
+            $linkDetail.find("#link-detail-value-mac").text(data.mac?data.mac: "---");
+            if(data.if_type === IF_INFO.TYPE.PPPOE){
+                $linkDetail.find("#link-detail-mac").hide();
+            }else{
+                $linkDetail.find("#link-detail-mac").show();
+            }
+            $linkDetail.msg('show');
+        }
+
+        $("#port-indicator-wrapper").css("width", "410px");
+
+        // 请求最大数量限制
+        proxy.query({
+            network: {
+                name: "sys_conf"
+            }
+        }, function(data){
+            if (!(data && data.network && data.network.sys_conf))
+            {
+                return;
+            }
+
+            var sysConf = data.network.sys_conf;
+            maxInfo.physicalMax = sysConf.physical_max || maxInfo.physicalMax;
+            maxInfo.bridgeMax = sysConf.bridge_max || maxInfo.bridgeMax;
+            maxInfo.staticMax = sysConf.static_max || maxInfo.staticMax;
+            maxInfo.dhcpMax = sysConf.dhcp_max || maxInfo.dhcpMax;
+            maxInfo.pppoeMax = sysConf.pppoe_max || maxInfo.pppoeMax;
+        });
+
+        //请求获取全部前缀授权接口信息列表
+        proxy.query({
+            network:
+                {
+                    table: "if_prefix"
+                }
+        }, function(data) {
+            if (!(data && data.network && data.network.count && data.network.if_prefix)) {
+                return;
+            }
+            var ifPrefix = data.network.if_prefix;
+            var prefix = {name: '---', value: ''};
+            var prefixName = {name: '---', value: ''};
+            PrefixItems.push(prefix);
+            PrefixNames.push(prefixName);
+            $.each(ifPrefix, function (_, item) {
+                for (var key in item) {
+                    prefix = {name: key, value: item[key].prefix};
+                    prefixName = {name: key, value: key};
+                    PrefixItems.push(prefix);
+                    PrefixNames.push(prefixName);
+                }
+            });
+            $interfaceEditor.find('#prefix-if').combobox('loadData',PrefixNames);
+        });
+
+        // 对Object.values与Object.keys做兼容性处理
+        if (!Object.values) Object.values = function(obj) {
+            if (obj !== Object(obj))
+                throw new TypeError('Object.values called on a non-object');
+            var val=[],key;
+            for (key in obj) {
+                if (Object.prototype.hasOwnProperty.call(obj,key)) {
+                    val.push(obj[key]);
+                }
+            }
+            return val;
+        }
+
+        if (!Object.keys) {
+            Object.keys = (function () {
+                var hasOwnProperty = Object.prototype.hasOwnProperty,
+                    hasDontEnumBug = !({toString: null}).propertyIsEnumerable('toString'),
+                    dontEnums = [
+                        'toString',
+                        'toLocaleString',
+                        'valueOf',
+                        'hasOwnProperty',
+                        'isPrototypeOf',
+                        'propertyIsEnumerable',
+                        'constructor'
+                    ],
+                    dontEnumsLength = dontEnums.length;
+
+                return function (obj) {
+                    if (typeof obj !== 'object' && typeof obj !== 'function' || obj === null) throw new TypeError('Object.keys called on non-object');
+
+                    var result = [];
+
+                    for (var prop in obj) {
+                        if (hasOwnProperty.call(obj, prop)) result.push(prop);
+                    }
+
+                    if (hasDontEnumBug) {
+                        for (var i=0; i < dontEnumsLength; i++) {
+                            if (hasOwnProperty.call(obj, dontEnums[i])) result.push(dontEnums[i]);
+                        }
+                    }
+                    return result;
+                }
+            })()
+        };
+
+        $("#unlink_confirm_content").html($.su.CHAR.INTERFACE.UNLINK_CONFIRM_CONTENT);
+
+        var interfaceHelp = new $.su.Help({
+            container: "div#interface-help",
+            content: "INTERFACE"
+        });
+    });
+
+//]]>
+</script>
+</body>
+
+</html>

@@ -1,0 +1,326 @@
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
+<html xmlns="http://www.w3.org/1999/xhtml">
+<head>
+<meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
+<title></title>
+</head>
+
+<body>
+<div class="func-container">
+	 <div id="backup_version_cnt">
+		 <div id="current_version">当前配置版本：</div>
+	 </div>
+
+	 <div id="backup_cnt">
+	 	<form id="backup-setting" enctype="multipart/form-data">
+	    	<p id="backupNote" name="backupNote"  class="note first-line"></p>
+	    	<button type="button" id="backup" name="backup"></button>
+	    </form>
+	 </div>
+
+	<div id="restore_cnt">
+	 	<div id="restore-setting">
+	    	<p id="restoreNote" name="restoreNote"  class="note first-line"></p>
+			<input id="file" name="archive" type="file" />
+
+	    	<button type="button" id="restore" name="restore"></button>
+	    </div>
+	</div>
+
+	<div id="restore_alert_cnt">
+		<h4 class="title" id="restore_confirm_cnt">
+	    	<span class="icon"></span>
+	 		<span class="text" id="restore_confirm_content"></span>
+	 	</h4>
+
+	 	<div id="restore_pro_cnt" class="reboot-loading-msg hidden">
+	    	<input id="restore_pro_bar" type="text" />
+	    </div>
+	</div>
+
+	<div id="restore_failed_cnt">
+		<h4 class="title">
+			<span class="icon" ></span>
+			<span class="text" id="error_str"></span>
+		</h4>
+	</div>
+
+	<div id="help_backup"></div>
+</div>
+
+<script type="text/javascript">
+try{
+    $
+}catch(e){
+    location.href = "/";
+};
+
+$(document).ready(function(e){
+	$(".func-container").hide();
+	var restore_total_time = 2*60*1000;
+	var restore_query_interval = false;
+	var restore_pro_id = false;
+
+	var BACKUP_URL = "";
+	var RESTORE_URL = ""
+
+	var backupProxy = restoreProxy = new $.su.Proxy();
+
+	
+	(function setVersion() {
+        var statusProxy = new $.su.Proxy({
+            async: false
+        });
+        statusProxy.query({"system":{"name":"cfg_info"}}, function(data){
+		
+			var cfg_ver=data.system.cfg_info.version;
+			
+
+            var $hard = $("#current_version");
+            $hard.text($hard.text() + "    " + cfg_ver);
+        });
+    })();
+
+
+	$("div.func-container").page({
+		title: $.su.CHAR.BACKUP.TITLE,
+		help: ""
+	});
+
+	$("#backup_version_cnt").panel({
+		title: $.su.CHAR.BACKUP.BACKUPVERSION,
+		collapsible: false
+	});
+
+	$("#backup_cnt").panel({
+		title: $.su.CHAR.BACKUP.BACKUP,
+		collapsible: false
+	});
+
+	$("input#current_version").textbox({
+		fieldLabel: $.su.CHAR.BACKUP.FIMWAREVERSION,
+		inputCls:'xxl',
+		readOnly:true
+	});
+
+	$("#restore_cnt").panel({
+		title: $.su.CHAR.BACKUP.RESTORE,
+		collapsible: false
+	});
+
+	$("#restore_note").html($.su.CHAR.BACKUP.RESTORE_WARN);
+
+	$("p#backupNote").html($.su.CHAR.BACKUP.BACKUPTIP);
+	$("p#restoreNote").html($.su.CHAR.BACKUP.RESTORETIP);
+
+
+	$("#file").file({
+		fieldLabel: $.su.CHAR.BACKUP.FILE,
+		allowBlank:false,
+		extension: "bin"
+	});
+
+	$("#backup-setting").form({
+		proxy:{},
+		formEnctype: "multipart/form-data",
+		traditional: true,
+		hiddenFrame: true,
+		autoLoad: false,
+		fileUrlCb: function(){
+			return $.su.url.subs + $.su.url.stok + BACKUP_URL;
+		}
+	});
+
+	$("#restore-setting").form({
+		proxy:{},
+		formEnctype: "multipart/form-data",
+		traditional: true,
+		hiddenFrame: true,
+		fields: [
+			{"name": "archive"}
+		],
+		fileUrlCb: function(){
+			return $.su.url.subs + $.su.url.stok + RESTORE_URL;
+		}
+	}).on("ev_loadData", function(e, data){
+	});
+
+	var restore_proxy = new $.su.Proxy();
+
+	var query_interval = 0;
+	var get_ret = false;
+	var msgInHTML =	"<input id=\"backcfg_pro_bar\" type=\"text\" />";
+	var backcfg_pro_cnt_msg = $("<div id=\"backcfg_pro_cnt\" class=\"reboot-loading-msg hidden\">").msg({
+		cls: 'warning reboot-confirm-size',
+		type: "alert",
+		closeBtn: false,
+		innerHTML: msgInHTML
+	});
+
+	var backcfg_pro_bar  = backcfg_pro_cnt_msg.find('input#backcfg_pro_bar').waitingbar({
+		barWidth: 320,
+		fieldLabel:  $.su.CHAR.OPERATION.BACKUP_WAITINGBAR_TIP,
+		labelCls:"xxl"
+	}).waitingbar("stop");
+
+	function hideWaitingBar() {
+		backcfg_pro_bar.waitingbar("stop");
+		backcfg_pro_bar.waitingbar("reset");
+		backcfg_pro_cnt_msg.msg('close');
+	}
+
+	function showWaitingBar() {
+		backcfg_pro_cnt_msg.msg('show');
+		backcfg_pro_cnt_msg.msg('hideButtons');
+		backcfg_pro_bar.waitingbar("show");
+		backcfg_pro_bar.waitingbar("run");
+	}
+
+	function getResult() {
+		if(get_ret == false) {
+			var exportCheckProxy = new $.su.Proxy();
+			exportCheckProxy.query({
+				system: {
+					name: "download_conf_status"
+				}
+			}, function(data) {
+				data = data.system.download_conf_status;
+				if (data.status == "1") {
+					clearInterval(query_interval);
+					hideWaitingBar();
+					get_ret = true;
+				}
+			})
+		}
+	}
+
+	$("#backup").button({
+		text: $.su.CHAR.BACKUP.BACKUPBTN,
+		cls: "submit",
+		handler: function(){
+			backupProxy.action({"system":{"download_conf":null}}, function(data){
+				BACKUP_URL = data.url;
+
+				showWaitingBar();
+				$("#backup-setting").form('submit', {});
+
+				clearInterval(query_interval);
+				get_ret = false;
+				query_interval = setInterval(getResult, 1000);
+			});
+		}
+	});
+
+	$("#restore").button({
+		text: $.su.CHAR.BACKUP.RESTOREBTN,
+		handler: function(){
+			if($("#restore-setting").form('validate'))
+			{
+				$("#restore_alert_cnt").msg("show");
+			}
+			else
+			{
+				return false;
+			}
+
+		},
+		cls: "submit"
+	});
+
+	var reboot_time = restore_total_time / 1000;
+	function restore_getResult()
+	{
+		if(get_ret == false) {
+			var restoreCheckProxy = new $.su.Proxy();
+			restoreCheckProxy.query({
+				system: {
+					name: "upload_conf_status"
+				}
+			}, function(data) {
+				data = data.system.upload_conf_status;
+				if (data.status == "1") {
+					clearInterval(query_interval);
+					restore_pro_bar.waitingbar("waitForReboot", reboot_time);
+					get_ret = true;
+				}
+			})
+		}
+	}
+
+	var lanIp = "";
+
+	function restore_write()
+	{
+		restoreProxy.action({"system":{"upload_conf":null}}, function(data){
+			RESTORE_URL = data.url;
+			$("#restore-setting").form('submit',{}, function(data){
+				reboot_time = data.upload_result.wait_time;
+
+				clearInterval(query_interval);
+				get_ret = false;
+				query_interval = setInterval(restore_getResult, 1000);
+			},function(errcode){
+				$("#restore_alert_cnt").hide();
+				$("#restore_alert_cnt").msg("close");
+				$("#restore_alert_cnt").msg('showButtons');
+				$('#restore_confirm_cnt').show();
+				$("#restore_pro_cnt").hide();
+				restore_pro_bar.waitingbar("stop");
+			},function(){
+				$("#restore_alert_cnt").hide();
+				$("#restore_alert_cnt").msg("close");
+				$("#restore_alert_cnt").msg('showButtons');
+				$('#restore_confirm_cnt').show();
+				$("#restore_pro_cnt").hide();
+				restore_pro_bar.waitingbar("stop");
+			});
+		});
+
+		$("#restore_alert_cnt").msg('hideButtons');
+		$('#restore_confirm_cnt').hide();
+		$("#restore_pro_cnt").show();
+		restore_pro_bar.waitingbar("runUntilReboot");
+		$("#restore_alert_cnt").msg("show");
+	}
+
+	$("#restore_failed_cnt").msg({
+		cls: 'warning reboot-confirm-size',
+		type: "alert"
+	});
+
+	$("#restore_alert_cnt").msg({
+		okHandler:function(){
+			$("#restore_alert_cnt").msg('hideButtons');
+            $('#restore_confirm_cnt').hide();
+            $("#restore_pro_cnt").show();
+			restore_write();
+			return false;
+		},
+		cancelHandler:function(){
+			return true;
+		},
+		cls: 'warning reboot-confirm-size',
+   	    closeBtn: false,
+		type: "confirm"
+	});
+
+
+	var restore_pro_bar  = $('input#restore_pro_bar').waitingbar({
+		fieldLabel: "正在恢复备份配置，系统将会重启，请不要做任何其他操作",
+		labelCls:"xxl",
+		waitTime: 600
+	});
+
+
+	$("#restore_confirm_content").html($.su.CHAR.BACKUP.RESTORE_CONFIRM_CONTENT);
+
+	$(".func-container").show();
+	var helpBackup = new $.su.Help({
+		container: "div#help_backup",
+		content: ["BACKUP_RESTORE"]
+	});
+});
+</script>
+</body>
+
+</html>

@@ -1,0 +1,1073 @@
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
+<html xmlns="http://www.w3.org/1999/xhtml">
+    <head>
+        <meta content="text/html; charset=utf-8" http-equiv="Content-Type"/>
+        <title>
+            APP LIST
+        </title>
+        <style type="text/css">
+        </style>
+        <script src="../web-static/js/su/widget/window/dialog.js?random=20201217044300" type="text/javascript"></script>
+        <script src="../web-static/js/su/widget/grid/comboSelector.js?random=20201217044300" type="text/javascript"></script>
+    </head>
+    <body>
+        <div class="func-container">
+            <div id="app_list">
+                <div id="app_list_grid">
+                </div>
+            </div>
+            <div id="own_editor">
+                <input id="name" name="name"/>
+                <input id="app_id" name="app_id"/>
+                <input id="usage" name="usage"/>
+                <input id="sub_usage" name="sub_usage"/>
+                <input id="transmission" name="transmission"/>
+                <input id="is_customer" name="is_customer"/>
+
+                <p>标签:</p>
+                <div style="border: 1px solid #ccc; padding: 4px 8px; width: 500px; margin-top: 8px">
+                    <input id="risk_stars" name="risk_stars"/>
+                    <input id="label_number" name="label_number"/>
+                    <input id="technique_label" name="technique_label"/>
+                    <input id="function_label" name="function_label"/>
+                    <input id="risk_label" name="risk_label"/>
+                    <input id="else_label" name="else_label"/>
+                </div>
+                <input id="comment" name="comment"/>
+            </div>
+        </div>
+        <div id="app_list_help">
+        </div>
+
+        <div id="delete_fail_msg">
+            <h4 class="title">
+                <span class="icon" ></span>
+                <span class="text" id="error_str"></span>
+            </h4>
+        </div>
+
+        <div class="notice" style="top:-20px;position:relative;">
+            <hr/>
+            <h6>有关应用匹配规则和地址端口映射的注意事项，请查看页面右上方的帮助信息。</h6>
+        </div>
+
+        <script type="text/javascript">
+            try{
+        $
+    }catch(e){
+        location.href="../web-static//";
+    };
+
+$(document).ready(function(e){
+    $(".func-container").hide();
+
+    $("div#app_list").panel({
+        title:$.su.CHAR.APP_LIBRARY.LIST_NAME,
+        collapsible: false
+    });
+
+    $("#delete_fail_msg").msg({
+        cls: 'warning reboot-confirm-size',
+        msg: "默认应用不可删除",
+        type: "alert"
+    });
+
+    var MIN_CUSTOMER_APP_ID = 65000;
+
+    var name = $("input#name").textbox({
+        fieldLabel:$.su.CHAR.APP_LIBRARY.NAME,
+        tips:"(1-28个字符)",
+        allowBlank:false,
+        maxLength:28
+    });
+
+    var comment = $("input#comment").textbox({
+        fieldLabel:$.su.CHAR.APP_LIBRARY.COMMENT,
+        tips:"(可选,0-50个字符)",
+        allowBlank:true,
+        maxLength:50
+    });
+
+    var app_id = $("input#app_id").textbox({
+        readOnly:true,
+        allowBlank:false
+    });
+
+    var usage = $("input#usage").combobox({
+        fieldLabel:$.su.CHAR.APP_LIBRARY.CATALOGUE_USAGE,
+        allowBlank:false,
+        multiSelect: false,
+        maxLength:50
+    });
+
+    var sub_usage = $("input#sub_usage").combobox({
+        fieldLabel:$.su.CHAR.APP_LIBRARY.CATALOGUE_SUB_USAGE,
+        allowBlank:false,
+        multiSelect: false,
+        maxLength:50
+    });
+
+    var transmission = $("input#transmission").combobox({
+        fieldLabel:$.su.CHAR.APP_LIBRARY.CATALOGUE_TRANSMISSION,
+        allowBlank:false,
+        multiSelect: false,
+        maxLength:50
+    });
+
+    var label_number = $("input#label_number").textbox({
+        readOnly: false,
+        allowBlank:false,
+        maxLength:50,
+        vtype:{
+            vtype:"number",
+            min:0,
+            max:24
+        }
+    });
+
+    var is_customer = $("input#is_customer").textbox({
+        readOnly: true,
+        allowBlank:false,
+        maxLength:50
+    });
+
+    var risk_stars = $("input#risk_stars").textbox({
+        fieldLabel:$.su.CHAR.APP_LIBRARY.CATALOGUE_RISK,
+        readOnly: true,
+        allowBlank:false,
+        maxLength:50
+    });
+
+    function changeRiskStars(x)
+    {
+        var stars = '';
+        if(x == 0 || x == 1){
+            stars = '⚠';
+        }
+        else if(x == 2){
+            stars = '⚠ ⚠';
+        }
+        else if(x == 3 || x == 4){
+            stars = '⚠ ⚠ ⚠';
+        }
+        else if(x == 5) {
+            stars = '⚠ ⚠ ⚠ ⚠';
+        }
+        else{
+            stars = '⚠ ⚠ ⚠ ⚠ ⚠';
+        }
+        $('#risk_stars').textbox('setValue', stars);
+    }
+
+    var technique_label = $("#technique_label").combobox({
+        fieldLabel : $.su.CHAR.APP_LIBRARY.CATALOGUE_TECHNIQUE_LABEL,
+        allowBlank:true,
+        multiSelect: true,
+        items:[
+                {name:"--",value:"--", selected:true}
+            ]
+    });
+
+    var function_label = $("#function_label").combobox({
+        fieldLabel : $.su.CHAR.APP_LIBRARY.CATALOGUE_FUNCTION_LABEL,
+        allowBlank:true,
+        multiSelect:true,
+        items:[
+                {name:"--",value:"--", selected:true}
+            ]
+    });
+
+    var risk_label = $("#risk_label").combobox({
+        fieldLabel : $.su.CHAR.APP_LIBRARY.CATALOGUE_RISK_LABEL,
+        allowBlank:true,
+        multiSelect:true,
+        items:[
+                {name:"--",value:"--", selected:true}
+            ]
+    }).on('ev_change', function(e, oldValue, newValue){
+        var x = parseInt($("input#label_number").textbox('getValue'));
+        if(oldValue.length < newValue.length){
+            $("input#label_number").textbox('setValue', x + 1);
+            changeRiskStars(x + 1);
+        }
+        else if(oldValue.length > newValue.length){
+            $("input#label_number").textbox('setValue', x - 1);
+            changeRiskStars(x - 1);
+        }
+    });
+
+    var else_label = $("#else_label").combobox({
+        fieldLabel : $.su.CHAR.APP_LIBRARY.CATALOGUE_ELSE_LABEL,
+        allowBlank:true,
+        multiSelect:true,
+        readOnly: true,
+        items:[
+                {name:"--",value:"--", selected:true}
+            ]
+    });
+
+    var usage_list=[];
+    var sub_usage_list=[];
+    var transmission_list=[];
+    var technique_label_list=[];
+    var function_label_list=[];
+    var risk_label_list=[];
+    var else_label_list=[];
+    var relation_list = [];
+    var confQuery = new $.su.Proxy({async: false});
+    confQuery.query({
+            "app_library_conf":{table:["catalogue_list", "catalogue_relation"]},
+        },
+        function(total_data) {
+            var data = total_data.app_library_conf.catalogue_list;
+            for (var i=0; i < data.length; i++){
+                for (var j in data[i]){
+                    if(data[i][j]['type'] == 'technique'){
+                        technique_label_list.push({name: data[i][j].name, value: data[i][j].id});
+                    }
+                    else if(data[i][j]['type'] == 'function'){
+                        function_label_list.push({name: data[i][j].name, value: data[i][j].id});
+                    }
+                    else if(data[i][j]['type'] == 'risk'){
+                        risk_label_list.push({name: data[i][j].name, value: data[i][j].id});
+                    }
+                    else if(data[i][j]['type'] == 'else'){
+                        else_label_list.push({name: data[i][j].name, value: data[i][j].id});
+                    }
+                    else if(data[i][j]['type'] == 'usage'){
+                        usage_list.push({name: data[i][j].name, value: data[i][j].id});
+                    }
+                    else if(data[i][j]['type'] == 'sub_usage'){
+                        sub_usage_list.push({name: data[i][j].name, value: data[i][j].id});
+                    }
+                    else if(data[i][j]['type'] == 'transmission'){
+                        transmission_list.push({name: data[i][j].name, value: data[i][j].id});
+                    }
+                }
+            }
+            technique_label.combobox('loadData',technique_label_list);
+            function_label.combobox('loadData',function_label_list);
+            risk_label.combobox('loadData',risk_label_list);
+            else_label.combobox('loadData',else_label_list);
+            usage.combobox('loadData',usage_list);
+            sub_usage.combobox('loadData',sub_usage_list);
+            transmission.combobox('loadData',transmission_list);
+
+            data = total_data.app_library_conf.catalogue_relation;
+            for (var i=0; i < data.length; i++){
+                for (var j in data[i]){
+                    var sub_list = [];
+                    $.map(data[i][j].sub_usage, function(id, index_1){
+                        var sub_name = "";
+                        $.map(sub_usage_list, function(item, index_2){
+                            if(parseInt(item.value) == parseInt(id)){
+                                sub_name = item.name;
+                                return;
+                            }
+                        });
+                        sub_list.push({name: sub_name, value:id});
+                    });
+                    relation_list.push({usage:data[i][j].usage, sub_usage:sub_list})
+                }
+            }
+        }
+    );
+
+    usage.on('ev_change', function(e, oldValue, newValue){
+        $.map(relation_list, function(relation_item, index){
+            if(relation_item.usage == newValue[0]){
+                sub_usage.combobox('loadData',relation_item.sub_usage);
+                return;
+            }
+        });
+    });
+
+    function getCatalogueName(id, list)
+    {
+        for(var catalogue in list)
+        {
+            if(list[catalogue].value == id)
+            {
+                return list[catalogue].name;
+            }
+        }
+        return 'undefined';
+    }
+
+    function slpIpgroupToName(ipgroup_obj) {
+        if (ipgroup_obj.flag == "system" && typeof(ipgroup_obj.comment) == "string" && ipgroup_obj.comment.length > 1) {
+            return ipgroup_obj.comment;
+        } else {
+            return ipgroup_obj.name;
+        }
+    }
+
+    function unselectedComboSelector()
+    {
+        var row = $("#filter-row");
+        var checkboxes = row.find('input[type="checkbox"]');
+        $.map(checkboxes, function(box, index){
+            $(checkboxes[index]).prop("checked", false);
+        });
+    }
+
+    var appListProxy = new $.su.Proxy();
+    var portRulePorxy = new $.su.Proxy();
+
+    var listGrid = $("#app_list_grid").grid({
+        combo: 'filter_catalogue',
+        comboFilterModule: 'app_library_conf',
+        comboObjectModule: 'app_library',
+        comboFunction: 'combo_filter_app_list',
+        maxRulesProperty: "max_rules",
+        editor:{
+            content:"#own_editor",
+            fields:[
+                {name:"name"},
+                {name:"comment"},
+                {name:"is_customer"},
+                {name:"app_id"},
+                {name:"usage"},
+                {name:"sub_usage"},
+                {name:"transmission"},
+                {name:"label_number"},
+                {name:"technique_label"},
+                {name:"function_label"},
+                {name:"risk_label"},
+                {name:"else_label"}
+            ],
+            validator:function(){
+                var name=$("#name").textbox('getValue');
+                var nameList = $("#app_list_grid").grid('getStore').data;
+                var editingId = $($("#app_list_grid").grid('getEditor')).editor("getEditingId");
+                var modify_flag = 0;
+                var reg =  new RegExp(/^[a-zA-Z0-9_]*$/);
+                for(var i=0;i<nameList.length;i++){
+                    if(editingId == nameList[i].key){
+                        modify_flag = 1;
+                        continue;
+                    }
+
+                    if(name == nameList[i].name){
+                        $($("#app_list_grid").grid("getEditor")).form('setError',"您输入的名称已经存在，请重新输入");
+                        return false;
+                    }
+                    if(!reg.test(name))
+                    {
+                        $($("#app_list_grid").grid("getEditor")).form('setError',"请输入正确字符格式的名称（仅包含英文字母、数字或下划线）");
+                            return false;
+                    }
+                }
+                return true;
+            },
+            transParams: function(params){
+                return params;
+            }
+        },
+        store:{
+            proxy:appListProxy,
+            fields:[
+                {name:"name"},
+                {name:"comment"},
+                {name:"is_customer"},
+                {name:"app_id"},
+                {name:"usage"},
+                {name:"sub_usage"},
+                {name:"transmission"},
+                {name:"label_number"},
+                {name:"technique_label"},
+                {name:"function_label"},
+                {name:"risk_label"},
+                {name:"else_label"}
+            ],
+            parseKey: {                 /* 此处在store中增加parseKey，便于store对象在底层对数据进行预处理，以实现SLP数据结构和SU数据结构的转变 */
+                moduleName:"app_library",      /* 此处的moduleName和tableName分别指数据块名和对应请求的table名 */
+                pageSizeName: "app_list_entry",
+                tableName:"app_list"
+            },
+            autoLoad:false,
+            isAppointIndex: true,
+            appointIndex: 0
+        },
+        paging_true:{
+            insertTofirst: true,
+            goToPageHandle: function(data, callback, type) {
+                if (type !== 'ev_remove') {
+                    $.su.loading.show();
+                }
+
+                var filter = {};
+                var obj = $('#app_list_grid');
+                var store = $('#app_list_grid').grid('getStore');
+                var filterContainer = $('.filter-row').find('.filter-container');
+                var doProxy = new $.su.Proxy({async: false});
+
+                for (var i = 0; i < filterContainer.length; i++) {
+                    var item = $(filterContainer[i]);
+                    var title = item.find('.checkbox-title').prop('value');
+                    var options = [];
+                    var checkboxes = item.find('.filter-table-checkbox');
+                    for (var j = 0; j < checkboxes.length; j++) {
+                        var checked = $(checkboxes[j]).find('input[type="checkbox"]').prop('checked');
+                        if (checked) {
+                            var option = $(checkboxes[j]).html().split('>')[1];
+                            options.push(option)
+                        }
+                    }
+                    if (options.length !== 0) {
+                        filter[title] = options;
+                    }
+                }
+
+                var numPerPage = data.numPerPage;
+                filter["startIndex"] = numPerPage * data.currentPage;
+                filter["endIndex"] = (data.currentPage + 1) * numPerPage - 1;
+
+                var postData = {
+                    "app_library" : {
+                        "combo_filter_app_list": filter
+                    }
+                };
+                doProxy.action(postData, function(data){
+                    var totalNum=data['app_library']['count']['app_list']
+                    data = store.dataFormat(data['app_library']['app_list']);
+                    store.loadData(data,{count: totalNum}, false, function(){
+                        if (type !== 'ev_remove') {
+                            $.su.loading.hide();
+                        }
+                    });
+                    var pagingElement=$(obj).grid('getPaging');
+                    pagingElement.totalNum=totalNum;
+                    pagingElement.totalPage=Math.floor(totalNum/numPerPage)+1;
+                    var paging_true_obj=$(pagingElement);
+                    store.keyProperty='key';
+                });
+            }
+        },
+        idColumnIndex:1,
+        maxLines: 10,
+        columns:[
+            {
+                xtype: "checkcolumn"
+            },
+            {
+                xtype: "rownumberer"
+            },
+            {
+                text:$.su.CHAR.APP_LIBRARY.NAME,
+                width:100,
+                dataIndex:"name",
+                scan: {
+                    cmp: $.search.compare.string
+                }
+            },
+            {
+                text:$.su.CHAR.APP_LIBRARY.CATALOGUE_USAGE,
+                width:100,
+                dataIndex:"usage",
+                renderer:function(dd, index, data)
+                {
+                    return getCatalogueName(dd, usage_list);
+                }
+            },
+            {
+                text:$.su.CHAR.APP_LIBRARY.CATALOGUE_SUB_USAGE,
+                width:100,
+                dataIndex:"sub_usage",
+                renderer:function(dd, index, data)
+                {
+                    return getCatalogueName(dd, sub_usage_list);
+                }
+            },
+            {
+                text:$.su.CHAR.APP_LIBRARY.CATALOGUE_TRANSMISSION,
+                width:100,
+                dataIndex:"transmission",
+                renderer:function(dd, index, data)
+                {
+                    return getCatalogueName(dd, transmission_list);
+                }
+            },
+            {
+                text:$.su.CHAR.APP_LIBRARY.CATALOGUE_RISK,
+                width:100,
+                dataIndex:"label_number",
+                renderer:function(x, index, data){
+                    if(x == 0 || x == 1){
+                        stars = '⚠';
+                    }
+                    else if(x == 2){
+                        stars = '⚠⚠';
+                    }
+                    else if(x == 3 || x == 4){
+                        stars = '⚠⚠⚠';
+                    }
+                    else if(x == 5) {
+                        stars = '⚠⚠⚠⚠';
+                    }
+                    else{
+                        stars = '⚠⚠⚠⚠⚠';
+                    }
+                    return stars;
+                }
+            },
+            {
+                text:"备注",
+                width:100,
+                dataIndex:"comment",
+                renderer:function(x, index, data){
+                    if(x != "---"){
+                        return x.substr(0, 5) + "...";
+                    }
+                    else{
+                        return x;
+                    }
+                }
+            },
+            {
+                xtype: "settings",
+                renderer: function(arg, dd, index, data){
+                    if(arg == "delete" && data.is_customer == "no") {
+                        return false;
+                    }
+                    return true;
+                }
+            }
+        ],
+        operation:"prompt|add|delete|search|searchAll",
+        childTable:[{
+            editor:{
+                content:"default",
+                fields:[
+                    {name: "name"},
+                    {name: "comment"},
+                    {name: "parent_table_key"},
+                    {name: "address"},
+                    {name: "port"},
+                    {name: "protocol"}
+                ],
+                validator:function(){
+                    return true;
+                }
+            },
+            store:{
+                proxy:portRulePorxy,
+                fields:[
+                    {name: "name"},
+                    {name: "comment"},
+                    {name: "parent_table_key"},
+                    {name: "address"},
+                    {name: "port"},
+                    {name: "protocol"}
+                ],
+                parseKey:{
+                    moduleName:"app_library",
+                    tableName:"app_rule"
+                },
+                autoLoad:true
+            },
+            columns:[
+                {
+                    xtype: "checkcolumn",
+                    width: 32
+                },
+                {
+                    text:$.su.CHAR.APP_LIBRARY.NAME,
+                    width: 32,
+                    dataIndex:"name",
+                    editor: {
+                        xtype: "textbox",
+                        allowBlank: false,
+                        maxLength:28,
+                        tips:"(1-28个字符)",
+                    },
+                    scan: {
+                        cmp: $.search.compare.string
+                    }
+                },
+                {
+                    text:"目的地址",
+                    width:32,
+                    dataIndex:"address",
+                    editor: {
+                        xtype: "subnet",
+                        allowBlank: true,
+                        vtype:"subnet"
+                    },
+                    renderer:function(dd, index, data){
+                        if (dd == "/") return "ANY";
+                        else return dd;
+                    }
+                },
+                {
+                    text:"目的端口", //$.su.CHAR.APP_LIBRARY.TIME,
+                    width: 32,
+                    dataIndex:"port",
+                    editor: {
+                        xtype: "textbox",
+                        allowBlank: false,
+                        maxLength:30,
+                        tips:"(请输入1~4个端口号，以,分割)",
+                    }
+                },
+                {
+                    text:"协议",
+                    width: 32,
+                    dataIndex:"protocol",
+                    editor: {
+                        xtype: "combobox",
+                        allowBlank: false,
+                        multiSelect: false,
+                        items:[
+                            {name:"TCP", value:"tcp"},
+                            {name:"UDP", value:"udp"},
+                            {name:"TCP/UDP", value:"tcp_or_udp"}
+                        ]
+                    },
+                    renderer:function(dd, index, data){
+                        if(dd == "tcp") return "TCP";
+                        else if(dd == "udp") return "UDP";
+                        else return "TCP/UDP";
+                    }
+                },
+                {
+                    text:"备注",//$.su.CHAR.APP_LIBRARY.COMMENT,
+                    width: 32,
+                    dataIndex:"comment",
+                    editor: {
+                        xtype: "textbox",
+                        allowBlank: true,
+                        maxLength:50,
+                        tips:"(可选,0-50个字符)",
+                    }
+                },
+                {
+                    xtype: "settings",
+                    width: 32
+                }
+            ],
+            operation: "prompt|add|delete|search",
+            msgSize: "xxl"
+        }, {
+            editor:{
+                content:"default",
+                fields:[
+                    {name: "name"},
+                    {name: "comment"},
+                    {name: "parent_table_key"},
+                    {name: "address"},
+                    {name: "port"},
+                    {name: "protocol"},
+                    {name: "direction"},
+                    {name: "range"},
+                    {name: "mode"},
+                    {name: "field"},
+                    {name: "pattern"}
+                ],
+                validator:function(){
+                    return true;
+                }
+            },
+            store:{
+                proxy:portRulePorxy,
+                fields:[
+                    {name: "name"},
+                    {name: "comment"},
+                    {name: "parent_table_key"},
+                    {name: "address"},
+                    {name: "port"},
+                    {name: "protocol"},
+                    {name: "direction"},
+                    {name: "range"},
+                    {name: "mode"},
+                    {name: "field"},
+                    {name: "pattern"}
+                ],
+                parseKey:{
+                    moduleName:"app_library",
+                    tableName:"app_rule"
+                },
+                autoLoad:true
+            },
+            columns:[
+                {
+                    xtype: "checkcolumn",
+                    width: 32
+                },
+                {
+                    text:$.su.CHAR.APP_LIBRARY.NAME,
+                    width: 32,
+                    dataIndex:"name",
+                    editor: {
+                        xtype: "textbox",
+                        allowBlank: false,
+                        maxLength:28,
+                        tips:"(1-28个字符)",
+                    },
+                    scan: {
+                        cmp: $.search.compare.string
+                    }
+                },
+                {
+                    text:"目的地址",
+                    width:32,
+                    dataIndex:"address",
+                    editor: {
+                        xtype: "subnet",
+                        allowBlank: true,
+                        vtype:"subnet"
+                    },
+                    renderer:function(dd, index, data){
+                        if (dd == "/") return "ANY";
+                        else return dd;
+                    }
+                },
+                {
+                    text:"目的端口",
+                    width: 32,
+                    dataIndex:"port",
+                    editor: {
+                        xtype: "textbox",
+                        allowBlank: true,
+                        maxLength:30,
+                        tips:"(请输入1~4个端口号，以,分割)",
+                    },
+                    renderer:function(dd, index, data){
+                        if (dd == "---") return "ANY";
+                        else return dd;
+                    }
+                },
+                {
+                    text:"协议",
+                    width: 32,
+                    dataIndex:"protocol",
+                    editor: {
+                        xtype: "combobox",
+                        allowBlank: false,
+                        multiSelect: false,
+                        items:[
+                            {name:"TCP", value:"tcp"},
+                            {name:"UDP", value:"udp"},
+                            {name:"TCP/UDP", value:"tcp_or_udp"}
+                        ],
+                        events: [
+                            {
+                                eventName: 'ev_change',
+                                eventCallback: function(e, oldValue, newValue) {
+                                    var items = [
+                                        {name: "---", value:"none", checked:true},
+                                        {name:"general_payload", value:"general"},
+                                        {name:"http_method", value:"http_method"},
+                                        {name:"http_host", value:"http_host"},
+                                        {name:"http_uri", value:"http_uri"},
+                                        {name:"http_user_agent", value:"http_user_agent"},
+                                        {name:"http_content_type", value:"http_content_type"},
+                                        {name:"http_cookie", value:"http_cookie"}
+                                    ];
+                                    if(newValue[0] === 'tcp_or_udp' || newValue[0] === 'udp') {
+                                      $('input[name="field"]').length && $($('input[name="field"]')[0]).combobox('loadData',items.slice(0, 2));
+
+                                    } else {
+                                        $('input[name="field"]').length && $($('input[name="field"]')[0]).combobox('loadData',items);
+                                    }
+                                }
+                            }
+                        ]
+                    },
+                    renderer:function(dd, index, data){
+                        if(dd == "tcp") return "TCP";
+                        else if(dd == "udp") return "UDP";
+                        else return "TCP/UDP";
+                    }
+                },
+                {
+                    text:"关键字",
+                    width: 32,
+                    dataIndex:"pattern",
+                    editor: {
+                        xtype: "textbox",
+                        allowBlank: true,
+                        maxLength:50,
+                    }
+                },
+                {
+                    text:"匹配字段",
+                    width: 32,
+                    dataIndex:"field",
+                    editor: {
+                        xtype: "combobox",
+                        allowBlank: true,
+                        multiSelect: false,
+                        items:[
+                            {name: "---", value:"none", checked:true},
+                            {name:"general_payload", value:"general"},
+                            {name:"http_method", value:"http_method"},
+                            {name:"http_host", value:"http_host"},
+                            {name:"http_uri", value:"http_uri"},
+                            {name:"http_user_agent", value:"http_user_agent"},
+                            {name:"http_content_type", value:"http_content_type"},
+                            {name:"http_cookie", value:"http_cookie"}
+                        ]
+                    }
+                },
+                {
+                    text:"检测方向",
+                    width: 32,
+                    dataIndex:"direction",
+                    editor: {
+                        xtype: "combobox",
+                        allowBlank: true,
+                        multiSelect: false,
+                        items:[
+                            {name: "---", value:"none", checked:true},
+                            {name:"请求数据", value:"origin"},
+                            {name:"返回数据", value:"reply"},
+                            {name:"任意", value:"any"}
+                        ]
+                    },
+                    renderer:function(dd, index, data){
+                        if(dd == "origin") return "请求数据";
+                        else if(dd == "reply") return "返回数据";
+                        else if(dd == "any") return "任意";
+                        else return "---";
+                    }
+                },
+                {
+                    text:"检测模式",
+                    width: 32,
+                    dataIndex:"mode",
+                    editor: {
+                        xtype: "combobox",
+                        allowBlank: true,
+                        multiSelect: false,
+                        items:[
+                            {name: "---", value:"none", checked:true},
+                            {name:"正则表达式", value:"regex"},
+                            {name:"字符串匹配", value:"substring"}
+                        ]
+                    },
+                    renderer:function(dd, index, data){
+                        if(dd == "regex") return "正则表达式";
+                        else if(dd == "substring") return "字符串匹配";
+                        else return "---";
+                    }
+                },
+                {
+                    text:"备注",//$.su.CHAR.APP_LIBRARY.COMMENT,
+                    width: 32,
+                    dataIndex:"comment",
+                    editor: {
+                        xtype: "textbox",
+                        allowBlank: true,
+                        maxLength:50,
+                        tips:"(可选,0-50个字符)",
+                    }
+                },
+                {
+                    xtype: "settings",
+                    width: 32
+                }
+            ],
+            operation: "prompt|add|delete|search",
+            msgSize: "xxxl"
+        }],
+        hyperlink_text: ["地址端口映射列表", "应用匹配规则列表"]
+    }).delegate('a.btn-detail-app', 'click', function(e){
+        var index = $(this).data('index');
+        showDetail_appList(listGrid.grid("getStore").data[index].app_list);
+    }).on("ev_load", function(e,data, others){
+        for(var i=0; i<data.length; i++){
+            if (data[i].is_customer === "no" ){
+                listGrid.grid('disableDelete',i);
+            }
+        }
+    }).on("ev_insert", function(){
+        unselectedComboSelector();
+        // 标记全局应用信息可能需要更新
+        $.su.app_list.setUpdateFlag();
+    }).on("ev_searchFinished", function(){
+        unselectedComboSelector();
+    }).on("ev_remove", function(){
+        unselectedComboSelector();
+        // 标记全局应用信息可能需要更新
+        $.su.app_list.setUpdateFlag();
+    }).on("ev_deleteError", function(e, data){
+        if(data === "disable-delete"){
+            $("#delete_fail_msg").msg("show");
+        }
+    }).on("ev_formatEditData", function(e, data){
+        if(typeof(data.technique_label) == "string") {
+            data.technique_label = [data.technique_label];
+        }
+        else if(typeof(data.technique_label) == "undefined") {
+            data.technique_label = [];
+        }
+        if(typeof(data.function_label) == "string") {
+            data.function_label = [data.function_label];
+        }
+        else if(typeof(data.function_label) == "undefined") {
+            data.function_label = [];
+        }
+        if(typeof(data.risk_label) == "string") {
+            data.risk_label = [data.risk_label];
+        }
+        else if(typeof(data.risk_label) == "undefined") {
+            data.risk_label = [];
+        }
+        if(typeof(data.else_label) == "string") {
+            data.else_label = [data.else_label];
+        }
+        else if(typeof(data.else_label) == "undefined") {
+            data.else_label = [];
+        }
+    }).on("ev_startEdit", function(e, index, key){
+        var store = listGrid.grid('getStore');
+        if (index != "add") {
+            if(store.data[index].is_customer === 'no') {
+                $('#hyperlink_0').show();
+                $('#hyperlink_1').hide();
+            }
+            else {
+                $('#hyperlink_0').hide();
+                $('#hyperlink_1').show();
+            }
+        }
+        else {
+            $('#hyperlink_0').hide();
+            $('#hyperlink_1').show();
+        }
+    });
+
+    function setAllUnselectCombobox(obj, combobox_list)
+    {
+        var fullList = [];
+        $.map(combobox_list, function(i, i_index){
+            fullList.push(i.value);
+        });
+
+        var list = obj.combobox('getValue');
+        obj.combobox('disableItem', fullList);
+        // obj.combobox('enableItem', list);
+    }
+
+    function setAllSelectableCombobox(obj, combobox_list)
+    {
+        var fullList = [];
+        $.map(combobox_list, function(i, i_index){
+            fullList.push(i.value);
+        });
+
+        obj.combobox('enableItem', fullList);
+    }
+
+    function getNewAppid()
+    {
+        var appid = MIN_CUSTOMER_APP_ID;
+        var appQuery = new $.su.Proxy({async: false});
+        appQuery.query({"app_library":{table:"app_list"}},
+            function(data) {
+                data = data.app_library.app_list;
+                var findingAppid = true;
+                while(findingAppid){
+                    findingAppid = false;
+                    for (var i=0; i < data.length; i++){
+                        for (var j in data[i]){
+                            if(appid == data[i][j].app_id && !findingAppid){
+                                appid++;
+                                findingAppid = true;
+                            }
+                        }
+                    }
+                }
+                app_id.textbox('setValue', appid);
+            }
+        );
+    }
+
+    var appLibraryEditor = $(listGrid.grid('getEditor'));
+    appLibraryEditor.on('ev_startEdit', function(e, index, key){
+        label_number.textbox('hide');
+        is_customer.textbox('hide');
+        app_id.textbox('hide');
+        $("#name").textbox("enableStyle");
+        if(index == 'add')
+        {
+            changeRiskStars(0);
+
+            label_number.textbox('setValue', '0');
+            is_customer.textbox('setValue', 'yes');
+
+            getNewAppid();
+
+            $("button.btn-cancel").button("setText", "取消");
+            $("button.btn-submit").attr("hidden", false);
+
+            setAllSelectableCombobox(usage, usage_list);
+            setAllSelectableCombobox(sub_usage, sub_usage_list);
+            setAllSelectableCombobox(transmission, transmission_list);
+            setAllSelectableCombobox(technique_label, technique_label_list);
+            setAllSelectableCombobox(function_label, function_label_list);
+            setAllSelectableCombobox(risk_label, risk_label_list);
+            setAllSelectableCombobox(else_label, else_label_list);
+
+            $("#name").textbox("setValue", "APP_");
+            usage.combobox("select", 4);
+            sub_usage.combobox("select", 136);
+            transmission.combobox("select", 205);
+        }
+        else
+        {
+            var store = listGrid.grid("getStore");
+            var data = store.getData(key);
+            changeRiskStars(data.label_number);
+
+            if(data.is_customer == 'no')
+            {
+                name.attr('readOnly', true);
+                comment.attr('readOnly', true);
+
+                $("button.btn-cancel").button("setText", "确认");
+                $("button.btn-submit").attr("hidden", true);
+
+                setAllUnselectCombobox(usage, usage_list);
+                setAllUnselectCombobox(sub_usage, sub_usage_list);
+                setAllUnselectCombobox(transmission, transmission_list);
+                setAllUnselectCombobox(technique_label, technique_label_list);
+                setAllUnselectCombobox(function_label, function_label_list);
+                setAllUnselectCombobox(risk_label, risk_label_list);
+                setAllUnselectCombobox(else_label, else_label_list);
+            }
+            else
+            {
+                $("#name").textbox("disableStyle");
+
+                $("button.btn-cancel").button("setText", "取消");
+                $("button.btn-submit").attr("hidden", false);
+
+                setAllSelectableCombobox(usage, usage_list);
+                setAllSelectableCombobox(sub_usage, sub_usage_list);
+                setAllSelectableCombobox(transmission, transmission_list);
+                setAllSelectableCombobox(technique_label, technique_label_list);
+                setAllSelectableCombobox(function_label, function_label_list);
+                setAllSelectableCombobox(risk_label, risk_label_list);
+                setAllSelectableCombobox(else_label, else_label_list);
+          }
+        }
+    });
+
+    function web_init()
+    {
+        $('div#app_list').show();
+        listGrid.grid("getStore").load();
+    }
+    web_init();
+
+    var helpImb = new $.su.Help({
+        container: "div#app_list_help",
+        content: ["APP_LIBRARY", "APP_RULE_1", "APP_RULE_2"]
+    });
+    $(".func-container").show();
+});
+        </script>
+    </body>
+</html>

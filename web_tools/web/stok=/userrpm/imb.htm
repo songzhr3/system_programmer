@@ -1,0 +1,903 @@
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
+<html xmlns="http://www.w3.org/1999/xhtml">
+<head>
+<meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
+<title>IMB</title>
+<style type="text/css">
+</style>
+</head>
+
+<body>
+<div class="func-container">
+    <div id="own-editor">
+        <input id="ip" name="ip"/>
+        <input id="mac" name="mac"/>
+        <input id="interface" name="interface"/>
+        <input id="description" name="description"/>
+        <input id="enable" name="enable"/>
+        <input id="hostname" name="hostname" type="hidden" value="anonymous" />
+    </div>
+
+    <div id="imb_alert_cnt">
+        <h4 class="title">
+            <span class="icon"></span>
+            <span class="text" id="imb_confirm_content"></span>
+        </h4>
+    </div>
+
+    <div id="imb_alert_cnt2">
+        <h4 class="title">
+            <span class="icon"></span>
+            <span class="text" id="imb_confirm_content2"></span>
+        </h4>
+    </div>
+
+    <div id="imb_alert_cnt3">
+        <h4 class="title">
+            <span class="icon"></span>
+            <span class="text" id="imb_confirm_content3"></span>
+        </h4>
+    </div>
+
+    <div id="function_setting">
+        <form id="imb_settings">
+            <input id="imb_enable" name="enable"/>
+            <input id="effect_zone" name="interface" />
+            <input id="imb_pass_enable" name="imb_pass" />
+            <input id="garp_send_enable" name="garp" />
+            <input id="time_interval" name="interval" />
+        </form>
+    </div>
+
+    <div id="import_bind">
+        <form id="bind_set">
+            <button id="bind_button" type="submit"></button>
+        </form>
+    </div>
+
+    <div id="imb_rule_list">
+        <div id="imb_rule_grid">
+        </div>
+    </div>
+
+    <div id="delete_alert_cnt">
+        <div id="delete_pro_cnt" class="reboot-loading-msg">
+            <input id="delete_pro_bar" type="text" />
+        </div>
+    </div>
+
+    <div id="import_alert_cnt">
+        <div id="import_pro_cnt" class="reboot-loading-msg">
+            <input id="import_pro_bar" type="text" />
+        </div>
+    </div>
+
+    <div class="notice" style="top:-70px;position:relative;">
+        <hr/>
+        <h6>您可以通过点击表头的"IP地址"来进行排序。</h6>
+    </div>
+
+    <div id="imb_help"></div>
+
+</div>
+
+<script type="text/javascript">
+try{
+    $
+}catch(e){
+    location.href = "/";
+};
+
+$(document).ready(function(e){
+
+    var dhcpImportProxy = new $.su.Proxy({
+    });
+
+    var inorder = false;
+    var isInterfaceArrayFinish = false;
+
+    $("#delete_alert_cnt").msg({
+        cls: 'warning reboot-confirm-size',
+        type: "confirm",
+        closeBtn: false,
+        okHandler:function(){},
+        cancelHandler:function(){}
+    });
+
+    $("#delete_alert_cnt").msg("hideButtons");
+
+    $("#delete_pro_bar").waitingbar({
+        fieldLabel:"删除多条IP-MAC绑定规则可能需要一些时间，请您耐心等待",
+        labelCls:"xxxl"
+    });
+
+
+    $("#import_alert_cnt").msg({
+        cls: 'warning reboot-confirm-size',
+        type: "confirm",
+        closeBtn: false,
+        okHandler:function(){},
+        cancelHandler:function(){}
+    });
+
+    $("#import_alert_cnt").msg("hideButtons");
+
+    $("#import_pro_bar").waitingbar({
+        fieldLabel:"导入规则可能需要一些时间，请您耐心等待",
+        labelCls:"xxxl"
+    });
+
+
+    var remoteHostIp;
+    //var needwarm = false;
+    var hostIpMacProxy = new $.su.Proxy();
+    hostIpMacProxy.query({"ip_mac_bind":{"name":"host_ip_mac"}}, function(data){
+        remoteHostIp = data.ip_mac_bind.host_ip_mac.ip;
+    })
+    var status_button = null;
+    var dhcp_static = [];
+    $("#function_setting").panel({
+        title: $.su.CHAR.IMB.SETTINGS,
+        collapsible: false
+    });
+
+    var enableProxy = new $.su.Proxy({
+       // url: URL_IMB_ENABLE
+        /* async: false*/
+    });
+
+
+   $("#imb_enable").checkbox({
+        /*fieldLabel: $.su.CHAR.IMB.TITLE,*/
+        items: [
+            {boxlabel: $.su.CHAR.IMB.ENABLE_IMB, inputValue: "1", uncheckedValue: "0"}
+        ]
+   }).on("ev_change", function(e, oldValue, newValue){
+        var val = (newValue[0]=="enable"||newValue[0]=="1") ? "1" : "0";
+        switch(val)
+        {
+            case "1":
+                $("#imb_pass_enable").checkbox("enable");
+                $("#imb_pass_enable").checkbox("reset");
+                $("#garp_send_enable").checkbox("enable");
+                $("#garp_send_enable").checkbox("reset");
+                //$("#enable_log").checkbox("enable");
+                //$("#enable_log").checkbox("reset");
+                $("#effect_zone").combobox("enable");
+                $("#effect_zone").combobox("reset");
+                break;
+            case "0":
+                $("#imb_pass_enable").checkbox("disable");
+                $("#imb_pass_enable").checkbox("setValue","0");
+                $("#garp_send_enable").checkbox("disable");
+                $("#garp_send_enable").checkbox("setValue","0");
+                //$("#enable_log").checkbox("disable");
+                //$("#enable_log").checkbox("setValue","off");
+                $("#effect_zone").combobox("disable");
+                $("#effect_zone").combobox("setValue", this.inputValue);
+                break;
+        }
+    });
+
+   $("#imb_pass_enable").checkbox({
+        items:[{
+            boxlabel:$.su.CHAR.IMB.IMB_PASS, inputValue: "1", uncheckedValue: "0"}
+        ]
+   }).on("ev_change", function(e, oldValue, newValue){
+        var val = (newValue[0]=="imb_pass"||newValue[0]=="1") ? "1" : "0";
+        switch(val)
+        {
+            case "1":
+                break;
+            case "0":
+                break;
+        }
+    });
+    var effect_zone = $("#effect_zone").combobox({
+        fieldLabel : "&nbsp&nbsp&nbsp&nbsp&nbsp&nbsp&nbsp&nbsp生效域",
+        allowBlank:false,
+        multiSelect: true ,
+        items:[
+                {name:"--",value:"--", selected:true}
+            ]
+    });
+    // $("#effect_zone").combobox("hide");
+
+    var interfaceItem=[];
+    var interfaceProxy = new $.su.Proxy({async: false});
+    interfaceProxy.query({"network":{table:"if"}}, function(data){
+        var i;
+        var data = data.network["if"];
+        for (j=0; j<data.length; j++)
+        {
+            for (var key in data[j])
+            {
+                if ((data[j][key].if_type != "vpn") && (data[j][key].if_type != "pppoe") && (data[j][key].isbridged != 1))
+                {
+                    interfaceItem.push({name:data[j][key].if_name,value:data[j][key].if_name});
+                }
+
+            }
+        }
+
+              /*  for (i=0; i<data.vpn.length; i++){
+                    interfaceItem.push({name:data.vpn[i].t_name,value:data.vpn[i].t_name});
+                }*/  /*
+                var combobox = $('#effect_zone');*/
+        effect_zone.combobox('loadData',interfaceItem);
+        isInterfaceArrayFinish = true;
+    });
+
+    $("#garp_send_enable").checkbox({
+        items:[{
+            boxlabel:$.su.CHAR.IMB.IMB_GARP,inputValue:"1",uncheckedValue: "0"
+        }]
+    }).on("ev_change", function(e, oldValue, newValue){
+        var val = (newValue[0]=="garp"||newValue[0]=="1") ? "1" : "0";
+        switch(val)
+        {
+            case "1":
+                $("#time_interval").textbox("enable");
+                break;
+            case "0":
+                $("#time_interval").textbox("disable");
+                $("#time_interval").textbox("setValue","1000");
+                break;
+        }
+    });
+
+    $("#time_interval").textbox({
+        fieldLabel: "&nbsp&nbsp&nbsp&nbsp&nbsp&nbsp&nbsp&nbsp" + $.su.CHAR.IMB.SEND_INTERVAL,
+        tips:$.su.CHAR.IMB.MS,
+        textFormat:$.su.format.number,
+        allowBlank:false,
+        vtype:{
+            vtype:"number",
+            max:10000,
+            min:1
+        }
+    });
+
+    $("#enable_log").checkbox({
+        items:[{
+            boxlabel:$.su.CHAR.IMB.ENABLE_LOG,inputValue:"1",uncheckedValue: "0"
+        }]
+    });
+    $("#enable_log").checkbox("hide");
+
+    var is_set_imb = false;
+    $("#imb_settings").form({
+        proxy: enableProxy,
+        autoLoad: false,
+        fields: [
+            {name: "enable", mapping: "enable"},
+            {name:"garp",mapping:"garp"},
+            {name:"imb_pass",mapping:"imb_pass"},
+            {name:"interval",mapping:"interval"},
+            //{name:"log_enable",mapping:"log_enable"},
+            {name:"interface",mapping:"interface"}
+        ],
+        parseKey: {                 /* 此处在store中增加parseKey，便于store对象在底层对数据进行预处理，以实现SLP数据结构和SU数据结构的转变 */
+                moduleName:"arp_defense",       /* 此处的moduleName和tableName分别指数据块名和对应请求的table名 */
+                sectionName:"global"
+        },
+        submitBtn:"default",
+        validator: function(v){
+            var forbidden = $("#imb_settings").form("serialize");
+            var needwarm = true;
+            if ("0" == forbidden["enable"] || "0" == forbidden["imb_pass"]){
+                return true;
+            }
+            // var data = ruleGrid.grid("getStore").data;
+            // for (var i = 0; i < data.length; i++){
+            //     if (data[i]["ipaddr"] == remoteHostIp){
+            //         needwarm = false;
+            //         if ("on" == data[i]["enable"]){
+
+            //             return true;
+            //         }
+
+            //         ifnames = forbidden["interface"];
+            //         if (!$.isArray(ifnames)){
+            //             ifnames = [ifnames];
+            //         }
+            //         for (var j = 0; j < ifnames.length; ++j){
+            //             //console.log(ifnames[j], data[i]["zone"])
+            //             if (ifnames[j] == data[i]["zone"]){
+
+            //                 if(is_set_imb){
+            //                     is_set_imb = false;
+            //                     return true;
+            //                 }else{
+            //                     $("#imb_alert_cnt2").msg("show");
+            //                     $("#imb_confirm_content2").html($.su.CHAR.IMB.IMB_CONFIRM_CONTENT);
+            //                     return false;
+            //                 }
+            //             }
+            //         }
+            //     }
+            // }
+            // if(needwarm){
+            //     if(is_set_imb){
+            //         is_set_imb = false;
+            //         return true;
+            //     }
+            //     $("#imb_alert_cnt2").msg("show");
+            //     $("#imb_confirm_content2").html($.su.CHAR.IMB.IMB_CONFIRM_CONTENT2);
+            //     return false;
+            // }
+            return true;
+        }
+    });
+
+    $("#import_bind").panel({
+        title:$.su.CHAR.ARPSCAN.IMPORT_DHCP,
+        collapsible:false
+    });
+
+
+    $("#imb_rule_list").panel({
+        title: $.su.CHAR.IMB.RULE_LIST,
+        collapsible: false
+    });
+
+    var ruleListProxy = new $.su.Proxy({
+        //url: URL_IMB_RULE_LIST
+    });
+
+    $("#imb_confirm_content").html($.su.CHAR.IMB.IMB_CONFIRM_CONTENT);
+    $("#imb_confirm_content2").html($.su.CHAR.IMB.IMB_CONFIRM_CONTENT);
+    $("#imb_confirm_content3").html($.su.CHAR.IMB.IMB_CONFIRM_CONTENT);
+    /*点击状态列*/
+    $("#imb_alert_cnt").msg({
+        okHandler:function(){
+            $(status_button).click();
+        },
+        cls:"m warning",
+        cancelHandler:function(){
+        }
+    });
+
+    /*点击设置按钮*/
+    $("#imb_alert_cnt2").msg({
+        okHandler:function(){
+            is_set_imb = true;
+            $("#imb_settings").form("submit");
+        },
+        cls:"m warning",
+        cancelHandler:function(){
+            is_set_imb = false;
+        }
+    });
+
+    /*点击确认editor按钮*/
+    $("#imb_alert_cnt3").msg({
+        okHandler:function(){
+            is_set_imb = true;
+            var ruleEditor = ruleGrid.grid("getEditor");
+            $(ruleEditor).find("button.btn-submit").click();
+        },
+        cls:"m warning",
+        cancelHandler:function(){
+            is_set_imb = false;
+        }
+    });
+
+    $("#ip").textbox({
+        fieldLabel: $.su.CHAR.IMB.IPADDR,
+        vtype: "ip",
+        allowBlank: false
+    });
+
+    $("#mac").textbox({
+        fieldLabel: $.su.CHAR.IMB.MAC,
+        vtype: "mac",
+        allowBlank: false,
+        tips:"(MAC地址格式:XX-XX-XX-XX-XX-XX)"
+    });
+
+    $("#interface").combobox({
+        fieldLabel: $.su.CHAR.IMB.INTERFACE,
+        allowBlank: false
+    });
+
+    $("#description").textbox({
+        fieldLabel: $.su.CHAR.IMB.NOTE,
+        allowBlank: true,
+        vtype:"string_visible_allow_blank",
+        tips:"(可选,0-50个字符)"
+    });
+/*
+    $("#enable").radio({
+        fieldLabel: $.su.CHAR.IMB.ENABLE,
+        columns:2,
+        cls:"inline",
+        items: [
+            {boxlabel:$.su.CHAR.IMB.ENABLE_RULE,inputValue:"1",checked:true},
+            {boxlabel:$.su.CHAR.IMB.DISABLE_RULE,inputValue:"0"}
+        ]
+    });*/
+   $("#enable").checkbox({
+        fieldLabel: $.su.CHAR.IMB.STATE,
+        items:[{
+            boxlabel:$.su.CHAR.IMB.ENABLE,inputValue:"1",uncheckedValue: "0", checked:true
+        }]
+    });
+
+    function grid_remind(){
+        var forbidden = $("#imb_settings").form("serialize");
+        var imb_settings = $("#imb_settings").form("serialize");
+        var ifnames = imb_settings["interface"];
+        var imb_pass = imb_settings["imb_pass"];
+        var imb_enable = imb_settings["enable"];
+        var ifIsSame = false;
+        //console.log(ifnames)
+
+        if (!$.isArray(ifnames)){
+            ifnames = [ifnames];
+        }
+
+        var trList = $(imb_rule_grid).find("tr.grid-content-tr");
+        $(trList).each(function(i, obj){
+            var me = $(obj);
+            var ip = me.find("td.grid-content-td-ip").text();
+            if(ip == remoteHostIp){
+                $(ifnames).each(function(i, qbj){
+                    if(qbj == me.find("td.grid-content-td-interface").text()){
+                        ifIsSame = true;
+                    }
+                });
+
+            }
+        });
+
+        if("0" == imb_enable || "0" == imb_pass){
+            $(status_button).click();
+        }else if($(status_button).hasClass("disabled") && ifIsSame){
+            $("#imb_alert_cnt").msg("show");
+        }else{
+            $(status_button).click();
+        }
+    }
+
+    /*设置触发*/
+    function set_grid_remind(){
+        var trList = $(imb_rule_grid).find("tr.grid-content-tr");
+        $(trList).each(function(i, obj){
+            var me = $(obj);
+            var ip = me.find("td.grid-content-td-ip").text();
+            var tr = me.closest("tr.grid-content-tr");
+            if (tr.hasClass("disabled")){
+                return;
+            };
+
+            if(ip == remoteHostIp){
+                me.find("td.grid-content-td-status-column").css("position","relative");
+                status_button = me.find("a.grid-content-btn.grid-content-btn-status.btn-status");
+                /*覆盖掉原来的按钮，防止直接提交*/
+                me.find("td.grid-content-td-status-column").css("position:relative;");
+                me.find("td.grid-content-td-status-column").append("<div style=\"position:absolute;z-index:398;width:120px;height:40px;top:0;cursor:pointer;\" id=\"status_button\"></div>");
+
+            }
+            me.find("td.grid-content-td-status-column").delegate("#status_button", "click", function(e){
+                grid_remind();
+            });
+        });
+
+
+    }
+
+    var ruleGrid = $("#imb_rule_grid").grid({
+        editor: {
+            validator: function(){
+                var $ruleEditor = $(ruleGrid.grid("getEditor"));
+                var enable = $ruleEditor.find("#enable").checkbox("getValue")
+                var ifname = $ruleEditor.find("#interface").combobox("getValue")
+                var ipaddr = $ruleEditor.find("#ip").textbox("getValue")
+                var mac = $ruleEditor.find("#mac").textbox("getValue");
+                var imb_settings = $("#imb_settings").form("serialize");
+                var ifnames = imb_settings["interface"];
+                var imb_pass = imb_settings["imb_pass"];
+                var imb_enable = imb_settings["enable"];
+                // if ("on" == enable || "off" == imb_enable || "off" == imb_pass || remoteHostIp != ipaddr){
+                //     return true;
+                // }
+                // if (!$.isArray(ifnames)){
+                //     ifnames = [ifnames];
+                // }
+                // for (var i = 0; i < ifnames.length; i++){
+                //     for (var j = 0; j < ifnames.length; ++j){
+                //         if (ifnames[j] == ifname){
+
+                //             if(is_set_imb){
+                //                 is_set_imb = false;
+                //                 return true;
+                //             }else{
+                //                 $("#imb_alert_cnt3").msg("show");
+                //                 return false;
+                //             }
+                //         }
+
+                //     }
+                // }
+                var poolList = $("div#imb_rule_grid").grid('getStore').data;
+                var editingId = $($("div#imb_rule_grid").grid("getEditor")).editor("getEditingId");
+                for(var i=0;i<poolList.length;++i)
+                {
+                    if(ipaddr == old_ip){
+                        break;
+                    }
+                    if(ipaddr == poolList[i].ip)
+                    {
+                         $($("#imb_rule_grid").grid("getEditor")).form('setError',  "您输入的IP地址与第"+(i+1)+"条规则的重复" );
+                         return false;
+                    }
+                }
+                return true;
+            },
+            content:"#own-editor",
+            fields: [
+                {name: "ip"},
+                {name: "mac"},
+                {name: "interface"},
+                {name: "description"},
+                {name: "enable"},
+                {name: "uniq_name"},
+                {name: "hostname"}
+            ]
+        },
+        store:{
+            proxy: ruleListProxy,
+            //keyProperty: "place",
+            fields: [
+                {name: "ip"},
+                {name: "mac"},
+                {name: "interface"},
+                {name: "description"},
+                {name: "enable"},
+                {name: "uniq_name"}
+                //{name: "place"}
+            ],
+            parseKey: {                 /* 此处在store中增加parseKey，便于store对象在底层对数据进行预处理，以实现SLP数据结构和SU数据结构的转变 */
+                moduleName:"ip_mac_bind",       /* 此处的moduleName和tableName分别指数据块名和对应请求的table名 */
+                tableName:"user_bind",
+                pageSizeName:"imb_entry",
+                maxSizeTableName:"imb",
+                maxSizeOptionName:"imb_max"
+            }/*,
+            autoLoad: true*/
+        },
+        paging_true:[],
+        columns: [
+            {
+                xtype: "checkcolumn"
+            },
+            {
+                xtype: "rownumberer"
+            },
+            {
+                text: $.su.CHAR.IMB.IPADDR,
+                width: 120,
+                dataIndex: "ip"
+            },
+            {
+                text: $.su.CHAR.IMB.MAC,
+                width: 120,
+                dataIndex: "mac"
+            },
+            {
+                text: $.su.CHAR.IMB.INTERFACE,
+                width: 100,
+                dataIndex: "interface"
+            },
+            {
+                text: $.su.CHAR.IMB.NOTE,
+                dataIndex: "description",
+                xtype:"comment"
+
+            },
+            {
+                dataIndex: "uniq_name",
+                hidden:true
+            },
+            {
+                text: $.su.CHAR.IMB.STATE,
+                xtype: "statuscolumn",
+                dataIndex: "enable",
+                trueValue:"1",
+                falseValue:"0"
+
+            },
+            {
+                xtype: "settings"
+            }
+        ],
+        operation: 'prompt|add|delete'
+    }).on("ev_load", function(e,data, others){
+         if(others)/* 通过json里的others参数传递动态阀值 */
+        {
+            maxrules = others.max_rules;
+        }
+        /*发送form请求,获取interface列表.用于显示于接口下拉框*/
+        /* var interfaceItem=[];
+        var interfaceProxy = new $.su.Proxy({
+                url: $.su.url('/admin/interface?form=status'),
+                async: false
+        });
+        interfaceProxy.read({}, function(data){
+                var i
+                for (i=0; i<data.normal.length; i++){
+                        interfaceItem.push({name:data.normal[i].t_name,value:data.normal[i].t_name});
+                 }*/
+               /*  for (i=0; i<data.vpn.length; i++){
+                        interfaceItem.push({name:data.vpn[i].t_name,value:data.vpn[i].t_name});
+                    }*/
+
+        var editor = ruleGrid.grid('getEditor');
+        var combobox = $(editor).find('.combobox-value[name=interface]');
+        combobox.combobox('loadData',interfaceItem);
+        /*});*/
+
+        var dhcpProxy = new $.su.Proxy();
+        //dhcpProxy.query({"dhcpd":{table:"dhcp_static"}},function(data){
+        dhcpProxy.query({"dhcpd":{table:"dhcp_static"}},function(data){
+            var i=0;
+            dhcp_static = [];
+            data = data["dhcpd"]["dhcp_static"];
+            /*预处理*/
+            for(i=0;i<data.length;i++)
+            {
+                for (var key in data[i])
+                {
+                    data[i] = data[i][key];
+                }
+                dhcp_static.push(data[i]);
+            }
+        });
+        set_grid_remind();
+    }).on("ev_remove", function(){
+        $("#delete_alert_cnt").msg("close");
+        $("#delete_pro_bar").waitingbar("stop");
+        $("#delete_pro_bar").waitingbar("reset");
+    }).on("ev_startDelete",function(){
+        var trList = ruleGrid.find("tr.selected");
+        if(trList.length > 1){
+            $("#delete_alert_cnt").msg("show");
+            $("#delete_pro_bar").waitingbar("run");
+            //del_check();
+        }
+    }).on("ev_deleteError",function(){
+        $("#delete_alert_cnt").msg("close");
+        $("#delete_pro_bar").waitingbar("stop");
+        $("#delete_pro_bar").waitingbar("reset");
+    }).on("ev_statusChange", function(e){
+        set_grid_remind();
+    });
+
+
+    function imb_reload(){
+        var store = ruleGrid.grid("getStore");
+        store.load({},function(){
+            if(inorder){
+                var data = store.data;
+                order = order == "up" ? "down" : "up";
+                ruleGrid.grid("load", data.sort(dataSort));
+                order = order == "up" ? "down" : "up";
+            }
+        });
+
+    }
+
+    $("button#bind_button").button({
+        text:$.su.CHAR.ARPSCAN.INPUT_BUTTON,
+        handler: function(){
+            /*读取IP-MAC绑定列表*/
+            var data = ruleGrid.grid('getStore').data;
+            var trList = ruleGrid.find("tr.grid-content-tr");
+            var isSelectAny = false;
+            var isFinish = false;
+            if(trList.length>0){
+                var index = 0;
+                var ip_flag = 0;
+              //  var readPro = setInterval(function(){
+                for ( index = 0 ; index < trList.length; index++) {
+                    if (index == 0 && $(trList[0]).hasClass("empty")) {
+                        if ($.su.app && $.su.app.errorOperation && $.su.app.errorOperation.denied){
+                            var ERR_EMPRY_LIST = -51406;
+                            $.su.app.errorOperation.denied(ERR_EMPRY_LIST);
+                        }
+                        return;
+                    }
+                    ip_flag = 0;
+                    if($(trList[index]).hasClass("selected")){
+                        isSelectAny = true;
+                        /*var ip = data[index].ipaddr;
+                        var mac = data[index].mac;
+                        var iface = data[index].zone;
+                        var des = data[index].description;
+                        var enable = data[index].enable;*/
+                        var i=0;
+                        for(i=0;i<dhcp_static.length;i++)
+                        {
+                            if(dhcp_static[i].ip == data[index].ip)
+                            {
+                               /* if ($.su.app && $.su.app.errorOperation && $.su.app.errorOperation.denied){
+                                    var HAS_BE_ACTIVE = 15111;
+                                    $.su.app.errorOperation.denied(HAS_BE_ACTIVE);
+                                 }
+                                return;*/
+                                ip_flag = 1;
+                                break;
+                            }
+                        }
+                        if(ip_flag == 1 )
+                        {
+                            continue;
+                        }
+                        if("undefined" == typeof(ip)){
+                            var ip = [data[index].ip];
+                            var mac = [data[index].mac];
+                            var enable = [data[index].enable];
+                            var iface = [data[index].interface];
+                            if(data[index].description == null){
+                                var note = [""];
+                            }else{
+                                var note = [data[index].description];
+                            }
+
+                        }else{
+                            ip.push(data[index].ip);
+                            mac.push(data[index].mac);
+                            enable.push(data[index].enable);
+                            iface.push(data[index].interface);
+                            if(data[index].description == null){
+                                note.push("");
+                            }else{
+                               note.push(data[index].description);
+                            }
+
+                        }
+                    }
+                }
+                if (true == isSelectAny){
+                    if(typeof ip == "undefined"){
+                        if ($.su.app && $.su.app.errorOperation && $.su.app.errorOperation.denied){
+                            var ALL_ITEM_IMPORTED = -51405;
+                            $.su.app.errorOperation.denied(ALL_ITEM_IMPORTED);
+                        }
+                        return;
+                    }
+
+
+                for(var index=0; index<ip.length; ++index){
+                    var tmp_data = {}
+                    tmp_data["ip"] = ip[index];
+                    tmp_data["mac"] = mac[index];
+                    tmp_data["interface"] = iface[index];
+                    tmp_data["enable"] = enable[index];
+                    tmp_data["note"] = note[index];
+                    if("undefined" == typeof(import_data)){
+                        var import_data = [tmp_data];
+                    }else{
+                        import_data.push(tmp_data);
+                    }
+                }
+
+                    var trList = ruleGrid.find("tr.selected");
+                    if(trList.length > 0){
+                        $("#import_alert_cnt").msg("show");
+                        $("#import_pro_bar").waitingbar("run");
+                        //del_check();
+                    }
+
+                    dhcpImportProxy.add({'dhcpd':{table:"dhcp_static",para:import_data}}, function(data){
+                        $("#import_alert_cnt").msg("close");
+                        $("#import_pro_bar").waitingbar("stop");
+                        $("#import_pro_bar").waitingbar("reset");
+                        if ($.su.app && $.su.app.errorOperation && $.su.app.errorOperation.denied){
+                            $.su.app.errorOperation.denied(0);
+                            for(var i=0;i<ip.length;++i)
+                            {
+                                var tmp = {};
+                                tmp.ip = ip[i];
+                                tmp.mac = mac[i];
+                                dhcp_static.push(tmp);
+                            }
+
+                        }
+
+                    },function(errcode){
+                        $("#import_alert_cnt").msg("close");
+                        $("#import_pro_bar").waitingbar("stop");
+                        $("#import_pro_bar").waitingbar("reset");
+                    });
+                }
+                if(false == isSelectAny){
+                    if ($.su.app && $.su.app.errorOperation && $.su.app.errorOperation.denied){
+                        var NO_ITEM_SELECT = -51403;
+                        $.su.app.errorOperation.denied(NO_ITEM_SELECT);
+                    }
+                    return;
+                }
+            }
+
+               // },30);
+
+        }
+    });
+
+    //防止接口过多时最后一个接口无法被选择
+    $("#imb_rule_grid").css("marginBottom","140px");
+
+
+    //IP地址排序
+
+    var order = "down";
+    function dataSort(x, y) {
+        xip = $.su.func.ipToInt(x.ip);
+        yip = $.su.func.ipToInt(y.ip);
+        if(order == "down"){
+            if (xip > yip) {
+                return -1;
+            }else if (xip < yip) {
+                return 1;
+            }
+        }else{
+            if (xip < yip) {
+                return -1;
+            }else if (xip > yip) {
+                return 1;
+            }
+        }
+    }
+
+    $("th.ip").css({
+        "color": "#00E",
+        "cursor": "pointer"
+    });
+
+    ruleGrid.delegate("th.ip", "click", function(e){
+        $("tbody label.checkbox-label.checked").removeClass("checked");
+        $("tr.selected").removeClass("selected");
+        $("tbody div.checkbox-group-container.grid-header-checkbox.checkcolumn.inline.selected").removeClass("selected");
+        var store = ruleGrid.grid("getStore");
+        var data = store.data;
+        ruleGrid.grid("load", data.sort(dataSort));
+        if(order == "down"){
+            order = "up";
+        }else{
+            order = "down";
+        }
+        inorder = true;
+    });
+
+    var editor = $(ruleGrid.grid('getEditor'));
+    editor.on("ev_startEdit", function(e){
+
+        is_set_imb = true;
+        old_ip = $("#ip").textbox('getValue');
+    });
+
+    /* Fix #237771 ,去掉异步请求, 并将多请求的地方放到稍微靠后的时间执行，保证优先加载页面*/
+    var formReadyLoad = setInterval(function(){
+        if (isInterfaceArrayFinish)
+        {
+            clearInterval(formReadyLoad);
+            $("#imb_settings").form('load');
+        }
+    }, 100);
+
+    setTimeout(function(){
+        $("#imb_rule_grid").grid('getStore').load();
+    },100);
+
+    var helpImb = new $.su.Help({
+        container: "div#imb_help",
+        content: ["IMB_ENABLE","IMB_IMPORT", "IMB_LIST"]
+    });
+
+});
+</script>
+</body>
+
+</html>

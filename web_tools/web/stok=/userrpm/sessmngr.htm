@@ -1,0 +1,905 @@
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
+<html xmlns="http://www.w3.org/1999/xhtml">
+<head>
+    <meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
+    <style type="text/css">
+    </style>
+    <title>Wportal</title>
+</head>
+
+<body>
+<div class="func-container">
+    <div id="sessmngr_list_container">
+        <div id="sessmngr_list"></div>
+        <div id="sessmngr_list_ssid"></div>
+        <div id="sessmngr_list_interface"></div>
+    </div>
+    <div id="sessmngr_list_help"> </div>
+</div>
+
+<script type="text/javascript">
+
+//<![CDATA[
+try{
+    $
+}catch(e){
+    location.href = "/";
+};
+
+function formatDate(now) {
+    var year=now.getYear();
+    var month=now.getMonth()+1;
+    var date=now.getDate();
+    var hour=now.getHours();
+    var minute=now.getMinutes();
+    var second=now.getSeconds();
+    return year+"/"+month+"/"+date+" "+hour+":"+minute+":"+second;
+}
+
+$(document).ready(function(e){
+    var AUTH_MODE_VLAN = "vlan"
+    var AUTH_MODE_SSID = "ssid"
+    var AUTH_MODE_INTERFACE = "interface"
+    var auth_mode = 0
+    var $sessmngr = $("#sessmngr_list");
+    var $sessmngr_ssid = $("#sessmngr_list_ssid");
+    var $sessmngr_interface = $("#sessmngr_list_interface");
+    var grid
+    var grid_ssid
+    var grid_interface
+
+    $("#sessmngr_list_container").panel({
+        title:$.su.CHAR.USER_STATUS.TITLE
+    });
+    
+    var auth_mode_proxy = new $.su.Proxy({async: false});
+    var globalProxy = new $.su.Proxy();
+    var sessionKickProxy = new $.su.Proxy();
+
+    $("div#sessmngr_list").hide();
+    $("div#sessmngr_list_ssid").hide();
+    $("div#sessmngr_list_interface").hide();
+
+    auth_mode_proxy.query({"authentication":{"name":"portal"}}, function(data){
+        auth_mode = data.authentication.portal.auth_mode;
+        if (AUTH_MODE_VLAN == auth_mode)
+        {
+            $("div#sessmngr_list").show();  
+        }
+        else if (AUTH_MODE_SSID == auth_mode)
+        {    
+            $("div#sessmngr_list_ssid").show();
+        }
+        else if (AUTH_MODE_INTERFACE == auth_mode)
+        {           
+            $("div#sessmngr_list_interface").show();
+        }
+    });
+
+
+/************************************************************************************************************
+                                                VLAN
+************************************************************************************************************/
+    if (AUTH_MODE_VLAN == auth_mode)
+    {
+        grid = $sessmngr.grid({
+            store: {
+                proxy: globalProxy,
+                autoLoad: true,
+                fields: [
+                    {name: "auth_type"},
+                    {name: "auth_server_type"},
+                    {name: "username"},
+                    {name: "mac"},
+                    {name: "vlan_id"},
+                    {name: "auth_time"},
+                    {name: "remain_time"}
+                ],
+                parseKey:{
+                    moduleName: "authentication",
+                    tableName: "auth_session_list",
+                    pageSizeName: "sessmngr_entry",
+                    maxSizeTableName: "wportal",
+                    maxSizeOptionName: "sessmngr_max",
+                    delFilter:function(itemNames, data, indexes){
+                        var result = [];
+                        
+                        for (var i = 0; i < indexes.length; i++)
+                        {
+							var filter = {};
+                            filter["mac"] = indexes[i].mac;
+                            filter["vlan_id"] = indexes[i].vlan_id;
+                            result.push(filter);
+                        }
+
+                        return result;
+                    }
+                }
+            },
+            editor: {
+                content: '#wportal-editor',
+                fields: [
+                    {name: "auth_type"},
+                    {name: "auth_server_type"},
+                    {name: "username"},
+                    {name: "vlan_id"},
+                    {name: "auth_time"},
+                    {name: "mac"},
+                    {name: "remain_time"}
+                ]
+            },
+            paging_true:{},
+            columns: [
+                {
+                    xtype: 'checkcolumn',
+                    width: 30
+                },
+                {
+                    xtype: 'rownumberer',
+                    width: 30
+                },
+                {
+                    text: '认证方式',
+                    width: 50,
+                    dataIndex: 'auth_type',
+                    renderer:function(dd, index, data)
+                    {
+                        var viewtype="";
+                        if ("web" == dd) {
+                            viewtype = "web认证";
+                        }
+                        else if ("onekey" == dd) {
+                            viewtype = "一键上网";
+                        }
+                        else if ("sms" == dd) {
+                            viewtype = "短信认证";
+                        }
+                        else if ("remote" == dd) {
+                            viewtype = "远程Portal";
+                        }
+                        else if ("cmcc" == dd) {
+                            viewtype = "CMCC认证";
+                        }
+                        else {
+                            viewtype = "--";
+                        }
+
+                        if ("local" == data.auth_server_type) {
+                            viewtype += "（本地认证）";
+                        }
+                        else if ("remote" == data.auth_server_type) {
+                            viewtype += "（RADIUS认证）";
+                        }
+                        else if ("tmp" == data.auth_server_type) {
+                            viewtype += "（临时放行）";
+                        }
+
+                        return viewtype;
+                    },
+                    scan: {
+                        type: "combobox",
+                        items: [
+                            {value: "web", name: "web认证"},
+                            {value: "onekey", name: "一键上网"},
+                            {value: "sms", name: "短信认证"},
+                            {value: "remote", name: "远程Portal"},
+                            {value: "cmcc", name: "CMCC认证"}
+                        ],
+                        vtype: "string"
+                    }
+                },
+                {
+                    text: "用户名",
+                    width: 90,
+                    dataIndex: 'username',
+                    scan: {
+                        cmp: $.search.compare.string,
+                        vtype: "string"
+                    }
+                },
+                {
+                    text: "MAC地址",
+                    width: 70,
+                    dataIndex: 'mac',
+                    scan: {
+                        cmp: $.search.compare.string,
+                        vtype: "string",
+                        check: $.search.compare.mac
+                    }
+                },
+                {
+                    text: "VLAN",
+                    width: 30,
+                    dataIndex: "vlan_id",
+                    renderer:function(v)
+                    {
+                        if ("4095" == v)
+                        {
+                            return "---";
+                        }
+                        else
+                        {
+                            return v;
+                        }
+                    },
+                    scan: {
+                        type: "textbox",
+                        cmp: function(src, tar, index){
+                            if (src == "4095"){
+                                if (tar == "4095" || tar == 4095 || tar == '-' || tar == '--' || tar == '---'){
+                                    return true;
+                                }
+                                return false;
+                            }
+                            return $.search.compare.num.call(this, src, tar, index);
+                        },
+                        vtype: "number",
+					    check: $.search.compare.vlan
+                    }
+                },
+                {
+                    text: '认证时间',
+                    width: 90,
+                    dataIndex: 'auth_time'
+                },
+                {
+                    text: "认证剩余时间",
+                    width: 80,
+                    dataIndex: "remain_time",
+                    renderer:function(v)
+                    {
+                        var total = parseInt(v);
+                        var ret = "";
+                        var day = parseInt(total/(24*60*60));
+                        ret = ret + day.toString() + "天";
+                        total = total%(24*60*60);
+                        var hour = parseInt(total/(60*60));
+                        ret = ret + hour.toString() + "小时";
+                        total = total%(60*60);
+                        var minute = parseInt(total/60);
+                        ret = ret + minute.toString() + "分钟";
+                        total = total % 60;
+                        var sec = total;
+                        ret = ret + sec.toString() + "秒";
+                        return ret;
+                    }
+                },
+                {
+                    xtype: "disconnect",
+                    width: 30
+                },
+                {
+                    xtype: "globalSearch",
+                    hidden: true,
+                    columns: [
+                        {
+                            text: "认证方式",
+                            dataIndex: "auth_type",
+                            scan: {
+                                type: "combobox",
+                                items: [
+                                    {value: "web", name: "web认证"},
+                                    {value: "onekey", name: "一键上网"},
+                                    {value: "sms", name: "短信认证"},
+                                    {value: "remote", name: "远程Portal"},
+                                    {value: "cmcc", name: "CMCC认证"}
+                                ],
+                                vtype: "string"
+                            }
+                        },
+                        {
+                            text: "用户名",
+                            dataIndex: "username",
+                            scan: {
+                                cmp: $.search.compare.string,
+                                vtype: "string"
+                            }
+                        },
+                        {
+                            text: "MAC地址",
+                            dataIndex: "mac",
+                            scan: {
+                                cmp: $.search.compare.string,
+                                vtype: "string",
+                                check: $.search.compare.mac
+                            }
+                        },
+                        {
+                            text: "VLAN",
+                            dataIndex: "vlan_id",
+                            scan: {
+                                cmp: $.search.compare.string,
+                                check: $.search.compare.vlan,
+                                vtype: "string",
+                                real_value: function(text) {
+                                    // vlan填写---等代表4095
+                                    return "" + (parseInt(text) || 4095);
+                                }
+                            }
+                        }
+                    ]
+                }
+            ],
+
+            operation: [
+                "delete",
+                "search",
+                "searchAll",
+                "refresh",
+                "autoRefresh"
+            ],
+            autoRefresh: true
+        }).undelegate("a.grid-content-btn.grid-content-btn-delete","click").delegate("a.grid-content-btn.grid-content-btn-delete", "click", function(e){
+            var btn = $(this);
+            var key = btn.attr("data-key");
+            var store = grid.grid("getStore");
+
+            var kickItem = [getSessionByKey(key)];
+
+            var postData = {};
+
+            postData["authentication"] = {};
+            postData["authentication"]["table"] = "auth_session_list"
+            postData["authentication"]["filter"] = {}
+            postData["authentication"]["filter"] = kickItem
+
+            sessionKickProxy.del(postData, function(){
+                grid.grid("disGridChkbox");
+                store.load();
+            });
+        }).on("ev_load", function(e,data, others){
+                if(others)
+                {
+                    maxrules = others.max_rules;
+                }
+                $($.find("a.grid-content-btn.grid-content-btn-delete.btn-delete")).attr("title","下线");
+        });
+    }
+
+/************************************************************************************************************
+                                                SSID
+************************************************************************************************************/
+    else if (AUTH_MODE_SSID == auth_mode)
+    {
+        grid_ssid = $sessmngr_ssid.grid({
+            store: {
+                proxy: globalProxy,
+                autoLoad: true,
+                fields: [
+                    {name: "auth_type"},
+                    {name: "auth_server_type"},
+                    {name: "username"},
+                    {name: "mac"},
+                    {name: "serv_id"},
+                    {name: "ssid"},
+                    {name: "auth_time"},
+                    {name: "remain_time"}
+                ],
+    			parseKey:{
+    				moduleName: "authentication",
+    				tableName: "auth_session_list",
+    				pageSizeName: "sessmngr_entry",
+    				maxSizeTableName: "wportal",
+    				maxSizeOptionName: "sessmngr_max",
+                    delFilter:function(itemNames, data, indexes){
+                        var result = [];
+                        
+                        for (var i = 0; i < indexes.length; i++)
+                        {
+							var filter = {};
+                            filter["mac"] = indexes[i].mac;
+                            filter["serv_id"] = indexes[i].serv_id;
+                            result.push(filter);
+                        }
+
+                        return result;
+                    }
+    			}
+            },
+            editor: {
+                content: '#wportal-editor',
+                fields: [
+                    {name: "auth_type"},
+                    {name: "auth_server_type"},
+                    {name: "username"},
+                    {name: "mac"},
+                    {name: "serv_id"},
+                    {name: "ssid"},
+                    {name: "auth_time"},
+                    {name: "remain_time"}
+                ]
+            },
+    		paging_true:{},
+            columns: [
+                {
+                    xtype: 'checkcolumn',
+                    width: 30
+                },
+                {
+                    xtype: 'rownumberer',
+                    width: 30
+                },
+                {
+                    text: '认证方式',
+                    width: 50,
+                    dataIndex: 'auth_type',
+                    renderer:function(dd, index, data)
+                    {
+                        var viewtype="";
+                        if ("web" == dd) {
+                            viewtype = "web认证";
+                        }
+                        else if ("onekey" == dd) {
+                            viewtype = "一键上网";
+                        }
+                        else if ("sms" == dd) {
+                            viewtype = "短信认证";
+                        }
+                        else if ("remote" == dd) {
+                            viewtype = "远程Portal";
+                        }
+                        else if ("cmcc" == dd) {
+                            viewtype = "CMCC认证";
+                        }
+                        else {
+                            viewtype = "--";
+                        }
+
+                        if ("local" == data.auth_server_type) {
+                            viewtype += "（本地认证）";
+                        }
+                        else if ("remote" == data.auth_server_type) {
+                            viewtype += "（RADIUS认证）";
+                        }
+                        else if ("tmp" == data.auth_server_type) {
+                            viewtype += "（临时放行）";
+                        }
+
+                        return viewtype;
+                    },
+                    scan: {
+                        type: "combobox",
+                        items: [
+                            {value: "web", name: "web认证"},
+                            {value: "onekey", name: "一键上网"},
+                            {value: "sms", name: "短信认证"},
+                            {value: "remote", name: "远程Portal"},
+                            {value: "cmcc", name: "CMCC认证"}
+                        ],
+                        vtype: "string"
+                    }
+                },
+                {
+                    text: "用户名",
+                    width: 90,
+                    dataIndex: 'username',
+                    scan: {
+                        cmp: $.search.compare.string,
+                        vtype: "string"
+                    }
+                },
+                {
+                    text: "MAC地址",
+                    width: 70,
+                    dataIndex: 'mac',
+                    scan: {
+                        cmp: $.search.compare.string,
+                        vtype: "string",
+                        check: $.search.compare.mac
+                    }
+                },
+                {
+                    text: "SSID",
+                    width: 80,
+                    dataIndex: "ssid",
+                    scan: {
+                        cmp: $.search.compare.string,
+                        vtype: "string"
+                    }
+                },
+                {
+                    text: '认证时间',
+                    width: 90,
+                    dataIndex: 'auth_time'
+                },
+                {
+                    text: "认证剩余时间",
+                    width: 80,
+                    dataIndex: "remain_time",
+                    renderer:function(v)
+                    {
+                        var total = parseInt(v);
+                        var ret = "";
+                        var day = parseInt(total/(24*60*60));
+                        ret = ret + day.toString() + "天";
+                        total = total%(24*60*60);
+                        var hour = parseInt(total/(60*60));
+                        ret = ret + hour.toString() + "小时";
+                        total = total%(60*60);
+                        var minute = parseInt(total/60);
+                        ret = ret + minute.toString() + "分钟";
+                        total = total % 60;
+                        var sec = total;
+                        ret = ret + sec.toString() + "秒";
+                        return ret;
+                    }
+                },
+                {
+                    xtype: "disconnect",
+                    width: 30
+                },
+                {
+                    xtype: "globalSearch",
+                    hidden: true,
+                    columns: [
+                        {
+                            text: "认证方式",
+                            dataIndex: "auth_type",
+                            scan: {
+                                type: "combobox",
+                                items: [
+                                    {value: "web",      name: "web认证"},
+                                    {value: "onekey",   name: "一键上网"},
+                                    {value: "sms",      name: "短信认证"},
+                                    {value: "remote",   name: "远程Portal"},
+                                    {value: "cmcc",     name: "CMCC认证"}
+                                ],
+                                vtype: "string"
+                            }
+                        },
+                        {
+                            text: "用户名",
+                            dataIndex: "username",
+                            scan: {
+                                cmp: $.search.compare.string,
+                                vtype: "string"
+                            }
+                        },
+                        {
+                            text: "MAC地址",
+                            dataIndex: "mac",
+                            scan: {
+                                cmp: $.search.compare.string,
+                                vtype: "string",
+                                check: $.search.compare.mac
+                            }
+                        },
+                        {
+                            text: "SSID",
+                            dataIndex: "ssid",
+                            scan: {
+                                cmp: $.search.compare.string,
+                                vtype: "string"
+                            }
+                        }
+                    ]
+                }
+            ],
+    		
+    		operation: [
+                "delete",
+                "search",
+                "searchAll",
+                "refresh",
+                "autoRefresh"
+            ],
+            autoRefresh: true
+        }).undelegate("a.grid-content-btn.grid-content-btn-delete","click").delegate("a.grid-content-btn.grid-content-btn-delete", "click", function(e){
+    		var btn = $(this);
+    		var key = btn.attr("data-key");
+    		var store = grid_ssid.grid("getStore");
+
+    		var kickItem = [getSessionByKey(key)];
+
+    		var postData = {};
+
+    		postData["authentication"] = {};
+    		postData["authentication"]["table"] = "auth_session_list"
+    		postData["authentication"]["filter"] = {}
+    		postData["authentication"]["filter"] = kickItem
+
+    		sessionKickProxy.del(postData, function(){
+    			grid_ssid.grid("disGridChkbox");
+    			//grid.grid("load");
+    			store.load();
+    		});
+    	}).on("ev_load", function(e,data, others){
+                if(others)
+                {
+                    maxrules = others.max_rules;
+                }
+                $($.find("a.grid-content-btn.grid-content-btn-delete.btn-delete")).attr("title","下线");
+        });
+    }
+
+/************************************************************************************************************
+                                                INTERFACE
+************************************************************************************************************/
+    else if (AUTH_MODE_INTERFACE == auth_mode)
+    {
+        grid_interface = $sessmngr_interface.grid({
+            store: {
+                proxy: globalProxy,
+                autoLoad: true,
+                fields: [
+                    {name: "auth_type"},
+                    {name: "ip"},
+                    {name: "username"},
+                    {name: "auth_time"},
+					{name: "auth_server_type"},
+                    {name: "mac"},
+                    {name: "vlan_id"}
+                ],
+                parseKey:{
+                    moduleName: "authentication",
+                    tableName: "auth_session_list",
+                    pageSizeName: "sessmngr_entry",
+                    maxSizeTableName: "wportal",
+                    maxSizeOptionName: "sessmngr_max"
+                }
+            },
+            editor: {
+                content: '#wportal-editor',
+                fields: [
+                    {name: "auth_type"},
+                    {name: "ip"},
+                    {name: "username"},
+                    {name: "auth_time"},
+					{name: "auth_server_type"},
+                    {name: "mac"},
+                    {name: "vlan_id"}
+                ]
+            },
+            paging_true:{},
+            columns: [
+                {
+                    xtype: 'checkcolumn',
+                    width: 32
+                },
+                {
+                    xtype: 'rownumberer',
+                    width: 30
+                },
+                {
+                    text: '认证方式',
+                    width: 50,
+                    dataIndex: 'auth_type',
+                    renderer:function(dd, index, data)
+                    {
+					
+                        var viewtype="";
+                        if ("web" == dd) {
+                            viewtype = "web认证";
+                        }
+                        else if ("onekey" == dd) {
+                            viewtype = "一键上网";
+                        }
+                        else if ("sms" == dd) {
+                            viewtype = "短信认证";
+                        }
+                        else if ("remote" == dd) {
+                            viewtype = "远程Portal";
+                        }
+                        else if ("cmcc" == dd) {
+                            viewtype = "CMCC认证";
+                        }
+                        else {
+                            viewtype = "--";
+                        }
+
+                        if ("local" == data.auth_server_type) {
+                            viewtype += "（本地认证）";
+                        }
+                        else if ("remote" == data.auth_server_type) {
+                            viewtype += "（RADIUS认证）";
+                        }
+                        else if ("tmp" == data.auth_server_type) {
+                            viewtype += "（临时放行）";
+                        }
+
+                        return viewtype;
+                    }
+                },
+                {
+                    text: "用户名",
+                    width: 90,
+                    dataIndex: 'username',
+                    scan: {
+                        cmp: $.search.compare.string,
+                        vtype: "string"
+                    }
+                },
+                {
+                    text: '认证时间',
+                    width: 90,
+                    dataIndex: 'auth_time'
+                    /*renderer:function(v)
+                    {
+                        return (new Date(parseInt(v) * 1000).toLocaleString().replace(/年|月/g, "-").replace(/日/g, " "));
+                    }*/
+                },
+                {
+                    text: 'MAC地址',
+                    width: 70,
+                    dataIndex: 'mac',
+                    renderer:function(dd, index, data)
+                    {					
+                        var view_value=dd;
+                        if ("00-00-00-00-00-00" == dd) {
+                            view_value = "---";
+                        }
+
+                        return view_value;
+                    }
+                },
+                {
+                    text: 'IP地址',
+                    width: 70,
+                    dataIndex: 'ip',
+                    renderer:function(dd, index, data)
+                    {					
+                        var view_value=dd;
+                        if ("0.0.0.0" == dd) {
+                            view_value = "---";
+                        }
+
+                        return view_value;
+                    }
+                },				
+                {
+                    text: $.su.CHAR.GRID.OPERATION,
+                    xtype: "disconnect",
+                    width: 30
+                }
+            ],
+            //operation: "refresh|delete"
+            operation: [
+            "refresh",
+            {
+                xtype: "button",
+                iconCls: "delete",
+                text: "下线",
+                handler: function(){
+                    var selectedKeys = grid_interface.grid("getSelected");
+                    var store = grid_interface.grid('getStore');
+                    var data_len = store.data.length;
+
+                    if(selectedKeys.length === 0){
+                        grid_interface.get(0).noneSelectMsg_g.msg('show');
+                        return;
+                    }
+                    else
+                    {
+                        var postData = {};
+                        var kickItem = [];
+
+                        for (var i = 0; i < selectedKeys.length; i++)
+                        {
+                            kickItem.push(getSessionByKey(selectedKeys[i]));
+                        }
+
+                        postData["authentication"] = {};
+                        postData["authentication"]["table"] = "auth_session_list"
+                        postData["authentication"]["filter"] = {}
+                        postData["authentication"]["filter"] = kickItem
+
+                        grid_interface.grid("runProgress");
+                        $.su.loading.show();
+
+                        sessionKickProxy.del(postData, function(){
+                            grid_interface.grid("disGridChkbox");
+                            grid_interface.grid("prompt", true);
+                            store.load();
+                            setTimeout(function(){  //延时时间根据各模块情况自行调整，与当前页条目数成正比
+                                $.su.loading.hide();
+                            }, data_len*1);
+                        });
+                    }
+                }
+            }]
+        }).undelegate("a.grid-content-btn.grid-content-btn-delete","click").delegate("a.grid-content-btn.grid-content-btn-delete", "click", function(e){
+            var btn = $(this);
+            var key = btn.attr("data-key");
+            var store = grid_interface.grid("getStore");
+
+            var kickItem = [getSessionByKey(key)];
+
+            var postData = {};
+
+            postData["authentication"] = {};
+            postData["authentication"]["table"] = "auth_session_list"
+            postData["authentication"]["filter"] = {}
+            postData["authentication"]["filter"] = kickItem
+
+            sessionKickProxy.del(postData, function(){
+                grid_interface.grid("disGridChkbox");
+                store.load();
+            });
+        }).on("ev_load", function(e,data, others){
+                if(others)
+                {
+                    maxrules = others.max_rules;
+                }
+                $($.find("a.grid-content-btn.grid-content-btn-delete.btn-delete")).attr("title","下线");
+        });
+    }
+
+	function getSessionByKey(data_key)
+	{
+		var result = {};
+        var dataSet
+        var keyProperty
+
+        if (AUTH_MODE_VLAN == auth_mode)
+        {
+            dataSet = grid.grid("getStore").data;
+            keyProperty = grid.grid("getStore").keyProperty;
+            for (var j = 0; j < dataSet.length; j++)
+            {
+                if (dataSet[j][keyProperty] == data_key)
+                {
+                    result["mac"] = dataSet[j]["mac"];
+                    result["vlan_id"] = dataSet[j]["vlan_id"];
+                }
+            }
+        }
+        else if (AUTH_MODE_SSID == auth_mode)
+        {
+            dataSet = grid_ssid.grid("getStore").data;
+            keyProperty = grid_ssid.grid("getStore").keyProperty;
+            for (var j = 0; j < dataSet.length; j++)
+            {
+                if (dataSet[j][keyProperty] == data_key)
+                {
+                    result["mac"] = dataSet[j]["mac"];
+                    result["serv_id"] = dataSet[j]["serv_id"];
+                }
+            }
+        }
+        else if (AUTH_MODE_INTERFACE == auth_mode)
+        {
+            dataSet = grid_interface.grid("getStore").data;
+            keyProperty = grid_interface.grid("getStore").keyProperty;
+            for (var j = 0; j < dataSet.length; j++)
+            {
+                if (dataSet[j][keyProperty] == data_key)
+                {
+                    result["mac"] = dataSet[j]["mac"];
+                    result["ip"] = dataSet[j]["ip"];
+                }
+            }
+        }
+
+		return result;
+	}
+    
+
+    var helpSessmngr
+    if (AUTH_MODE_VLAN == auth_mode)
+    {
+        helpSessmngr = new $.su.Help({
+            container: "div#sessmngr_list_help",
+            content: "SESSMNGR_LIST_VLAN"
+        })
+    }
+    else if (AUTH_MODE_SSID == auth_mode)
+    {
+        helpSessmngr = new $.su.Help({
+            container: "div#sessmngr_list_help",
+            content: "SESSMNGR_LIST_SSID"
+        })
+    }
+    else
+    {
+        helpSessmngr = new $.su.Help({
+            container: "div#sessmngr_list_help",
+            content: "SESSMNGR_LIST_INTERFACE"
+        })
+    }
+    
+});
+//]]>
+</script>
+</body>
+
+</html>

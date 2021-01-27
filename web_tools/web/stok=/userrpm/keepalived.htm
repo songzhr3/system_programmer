@@ -1,0 +1,472 @@
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
+<html xmlns="http://www.w3.org/1999/xhtml">
+<head>
+<meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
+<title>KEEPALIVED</title>
+<style type="text/css">
+#sec_policy_notice_title{
+    font-weight: bold;
+}
+</style>
+</head>
+
+<body>
+<div class="func-container">
+	<div id="vrrp_interface_setting">
+		<form id="vrrp_settings">
+			<input id="vrrp_interface" name="vrrp_interface" value="">
+			<input id="vrrp_interface_enable" name="vrrp_interface_enable" value=""/>
+		</form>
+		<button id="submitBtn" type="button"></button>
+	</div>
+	<div id="keepalived_rule">
+		<div id="keepalived_rule_grid"> </div>
+	</div>
+
+    <div id="own_editor">
+		<input id="name" name="name" value="">
+		<input id="state" name="state" value="">
+		<input id="effect_interface" name="effect_interface" value="">
+		<input id="virtual_router_id" name="virtual_router_id" value=""/>
+		<input id="priority" name="priority" value="">
+		<input id="advert_int" name="advert_int" value="">
+		<input id="mode" name="mode" value=""/>
+		<input id="virtual_ipaddress" name="virtual_ipaddress" value=""/>
+		<input id="running_state" name="running_state" value=""/>
+		<input id="enable" name="enable" value="">
+    </div>
+
+	<div id="keepalived_help"></div>
+
+    <div class="notice" style="top:-20px;position:relative;">
+        <hr/>
+        <h5 class="title" id="sec_policy_notice_title"></h5>
+        <p><span class="" id="sec_policy_notice_content"></span></p>
+    </div>
+
+</div>
+
+<script type="text/javascript">
+	try{
+		$
+	}catch(e){
+		location.href = "/";
+	};
+
+$(document).ready(function(e){
+	//pannel
+	var vrrp_if = ""
+	var vrrp_changeable = "off"
+
+    //设置安全策略提示
+    $("h5#sec_policy_notice_title").html("注意：");
+    $("#sec_policy_notice_content").html("1、 当默认安全策略为禁止时，需要添加放行VRRP服务（该服务为系统预置）的安全策略规则，主备倒换功能才能正常使用。");
+
+	$("#vrrp_interface_setting").panel({
+        title: $.su.CHAR.KEEPALIVED.VRRP_SETTING,
+        collapsible: false,
+        help: $("#keepalived_help")
+    });
+    $("#keepalived_rule").panel({
+        title: $.su.CHAR.KEEPALIVED.RULE_LIST,
+        collapsible: false
+	});
+	
+	//心跳接口设置
+	$("#vrrp_interface").combobox({
+		fieldLabel: $.su.CHAR.KEEPALIVED.VRRP_INTERFACE,
+		allowBlank: false,
+        items:[
+            {name:"---",value:"---"}
+        ]
+	});
+
+	$("#vrrp_interface_enable").radio({
+		fieldLabel: $.su.CHAR.KEEPALIVED.ENABLE,
+		columns: 2,
+		items:[
+			{boxlabel: $.su.CHAR.KEEPALIVED.ENABLE_ON, name:'vrrp_interface_enable', inputValue:'on'},
+			{boxlabel: $.su.CHAR.KEEPALIVED.ENABLE_OFF, name:'vrrp_interface_enable', inputValue:'off'}
+		]
+	}).on('ev_change', function(e, oldValue, newValue){});
+
+	$("#submitBtn").button({
+        text: "设置",
+        cls: "submit",
+        handler: function(e){
+			console.log(vrrp_changeable);
+			if (vrrp_changeable == "on") {
+				if ($("#vrrp_interface").combobox("validate") != true){
+                	return false;
+            	}
+			}
+            vrrp_form.form("submit", function(){
+            } ,function(){
+            });
+        }
+    });
+
+	$("#vrrp_interface_enable").radio("setValue", "off");
+
+	// rule 设置
+    $("#name").textbox({
+        fieldLabel: $.su.CHAR.KEEPALIVED.NAME,
+		maxLength:32,
+        allowBlank: false,
+        vtype: "name"
+    });
+	$("#state").radio({
+		fieldLabel: $.su.CHAR.KEEPALIVED.STATE,
+		columns: 2,
+		items:[
+			{boxlabel: $.su.CHAR.KEEPALIVED.STATE_MASTER, name:'state', inputValue:'master'},
+			{boxlabel: $.su.CHAR.KEEPALIVED.STATE_BACKUP, name:'state', inputValue:'backup'}
+		]
+	}).on('ev_change', function(e, oldValue, newValue){
+		if(oldValue.length == 0 || newValue.length == 0){
+			return;
+		}
+		if("backup" == newValue){
+			$("input#mode").radio("hide");
+			$("input#mode").radio("setValue", "preempt");
+			$("input#priority").textbox("setValue", "90");
+		}else{
+			$("input#mode").radio("show");
+			$("input#priority").textbox("setValue", "100");
+		}
+	});
+	$("#effect_interface").combobox({
+        fieldLabel: $.su.CHAR.KEEPALIVED.EFFECT_INTERFACE,
+		allowBlank: false,
+        items:[
+            {name:"---",value:"---"}
+        ]
+    });
+
+    $("#virtual_router_id").textbox({
+        fieldLabel: $.su.CHAR.KEEPALIVED.VIRTUAL_ROUTER_ID,
+		allowBlank: false,
+        vtype: {
+            vtype: "number",
+            max: 255,
+            min: 1
+        },
+		textFormat:function(value){
+            var number = parseInt(value,10);
+            if(false == isNaN(number)){
+                return number.toString();
+            }else{
+                return value;
+            }
+        },
+		tips:$.su.CHAR.KEEPALIVED.VIRTUAL_ROUTER_ID_TIP
+    });
+    $("#priority").textbox({
+        fieldLabel: $.su.CHAR.KEEPALIVED.PRIORITY,
+		allowBlank: false,
+        vtype:{
+            vtype: "number",
+            max: 255,
+            min: 1
+        },
+		tips:$.su.CHAR.KEEPALIVED.PRIORITY_TIP
+    });
+	$('#priority').textbox('hide');
+    $("#advert_int").textbox({
+        fieldLabel: $.su.CHAR.KEEPALIVED.ADVERT_INT,
+		allowBlank: false,
+        vtype: {
+            vtype: "number",
+            max: 255,
+            min: 1
+        },
+		textFormat:function(value){
+            var number = parseInt(value,10);
+            if(false == isNaN(number)){
+                return number.toString();
+            }else{
+                return value;
+            }
+        },
+		tips:$.su.CHAR.KEEPALIVED.ADVERT_INT_TIP
+    });
+	$("#mode").radio({
+		fieldLabel: $.su.CHAR.KEEPALIVED.MODE,
+		columns: 2,
+		items:[
+			{boxlabel: $.su.CHAR.KEEPALIVED.MODE_NOPREEMPT, name:'mode', inputValue:'nopreempt'},
+			{boxlabel: $.su.CHAR.KEEPALIVED.MODE_PREEMPT, name:'mode', inputValue:'preempt'}
+		]
+	}).on('ev_change', function(e, oldValue, newValue){});
+
+    $("#virtual_ipaddress").textbox({
+        fieldLabel: $.su.CHAR.KEEPALIVED.VIRTUAL_IPADDRESS,
+		allowBlank: false,
+        vtype: "ip",
+		tips:$.su.CHAR.KEEPALIVED.VIRTUAL_IPADDRESS_TIP
+    });
+
+    $("#running_state").textbox({
+        fieldLabel: $.su.CHAR.KEEPALIVED.RUNNING_STATE,
+		allowBlank: true
+    });
+	$('#running_state').textbox('hide');
+
+    $("#enable").radio({
+		fieldLabel: $.su.CHAR.KEEPALIVED.ENABLE,
+		columns: 2,
+		items:[
+			{boxlabel: $.su.CHAR.KEEPALIVED.ENABLE_ON, name:'enable', inputValue:'on'},
+			{boxlabel: $.su.CHAR.KEEPALIVED.ENABLE_OFF, name:'enable', inputValue:'off'}
+		]
+	}).on('ev_change', function(e, oldValue, newValue){});
+
+	//proxy
+	var vrrp_proxy = new $.su.Proxy({});
+	var vrrp_form = $("#vrrp_settings").form({
+        proxy: vrrp_proxy,
+        fields: [
+			{name: "vrrp_interface", mapping: "vrrp_interface"},
+			{name: "vrrp_interface_enable", mapping: "vrrp_interface_enable"}
+        ],
+        parseKey:{
+            moduleName: "keepalived",
+            sectionName: "setting"
+		},
+		autoLoad:true,
+		submitBtn: "#submitBtn"
+	}).on("ev_loadData", function(e, data){
+
+		vrrp_changeable = data.vrrp_changeable;
+		//if vrrp interface cannot change
+		if (vrrp_changeable == "off") {
+			$("#vrrp_interface_setting").hide();
+			var keepalivedHelp = new $.su.Help({
+				container: "div#keepalived_help",
+				content: ["KEEPALIVED"]
+			});
+		}
+		else
+		{
+			var keepalivedHelp = new $.su.Help({
+				container: "div#keepalived_help",
+				content: ["VRRP_INTERFACE_CHANGEABLE", "KEEPALIVED"]
+			});
+		}
+		vrrp_if = data.vrrp_interface;
+		$("#vrrp_interface").combobox('setValue',data.vrrp_interface);
+	});
+
+	var keepalived_proxy = new $.su.Proxy({});
+    var keepalivedRuleGrid = $("#keepalived_rule_grid").grid({
+		store:{
+			proxy: keepalived_proxy,
+			fields: [
+				{name: "id"},
+				{name: "name"},
+				{name: "state"},
+				{name: "effect_interface"},
+				{name: "virtual_router_id"},
+				{name: "priority"},
+				{name: "advert_int"},
+				{name: "mode"},
+				{name: "virtual_ipaddress"},
+				{name: "running_state"},
+				{name: "enable"}
+			],
+			parseKey: {					/* 此处在store中增加parseKey，便于store对象在底层对数据进行预处理，以实现SLP数据结构和SU数据结构的转变 */
+				moduleName:"keepalived",		/* 此处的moduleName和tableName分别指数据块名和对应请求的table名 */
+				tableName:"rule"
+			},
+			autoLoad: true
+		},
+		editor: {
+			content: "#own_editor",
+			fields: [
+				{name: "name"},
+				{name: "state"},
+				{name: "effect_interface"},
+				{name: "virtual_router_id"},
+				{name: "priority"},
+				{name: "advert_int"},
+				{name: "mode"},
+				{name: "virtual_ipaddress"},
+				{name: "running_state"},
+				{name: "enable"}
+			]
+		},
+		paging_true:{},
+		columns: [
+			{
+				xtype: "checkcolumn",
+				width: $.su.CHAR.SETTING.KEEPALIVED.CHECK_COLUMN_WIDTH
+			},
+			{
+				xtype: "rownumberer",
+				width: $.su.CHAR.SETTING.KEEPALIVED.ROW_NUMBER_WIDTH
+			},
+			{
+				text: $.su.CHAR.KEEPALIVED.NAME,
+				width: $.su.CHAR.SETTING.KEEPALIVED.NAME_WIDTH,
+				dataIndex: "name",
+				scan: {
+					cmp: $.search.compare.string
+				}
+			},
+			{
+				text: $.su.CHAR.KEEPALIVED.STATE,
+				width: $.su.CHAR.SETTING.KEEPALIVED.STATE_WIDTH,
+				dataIndex:"state",
+				renderer: function(dd, index, data){
+					if ("master" == data.state){
+						return $.su.CHAR.KEEPALIVED.STATE_MASTER;
+					} else {
+						return $.su.CHAR.KEEPALIVED.STATE_BACKUP;
+					}
+                }
+			},
+			{
+				text: $.su.CHAR.KEEPALIVED.EFFECT_INTERFACE,
+				width: $.su.CHAR.SETTING.KEEPALIVED.INTERFACE_WIDTH,
+				dataIndex:"effect_interface"
+			},
+			{
+				text: $.su.CHAR.KEEPALIVED.VIRTUAL_ROUTER_ID,
+				width: $.su.CHAR.SETTING.KEEPALIVED.VIRTUAL_ROUTER_ID_WIDTH,
+				dataIndex:"virtual_router_id"
+			},
+			{
+				text: $.su.CHAR.KEEPALIVED.PRIORITY,
+				width: $.su.CHAR.SETTING.KEEPALIVED.PRIORITY_WIDTH,
+				dataIndex:"priority",
+				hidden:true
+			},
+			{
+				text: $.su.CHAR.KEEPALIVED.ADVERT_INT,
+				width: $.su.CHAR.SETTING.KEEPALIVED.ADVERT_INT_WIDTH,
+				dataIndex:"advert_int"
+			},
+			{
+				text: $.su.CHAR.KEEPALIVED.MODE,
+				width: $.su.CHAR.SETTING.KEEPALIVED.MODE_WIDTH,
+				dataIndex:"mode",
+				renderer: function(dd, index, data){
+					if (data.state == "master") {
+						if ("nopreempt" == data.mode) {
+							return $.su.CHAR.KEEPALIVED.MODE_NOPREEMPT;
+						} else {
+							return $.su.CHAR.KEEPALIVED.MODE_PREEMPT;
+						}
+					} else {
+						return "---";
+					}
+                }
+			},
+			{
+				text: $.su.CHAR.KEEPALIVED.VIRTUAL_IPADDRESS,
+				width: $.su.CHAR.SETTING.KEEPALIVED.VIRTUAL_IPADDRESS_WIDTH,
+				dataIndex:"virtual_ipaddress",
+				scan: {
+					cmp: $.search.compare.string
+				}
+			},
+			{
+				text: $.su.CHAR.KEEPALIVED.RUNNING_STATE,
+				width: $.su.CHAR.SETTING.KEEPALIVED.RUNNING_STATE_WIDTH,
+				dataIndex:"running_state",
+				renderer: function(dd, index, data){
+					if ("master" == data.running_state){
+						return $.su.CHAR.KEEPALIVED.STATE_MASTER;
+					} else if ("backup" == data.running_state) {
+						return $.su.CHAR.KEEPALIVED.STATE_BACKUP;
+					} else if ("---" == data.running_state) {
+						return "---";
+					} else if ("vote" == data.running_state) {
+						return $.su.CHAR.KEEPALIVED.STATE_VOTE;
+					} else {
+						return $.su.CHAR.KEEPALIVED.STATE_VOTE;
+					}
+                }
+			},
+			{
+				text: $.su.CHAR.KEEPALIVED.ENABLE,
+				width: $.su.CHAR.SETTING.KEEPALIVED.ENABLE_WIDTH,
+				dataIndex:"enable",
+				trueValue: "on",
+				falseValue: "off",
+				xtype: 'statuscolumn'
+			},
+			{
+				text: $.su.CHAR.KEEPALIVED.SETTING,
+				width: $.su.CHAR.KEEPALIVED.SETTING_WIDTH,
+				xtype: "settings"
+			}
+		],
+		operation: "prompt|add|delete|search|searchAll"
+	}).on("ev_load", function(e, data, others){
+		if(others){
+			maxrules = others.max_rules;
+		}
+
+    });
+	var interfaceProxy = new $.su.Proxy({});
+	interfaceProxy.query({"keepalived":{table:"if"}}, function(data){
+			var vrrp_if_items = [];
+			var effect_if_items = [];
+			if (data && data.keepalived['if']) {
+				var if_arr=data.keepalived['if'];
+				for (var i=0; i< data.keepalived.count['if']; i++){
+					if (if_arr[i]) {
+						for (var key in if_arr[i]){
+							effect_if_items.push({name:if_arr[i][key].if_name,value:if_arr[i][key].if_name});
+							//MGMT cannot be vrrp_if
+							if(if_arr[i][key].mngt_enable=="off"){
+								vrrp_if_items.push({name:if_arr[i][key].if_name,value:if_arr[i][key].if_name});
+							}
+						}
+					}
+				}
+			}
+			var editor = keepalivedRuleGrid.grid('getEditor');
+			var interfaceCombobox = $(editor).find('.combobox-value[name=effect_interface]');
+			interfaceCombobox.combobox('loadData',effect_if_items);
+			if (vrrp_changeable == "on") {
+				interfaceCombobox = $('#vrrp_interface');
+				interfaceCombobox.combobox('loadData',vrrp_if_items);
+			}
+			if(vrrp_if != "") {
+				$("#vrrp_interface").combobox('setValue',vrrp_if);
+			}
+	});
+
+	var editor = $("div#keepalived_rule_grid").grid("getEditor");
+	$(editor).on("ev_startEdit", function(e, index, key){
+		if("add" == index){
+			$("input#state").radio("setValue", "master");
+			$("input#mode").radio("setValue", "preempt");
+			$("input#enable").radio("setValue", "on");
+			//$("input#virtual_router_id").textbox("setValue", "51");
+			$("input#advert_int").textbox("setValue", "1");
+			$("input#priority").textbox("setValue", "100");
+			
+		} else {
+			var store = keepalivedRuleGrid.grid("getStore");
+			var store_data = store.getData(key);
+			if ("backup" == store_data.state) {
+				$("input#mode").radio("hide");
+				$("input#mode").radio("setValue", "preempt");
+				//set backup priority 90, set master priority 100
+				$("input#priority").textbox("setValue", "90");
+			} else {
+				$("input#mode").radio("show");
+				$("input#priority").textbox("setValue", "100");
+			}
+		}
+	});
+
+
+});
+</script>
+</body>
+
+</html>

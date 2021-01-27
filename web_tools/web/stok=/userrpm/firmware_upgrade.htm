@@ -1,0 +1,810 @@
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
+<html xmlns="http://www.w3.org/1999/xhtml">
+<head>
+<meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
+<title></title>
+<style type="text/css">
+	div.offset{
+		margin-left:500px;
+	}
+</style>
+</head>
+
+<body>
+<div class="func-container">
+
+	<div id="firmware-online">
+	 	<form id="firmware-setting-online">
+	 		<input type="text"  id="firmware_version" name="firmware_version" value="" />
+	 		<input type="text"  id="newest_firmware_version" name="newest_firmware_version" value="" />
+	 		<div id="upgrade_note" style="margin:16px 0px;vertical-align:middle">
+                <div style="width:174px;display:inline-block;vertical-align:top">
+                    <label>软件更新说明:</label>
+                </div>
+                <div style="display:inline-block;vertical-align:middle" >
+                    <span id="upgrade_text" style="font-size:15px;padding:8px">
+                    </span>
+                </div>
+            </div>
+	    	<p id="version_note" name="version_note"  class="note first-line hidden"></p>
+	    	<button type="button" id="online_check" name="online_check"></button>
+	    	<button type="button" id="online_upgrade" name="online_upgrade"></button>
+	    </form>
+	</div>
+
+	<div id="online_upgrade_alert_cnt">
+		<h4 class="title" id="online_confirm_cnt">
+			<span class="icon"></span>
+	 		<span class="text" id="online_confirm_content"></span>
+	 	</h4>
+
+	 	<div id="online_upgrade_cnt" class="reboot-loading-msg hidden">
+    		<p id="online_note" class="reboot-progressbar-text"></p>
+	    	<input id="online_pro_bar" type="text" />
+			<input id="online_pro_bar_reboot" type="text" />
+	    </div>
+	</div>
+
+	<div id="online_upgrade_failed_cnt">
+		<h4 class="title">
+			<span class="icon" ></span>
+			<span class="text" id="online_error_str"></span>
+		</h4>
+	</div>
+
+	<div id="firmware">
+		<form id="hw_ver_keep">
+			<input type="text"  id="hardware_version" name="hardware_version" value="" />
+	    	<input name="keep" value="on" type="hidden" />
+		</form>
+	 	<form  id="firmware-setting">
+	    	<input id="file" name="image" type="file" />
+
+			<!-- <span id="error_str" class="error"></span> -->
+	    	<button type="button" id="upgrade" name="upgrade"></button>
+	    </form>
+
+	</div>
+
+	<div id="upgrade_alert_cnt">
+		<h4 class="title" id="confirm_cnt">
+			<span class="icon"></span>
+	 		<span class="text" id="confirm_content"></span>
+	 	</h4>
+
+	 	<div id="upload_loading_msg" class="reboot-loading-msg hidden">
+    		      <p id="note" class="reboot-progressbar-text"></p>
+	    	      <input id="pro_bar" type="text" />
+				  <input id="pro_bar_reboot" type="text" />
+	        </div>
+	</div>
+
+	<div id="upgrade_failed_cnt">
+		<h4 class="title">
+			<span class="icon" ></span>
+			<span class="text" id="error_str"></span>
+		</h4>
+	</div>
+	<div id="help_firmware"></div>
+</div>
+
+<script type="text/javascript">
+try{
+    $
+}catch(e){
+    location.href = "/";
+};
+
+$(document).ready(function(e){
+	$(".func-container").hide();
+	//var CLOUD_FIRMWARE_URL = $.su.url("/admin/cloud_upgrade?form=firmware");
+	//var CLOUD_UPGRADE_URL = $.su.url("/admin/cloud_upgrade?form=upgrade");
+
+	var cloudFirmwareProxy = new $.su.Proxy({
+        //url: CLOUD_FIRMWARE_URL
+    });
+
+	var cloudUpgradeProxy = new $.su.Proxy({
+        //url: CLOUD_UPGRADE_URL
+    });
+
+	//var UPGRADE_URL_NEW = $.su.url("/admin/firmware?form=upgrade");
+	var query_proxy = new $.su.Proxy({
+		//url: UPGRADE_URL_NEW
+	});
+
+    var currentVersion = " ";
+    var hardware_version = " ";
+    var upgradeNote = " ";
+    var query_interval = false;
+    var getVersionTry = 0;	/* record the try times to get the newest firmware */
+    var updateFlag = false;
+    var DOWNLOADTIMEOUT = 300;	/* the timeout of download (second) */
+    var UPGRADETIME = 360;	/* the wait time of upgrade */
+    var REBOOTTIME = 150;	/* the wait time of reboot */
+
+
+	$("div.func-container").page({
+		title: $.su.CHAR.FIMWARE.TITLE,
+		help: ""	/* 可能是个调用的id 也可能是个url */
+	});
+
+	/************************online upgrade***********************/
+	$("p#version_note").html("当前软件版本已是最新版本");
+
+	$("div#firmware-online").panel({
+		title: "在线升级",
+		collapsible: false,
+		help:$("#help_firmware")
+	});
+
+	$("#firmware-setting-online").form({
+		proxy: cloudFirmwareProxy,
+		parseKey: {
+			moduleName:"cloud_config",
+			sectionName:["new_firmware", "upgrade_info"]
+		},
+		formEnctype: "multipart/form-data",
+		traditional: true,
+		hiddenFrame: true,
+		submitBtn: null
+	}).on("ev_loadData", function(e,data){
+		/* get if the there is firmware that we hasn't upgrade */
+     		/* there is newer firmware to download */
+			if (data.fw_new_notify == "1")
+        	{
+    			var newestVersion = data.version;
+            	upgradeNote = data.release_log;
+
+            	/* show the red point to remind the user to upgrade */
+            	hide_red_point();
+            	show_red_point();
+        		if (upgradeNote != null && upgradeNote.length != 0)
+        		{
+        			upgradeNote = upgradeNote.replace(/\\n/g, "<br/>&nbsp&nbsp");
+					$("#upgrade_text").html(upgradeNote);
+					$("#upgrade_note").show();
+        		}
+        		else
+        		{
+        			$("#upgrade_note").hide();
+        		}
+
+				$("input#newest_firmware_version").textbox("setValue", newestVersion);
+        		$("input#newest_firmware_version").textbox("show");
+				$("button#online_upgrade").button("show");
+				$("button#online_check").button("hide");
+        	}
+
+	});
+
+	$("input#firmware_version").textbox({
+		fieldLabel: $.su.CHAR.FIMWARE.FIMWAREVERSION,
+		inputCls:'xxl',
+		readOnly:true
+	});
+
+	$("input#newest_firmware_version").textbox({
+		fieldLabel: "最新软件版本",
+		inputCls:'xxl',
+		readOnly:true
+	}).textbox("hide");
+
+	$("#upgrade_note").hide();
+
+	$("#online_confirm_content").html("确认下载最新软件并升级？");
+
+	$("#online_upgrade_failed_cnt").msg({
+		cls: 'warning reboot-confirm-size',
+		type: "alert"
+	});
+
+	/***********************check the newest version*************************/
+	$("button#online_check").button({
+		text: "检测新版本",
+		cls:"m",
+		handler: function(){
+
+        	$("button#online_check").button("setText","检测中..");
+        	$("button#online_check").button("disable");
+
+        	cloudFirmwareProxy.action({"cloud_config":{"check_fw_version": "null"}}, function(data){
+        		if(!query_interval)  /* check the fireware version every 4s */
+				{
+					query_interval = setInterval(check_newest_version,4000);
+				}
+       		},function(errcode){
+        		$("button#online_check").button("enable");
+            	$("button#online_check").button("setText","检查新版本");
+            	$("#online_error_str").html("获取最新版本软件失败");
+				showOnlineAlertMag();
+			},function(){
+				$("button#online_check").button("enable");
+            	$("button#online_check").button("setText","检查新版本");
+            	$("#online_error_str").html("获取最新版本软件失败");
+				showOnlineAlertMag();
+			});
+		},
+		cls: "submit inline"
+	});
+
+	function show_red_point()
+	{
+		var fst_menu_point = "<span style=\"color:red;font-size:12px;font-weight:bold;position:relative;bottom:6px;left:7px\">●</span>",
+		advanced_menu_point = "<span style=\"color:red;font-size:12px;font-weight:bold;position:relative;bottom:6px;left:7px\">●</span>",
+		tab_point = "<span style=\"color:red;font-size:12px;font-weight:bold;position:relative;bottom:6px;left:7px\">●</span>";
+
+		var fst_menu = $('[name="sys-tools"]');
+
+		if (fst_menu)
+		{
+			/* system-tools show red point */
+			fst_menu.find("span.text").append(fst_menu_point);
+		}
+		var advanced_menu = $('[name="sys-tools"]').closest("li").find("a.sec.selected");
+		//console.log(advanced_menu);
+		if (advanced_menu)
+		{
+			/* device management show red point */
+			advanced_menu.find("span.text").append(advanced_menu_point);
+		}
+		var tab = $("ul.tab-menu-ul li.selected a").not(":hidden");
+		if (tab)
+		{
+			/* firmware upgrade show red point */
+			tab.find("span").append(tab_point);
+		}
+	}
+
+	function hide_red_point()
+	{
+		var first_span = $('[name="sys-tools"]').find("span").eq(2);
+		if (first_span.length != 0){
+			first_span.remove();
+		}
+
+		var sec_span = $('[name="sys-tools"]').closest("li").find("ul.sec li").eq(1).find("a span").eq(2);
+		if (sec_span.length != 0){
+			sec_span.remove();
+		}
+
+		var thd_span = $("ul.tab-menu-ul li.selected a").not(":hidden").find("span").eq(1);
+		if (thd_span.length != 0){
+			thd_span.remove();
+		}
+	}
+
+	function check_newest_version()
+	{
+		var req = {"cloud_config":{"name" : ["new_firmware","upgrade_info"]},"cloud_status":{"name": "check_fw_ver"}};
+		cloudFirmwareProxy.query(req, function(data){
+			var new_firmware = data.cloud_config.new_firmware;
+			var upgrade_info = data.cloud_config.upgrade_info;
+			var check_fw_ver = data.cloud_status.check_fw_ver;
+    		if (check_fw_ver.action_status == "4")
+    		{
+    			clearInterval(query_interval);	/* get the newest version successfully, so clean the interval*/
+    			query_interval = false;
+				getVersionTry = 0;
+    			var newestVersion = upgrade_info.version;
+            	upgradeNote = upgrade_info.release_log;
+            	$("button#online_check").button("enable");
+            	$("button#online_check").button("setText","检查新版本");
+
+        		if (new_firmware.fw_new_notify != "1")
+        		{
+        			/* there is no newer firmware to download */
+        			$("p#version_note").show();
+        			$("input#newest_firmware_version").textbox("hide");
+        			$("#upgrade_note").hide();
+        			$("button#online_upgrade").button("hide");
+					$("button#online_check").button("show");
+
+        		}
+        		else
+        		{
+        			/* there is newer firmware to download */
+
+	            	hide_red_point();
+	            	show_red_point();
+        			if (upgradeNote != null && upgradeNote.length != 0)
+        			{
+        				upgradeNote = upgradeNote.replace(/\\n/g, "<br/>&nbsp&nbsp");
+						$("#upgrade_text").html(upgradeNote);
+						$("#upgrade_note").show();
+        			}
+        			else
+        			{
+        				$("#upgrade_note").hide();
+        			}
+        			$("p#version_note").hide();
+        			$("input#newest_firmware_version").textbox("setValue", newestVersion);
+        			$("input#newest_firmware_version").textbox("show");
+					$("button#online_upgrade").button("show");
+					$("button#online_check").button("hide");
+        		}
+    		}
+    		else if (check_fw_ver.action_status == "0" || check_fw_ver.action_status == "5")
+    		{
+    			clearInterval(query_interval);
+        		query_interval = false;
+        		getVersionTry = 0;
+        		$("button#online_check").button("enable");
+            	$("button#online_check").button("setText","检查新版本");
+            	if (check_fw_ver.action_status == "0")
+            	{
+            		$("#online_error_str").html("获取最新版本软件失败");
+            	}
+            	else
+            	{
+            		$("#online_error_str").html("获取最新版本软件超时");
+            	}
+            	showOnlineAlertMag();
+    		}
+
+        },function(errcode){
+        	clearInterval(query_interval);
+        	query_interval = false;
+        	getVersionTry = 0;
+        	$("button#online_check").button("enable");
+            $("button#online_check").button("setText","检查新版本");
+            $("#online_error_str").html("获取最新版本软件失败");
+			showOnlineAlertMag();
+		},function(){
+			clearInterval(query_interval);
+			query_interval = false;
+			getVersionTry = 0;
+			$("button#online_check").button("enable");
+            $("button#online_check").button("setText","检查新版本");
+            $("#online_error_str").html("获取最新版本软件失败");
+			showOnlineAlertMag();
+		});
+
+		getVersionTry++;
+		/* no more try */
+		if ( getVersionTry > 4 )
+		{
+			clearInterval(query_interval);
+			query_interval = false;
+			getVersionTry = 0;
+			$("button#online_check").button("enable");
+            $("button#online_check").button("setText","检查新版本");
+            $("#online_error_str").html("获取最新版本软件失败");
+			showOnlineAlertMag();
+		}
+	}
+
+	/*************************download --> upgrade****************************/
+	$("button#online_upgrade").button({
+		text: "在线升级",
+		cls:"m",
+		handler: function(){
+			$("#online_upgrade_alert_cnt").msg("show");
+		},
+		cls: "submit inline"
+	}).button("hide");
+
+	var downloadTimeout = 0;
+
+	$("#online_upgrade_alert_cnt").msg({
+		okHandler:function(){
+
+			$("#online_upgrade_alert_cnt").msg('hideButtons');
+			$('#online_confirm_cnt').hide();
+			$("#online_note").html("正在下载...");
+			$("#online_upgrade_cnt").show();
+
+			cloudFirmwareProxy.action({"cloud_config":{"fw_download": "null"}}, function(data){
+				/* tell the luci begin to download */
+			},function(errcode){
+        		hide_online_upgrade_promsg();
+        		$("#online_error_str").html("下载失败");
+				showOnlineAlertMag();
+			},function(){
+				hide_online_upgrade_promsg();
+				$("#online_error_str").html("下载失败");
+				showOnlineAlertMag();
+			});
+
+			downloadTimeout = setTimeout(function() {
+				hide_online_upgrade_promsg();
+				$("#online_error_str").html("下载超时");
+				showOnlineAlertMag();
+			}, DOWNLOADTIMEOUT*1000);
+
+			if(!query_interval)
+			{
+				query_interval = setInterval(download_firmware,2000);
+			}
+			return false;
+		},
+		// cls: "m warning",
+		cancelHandler:function(){
+			return true;
+		},
+		cls: 'warning reboot-confirm-size',
+   	    closeBtn: false,
+		type: "confirm"
+	});
+
+	function hide_online_upgrade_promsg()
+	{
+		clearInterval(query_interval);
+		query_interval = false;
+		clearTimeout(downloadTimeout);
+		online_pro_bar.progressbar("stop");
+		online_pro_bar.progressbar("reset");
+		online_pro_bar_reboot.waitingbar("stop");
+		online_pro_bar_reboot.waitingbar("reset");
+		percentOnline = 0;
+
+		$("#online_upgrade_alert_cnt").hide();
+		$("#online_upgrade_alert_cnt").msg("close",function(){
+			$("#online_upgrade_alert_cnt").msg('showButtons');
+			$('#online_confirm_cnt').show();
+			$("#online_upgrade_cnt").hide();
+		});
+	}
+
+	function showOnlineAlertMag(){
+		$("#online_upgrade_failed_cnt").msg("show", function(){
+
+		});
+	};
+
+	function download_firmware()
+	{
+        cloudFirmwareProxy.query({"cloud_status":{"name": "client_info"}}, function(data){
+			var client_info = data.cloud_status.client_info;
+        	var progress = 0;
+
+    		if (client_info.fw_download_progress == "100")	/* the download is done */
+    		{
+    			clearTimeout(downloadTimeout);
+    			clearInterval(query_interval);	/* the firmware is download over, so clean the interval*/
+    			query_interval = false;
+    			updateFlag = false;
+    			online_pro_bar.progressbar("setValue", 1.00);	/* set the progressbar to 100% */
+
+    			if(!query_interval)	/* the download is finished, begin to upgrade*/
+				{
+					query_interval = setInterval(cloud_upgrade,1000);
+				}
+    		}
+    		else if (client_info.fw_download_progress != "-1" && client_info.fw_download_status != "0")	/* the download is doing */
+    		{
+    			progress = parseFloat(client_info.fw_download_progress);
+    			progress = progress / 100;
+				if(client_info.fw_download_status == "2")
+				{
+					progress = 1.0;
+				}
+    			if ( progress > 0 && progress <= 1.0)
+    			{
+    				online_pro_bar.progressbar("setValue", progress.toFixed(2));
+    			}
+    			if( client_info.fw_download_status == "2")
+    			{
+    				$("#online_note").html("下载完毕，开始校验并准备升级...");
+    			}
+    		}
+    		else	/* the download is failed */
+    		{
+    			hide_online_upgrade_promsg();
+    			$("#online_error_str").html("下载失败");
+				showOnlineAlertMag();
+    		}
+
+        },function(errcode){
+			hide_online_upgrade_promsg();
+		},function(){
+			hide_online_upgrade_promsg();
+		});
+	}
+
+	var timeoutOnline = 0;
+	var rebootIntervalOnline = 0;
+	var isRebootFinishOnline = false;
+	var percentOnline = 0;
+	var totolTimeOnline = UPGRADETIME;	/* total time of upgrade */
+	var rebootTimeOnline = REBOOTTIME*1000;	/* total time of reboot */
+	var percentPersecondOnline = 1 / totolTimeOnline;
+
+	function cloud_upgrade()	/* cloud upgrade and reboot */
+	{
+		if (updateFlag == false)
+		{
+			$("#online_note").html("正在升级，在此期间请不要进行其它操作");
+			updateFlag = true;
+		}
+
+			percentOnline = percentOnline + percentPersecondOnline;
+			online_pro_bar.progressbar("setValue", percentOnline.toFixed(2));
+			if(percentOnline >= 1.0)
+			{
+				clearInterval(query_interval);
+				online_pro_bar.progressbar("reset");
+				online_pro_bar.progressbar("hide");
+				percentOnline = 0;
+				$("#online_note").hide();
+
+				online_pro_bar_reboot.waitingbar("show");
+				online_pro_bar_reboot.waitingbar("run");
+				timeoutOnline = setTimeout(function() {
+					rebootIntervalOnline = setInterval(function(){
+						$.ajax({
+						    //url: "./login.html",
+							url: "./login.htm",
+						    async: true,
+						    dataType: "html",
+
+						    success: function(data){
+						    	isRebootFinishOnline = true;
+						    },
+						    error: function(){
+						        isRebootFinishOnline = false;
+						    }
+						});
+
+					    if(isRebootFinishOnline){
+					    	clearInterval(rebootIntervalOnline);
+					    	//location.href= "./login.html";
+							location.href= "./login.htm";
+					    }
+					}, 1000);
+				}, rebootTimeOnline);
+			}
+	}
+
+	/***********************local upgrade************************/
+	$("div#firmware").panel({
+		//title: $.su.CHAR.FIMWARE.TITLE,
+		title: "本地升级",
+		collapsible: false
+		//help:$("#help_firmware")
+	});
+
+	(function setVersion() {
+        var statusProxy = new $.su.Proxy({
+            async: false
+        });
+        statusProxy.query({"firmware":{"name":"config"}}, function(data){
+			data = data["firmware"]["config"];
+            $("input#firmware_version").textbox("setValue",data["firmware_version"]);
+			$("input#hardware_version").textbox("setValue",data["model"] + " " + data["hardware_version"]);
+        });
+    })();
+
+	var reboot_time = 3*60*1000;
+	var step1_time = 3*1000;
+	var mid_val = 0.2;
+	//var query_interval = false;
+	var step2_query_flag = true;
+	var count = 0;
+	var count2 = 0;
+	var upload_url;
+
+	var rebootInterval = 0;
+	var isRebootFinish = false;
+	var percent = 0;
+	var totalTime = UPGRADETIME;//升级导入的时间,单位秒
+	var rebootTime = REBOOTTIME*1000;//重启时间,单位毫秒
+	var percentPersecond = 1 / totalTime;
+
+	$("input#hardware_version").textbox({
+		fieldLabel: $.su.CHAR.FIMWARE.HARDWAREVERSION,
+		inputCls:'xxl',
+		readOnly:true
+	});
+
+	$("#file").file({
+		fieldLabel: $.su.CHAR.FIMWARE.NEWFILE,
+		allowBlank:false,
+		//extension: "tar"
+		extension: "bin",
+		cls:"inline"
+	});
+
+	$("#upgrade_failed_cnt").msg({
+		cls: 'warning reboot-confirm-size',
+		type: "alert"
+	});
+
+	$("#upgrade_alert_cnt").msg({
+		okHandler:function(){
+			$("#upgrade_alert_cnt").msg('hideButtons');
+			$('#confirm_cnt').hide();
+			$("#note").html($.su.CHAR.FIMWARE.WARNING);
+			$("#upload_loading_msg").show();
+
+			var proxy = new $.su.Proxy();
+			var data = {};
+			data.system = {
+				"firmware_upgrade":null
+			}
+
+			proxy.action(data, function(data){
+				upload_url = data.url;
+
+				$("#firmware-setting").form('submit',{operation:"firmware"}, function(data){
+					// wait time是升级过程预估花费的时间，重启时间不需要获取
+					// 在一定时间后会不停检测设备是否重启完成
+					totalTime = Number(data.upload_result.wait_time || totalTime);
+					percentPersecond = 1 / totalTime;
+
+					if(!query_interval)
+					{
+						query_interval = setInterval(setResult,1000);
+					}
+				},function(errcode){
+					hideProMsg();
+					if ($.su.app && $.su.app.errorOperation && $.su.app.errorOperation.denied){
+						errcode = errcode || -50904;
+						$.su.app.errorOperation.denied(errcode);
+					}
+				},function(){
+					hideProMsg()
+				});
+			});
+			return false;
+		},
+		// cls: "m warning",
+		cancelHandler:function(){
+			return true;
+		},
+		cls: 'warning reboot-confirm-size',
+   	    closeBtn: false,
+		type: "confirm"
+	});
+
+	var online_pro_bar = $('input#online_pro_bar').progressbar({
+		fieldLabel: null,
+		width: 326,
+	    height: 6,
+		value: 0,
+		expression: "percentage*100",
+	    cls: 'reboot-loading-probar'
+	});
+
+	var online_pro_bar_reboot  = $('input#online_pro_bar_reboot').waitingbar({
+		fieldLabel: $.su.CHAR.FIMWARE.REBOOT
+	});
+
+	online_pro_bar_reboot.waitingbar("hide");
+
+	var pro_bar  = $('input#pro_bar').progressbar({
+		fieldLabel: null,
+		width: 326,
+	    height: 6,
+		value: 0,
+		expression: "percentage*100",
+	    cls: 'reboot-loading-probar'
+	});
+
+	var pro_bar_reboot  = $('input#pro_bar_reboot').waitingbar({
+		fieldLabel: $.su.CHAR.FIMWARE.REBOOT
+	});
+
+	pro_bar_reboot.waitingbar("hide");
+
+	$("button#upgrade").button({
+		text: $.su.CHAR.FIMWARE.UPGRADE,
+		cls:"m",
+		handler: function(){
+			if($("#firmware-setting").form('validate'))
+			{
+				$("#upgrade_alert_cnt").msg("show");
+			}
+			else
+			{
+				return false;
+			}
+		},
+		cls: "submit inline"
+	});
+
+	//第一阶段的操作
+	function setResult()
+	{
+			percent = percent + percentPersecond;
+			pro_bar.progressbar("setValue", percent.toFixed(2));
+			if(percent >= 1.0)
+			{
+				clearInterval(query_interval);
+				pro_bar.progressbar("reset");
+				pro_bar.progressbar("hide");
+				percent = 0;
+				$("#note").hide();
+
+				pro_bar_reboot.waitingbar("show");
+				pro_bar_reboot.waitingbar("runUntilReboot");
+			}
+	}
+
+	function hideProMsg(){
+		clearInterval(query_interval);
+		query_interval = false;
+		pro_bar.progressbar("stop");
+		pro_bar.progressbar("reset");
+		pro_bar_reboot.waitingbar("stop");
+		pro_bar_reboot.waitingbar("reset");
+		percent = 0;
+
+		$("#upgrade_alert_cnt").hide();
+		$("#upgrade_alert_cnt").msg("close",function(){
+			$("#upgrade_alert_cnt").msg('showButtons');
+			$('#confirm_cnt').show();
+			$("#upload_loading_msg").hide();
+		});
+	};
+	function showAlertMag(){
+		$("#upgrade_failed_cnt").msg("show", function(){
+		});
+	};
+
+	$("#confirm_content").html($.su.CHAR.FIMWARE.CONFIRM_CONTENT);
+
+
+	//这里多个表格调用一个proxy，proxy需要单独定义！
+	var ipv4Proxy = new $.su.Proxy({
+		//url: UPGRADE_URL_NEW
+	});
+
+
+	$("#firmware-setting").form({
+		proxy: ipv4Proxy,
+		formEnctype: "multipart/form-data",
+		traditional: true,
+		hiddenFrame: true,
+		fields: [
+			{name: "image"}//,
+			//{name: "firmware_version", mapping: "firmware_version"},
+			//{name: "hardware_version", mapping: "hardware_version"}
+		],
+		fileUrlCb: function(){
+			//console.log("fileUrlCb upload_url: " + upload_url);
+			return $.su.url(upload_url);
+		},
+		submitBtn: null
+	}).on("ev_loadData", function(e, data){
+		//console.log("firmware-setting");
+		//reboot_time = Number(data.totaltime*1000 || reboot_time);
+		reboot_time = Number(data.wait_time*1000 || reboot_time);
+		currentVersion = data.firmware_version;
+		hardware_version = data.hardware_version;
+		$("input#firmware_version").textbox("setValue",currentVersion);
+		$("input#hardware_version").textbox("setValue",hardware_version);
+		//reboot_time = Number(data.totaltime*1000 || reboot_time);
+		reboot_time = Number(data.wait_time*1000 || reboot_time);
+	});
+
+	$.su.app.runningModule.addUnloadHandler(function(){
+		if(query_interval)
+	    {
+	    	clearInterval(query_interval);
+			query_interval = false;
+	    }
+	    pro_bar.progressbar("stop");
+		pro_bar.progressbar("reset");
+
+		pro_bar_reboot.waitingbar("stop");
+		pro_bar_reboot.waitingbar("reset");
+
+		online_pro_bar.progressbar("stop");
+		online_pro_bar.progressbar("reset");
+
+		online_pro_bar_reboot.waitingbar("stop");
+		online_pro_bar_reboot.waitingbar("reset");
+
+	});
+
+	$(".func-container").show();
+	var helpFireware = new $.su.Help({
+		container: "div#help_firmware",
+		content: ["FIRMWARE"]
+	});
+});
+</script>
+</body>
+
+</html>

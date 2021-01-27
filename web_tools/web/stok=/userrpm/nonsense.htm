@@ -1,0 +1,542 @@
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
+<html xmlns="http://www.w3.org/1999/xhtml">
+<head>
+    <meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
+    <style type="text/css">
+    </style>
+    <title>Session manager</title>
+</head>
+
+<body>
+<div class="func-container">
+    <div id="nonsense_list_container">
+        <div id="nonsense_list"></div>
+		<div id="nonsense_list_ssid"></div>
+		<div id="nonsense_list_interface"></div>
+    </div>
+	
+	<div id="nonsense_help"></div>
+</div>
+
+<script type="text/javascript">
+
+// <![CDATA[
+try{
+    $
+}catch(e){
+    location.href = "/";
+};
+
+function formatDate(now) {
+    var year=now.getYear();
+    var month=now.getMonth()+1;
+    var date=now.getDate();
+    var hour=now.getHours();
+    var minute=now.getMinutes();
+    var second=now.getSeconds();
+    return year+"/"+month+"/"+date+" "+hour+":"+minute+":"+second;
+}
+
+$(document).ready(function(e){
+    var AUTH_MODE_VLAN = "vlan"
+    var AUTH_MODE_SSID = "ssid"
+    var AUTH_MODE_INTERFACE = "interface"
+    var auth_mode = 0
+    var $nonsense = $("#nonsense_list");
+	var $nonsense_ssid = $("#nonsense_list_ssid");
+	var $nonsense_interface = $("#nonsense_list_interface");
+    var grid
+    var grid_ssid
+    var grid_interface
+
+    $("#nonsense_list_container").panel({
+        title: $.su.CHAR.WPORTAL.NONSENSE
+    });
+
+    var authModeProxy = new $.su.Proxy({async: false});
+    var globalProxy = new $.su.Proxy();
+    var sessionKickProxy = new $.su.Proxy();
+
+    $("div#nonsense_list").hide();
+	$("div#nonsense_list_ssid").hide();
+    $("div#nonsense_list_interface").hide();
+
+	authModeProxy.query({"authentication":{"name":"portal"}}, function(data){
+        auth_mode = data.authentication.portal.auth_mode;
+        if (AUTH_MODE_VLAN == auth_mode)
+        {
+            $("div#nonsense_list").show();
+        }
+        else if (AUTH_MODE_SSID == auth_mode)
+        {
+            $("div#nonsense_list_ssid").show();
+        }
+        else if (AUTH_MODE_INTERFACE == auth_mode)
+        {
+            $("div#nonsense_list_interface").show();
+        }
+    });
+
+
+/************************************************************************************************************
+                                                VLAN
+************************************************************************************************************/
+    if (AUTH_MODE_VLAN == auth_mode)
+    {
+        grid = $nonsense.grid({
+            store: {
+                proxy: globalProxy,
+                autoLoad: true,
+                fields: [
+                    {name: "vlan_id"},
+    				{name: "mac"},
+                    {name: "username"},
+    				{name: "password"},
+                    {name: "auth_time"}
+                ],
+    			parseKey: {
+    				moduleName: "authentication",
+    				tableName: "nonsense_list",
+    				pageSizeName: "nonsense_entry",
+    				maxSizeTableName: "wportal",
+    				maxSizeOptionName: "nonsense_max",
+                    delFilter:function(itemNames, data, indexes){
+                        var result = [];
+                        
+                        for (var i = 0; i < indexes.length; i++)
+                        {
+							var filter = {};
+                            filter["mac"] = indexes[i].mac;
+                            filter["vlan_id"] = indexes[i].vlan_id;
+                            result.push(filter);
+                        }
+
+                        return result;
+                    }
+    			}
+            },
+            editor: {
+                content: '#nonsense-editor',
+                fields: [
+                    {name: "vlan_id"},
+    				{name: "mac"},
+                    {name: "username"},
+    				{name: "password"},
+                    {name: "auth_time"}
+                ]
+            },
+    		paging_true:{},
+            columns: [
+                {
+                    xtype: 'checkcolumn',
+                    width: 30
+                },
+                {
+                    xtype: 'rownumberer',
+                    width: 30
+                },
+                {
+                    text: 'VLAN',
+                    width: 30,
+                    dataIndex: 'vlan_id',
+    				renderer:function(v)
+                    {
+                        if ("4095" == v)
+    					{
+    						return "---";
+    					}
+    					else
+    					{
+    						return v;
+    					}
+                    },
+    				scan: {
+    					type: "textbox",
+    					cmp: function(src, tar, index){
+    						if (src == "4095"){
+    							if (tar == "4095" || tar == 4095 || tar == '-' || tar == '--' || tar == '---'){
+    								return true;
+    							}
+    							return false;
+    						}
+    						return $.search.compare.num.call(this, src, tar, index);
+    					},
+    					vtype: "number",
+					    check: $.search.compare.vlan
+    				}
+                },
+                {
+                    text: 'MAC地址',
+                    width: 90,
+                    dataIndex: 'mac',
+    				scan: {
+    					cmp: $.search.compare.string,
+    					vtype: "string",
+    					check: $.search.compare.mac
+    				}
+                },
+    			{
+                    text: '用户名',
+                    width: 90,
+                    dataIndex: 'username',
+    				scan: {
+    					cmp: $.search.compare.string,
+    					vtype: "string"
+    				}
+                },
+    			{
+                    text: '密码',
+                    width: 90,
+                    dataIndex: 'password',
+    				scan: {
+    					cmp: $.search.compare.string,
+    					vtype: "string"
+    				}
+                },
+                {
+                    text: '认证时间',
+                    width: 120,
+                    dataIndex: 'auth_time'
+                },
+    			{
+                    xtype: "disconnect",
+                    width: 30
+                },
+    			{
+                    xtype: "globalSearch",
+                    hidden: true,
+                    columns: [
+                        {
+                            text: "VLAN",
+                            dataIndex: "vlan_id",
+                            scan: {
+                                cmp: $.search.compare.string,
+                                check: $.search.compare.vlan,
+                                vtype: "string",
+                                real_value: function(text) {
+                                    // vlan填写---等代表4095
+                                    return "" + (parseInt(text) || 4095);
+                                }
+                            }
+                        },
+                        {
+                            text: "MAC地址",
+                            dataIndex: 'mac',
+                            scan: {
+                                cmp: $.search.compare.string,
+                                vtype: "string",
+                                check: $.search.compare.mac
+                            }
+                        },
+                        {
+                            text: "用户名",
+                            dataIndex: "username",
+                            scan: {
+                                cmp: $.search.compare.string,
+                                vtype: "string"
+                            }
+                        },
+                        {
+                            text: "密码",
+                            dataIndex: "password",
+                            scan: {
+                                cmp: $.search.compare.string,
+                                vtype: "string"
+                            }
+                        }
+                    ]
+                }
+            ],
+    		operation: ["delete","search","searchAll","refresh","autoRefresh"],
+    		autoRefresh: true
+    			
+    	}).undelegate("a.grid-content-btn.grid-content-btn-delete","click").delegate("a.grid-content-btn.grid-content-btn-delete", "click", function(e){
+    		var btn = $(this);
+    		var key = btn.attr("data-key");
+    		var store = grid.grid("getStore");
+    		var kickItem = [getSessionByKey(key)];
+    		var postData = {};
+
+    		postData["authentication"] = {};
+            postData["authentication"]["table"] = "nonsense_list"
+            postData["authentication"]["filter"] = {}
+            postData["authentication"]["filter"] = kickItem
+
+    		sessionKickProxy.del(postData, function(){
+                grid.grid("disGridChkbox");
+                store.load();
+            });
+        }).on("ev_load", function(e,data, others){
+        	if(others)
+    		{
+    			maxrules = others.max_rules;
+    		}
+        });
+    }
+
+
+/************************************************************************************************************
+                                                SSID
+************************************************************************************************************/
+    else if (AUTH_MODE_SSID == auth_mode)
+    {
+    	grid_ssid = $nonsense_ssid.grid({
+            store: {
+                proxy: globalProxy,
+                autoLoad: true,
+                fields: [
+    				{name: "serv_id"},
+    				{name: "ssid"},
+    				{name: "mac"},
+                    {name: "username"},
+    				{name: "password"},
+                    {name: "auth_time"}
+                ],
+    			parseKey:{
+    				moduleName: "authentication",
+    				tableName: "nonsense_list",
+    				pageSizeName: "nonsense_entry",
+    				maxSizeTableName: "wportal",
+    				maxSizeOptionName: "nonsense_max",
+                    delFilter:function(itemNames, data, indexes){
+                        var result = [];
+                        
+                        for (var i = 0; i < indexes.length; i++)
+                        {
+							var filter = {};
+                            filter["mac"] = indexes[i].mac;
+                            filter["serv_id"] = indexes[i].serv_id;
+                            result.push(filter);
+                        }
+
+                        return result;
+                    }
+    			}
+            },
+            editor: {
+                content: '#nonsense-editor_ssid',
+                fields: [
+    				{name: "serv_id"},
+    				{name: "ssid"},
+    				{name: "mac"},
+                    {name: "username"},
+    				{name: "password"},
+                    {name: "auth_time"}
+                ]
+            },
+    		paging_true:{},
+            columns: [
+                {
+                    xtype: 'checkcolumn',
+                    width: 30
+                },
+                {
+                    xtype: 'rownumberer',
+                    width: 30
+                },
+    			{
+                    text: 'SSID',
+                    width: 90,
+                    dataIndex: 'ssid',
+    				scan: {
+    					cmp: $.search.compare.string,
+    					vtype: "string"
+    				}
+                },
+                {
+                    text: 'MAC地址',
+                    width: 90,
+                    dataIndex: 'mac',
+    				scan: {
+    					cmp: $.search.compare.string,
+    					vtype: "string",
+    					check: $.search.compare.mac
+    				}
+                },
+    			{
+                    text: '用户名',
+                    width: 90,
+                    dataIndex: 'username',
+    				scan: {
+    					cmp: $.search.compare.string,
+    					vtype: "string"
+    				}
+                },
+    			{
+                    text: '密码',
+                    width: 90,
+                    dataIndex: 'password',
+    				scan: {
+    					cmp: $.search.compare.string,
+    					vtype: "string"
+    				}
+                },
+                {
+                    text: '认证时间',
+                    width: 120,
+                    dataIndex: 'auth_time'
+                },
+    			{
+                    xtype: "disconnect",
+                    width: 30
+                },
+                {
+                    xtype: "globalSearch",
+                    hidden: true,
+                    columns: [
+                        {
+                            text: "SSID",
+                            dataIndex: "ssid",
+                            scan: {
+                                cmp: $.search.compare.string,
+                                vtype: "string"
+                            }
+                        },
+                        {
+                            text: 'MAC地址',
+                            dataIndex: 'mac',
+                            scan: {
+                                cmp: $.search.compare.string,
+                                vtype: "string",
+                                check: $.search.compare.mac
+                            }
+                        },
+                        {
+                            text: '用户名',
+                            dataIndex: 'username',
+                            scan: {
+                                cmp: $.search.compare.string,
+                                vtype: "string"
+                            }
+                        },
+                        {
+                            text: '密码',
+                            dataIndex: 'password',
+                            scan: {
+                                cmp: $.search.compare.string,
+                                vtype: "string"
+                            }
+                        }
+                    ]
+                }
+            ],
+    		operation: ["delete","search","searchAll","refresh","autoRefresh"],
+    		autoRefresh: true
+    			
+    	}).undelegate("a.grid-content-btn.grid-content-btn-delete","click").delegate("a.grid-content-btn.grid-content-btn-delete", "click", function(e){
+    		var btn = $(this);
+    		var key = btn.attr("data-key");
+    		var store = grid_ssid.grid("getStore");
+    		var kickItem = [getSessionByKey(key)];
+    		var postData = {};
+
+    		postData["authentication"] = {};
+    		postData["authentication"]["table"] = "nonsense_list"
+    		postData["authentication"]["filter"] = {}
+    		postData["authentication"]["filter"] = kickItem
+
+    		sessionKickProxy.del(postData, function(){
+    			grid_ssid.grid("disGridChkbox");
+    			//grid_ssid.grid("load");
+    			store.load();
+    		});
+
+    	}).on("ev_load", function(e,data, others){
+    		if(others)
+    		{
+    			maxrules = others.max_rules;
+    		}
+        });
+    }
+
+
+/************************************************************************************************************
+                                                INTERFACE
+************************************************************************************************************/
+    else if (AUTH_MODE_INTERFACE == auth_mode)
+    {
+        
+    }
+
+
+
+/************************************************************************************************************
+                                                Other
+************************************************************************************************************/
+	function getSessionByKey(data_key)
+	{
+		var result = {};
+        var dataSet
+        var keyProperty
+
+         if (AUTH_MODE_VLAN == auth_mode)
+        {
+            dataSet = grid.grid("getStore").data;
+            keyProperty = grid.grid("getStore").keyProperty;
+            for (var j = 0; j < dataSet.length; j++)
+            {
+                if (dataSet[j][keyProperty] == data_key)
+                {
+                    result["mac"] = dataSet[j]["mac"];
+                    result["vlan_id"] = dataSet[j]["vlan_id"];
+                }
+            }
+        }
+        else if (AUTH_MODE_SSID == auth_mode)
+        {
+            dataSet = grid_ssid.grid("getStore").data;
+            keyProperty = grid_ssid.grid("getStore").keyProperty;
+            for (var j = 0; j < dataSet.length; j++)
+            {
+                if (dataSet[j][keyProperty] == data_key)
+                {
+                    result["mac"] = dataSet[j]["mac"];
+                    result["serv_id"] = dataSet[j]["serv_id"];
+                }
+            }
+        }
+        else if (AUTH_MODE_INTERFACE == auth_mode)
+        {
+            dataSet = grid_interface.grid("getStore").data;
+            keyProperty = grid_interface.grid("getStore").keyProperty;
+            for (var j = 0; j < dataSet.length; j++)
+            {
+                if (dataSet[j][keyProperty] == data_key)
+                {
+                    result["mac"] = dataSet[j]["mac"];
+                    result["ip"] = dataSet[j]["ip"];
+                }
+            }
+        }
+
+        return result;
+	}
+
+
+    if (AUTH_MODE_VLAN == auth_mode)
+    {
+        var helpNonSense = new $.su.Help({
+            container: "div#nonsense_help",
+            content: ["NONSENSE_LIST_VLAN"]
+        });
+    }
+	else if(AUTH_MODE_SSID == auth_mode)
+	{
+		var helpNonSense = new $.su.Help({
+			container: "div#nonsense_help",
+			content: ["NONSENSE_LIST_SSID"]
+		});
+	}
+    else if (AUTH_MODE_INTERFACE == auth_mode)
+    {
+        // var helpNonSense = new $.su.Help({
+        //     container: "div#nonsense_help",
+        //     content: ["NONSENSE_LIST_INTERFACE"]
+        // });
+    }
+});
+//]]>
+</script>
+</body>
+
+</html>

@@ -1,0 +1,147 @@
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
+<html xmlns="http://www.w3.org/1999/xhtml">
+<head>
+<meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
+<title>IPgroup view</title>
+<style type="text/css">
+</style>
+</head>
+
+<body>
+<div class="func-container">
+    <div id="ipgroup-view-list">
+        <div id="ipgroup-view-grid">
+        </div>
+    </div>
+
+    <div id="ipgroup-view-help"></div>
+</div>
+
+<script type="text/javascript">
+try{
+    $
+}catch(e){
+    location.href = "/";
+};
+
+$(document).ready(function(e){
+	$("#ipgroup-view-list").panel({
+		title: $.su.CHAR.IPGROUP_VIEW.PANEL_LIST
+	});
+
+	var ipgroupListProxy = new $.su.Proxy();
+
+	var ipGroupGrid = $("#ipgroup-view-grid").grid({
+        editor: {
+            content:"default",
+            fields: [
+                {name: "group"},
+				{name: "rule_scope"}
+            ]
+        },
+		store:{
+			proxy: ipgroupListProxy,
+			fields: [
+                {name: "group", mapping:"group", sectionName:"rule_ipgroup"},
+				{name: "rule_scope", mapping:"rule_scope", sectionName:"rule_ipscope"}
+			],
+			parseKey: {
+				moduleName: "ipgroup",
+				tableName: ["rule_ipgroup", "rule_ipscope"]
+			},
+			autoLoad: true
+		},
+        paging:[],
+		columns: [
+			{
+				xtype: "checkcolumn",
+				width: $.su.CHAR.SETTING.IPGROUP_VIEW.CHECK_COLUMN_WIDTH
+			},
+			{
+				xtype: "rownumberer",
+				width: $.su.CHAR.SETTING.IPGROUP_VIEW.ROW_NUMBER_WIDTH
+			},
+			{
+				text: $.su.CHAR.IPGROUP_VIEW.GROUP_NAME,
+				width: $.su.CHAR.SETTING.IPGROUP_VIEW.GROUP_NAME_WIDTH,
+				dataIndex: "group",
+                editor: {
+                    xtype: "combobox",
+                    allowBlank: false,
+                    items:[
+                        {name:"---",value:"---"}
+                    ]
+                }
+			},
+			{
+				text: $.su.CHAR.IPGROUP_VIEW.USERNAME,
+				width: $.su.CHAR.SETTING.IPGROUP_VIEW.USERNAME_WIDTH,
+				dataIndex: "rule_scope",
+                editor: {
+                    xtype: "combobox",
+					multiSelect: true,
+                    allowBlank: false,
+                    items:[
+                        {name:"---",value:"---"}
+                    ]
+                }
+			},
+			{
+                xtype: "settings",
+                width: $.su.CHAR.SETTING.IPGROUP_GROUP.SETTING_WIDTH
+            }
+		],
+		operation: 'prompt'
+	}).on("ev_load", function(e,data, others){
+		if(others)/* 通过json里的others参数传递动态阀值 */
+        {
+
+        }
+        /*发送form请求,获取interface列表.用于显示于接口下拉框*/
+        var groupItem=[];
+        var groupProxy = new $.su.Proxy({
+                async: false
+        });
+        groupProxy.query({"ipgroup":{"table":"rule_ipgroup"}}, function(data){
+            for (var i=0; i<data.ipgroup.rule_ipgroup.length; i++){
+				for (var j in data.ipgroup.rule_ipgroup[i])
+				{
+					groupItem.push({name:data.ipgroup.rule_ipgroup[i][j].name,value:data.ipgroup.rule_ipgroup[i][j].name});
+					break;
+				}
+			}
+
+			var editor = ipGroupGrid.grid('getEditor');
+			var combobox = $(editor).find('.combobox-value[name=group]');
+            combobox.combobox('loadData',groupItem);
+        });
+
+		var ruleItem=[];
+        var ruleProxy = new $.su.Proxy({
+                async: false
+        });
+        ruleProxy.query({"ipgroup":{"table":"rule_ipscope"}}, function(data){
+            for (var i=0; i<data.ipgroup.rule_ipgroup.length; i++){
+				for (var j in data.ipgroup.rule_ipgroup[i])
+				{
+					ruleItem.push({name:data.ipgroup.rule_ipgroup[i][j].name,value:data.ipgroup.rule_ipgroup[i][j].name});
+					break;
+				}
+			}
+
+			var editor = ipGroupGrid.grid('getEditor');
+			var combobox = $(editor).find('.combobox-value[name=rule_scope]');
+			combobox.combobox('loadData',ruleItem);
+        });
+
+    });
+
+/*    var helpIpgroupGrid = new $.su.Help({
+        container: "div#ipgroup-group-help",
+        content: "PPTP_TUNNEL"
+    });*//* TODO */
+});
+</script>
+</body>
+
+</html>

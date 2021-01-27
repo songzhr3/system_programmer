@@ -1,0 +1,267 @@
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
+<html xmlns="http://www.w3.org/1999/xhtml">
+<head>
+<meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
+<title>account_mngt</title>
+</head>
+
+<body>
+<div class="func-container">
+	<div id="account">
+	 	<form id="account-setting">
+	    	<!-- <p  id="note" name="note"></p> -->
+	    	<input type="text"  id="old_acc" name="old_acc" value="" />
+	    	<input type="password"  id="old_pwd" name="old_pwd" value="" />
+
+			<input type="text"  id="new_acc" name="new_acc" value="" />
+	    	<input type="password"  id="new_pwd" name="new_pwd" value="" />
+			<input type="password"  id="cfm_pwd" name="cfm_pwd" value="" />
+			<input id="pwd_status"  value="" />
+
+	    </form>
+	</div>
+	<div id="help_admin"></div>
+</div>
+
+<script type="text/javascript">
+try{
+    $
+}catch(e){
+    location.href = "/";
+};
+
+$(document).ready(function(e){
+	$("div.func-container").page({
+		title: $.su.CHAR.ACCOUNT.TITLE,
+		help: ""	//可能是个调用的id 也可能是个url
+	});
+
+	$("div#account").panel({
+		title: $.su.CHAR.ACCOUNT.ACCOUNT_TITLE,
+		collapsible: false
+	});
+
+	$("div#recovery").panel({
+		title: $.su.CHAR.ACCOUNT.RECOVERYINFO,
+		collapsible: false
+	});
+
+	$("input#old_acc").textbox({
+		fieldLabel: $.su.CHAR.ACCOUNT.OLDUSER,
+		vtype:"ascii_visible",
+		minLength:1,
+		maxLength:15,
+		tips: $.su.CHAR.ACCOUNT.ACCOUNT_TIPS,
+		allowBlank: false
+	});
+
+	$("input#old_pwd").password({
+		fieldLabel: $.su.CHAR.ACCOUNT.OLDPWD,
+		allowBlank: false,
+		vtype:"ascii_visible",
+		showLevel:false,
+		tips: $.su.CHAR.ACCOUNT.NEW_PWD_TIPS,
+		minLength:5,
+		maxLength:15
+	});
+
+	$("input#new_acc").textbox({
+		fieldLabel: $.su.CHAR.ACCOUNT.NEWUSER,
+		cls:"part-separate",
+		allowBlank: false,
+		tips: $.su.CHAR.ACCOUNT.ACCOUNT_TIPS,
+		vtype:"ascii_visible",
+		minLength:1,
+		maxLength:15
+	});
+
+	var passwordCheck = function(new_pwd, cfm_val){
+
+		if(cfm_val == new_pwd){
+			$("#pwd_status").status("setSuccess");
+			return true;
+		}else{
+			$("#pwd_status").status("setFailed");
+			return false;
+		};
+	};
+
+	$("input#new_pwd").password({
+		fieldLabel: $.su.CHAR.ACCOUNT.NEWPWD,
+		allowBlank: false,
+		vtype:"ascii_visible",
+		tips: $.su.CHAR.ACCOUNT.NEW_PWD_TIPS,
+		minLength:5,
+		maxLength:15
+	}).on("ev_change", function(item, data){
+		$("#pwd_status").status('setNormal');
+		$("input#cfm_pwd").password('setNormal');
+
+		var new_pwd = $("input#new_pwd").password("getValue");
+		var cfm_val = $("input#cfm_pwd").password("getValue");
+		if ( cfm_val){
+			passwordCheck(new_pwd, cfm_val);
+		}
+	}).on("ev_validatechange", function(item, data){
+		var new_pwd = $("input#new_pwd").password("getValue");
+	    var cfm_val = $("input#cfm_pwd").password("getValue");
+
+		if( cfm_val=='' ){
+			$("#pwd_status").status('setNormal');
+			return true;
+		}else{
+			passwordCheck(new_pwd, cfm_val);
+		};
+	});
+
+
+	$("input#cfm_pwd").password({
+		fieldLabel: $.su.CHAR.ACCOUNT.CONFIRM,
+		vtype:"ascii_visible",
+		minLength:5,
+		maxLength:15,
+		tips: $.su.CHAR.ACCOUNT.NEW_PWD_TIPS,
+		cls:"inline",
+		allowBlank: false,
+		validator:function(val){
+			return true;
+		},
+		showLevel:false
+	}).on("ev_change ev_validatechange", function(){
+		var new_pwd = $("input#new_pwd").password("getValue");
+	    var cfm_val = $("input#cfm_pwd").password("getValue");
+
+		if (new_pwd == ""){
+			if ( cfm_val == "" ){
+				$("#pwd_status").status("setNormal");
+			}else{
+				if (!passwordCheck(new_pwd, cfm_val)){
+					$("input#cfm_pwd").password("setError");
+				};
+			}
+		}else{
+			if (!passwordCheck(new_pwd, cfm_val)){
+				$("input#cfm_pwd").password("setError");
+			}
+		}
+	});
+
+	$("#pwd_status").status({
+		cls:"inline"
+	});
+
+	$("#auth_cnt").fieldset({
+		fields: [
+			{name: "username"},
+			{name: "password"},
+			{name: "confirm"}
+		]
+	}).hide();
+
+	var pwdProxy = new $.su.Proxy({
+		autoLoad:false
+	});
+
+	$("form#account-setting").form({
+		proxy: pwdProxy,
+		//showPromptSuccess:false,
+		fields: [
+			{name: "old_acc", mapping: "old_acc"},
+			{name: "old_pwd", mapping: "old_pwd"},
+			{name: "new_acc", mapping: "new_acc"},
+			{name: "new_pwd", mapping: "new_pwd"}
+			//{name: "cfm_pwd", mapping: "cfm_pwd"}
+		],
+		parseKey: {
+			moduleName:"administration",
+			sectionName:"modify_login_pwd"
+		},
+		autoLoad:true,
+		submitBtn: "default"
+	}).on("ev_loadData", function(e, data){
+
+	});
+
+	function validatorModify()
+	{
+		//输入框参数错误时，不允许提交
+		if (!$("input#old_acc").password("validate")
+		|| !$("input#old_pwd").password("validate")
+		|| !$("input#new_acc").password("validate")
+		|| !$("input#new_pwd").password("validate")
+		|| !$("input#cfm_pwd").password("validate")) {
+			return false
+		}
+		var  val = $("input#cfm_pwd").password("getValue");
+		var new_pwd = $("input#new_pwd").password("getValue");
+
+		if(new_pwd.length < 5 || new_pwd.length > 15){
+			$("input#new_pwd").password("setError", "密码长度最少为5位,最多为15位");
+			return false;
+		}
+		if(val.length < 5 || val.length > 15){
+			$("input#cfm_pwd").password("setError", "密码长度最少为5位,最多为15位");
+			return false;
+		}
+		if(val == new_pwd)
+		{
+			return true;
+		}
+		else
+		{
+			$("input#cfm_pwd").password("setError", $.su.CHAR.ERROR["00000148"]);
+			return false;
+		}
+	}
+
+	function modifyPwd()
+	{
+		var proxy = new $.su.Proxy();
+		var old_acc = $("input#old_acc").val();
+		var old_pwd = $("input#old_pwd").val();
+		var new_acc = $("input#new_acc").val();
+		var new_pwd = $("input#new_pwd").val();
+		var data = {
+			administration: {
+				modify_login_pwd: {
+					old_acc: old_acc,
+					old_pwd: $.su.orgAuthPwd(old_pwd),
+					new_acc: new_acc,
+					new_pwd: $.su.orgAuthPwd(new_pwd)
+				}
+			}
+		};
+
+		proxy.modify(data, function(result){
+			if ($.su.app && $.su.app.errorOperation && $.su.app.errorOperation.denied){
+				$("form#account-setting").form("prompt", true);
+			}
+		}, function(errcode){
+			if ($.su.app && $.su.app.errorOperation && $.su.app.errorOperation.denied){
+				$.su.app.errorOperation.denied(errcode);
+			}
+		} ,function(xhr){
+
+		});
+	}
+
+	$($("form#account-setting").find("button.button-button")).button({
+		handler:function(e){
+			var validator_ret = validatorModify();
+			if(validator_ret)
+			{
+				modifyPwd();
+			}
+		}
+	});
+
+	var helpAdmin = new $.su.Help({
+		container: "div#help_admin",
+		content: ["ADMIN_ACCOUNT"]
+	});
+
+});
+</script>
+</body>
+
+</html>

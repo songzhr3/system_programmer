@@ -1,0 +1,653 @@
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
+<html xmlns="http://www.w3.org/1999/xhtml">
+    <head>
+        <meta content="text/html; charset=utf-8" http-equiv="Content-Type"/>
+        <title>
+            APP GROUPING
+        </title>
+        <style type="text/css">
+        </style>
+        <script src="../web-static/js/su/widget/window/dialog.js?random=20201217044300" type="text/javascript"></script>
+        <script src="../web-static/js/su/widget/grid/comboSelector.js?random=20201217044300" type="text/javascript"></script>
+    </head>
+    <body>
+        <div class="func-container">
+            <div id="div_is_smart_mode">
+                <form id="form_is_smart_mode">
+                    <input id="is_smart_mode" name="is_smart_mode" value=""/>
+                </form>
+            </div>
+
+            <div id="app_grouping_list">
+                <div id="app_grouping_list_grid">
+                </div>
+            </div>
+
+            <div id="app_selector"></div>
+
+            <div id="own_editor">
+                <input id="name" name="name"/>
+                <input id="group_id" name="group_id"/>
+                <textarea id="textarea_app_name_list"></textarea>
+                <textarea id="textarea_app_id_list" name="app_id_list"></textarea>
+                <button id="button_app_id_list">点击修改</button>
+                <input id="comment" name="comment"/>
+            </div>
+        </div>
+
+        <div id="link-detail-window">
+            <table class="link-detail-table detail">
+                <tr>
+                    <td class="detail-value">
+                    </td>
+                </tr>
+            </table>
+        </div>
+
+        <div id="app_grouping_help"></div>
+
+        <script type="text/javascript">
+            try{
+        $
+    }catch(e){
+        location.href="../web-static//";
+    };
+
+$(document).ready(function(e){
+    $(".func-container").hide();
+
+    $("div#app_grouping_list").panel({
+        title:$.su.CHAR.APP_GROUPING.LIST_NAME,
+        collapsible: false
+    });
+
+    $("#div_is_smart_mode").panel({
+        title: $.su.CHAR.APP_GROUPING.ENGINE_MODE,
+        collapsible: false
+    });
+
+    var mode_proxy = new $.su.Proxy({async: false});
+
+    var is_smart_mode = $("input#is_smart_mode").checkbox({
+        items:[
+              {boxlabel:$.su.CHAR.APP_GROUPING.IS_SMART_MODE,name:"is_smart_mode", inputValue: "1", uncheckedValue: "0"}
+        ]
+    });
+
+    $("#form_is_smart_mode").form({
+        proxy: mode_proxy,
+        fields: [
+            {name: "is_smart_mode", mapping: "is_smart_mode"}
+        ],
+        parseKey: {
+            moduleName:"app_library",
+            sectionName:"global"
+        },
+        submitBtn: "default"
+    });
+
+
+    var MAX_APP_GROUPING_NUM = 32;
+    var MIN_CUSTOMER_GROUP_ID = 10001;
+
+    var usage_list=[];
+    var sub_usage_list=[];
+    var transmission_list=[];
+    var appList = $.su.app_list.getAppList();
+    var labelsQuery = new $.su.Proxy({async: false});
+    labelsQuery.query({"app_library_conf":{table:"catalogue_list"}},
+        function(data)
+        {
+            data = data.app_library_conf.catalogue_list;
+            for (var i=0; i < data.length; i++){
+                for (var j in data[i]){
+                    if(data[i][j]['type'] == 'usage'){
+                        usage_list.push({name: data[i][j].name, value: data[i][j].id});
+                    }
+                    else if(data[i][j]['type'] == 'sub_usage'){
+                        sub_usage_list.push({name: data[i][j].name, value: data[i][j].id});
+                    }
+                    else if(data[i][j]['type'] == 'transmission'){
+                        transmission_list.push({name: data[i][j].name, value: data[i][j].id});
+                    }
+                }
+            }
+        }
+    );
+
+    function getCatalogueName(id, list)
+    {
+        var name = '缺失信息';
+        $.map(list, function(data, index){
+            if(data.value == id) {
+                name = data.name;
+                return;
+            }
+        });
+        return name;
+    }
+
+    function getAppName(appid)
+    {
+        var name = '缺失信息';
+        $.map(appList, function(data, index){
+            if(data.value == appid) {
+                name = data.name;
+                return;
+            }
+        });
+        // 可能是没有app.db
+        return name;
+    }
+
+    function getAppId(name)
+    {
+        var appid = 0;
+        $.map(appList, function(data, index){
+            if(data.name == name) {
+                appid = data.value;
+                return;
+            }
+        });
+        return appid;
+    }
+
+    $("input#name").textbox({
+        fieldLabel:$.su.CHAR.APP_GROUPING.NAME,
+        tips:"(1-28个字符)",
+        allowBlank:false,
+        maxLength:28,
+        vtype:"name"
+    });
+
+    $("input#comment").textbox({
+        fieldLabel:$.su.CHAR.APP_GROUPING.COMMENT,
+        tips:"(可选,0-50个字符)",
+        allowBlank:true,
+        maxLength:50
+    });
+
+    var group_id = $("input#group_id").textbox({
+        allowBlank:false,
+        maxLength:50
+    });
+
+    var textarea_app_name_list = $("#textarea_app_name_list").textarea({
+        fieldLabel: $.su.CHAR.APP_GROUPING.APP_LIST_PREVIEW,
+        readOnly: true,
+        inputCls:"long",
+        allowBlank:false
+    });
+
+    var textarea_app_id_list = $("#textarea_app_id_list").textarea({
+        readOnly: true,
+        inputCls:"long",
+        setValueCb: function(data){
+            var dataString = data.join("\n");
+            return dataString;
+        },
+        getValueCb: function(data){
+            var tmp = data.replace(/\s/g,"\n")
+            var dataArray = tmp.split(/;|\n/);
+
+            for (var i = 0; i < dataArray.length; i++)
+            {
+                if (dataArray[i] == "")
+                {
+                    dataArray.splice(i , 1);
+                    i--;
+                }
+            }
+            return dataArray;
+        }
+    });
+
+    var button_app_id_list = $('#button_app_id_list').button({
+        fieldLabel: $.su.CHAR.APP_GROUPING.APP_LIST_BUTTON,
+        text: $.su.CHAR.APP_GROUPING.EDIT
+    });
+
+    var $linkDetail = $("#link-detail-window").msg({
+        closeBtn: true,
+        cls:"l",
+        title: "应用组列表",
+        type: "window"
+    }).msg("hide");
+
+    function getNewGroupid()
+    {
+        var groupid = MIN_CUSTOMER_GROUP_ID;
+        var groupQuery = new $.su.Proxy({async: false});
+        groupQuery.query({"app_library":{table:"app_grouping"}}, 
+            function(data) {
+                data = data.app_library.app_grouping;
+                var findingGroupid = true;
+                while(findingGroupid){
+                    findingGroupid = false;
+                    for (var i=0; i < data.length; i++){
+                        for (var j in data[i]){
+                            if(groupid == data[i][j].group_id && !findingGroupid){
+                                groupid++;
+                                findingGroupid = true;
+                            }
+                        }
+                    }
+                }
+                group_id.textbox('setValue', groupid);
+            }
+        );
+    }
+
+    function showDetail_appList(domain)
+    {
+        var domainString = "";
+        for(var i = 0; i < domain.length; i++){
+            domainString += getAppName(domain[i]) + "</br>";
+        }
+        $linkDetail.find(".detail-value").html(domainString).css({
+            "lineHeight":"20px",
+            "textAlign":"center",
+            "wordBreak":"break-all"
+        });
+        $linkDetail.msg('show');
+    }
+
+    var appSelectorQuery = new $.su.Proxy();
+    var app_selector = $('#app_selector').comboSelector({
+        combo: 'filter_catalogue',
+        gridParams:{
+            comboFilterModule: 'app_library_conf',
+            comboObjectModule: 'app_library',
+            comboFunction: 'combo_filter_app_list',
+            maxRulesProperty: "max_rules",
+            store:{
+                proxy:appSelectorQuery,
+                fields:[
+                    {name:"name"},
+                    {name:"comment"},
+                    {name:"is_customer"},
+                    {name:"usage"},
+                    {name:"sub_usage"},
+                    {name:"transmission"},
+                    {name:"label_number"},
+                    {name:"technique_label"},
+                    {name:"function_label"},
+                    {name:"risk_label"},
+                    {name:"else_label"}
+                ],
+                parseKey: {
+                    moduleName: "app_library",
+                    tableName: "app_list",
+                    pageSizeName: "combo_app_list_entry"
+                },
+                autoLoad: true,
+                updateMode: "operation"
+            },
+            recordAllPagesSelect:true,
+            idColumnIndex:1,
+            maxLines:9,
+            paging_true:{
+                startNumPerPage: 100,
+                goToPageHandle: function(data, callback, type) {
+                    if (type !== 'ev_remove') {
+                        $.su.loading.show();
+                    }
+
+                    var filter = {};
+                    var obj = $('#comboSelector_inner_grid');
+                    var store = $('#comboSelector_inner_grid').grid('getStore');
+                    var filterContainer = $('.filter-row').find('.filter-container');
+                    var doProxy = new $.su.Proxy({async: false});
+
+                    for (var i = 0; i < filterContainer.length; i++) {
+                        var item = $(filterContainer[i]);
+                        var title = item.find('.checkbox-title').prop('value');
+                        var options = [];
+                        var checkboxes = item.find('.filter-table-checkbox');
+                        for (var j = 0; j < checkboxes.length; j++) {
+                            var checked = $(checkboxes[j]).find('input[type="checkbox"]').prop('checked');
+                            if (checked) {
+                                var option = $(checkboxes[j]).html().split('>')[1];
+                                options.push(option)
+                            }
+                        }
+                        if (options.length !== 0) {
+                            filter[title] = options;
+                        }
+                    }
+
+                    var numPerPage = data.numPerPage;
+                    filter["startIndex"] = numPerPage * data.currentPage;
+                    filter["endIndex"] = (data.currentPage + 1) * numPerPage - 1;
+
+                    var postData = {
+                        "app_library" : {
+                            "combo_filter_app_list": filter
+                        }
+                    };
+                    doProxy.action(postData, function(data){
+                        var totalNum=data['app_library']['count']['app_list']
+                        data = store.dataFormat(data['app_library']['app_list']);
+                        store.loadData(data,{count:totalNum}, false, function(){
+                            if (type !== 'ev_remove') {
+                                $.su.loading.hide();
+                            }
+                        });
+                        var pagingElement=$(obj).grid('getPaging');
+                        pagingElement.totalNum=totalNum;
+                        pagingElement.totalPage=Math.floor(totalNum/numPerPage)+1;
+                        var paging_true_obj=$(pagingElement);
+                        store.keyProperty='key';
+                    });
+                }
+            },
+            columns:[
+                {
+                    xtype: "checkcolumn"
+                },
+                {
+                    xtype: "rownumberer"
+                },
+                {
+                    text:$.su.CHAR.APP_LIBRARY.NAME,
+                    width:100,
+                    dataIndex:"name",
+                    scan: {
+                        cmp: $.search.compare.string
+                    }
+                },
+                {
+                    text:$.su.CHAR.APP_LIBRARY.CATALOGUE_USAGE,
+                    width:100,
+                    dataIndex:"usage",
+                    renderer:function(dd, index, data)
+                    {
+                        return getCatalogueName(dd, usage_list);
+                    }
+                },
+                {
+                    text:$.su.CHAR.APP_LIBRARY.CATALOGUE_SUB_USAGE,
+                    width:100,
+                    dataIndex:"sub_usage",
+                    renderer:function(dd, index, data)
+                    {
+                        return getCatalogueName(dd, sub_usage_list);
+                    }
+                },
+                {
+                    text:$.su.CHAR.APP_LIBRARY.CATALOGUE_TRANSMISSION,
+                    width:100,
+                    dataIndex:"transmission",
+                    renderer:function(dd, index, data)
+                    {
+                        return getCatalogueName(dd, transmission_list);
+                    }
+                },
+                {
+                    text:$.su.CHAR.APP_LIBRARY.CATALOGUE_RISK_LABEL,
+                    width:100,
+                    dataIndex:"label_number",
+                    renderer:function(x, index, data){
+                        if(x == 0 || x == 1){
+                            stars = '⚠';
+                        }
+                        else if(x == 2){
+                            stars = '⚠⚠';
+                        }
+                        else if(x == 3 || x == 4){
+                            stars = '⚠⚠⚠';
+                        }
+                        else if(x == 5) {
+                            stars = '⚠⚠⚠⚠';
+                        }
+                        else{
+                            stars = '⚠⚠⚠⚠⚠';
+                        }
+                        return stars;
+                    }
+                },
+                {
+                    xtype:"comment",
+                    dataIndex:"comment"
+                }
+            ],
+            operation:"search|searchAll"
+        }
+    });
+
+    var appgroupingListProxy = new $.su.Proxy({
+    });
+
+    var listGrid = $("#app_grouping_list_grid").grid({
+        maxRulesProperty: "max_rules",
+        editor:{
+            content:"#own_editor",
+            fields:[
+                {name:"name"},
+                {name:"group_id"},
+                {name:"app_id_list"},
+                {name:"comment"}
+            ],
+            validator:function(){
+                var name=$("#name").textbox('getValue');
+                if(name.indexOf("[") >= 0 || name.indexOf("]") >= 0 || name.indexOf("/") >= 0){
+                    $("#name").textbox("setError", "不允许输入[ ] /等特殊符号");
+                    return false;
+                }
+                var nameList = $("#app_grouping_list_grid").grid('getStore').data;
+                var editingId = $($("#app_grouping_list_grid").grid('getEditor')).editor("getEditingId");
+                var modify_flag = 0;
+                for(var i=0;i<nameList.length;i++){
+                    if(editingId == nameList[i].key)
+                    {
+                        modify_flag = 1;
+                        continue;
+                    }
+
+                    if(name == nameList[i].name)
+                    {
+                        $("#name").textbox("setError", "您输入的名称已经存在，请重新输入")
+                        return false;
+                    }
+                }
+                var applist = textarea_app_name_list.textarea("getValue");
+                if(applist == ""){
+                    button_app_id_list.button("setError", "请选择应用");
+                        return false;
+                }
+
+                if(modify_flag == 0){
+                    if(nameList.length >= MAX_APP_GROUPING_NUM){
+                        $($("#app_grouping_list_grid").grid("getEditor")).form('setError',"最多定义" + MAX_APP_GROUPING_NUM + "个应用组");
+                        return false;
+                    }
+                }
+
+                return true;
+            },
+            transParams: function(params){
+                return params;
+            }
+        },
+        store:{
+            proxy:appgroupingListProxy,
+            fields:[
+                {name:"name"},
+                {name:"app_id_list"},
+                {name:"group_id"},
+                {name:"comment"}
+            ],
+            parseKey: {                 /* 此处在store中增加parseKey，便于store对象在底层对数据进行预处理，以实现SLP数据结构和SU数据结构的转变 */
+                moduleName:"app_library",      /* 此处的moduleName和tableName分别指数据块名和对应请求的table名 */
+                pageSizeName: "app_grouping_entry",
+                tableName:"app_grouping"
+            },
+            autoLoad:false,
+            isAppointIndex: true,
+            appointIndex: 0
+        },
+        idColumnIndex:1,
+        paging_true:{
+            insertTofirst: true,
+        },
+        columns:[
+            {
+                xtype: "checkcolumn"
+            },
+            {
+                xtype: "rownumberer"
+            },
+            {
+                text:$.su.CHAR.APP_GROUPING.NAME,
+                width:100,
+                dataIndex:"name",
+                scan: {
+                    cmp: $.search.compare.string
+                }
+            },
+            {
+                text:$.su.CHAR.APP_GROUPING.APP_LIST,
+                width:120,
+                dataIndex:"app_id_list",
+                renderer:function(dd, index, data)
+                {
+                    if("---" == dd || typeof dd == "undefined")
+                    {
+                        return "---";
+                    }
+                    var apps = dd;
+
+                    switch(apps.length)
+                    {
+                        case 0:
+                            return "---";
+                            break;
+                        case 1:
+                            return getAppName(apps[0]);
+                            break;
+                        default:
+                            return getAppName(apps[0]) + "&nbsp&nbsp" + "<a href='javascript:void(0);' class='btn-detail-app' data-index='"+ index +"'>更多</a>";
+                            break;
+                    }
+
+                    return data;
+                }
+            },
+            {
+                xtype:"comment",
+                dataIndex:"comment"
+            },
+            {
+                xtype: "settings"
+            }
+        ],
+        operation:"prompt|add|delete|search"
+    }).delegate('a.btn-detail-app', 'click', function(e){
+        var index = $(this).data('index');
+        showDetail_appList(listGrid.grid("getStore").data[index].app_id_list);
+    }).on("ev_load", function(e,data, others){
+        if(others){
+                MAX_APP_GROUPING_NUM = others.app_group_max;
+        }
+    }).on("ev_formatEditData", function(e, data){
+        if(typeof(data.app_id_list) == "string") {
+            data.app_id_list = [data.app_id_list];
+        }
+        else if(typeof(data.app_id_list) == "undefined") {
+            data.app_id_list = [];
+        }
+    });
+
+    var appGroupingEditor = $(listGrid.grid('getEditor'));
+    appGroupingEditor.on('ev_startEdit', function(e, index, key){
+        textarea_app_id_list.textarea('hide');
+        group_id.textbox('hide');
+
+        if(index == 'add'){
+            getNewGroupid();
+
+            textarea_app_name_list.textarea('setValue', '');
+            textarea_app_id_list.textarea('setValue', []);
+
+            // 新建，绑定事件：使用空数组打开comboselector
+            $("#button_app_id_list").unbind("click");
+            $("#button_app_id_list").on('click', function(e, d){
+                $('#app_selector').comboSelector('show',[]);
+            });
+        }
+        else{
+            var store = listGrid.grid("getStore");
+            var data = store.getData(key);
+
+            var selectedList = [];
+            var text = '';
+            if(data.app_id_list)
+            {
+                $.map(data.app_id_list, function(id, index){
+                    var name = getAppName(id);
+                    selectedList.push(name);
+                    text = text + name + ';\n';
+                });
+            }
+
+            // 修改，绑定事件：使用存储的数组打开comboselector
+            $("#button_app_id_list").unbind("click");
+            $("#button_app_id_list").on('click', function(e, d){
+                $('#app_selector').comboSelector('show',selectedList);
+            });
+
+            textarea_app_name_list.textarea('setValue', text);
+        }
+
+        $("#app_selector").on('ev_comboSelectorConfirm', function(e, data){
+            var text = '';
+            var id = [];
+            $.map(data, function(name, index){
+                if(name != 'undefined'){
+                    var tmp = getAppId(name);
+                    if(tmp != 0) {
+                        text = text + name + ';\n';
+                        id.push(tmp);
+                    }
+                }
+            });
+            textarea_app_name_list.textarea('setValue', text);
+            textarea_app_id_list.textarea('setValue', id);
+
+            // 从comboselector确认返回，绑定事件：使用返回的数组打开comboselector
+            $("#button_app_id_list").unbind("click");
+            $("#button_app_id_list").on('click', function(e, d){
+                $('#app_selector').comboSelector('show',data);
+            });
+        }).on('ev_comboSelectorCancel', function(e, d){
+            var text = textarea_app_name_list.textarea('getValue');
+            var list = text.split(';');
+            list.pop();
+            list = $.map(list, function(str, i){
+                return str.replace("\n", "");
+            })
+
+            // 从comboselector取消返回，绑定事件：使用存储的数组打开comboselector
+            $("#button_app_id_list").unbind("click");
+            $("#button_app_id_list").on('click', function(e, d){
+                $('#app_selector').comboSelector('show', list);
+            });
+        });
+    });
+
+    function web_init()
+    {
+        $('div#app_grouping_list').show();
+        listGrid.grid("getStore").load();
+    }
+    web_init();
+
+    var helpImb = new $.su.Help({
+        container: "div#app_grouping_help",
+        content: ["ENGINE_MODE", "APP_GROUPING"]
+    });
+    $(".func-container").show();
+});
+        </script>
+    </body>
+</html>

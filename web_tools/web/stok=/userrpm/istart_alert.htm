@@ -1,0 +1,98 @@
+<html xmlns="http://www.w3.org/1999/xhtml">
+<head>
+<meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
+<title>istart-alert</title>
+</head>
+<body>
+<div class="istart-alert-box"></div>
+<style>
+#istart-alert-msg {
+	width: 350px;
+	margin: 32px auto;
+}
+
+#istart-alert-title {
+	margin-top: 40px;
+	font-size: 15px;
+	font-weight: 600;
+}
+
+#istart-alert-note {
+	margin-top: 10px;
+	margin-bottom: 30px;
+	font-size: 12px;
+	font-weight: 600;
+}
+
+#button-istart-break {
+	margin-left: 1px;
+	width: 50px;
+	height: 25px;
+	font-size: 14px;
+	background: #BEBEBE;
+	color: #fff;
+}
+
+#button-istart-continue {
+	margin-left: 8px;
+	width: 212px;
+	height: 25px;
+	font-size: 14px;
+	background: #5680B0;
+	color: #fff;
+}
+
+</style>
+<script type="text/javascript">
+
+//<![CDATA[
+try{
+	$
+}catch(e){
+	location.href = "/";
+};
+
+$(document).ready(function(e){
+	var gHtm = "";
+	gHtm += "<div id=\"istart-alert-msg\">";
+	gHtm +=     "<div id=\"istart-alert-title\" ></div>"
+	gHtm +=     "<div id=\"istart-alert-note\"></div>"
+	gHtm +=     "<input id=\"istart-break\"/>";
+	gHtm +=     "<input id=\"istart-continue\"/>";
+	gHtm += "</div>";
+	$(".istart-alert-box").html(gHtm);
+
+	$("#istart-alert-title").text("是否继续上次未完成的智能配置？");
+	$("#istart-alert-note").text("如需继续智能配置，请先登入TP-LINK统一管理平台。");
+	$("#istart-break").button({
+		text:"放弃",
+		cls:"inline",
+		handler: function() {
+			// 设置智能开局标记位，防止重新登入弹框提示
+			var globalProxy = new $.su.Proxy({isWizard:true});
+			globalProxy.modify({"istart": {"global":{"state":"0"}}}, function(data){}, function(error, others){});
+			$.su.istart_alert.hide();
+			$.su.mask.count = 0;
+			$.su.mask.hide();
+			$.su.istart_alert.user_acked = 0;
+		}
+	});
+
+	$("#istart-continue").button({
+		text:"继续配置,登入TP-LINK统一管理平台",
+		cls:"inline",
+		handler: function() {
+			$.su.istart_alert.user_acked = 1;
+			$.su.istart_alert.hide();
+			$.su.menu.advanced.goTo('wizard');
+			$.su.mask.count = 0;
+			$.su.mask.hide();
+		}
+	});
+});
+
+//]]>
+</script>
+</body>
+
+</html>

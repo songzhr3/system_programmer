@@ -1,0 +1,660 @@
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
+<html xmlns="http://www.w3.org/1999/xhtml">
+<head>
+<meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
+<title>Security Policy</title>
+<style type="text/css">
+    .top{
+        min-width: 1500px !important;
+    }
+    .top-content{
+        width: 1375px !important;
+        min-width: 1405px !important;
+    }
+
+    #app-list{
+        border: 1px solid #d9d9d9;
+        width: 800px;
+        max-height: 320px;
+        overflow-y: auto;
+        margin:10px 0px;
+    }
+    #app-list .widget-container{
+        margin: 3px 0;
+    }
+    #app-list-table td{
+        text-align: left;
+        overflow: hidden;
+    }
+    .app-category{
+        background-color: #FAFAFA;
+    }
+
+    .av_checked{
+        background:url("../web-static/themes/old/img/icons-02.png?random=20201016043108") no-repeat;
+        background-position:-15.5px -0px;
+        margin : 3px 0px -13px 40%;
+        width: 19px;
+        height: 19px;
+    }
+
+    .av_unchecked{
+        background:url("../web-static/themes/old/img/icons-02.png?random=20201016043108") no-repeat;
+        background-position:-52.5px -0px;
+        margin : 3px 0px -13px 40%;
+        width: 19px;
+        height: 19px;
+    }
+
+    .av_none{
+        margin : 3px 0px -13px 30%;
+        width: 40px;
+        height: 19px;
+    }
+</style>
+</head>
+
+<body>
+<div class="func-container">
+    <div id="av_profile">
+        <div id="av_profile_grid"></div>
+    </div>
+
+    <div id="own_editor">
+        <div>
+            <input id="rule_name" name="name" />
+            <input id="comment" name="comment" />
+        </div>
+
+        <div id = "protocol" style="border: 1px solid #ccc; width:800px; margin:10px 0px;">
+            <table>
+                <tr>
+                    <td><input id="http_action" name="http_action" /></td>
+                    <td><input id="http_up" name="http_up" /></td>
+                    <td><input id="http_down" name="http_down" /></td>
+                </tr>
+                <tr>
+                    <td><input id="ftp_action" name="ftp_action" /></td>
+                    <td><input id="ftp_up" name="ftp_up" /></td>
+                    <td><input id="ftp_down" name="ftp_down" /></td>
+                </tr>
+                <tr>
+                    <td><input id="smtp_action" name="smtp_action" /></td>
+                    <td><input id="smtp_up" name="smtp_up" /></td>
+                    <td></td>
+                </tr>
+                <tr>
+                    <td><input id="pop3_action" name="pop3_action" /></td>
+                    <td></td>
+                    <td><input id="pop3_down" name="pop3_down" /></td>
+                </tr>
+                <tr>
+                    <td><input id="imap_action" name="imap_action" /></td>
+                    <td><input id="imap_up" name="imap_up" /></td>
+                    <td><input id="imap_down" name="imap_down" /></td>
+                </tr>
+            </table>
+        </div>
+
+        <input id="appid_accept" name="appid_accept"/>
+        <input id="appid_warn" name="appid_warn"/>
+        <input id="appid_block" name="appid_block"/>
+    </div>
+
+    <div id="av_profile_help">
+    </div>
+
+    <div class="notice" style="top:-20px;position:relative;">
+        <hr/>
+        <h6>default反病毒配置文件无法修改和删除。</h6>
+    </div>
+</div>
+
+<script type="text/javascript">
+try{
+    $
+}catch(e){
+    location.href = "/";
+};
+
+$(document).ready(function(e){
+    $(".func-container").hide();
+    var appListItems;
+    var appList=[];
+    var appDict=[];
+    var fileActionItem=[];
+    var mailActionItem=[];
+    var imapActionItem=[];
+
+    var actionItem = {
+        warn:'<div class="av_none">' + $.su.CHAR.AV_PROFILE.WARN + '</div>',
+        block:'<div class="av_none">' + $.su.CHAR.AV_PROFILE.BLOCK + '</div>',
+        declare:'<div class="av_none">' + $.su.CHAR.AV_PROFILE.DECLARE + '</div>',
+        delete_attach:'<div class="av_none">' + $.su.CHAR.AV_PROFILE.DELETE_ATTACH + '</div>'
+    };
+
+    fileActionItem.push({name:"告警", value:"warn"});
+    fileActionItem.push({name:"阻断", value:"block"});
+    mailActionItem.push({name:"告警", value:"warn"});
+    //mailActionItem.push({name:"宣告", value:"declare"});
+    //mailActionItem.push({name:"删除附件", value:"delete_attach"});
+    imapActionItem.push({name:"告警", value:"warn"});
+
+    var appid_accept = $("#appid_accept").combobox({
+        fieldLabel: $.su.CHAR.AV_PROFILE.APP_ACCEPT,
+        multiSelect: true,
+        allowBlank:true,
+    });
+
+    var appid_warn = $("#appid_warn").combobox({
+        fieldLabel: $.su.CHAR.AV_PROFILE.APP_WARN,
+        multiSelect: true,
+        allowBlank:true,
+    });
+
+    var appid_block = $("#appid_block").combobox({
+        fieldLabel: $.su.CHAR.AV_PROFILE.APP_BLOCK,
+        multiSelect: true,
+        allowBlank:true,
+    });
+
+    //查询显示下划列表中的内容
+    var itemProxy = new $.su.Proxy({async: false});
+    itemProxy.query({av_profile:{table:"exception_app"}},
+        function(data){
+            data = data.av_profile.exception_app;
+            for (var i=0; i < data.length; i++){
+                for(var j in data[i])
+                {
+                    appList.push({name: data[i][j].name, value: data[i][j].id});
+                }
+            }
+            appid_accept.combobox('loadData',appList);
+            appid_warn.combobox('loadData',appList);
+            appid_block.combobox('loadData',appList);
+        });
+
+    var av_profile_proxy = new $.su.Proxy();
+    var child_proxy = new $.su.Proxy();
+    var maxrules;
+    var defaultRulesCnt = 0;
+    var displayFlag = 1;
+    //选项类型和参数设置
+    $("#av_profile").panel({
+        title: $.su.CHAR.AV_PROFILE.RULE_LIST,
+        collapsible: false
+    });
+
+    $("#rule_name").textbox({
+        fieldLabel:$.su.CHAR.AV_PROFILE.NAME,
+        tips:"(1-28个字符)",
+        allowBlank:false,
+        maxLength:28,
+        vtype:"name"
+    });
+
+    $("#comment").textbox({
+        fieldLabel:$.su.CHAR.AV_PROFILE.DESC,
+        tips:"(1-50个字符)",
+        allowBlank:true,
+        maxLength:50,
+    });
+
+
+    appid_accept.on('ev_change', function(e, oldValue, newValue){
+        changeItemState(appid_warn, appid_block, oldValue, newValue);
+    });
+
+
+    appid_warn.on('ev_change', function(e, oldValue, newValue){
+        changeItemState(appid_accept, appid_block, oldValue, newValue);
+    });
+
+    appid_block.on('ev_change', function(e, oldValue, newValue){
+        changeItemState(appid_accept, appid_warn, oldValue, newValue);
+    });
+
+    $("#http_action").combobox({
+        fieldLabel:$.su.CHAR.AV_PROFILE.HTTP,
+        items:fileActionItem,
+        defaultValue:['block'],
+        noneSelectedText:"阻断",
+        inputCls:"m",
+        labelCls:"xs"
+    });
+
+    $("#ftp_action").combobox({
+        fieldLabel:$.su.CHAR.AV_PROFILE.FTP,
+        items:fileActionItem,
+        defaultValue:['block'],
+        noneSelectedText:"阻断",
+        inputCls:"m",
+        labelCls:"xs"
+    });
+
+    $("#smtp_action").combobox({
+        fieldLabel:$.su.CHAR.AV_PROFILE.SMTP,
+        items:mailActionItem,
+        defaultValue:['warn'],
+        noneSelectedText:"告警",
+        inputCls:"m",
+        labelCls:"xs"
+    });
+
+    $("#pop3_action").combobox({
+        fieldLabel:$.su.CHAR.AV_PROFILE.POP3,
+        items:mailActionItem,
+        defaultValue:['warn'],
+        noneSelectedText:"告警",
+        inputCls:"m",
+        labelCls:"xs"
+    });
+
+    $("#imap_action").combobox({
+        fieldLabel:$.su.CHAR.AV_PROFILE.IMAP,
+        items:imapActionItem,
+        defaultValue:['warn'],
+        noneSelectedText:"告警",
+        inputCls:"m",
+        labelCls:"xs"
+    });
+
+    $("#http_up").checkbox({
+        items: [
+            {boxlabel: "上传", name:"http_up",uncheckedValue:"no", inputValue: "yes", checked:true}
+        ]
+    });
+
+
+    $("#http_down").checkbox({
+        items: [
+            {boxlabel: "下载", name:"http_down", uncheckedValue:"no", inputValue: "yes", checked:true}
+        ]
+    });
+
+    $("#ftp_up").checkbox({
+        items: [
+            {boxlabel: "上传", name:"ftp_up", uncheckedValue:"no", inputValue: "yes", checked:true}
+        ]
+    });
+
+    $("#ftp_down").checkbox({
+        items: [
+            {boxlabel: "下载", name:"ftp_down", uncheckedValue:"no", inputValue: "yes", checked:true}
+        ]
+    });
+
+    $("#smtp_up").checkbox({
+        items: [
+            {boxlabel: "上传", name:"smtp_up", uncheckedValue:"no", inputValue: "yes", checked:true}
+        ]
+    });
+
+
+    $("#pop3_down").checkbox({
+        items: [
+            {boxlabel: "下载", name:"pop3_down", uncheckedValue:"no", inputValue: "yes", checked:true}
+        ]
+    });
+
+    $("#imap_up").checkbox({
+        items: [
+            {boxlabel: "上传", name:"imap_up", uncheckedValue:"no", inputValue: "yes", checked:true}
+        ]
+    });
+
+    $("#imap_down").checkbox({
+        items: [
+            {boxlabel: "下载", name:"imap_down",  uncheckedValue:"no", inputValue: "yes", checked:true}
+        ]
+    });
+
+    $("#threat_id").textbox({
+        fieldLabel:$.su.CHAR.AV_PROFILE.ID,
+        allowBlank:false,
+        maxLength:28,
+        autoTrim:true,
+    });
+
+    var ruleGrid = $("#av_profile_grid").grid({
+        editor:{
+            content:"#own_editor",
+            fields:[
+                {name: "name"},
+                {name: "comment"},
+                {name: "http_action"},
+                {name: "http_up"},
+                {name: "http_down"},
+                {name: "ftp_action"},
+                {name: "ftp_up"},
+                {name: "ftp_down"},
+                {name: "smtp_action"},
+                {name: "smtp_up"},
+                {name: "pop3_action"},
+                {name: "pop3_down"},
+                {name: "imap_action"},
+                {name: "imap_up"},
+                {name: "imap_down"},
+                {name: "appid_accept"},
+                {name: "appid_warn"},
+                {name: "appid_block"}
+            ],
+            validator:function(){
+                var name=$("#rule_name").textbox('getValue');
+                var nameList = $("#av_profile_grid").grid('getStore').data;
+                var editingId = $($("#av_profile_grid").grid('getEditor')).editor("getEditingId");
+                var modify_flag = 0;
+                for(var i=0;i<nameList.length;i++){
+                    //如果是修改，则跳过;不检测重名
+                    if(editingId == nameList[i].key)
+                    {
+                        modify_flag = 1;
+                        continue;
+                    }
+
+                    if(name == nameList[i].name)
+                    {
+                        $($("#av_profile_grid").grid("getEditor")).form('setError',"您输入的名称已经存在，请重新输入");
+                        return false;
+                    }
+                }
+                return true;
+            }
+        },
+        store:{
+            idFieldName:'name',//解决问题：多次加载导致key不相同，然后无法编辑
+            proxy:av_profile_proxy,
+            fields:[
+                {name: "name"},
+                {name: "comment"},
+                {name: "http_action"},
+                {name: "http_up"},
+                {name: "http_down"},
+                {name: "ftp_action"},
+                {name: "ftp_up"},
+                {name: "ftp_down"},
+                {name: "smtp_action"},
+                {name: "smtp_up"},
+                {name: "pop3_action"},
+                {name: "pop3_down"},
+                {name: "imap_action"},
+                {name: "imap_up"},
+                {name: "imap_down"},
+                {name: "appid_accept"},
+                {name: "appid_warn"},
+                {name: "appid_block"}
+            ],
+            parseKey:{
+                moduleName: "av_profile",
+                tableName: "av_profile",
+                pageSizeName: "av_profile_entry"
+            },
+            autoLoad:true
+        },
+        paging_true:[],
+        //主表格，格式设置
+        columns:[
+             {
+                xtype: "checkcolumn",
+                width: 32
+            },
+            {
+                xtype: "rownumberer",
+                width: 30
+            },
+            {
+                text:$.su.CHAR.AV_PROFILE.NAME,
+                width:40,
+                dataIndex:"name",
+                scan:{
+                    cmp: $.search.compare.string
+                }
+            },
+            {
+                text:$.su.CHAR.AV_PROFILE.DESC,
+                width:60,
+                dataIndex:"comment",
+            },
+            {
+                text:$.su.CHAR.AV_PROFILE.PROTO,
+                width:30,
+                renderer:function(dd, index, data){
+                    var proto = '<div class="av_none">' + $.su.CHAR.AV_PROFILE.HTTP + "</div><br>" +
+                                '<div class="av_none">' + $.su.CHAR.AV_PROFILE.FTP + "</div><br>" +
+                                '<div class="av_none">' + $.su.CHAR.AV_PROFILE.SMTP + "</div><br>" +
+                                '<div class="av_none">' + $.su.CHAR.AV_PROFILE.POP3 + "</div><br>" +
+                                '<div class="av_none">' + $.su.CHAR.AV_PROFILE.IMAP + "</div><br>";
+                    return proto;
+                }
+            },
+            {
+                text:$.su.CHAR.AV_PROFILE.UPLOAD,
+                width:30,
+                dataIndex:"http_up",
+                renderer:function(dd, index, data){
+                    var upload_str = createDireItem(data.http_up);
+                    upload_str += createDireItem(data.ftp_up);
+                    upload_str += createDireItem(data.smtp_up);
+                    upload_str += createDireItem(data.pop3_up);
+                    upload_str += createDireItem(data.imap_up);
+                    return upload_str;
+                }
+            },
+            {
+                text:$.su.CHAR.AV_PROFILE.DOWNLOAD,
+                width:30,
+                dataIndex:"http_down",
+                renderer:function(dd, index, data){
+                    var download_str = createDireItem(data.http_down);
+                    download_str += createDireItem(data.ftp_down);
+                    download_str += createDireItem(data.smtp_down);
+                    download_str += createDireItem(data.pop3_down);
+                    download_str += createDireItem(data.imap_down);
+                    return download_str;
+                }
+            },
+            {
+                text:$.su.CHAR.AV_PROFILE.ACTION,
+                width:30,
+                dataIndex:"http_action",
+                renderer:function(dd, index, data){
+                    var action_str = actionItem[data.http_action] + "<br>";
+                    action_str += actionItem[data.ftp_action] + "<br>";
+                    action_str += actionItem[data.smtp_action] + "<br>";
+                    action_str += actionItem[data.pop3_action] + "<br>";
+                    action_str += actionItem[data.imap_action] + "<br>";
+                    return action_str;
+                }
+            },
+            {
+                xtype: "settings",
+                width: $.su.CHAR.SETTING.IMB.SETTING_WIDTH
+            }
+        ],
+        operation:"prompt|add|delete|search",
+        childTable:[{
+            store:{
+                proxy: child_proxy,
+                parseKey:{
+                    moduleName:"av_profile",
+                    tableName:"virus_exception",
+                    pageSizeName:"virus_exception_entry"
+                },
+                fields:[
+                    {name:"threat_id"},
+                    {name:"threat_name"},        //这个用来获取后台返回的数据
+                    {name:"parent_table_key"}
+                ],
+                autoLoad:true
+            },
+            columns:[
+                {
+                    xtype: "checkcolumn",
+                    width: 32,
+                },
+                {
+                    text:$.su.CHAR.AV_PROFILE.ID,
+                    width: 32,
+                    dataIndex:"threat_id",
+                    editor: {
+                        xtype: "textbox",
+                        allowBlank: false,
+                        maxLength:32,
+                    },
+                    scan:{
+                        cmp: $.search.compare.string
+                    }
+                },
+                {
+                    text:"病毒描述",//$.su.CHAR.AV_PROFILE.VIRUS_DESCRIPTION,
+                    width: 60,
+                    dataIndex:"threat_name",
+                    scan:{
+                        cmp: $.search.compare.string
+                    }
+                }
+            ],
+            editor:{
+                content:"default",
+                fields:[
+                    {name:"threat_id"},
+                    {name:"threat_name"},            //这个可以不用，只是为了整齐
+                    {name:"parent_table_key"}
+                ]
+            },
+            paging_true:[],
+            operation:"prompt|add|delete|search",
+            msgSize: 'xl'
+        }],
+        "hyperlink_text":["病毒例外"]
+    }).on("ev_insert",function(){
+        ruleGrid.grid("getStore").load();
+    }).on("ev_remove", function(){
+        ruleGrid.grid("getStore").load();
+    }).on("ev_update", function(){
+         ruleGrid.grid("getStore").load();
+    }).on("ev_formatEditData", function(e, data){
+        //避免传给后台数据类型不一致，导致错误
+        if(typeof(data.appid_accept) == "string") {
+            data.appid_accept = [data.appid_accept];
+        }
+        else if(typeof(data.appid_accept) == "undefined") {
+            data.appid_accept = [];
+        }
+
+        if(typeof(data.appid_warn) == "string") {
+            data.appid_warn = [data.appid_warn];
+        }
+        else if(typeof(data.appid_warn) == "undefined") {
+            data.appid_warn = [];
+        }
+
+        if(typeof(data.appid_blcok) == "string") {
+            data.appid_blcok = [data.appid_blcok];
+        }
+        else if(typeof(data.appid_blcok) == "undefined") {
+            data.appid_blcok = [];
+        }
+
+    }).on("ev_startEdit", function(e, index, key){
+        var policyEditor = $($("#av_profile_grid").grid("getEditor"));
+        if (index != "add")
+        {
+            var name = policyEditor.find("#rule_name").textbox('getValue');
+            if("default" == name)
+            {
+                setDefaultDisable();
+            }
+            else
+            {
+                setOtherEnable();
+            }
+
+            //设置应用例外为都可选
+            setAllEnable(appid_accept, appList);
+            setAllEnable(appid_warn, appList);
+            setAllEnable(appid_block, appList);
+            //根据已有的值设置其他的条目中应用不可选
+            setElseDisable(appid_accept, appid_warn, appid_block);
+            setElseDisable(appid_warn, appid_block, appid_accept);
+            setElseDisable(appid_block, appid_accept, appid_warn);
+        }
+        else
+        {
+            setOtherEnable();
+            setAllEnable(appid_accept, appList);
+            setAllEnable(appid_warn, appList);
+            setAllEnable(appid_block, appList);
+        }
+    });
+
+    function setDefaultDisable()
+    {
+        $("#rule_name").textbox("disableStyle");
+        $("#comment").textbox("disableStyle");
+        $('#hyperlink_0').hide();
+        $(ruleGrid.grid("getEditor")).find("button.btn-submit").attr("disabled",true);
+    }
+
+    function setOtherEnable()
+    {
+        $("#rule_name").textbox("enableStyle");
+        $("#comment").textbox("enableStyle");
+        $('#hyperlink_0').show();
+        $(ruleGrid.grid("getEditor")).find("button.btn-submit").attr("disabled",false);
+    }
+
+    function setElseDisable(obj, disable_obj1, disable_obj2)
+    {
+        var list = obj.combobox('getValue');
+        disable_obj1.combobox('disableItem', list);
+        disable_obj2.combobox('disableItem', list);
+    }
+
+    function setAllEnable(appid_combobox, combobox_List)
+    {
+        var fullList = [];
+        $.map(combobox_List, function(i, i_index){
+            fullList.push(i.value);
+        });
+        appid_combobox.combobox("enableItem", fullList);
+    }
+
+    function changeItemState(appid_combobox1, appid_combobox2, oldValue, newValue)
+    {
+        appid_combobox1.combobox("enableItem", oldValue);
+        appid_combobox2.combobox("enableItem", oldValue);
+        appid_combobox1.combobox("disableItem", newValue);
+        appid_combobox2.combobox("disableItem", newValue);
+    }
+
+    function createDireItem(direction)
+    {
+        var dItem = "";
+        var picture = '<div class="av_checked"></div>';
+        if("yes" === direction)
+        {
+            dItem += picture;
+        }
+        else if("no" === direction)
+        {
+            dItem += '<div class="av_unchecked"></div>';
+        }
+        else
+        {
+            dItem += '<div class="av_none"></div>';
+        }
+
+        dItem += "<br>"
+        return dItem;
+    }
+
+     var av_profile_help = new $.su.Help({
+        container: "div#av_profile_help",
+        content: ["AV_PROFILE"] });
+
+    $(".func-container").show();
+});
+</script>
+</body>
+</html>

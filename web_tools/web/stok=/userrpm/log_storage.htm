@@ -1,0 +1,477 @@
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
+<html xmlns="http://www.w3.org/1999/xhtml">
+<head>
+    <meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
+    <title>Log Stroage</title>
+    <style type="text/css">
+        .divider{
+            height: 30px;
+            width: 95%;
+            line-height: 30px;
+            color: #555;
+            font-size: 14px;
+            font-weight: bold;
+            margin: 25px 0;
+            border-bottom: 1px solid #ccc;
+        }
+    </style>
+</head>
+
+<body>
+<div class="func-container">
+    <div id="disk_status">
+        <div id="disk_online_staus"></div>
+    </div>
+    <div id="logstorage-alarm">
+        <p><input id="alarm_percent" name="alarm_percent"></p>
+        <p><button type="button" id="alarm_commit" name="alarm_commit"></button></p>
+    </div>
+
+    <div id="logstorage-full">
+        <p><input id="full_strategy" name="full_strategy"></p>
+        <p><button type="button" id="strategy_commit" name="strategy_commit"></button></p>
+    </div>
+
+    <div id="logstorage-list">
+        <div id="logstorage-grid"></div>
+    </div>
+
+    <div id="own_editor">
+        <div id="logtype_id">
+            <input id="type_id" name="type_id">
+        </div>
+        <div id="logtype">
+            <input id="type" name="type">
+        </div>
+        <div id="currentspace">
+            <input id="current_space" name="current_space">
+        </div>
+        <div id="maxspace">
+            <input id="max_space" name="max_space">
+        </div>
+        <!-- <div>
+            <button type="button" id="del_log_store" name="del_log_store"></button>
+        </div> -->
+    </div>
+
+    <div id="cmd_success_cnt">
+        <h4 class="title">
+            <span class="icon" ></span>
+            <span class="text" id="error_str"></span>
+        </h4>
+    </div>
+
+    <div id="cmd_fail_cnt">
+        <h4 class="title">
+            <span class="icon" ></span>
+            <span class="text" id="error_str"></span>
+        </h4>
+    </div>
+
+    <div id="clean_pro_bar_div" style="display: none;">
+        <div id="clean_pro" class="reboot-loading-msg hidden">
+            <input id="clean_pro_bar" type="text" />
+        </div>
+    </div>
+
+    <div id="clean_success_cnt">
+        <h4 class="title">
+            <span class="icon" ></span>
+            <span class="text" id="error_str"></span>
+        </h4>
+    </div>
+
+    <div id="logstorage-help"></div>
+</div>
+
+<script type="text/javascript">
+try{
+    $
+}catch(e){
+    location.href = "/";
+};
+
+$(document).ready(function(e){
+    $(".func-container").hide();
+
+    $("#cmd_success_cnt").msg({
+        cls: 'warning reboot-confirm-size',
+        msg: $.su.CHAR.LOG_STORAGE.SETTING_SUCCESS,
+        type: "alert"
+    });
+
+    $("#cmd_fail_cnt").msg({
+        cls: 'warning reboot-confirm-size',
+        msg: $.su.CHAR.LOG_STORAGE.SETTING_FAIL,
+        type: "alert"
+    });
+
+    $("#clean_success_cnt").msg({
+        cls: 'warning reboot-confirm-size',
+        msg: $.su.CHAR.LOG_STORAGE.CLEAR_SUCCESS,
+        type: "alert"
+    });
+
+    function runwatingbar()
+    {
+        $("#clean_pro_bar_div").msg('show');
+        $("#clean_pro").show();
+        $("#clean_pro_bar").waitingbar("run");
+    }
+
+    function hideWaitingbar()
+    {
+        $("#clean_pro_bar").waitingbar("stop");
+        $("#clean_pro_bar").waitingbar("reset");
+        $("#clean_pro").hide();
+        setTimeout(function() {
+            $("#clean_pro_bar_div").msg('hide');
+        }, 200);
+
+        $("#mask").hide();
+    }
+
+    var disk_status_proxy = new $.su.Proxy({
+    });
+    var disk_status = "";
+    disk_status_proxy.query({"system":{"name":"disk_status"}}, function(data){
+        disk_status = data.system.disk_status.status;
+
+        if (disk_status == "online")
+        {
+            var alarm_proxy = new $.su.Proxy({
+            });
+
+            var strategy_proxy = new $.su.Proxy({
+            });
+
+            $("div#logstorage-alarm").panel({
+                title: $.su.CHAR.LOG_STORAGE.ALARM_LABLE
+            });
+
+            $("input#alarm_percent").textbox({
+                fieldLabel: $.su.CHAR.LOG_STORAGE.ALARM_SIZE,
+                lableCls:"xs",
+                vtype:{
+                    vtype:"number",
+                    max: 100,
+                    min:1
+                },
+                tips:"(%)"
+            });
+            alarm_proxy.query({"log_storage":{"name":"alarm_size"}}, function(data){
+                var alarm_percent = data.log_storage.alarm_size.alarm_size;
+                $("input#alarm_percent").textbox("setValue", alarm_percent);
+            });
+
+            $("#alarm_commit").button({
+                text: $.su.CHAR.LOG_STORAGE.SETTING,
+                handler: function(){
+                    var alarm_percent = $("#alarm_percent").textbox("getValue").toString();
+                    var reg = /^\+?[1-9][0-9]*$/;　　//正整数
+                    if(!reg.test(alarm_percent)) {
+                        return;
+                    }
+                    if(parseInt(alarm_percent) < 1 || parseInt(alarm_percent) > 100) {
+                        return;
+                    }
+                    alarm_proxy.action({"log_storage":{"set_alarm_size":{"alarm_percent":alarm_percent}}},
+                        function(data){
+                            var err = data.error_code;
+                            if (err == 0){
+                                $("#cmd_success_cnt").msg("show");
+                            }
+                            else{
+                                $("#cmd_fail_cnt").msg("show");
+                            }
+                        });
+                },
+                cls: "submit"
+            });
+
+            $("div#logstorage-full").panel({
+                title: $.su.CHAR.LOG_STORAGE.FULL_STRATEGY
+            })
+
+            $("input#full_strategy").radio({
+                fieldLabel: $.su.CHAR.LOG_STORAGE.FULL_STRATEGY_LABEL,
+                columns: 2,
+                items: [{
+                    boxlabel:$.su.CHAR.LOG_STORAGE.FULL_STRATEGY_COVER,
+                    inputValue:"cover",
+                },{
+                    boxlabel:$.su.CHAR.LOG_STORAGE.FULL_STRATEGY_DISCARD,
+                    inputValue:"discard"
+                }],
+
+            });
+            strategy_proxy.query({"log_storage":{"name":"full_strategy"}}, function(data){
+                var strategy = data.log_storage.full_strategy.strategy;
+                $("input#full_strategy").radio("setValue", strategy);
+            });
+
+            $("#strategy_commit").button({
+                text: $.su.CHAR.LOG_STORAGE.SETTING,
+                handler: function(){
+                    var strategy = $("#full_strategy").radio("getValue").toString();
+                    strategy_proxy.action({"log_storage":{"set_full_strategy":{"full_strategy":strategy}}},
+                        function(data){
+                            var err = data.error_code;
+                            if (err == 0){
+                                $("#cmd_success_cnt").msg("show");
+                            }
+                            else{
+                                $("#cmd_fail_cnt").msg("show");
+                            }
+                        });
+                },
+                cls: "submit"
+            });
+
+            $("div#logstorage-list").panel({
+                title: $.su.CHAR.LOG_STORAGE.LOG_STORAGE_LIST
+            });
+
+            $("input#type_id").textbox({
+                fieldLabel: "",
+                readOnly:true
+            });
+            $("#logtype_id").hide();
+            $("input#type").textbox({
+                fieldLabel: $.su.CHAR.LOG_STORAGE.LOG_TYPE,
+                readOnly:true
+            });
+            $("input#current_space").textbox({
+                fieldLabel: $.su.CHAR.LOG_STORAGE.CURRENT_SPACE,
+                tips:"(%)",
+                readOnly:true
+            });
+
+            $("input#max_space").textbox({
+                fieldLabel: $.su.CHAR.LOG_STORAGE.MAX_SPACE,
+                vtype:{
+                    vtype:"number",
+                    max: 100,
+                    min:1
+                },
+                tips:"(%)"
+            });
+
+            var log_proxy = new $.su.Proxy({});
+            var logstorage_grid = $("#logstorage-grid").grid({
+                editor: {
+                    content:"#own_editor",
+                    fields:[
+                        {name:"type_id"},
+                        {name:"type"},
+                        {name:"current_space"},
+                        {name:"max_space"}
+                    ],
+                    validator: function()
+                    {
+                        var editor = $(logstorage_grid.grid("getEditor"));
+                        var log_type = editor.find(".text-text[name=type]").textbox("getValue");
+                        var current_space = editor.find(".text-text[name=current_space]").textbox("getValue");
+                        current_space = parseFloat(current_space);
+                        var max_space = editor.find(".text-text[name=max_space]").textbox("getValue");
+                        max_space = parseFloat(max_space);
+                        var store = logstorage_grid.grid("getStore");
+                        var keyProperty = store.keyProperty;
+                        var grid_array = store.data;
+
+                        var editingId = editor.editor("getEditingId");
+                        //console.log("editingID:",editingId);
+
+                        if($.isArray(grid_array) && grid_array.length > 0)
+                        {
+                            if (max_space < current_space)
+                            {
+                                //console.log("max: ",max_space," current:",current_space);
+                                $($("div#logstorage-grid").grid("getEditor")).form('setError',"修改后空间不能小于当前已用空间");
+                                return false;
+                            }
+
+                            var total_space = 0;
+                            for(var k=0; k < grid_array.length; k++)
+                            {
+                                var data = grid_array[k];
+                                //console.log("data[keyProperty]:",data[keyProperty] )
+                                if(data[keyProperty] == editingId)
+                                    total_space += max_space;
+                                else
+                                    total_space += parseFloat(data["max_space"]);
+                                //console.log(total_space);
+                            }
+                            if (total_space > 100)
+                            {
+                                $($("div#logstorage-grid").grid("getEditor")).form('setError',"已分配空间应小于100%");
+                                return false;
+                            }
+                        }
+                        return true;
+                    },
+                },
+                store:{
+                    proxy: log_proxy,
+                    parseKey:{
+                        moduleName: "log_storage",
+                        tableName: "log_storage_list",
+                        pageSizeName: "log_storage_list_entry"
+                    },
+                    fields:[
+                        {name:"type_id"},
+                        {name:"type"},
+                        {name:"current_space"},
+                        {name:"max_space"}
+                    ],
+                    autoLoad: true
+                },
+                paging:{},
+                columns: [
+                    {
+                        xtype:"checkcolumn"
+                    },
+                    {
+                        xtype:"rownumberer"
+                    },
+                    {
+                        text:"",
+                        dataIndex: "type_id",
+                        hidden: true
+                    },
+                    {
+                        text: $.su.CHAR.LOG_STORAGE.LOG_TYPE,
+                        width: 200,
+                        dataIndex: "type",
+                        scan: {
+                            cmp: $.search.compare.string
+                        }
+                    },
+                    {
+                        text: $.su.CHAR.LOG_STORAGE.CURRENT_SPACE,
+                        width: 120,
+                        dataIndex: "current_space"
+                    },
+                    {
+                        text: $.su.CHAR.LOG_STORAGE.MAX_SPACE,
+                        width: 120,
+                        dataIndex: "max_space"
+                    },
+                    {
+                        width: 80,
+                        text: $.su.CHAR.OPERATION.EDIT,
+                        dataIndex: "none",
+                        renderer: function(dd, index, data){
+                            var inHTML="<div class=\"button-container zone-operation\" style=\"text-align:center\">";
+                            inHTML +=	"<a href=\"javascript:void(0);\" data-index=\""+index+"\" data-key=\""+data.key+"\" title=\""+ $.su.CHAR.OPERATION.EDIT +"\" class=\"grid-content-btn grid-content-btn-edit btn-edit\">";
+                            inHTML +=		"<span class=\"icon\"></span>";
+                            inHTML +=		"<span class=\"text\">"+$.su.CHAR.OPERATION.EDIT+"</span>";
+                            inHTML +=	"</a>";
+                            inHTML +="</div>";
+                            return inHTML;
+                        }
+                    }
+                ],
+                operation: ["clear","refresh"]
+            }).on("ev_clear", function(me, data, others){
+                var msgInHTML = 	"<div class=\"grid-warning-msg warning\">";
+                    msgInHTML +=		"<h4 class=\"title\">";
+                    msgInHTML +=			"<span class=\"icon\"></span>";
+                    msgInHTML +=			"<span class=\"text\">"+$.su.CHAR.LOG_STORAGE.NON_SELECTED+"</span>";
+                    msgInHTML +=		"</h4>";
+                    msgInHTML += 	"</div>";
+
+                var noneSelectMsg = $("<div class=\"grid-none-selected-msg\"></div>").msg({
+                    type: "alert",
+                    cls: "grid-popup-msg",
+                    innerHTML: msgInHTML
+                });
+
+                    msgInHTML = 	"<div class=\"grid-warning-msg warning\">";
+                    msgInHTML +=		"<h4 class=\"title\">";
+                    msgInHTML +=			"<span class=\"icon\"></span>";
+                    msgInHTML +=			"<span class=\"text\">"+$.su.CHAR.LOG_STORAGE.CLEAR_WARNING+"</span>";
+                    msgInHTML +=		"</h4>";
+                    msgInHTML += 	"</div>";
+
+                var deleteConfirmMsg = $("<div class=\"grid-delete-comfirm-msg\"></div>").msg({
+                    type: "prompt",
+                    cls: "grid-popup-msg",
+                    innerHTML: msgInHTML,
+                    okHandler: function(e){
+                        var selectedKeys = logstorage_grid.grid("getSelected");
+                        var store = logstorage_grid.grid("getStore");
+                        var data_len = store.data.length;
+                        var post_data = {};
+                        var items = [];
+                        if (selectedKeys.length > 0){
+                            if (!$.isArray(selectedKeys)){
+                                selectedKeys = [selectedKeys];
+                            }
+                            var item_name_array = store.getItemNames(selectedKeys);
+                            var indexes = store.getIndexs(selectedKeys);
+                            $.each(indexes, function(_, index){
+                                items.push(store.getDataByIndex(index));
+                            })
+                            if (item_name_array.length == 1)
+                            {
+                                item_name_array = item_name_array[0];
+                            }
+                            post_data = {"log_storage":{"clean_log_storage":{"clean":item_name_array}}}
+                            runwatingbar();
+                            log_proxy.action(post_data, function(data){
+                                var err = data.error_code;
+                                if (err == 0)
+                                {
+                                    hideWaitingbar();
+                                    $("#clean_success_cnt").msg("show");
+                                }
+                            },function(){
+                                hideWaitingbar();
+                            },function(){
+                                hideWaitingbar();
+                            });
+                            //console.log(store, selectedKeys);
+                        }
+                    }
+                });
+                var select = logstorage_grid.grid("getSelected");
+                if (select.length > 0){
+                    deleteConfirmMsg.msg("show");
+                }else{
+                    noneSelectMsg.msg("show");
+                }
+            });
+
+            $("#clean_pro_bar_div").msg({
+                cls: 'warning reboot-confirm-size',
+                closeBtn: false,
+                type: "window"
+            });
+
+            var clean_pro_bar  = $('input#clean_pro_bar').waitingbar({
+                fieldLabel: $.su.CHAR.DISK_MNGT.WAITTIP,
+                labelCls:"xxl",
+                waitTime: 1000
+            });
+
+            var help_log_storage = new $.su.Help({
+                container: "div#logstorage-help",
+                content: ["LOG_STORAGE"]
+            });
+        }
+        else{
+            var stat_str = $("#disk_online_staus");
+            stat_str.text($.su.CHAR.DISK_MNGT.ONLINESTAUS + "    " + $.su.CHAR.DISK_MNGT.OFFLINE);
+            $("#logstorage-alarm").hide();
+            $("#logstorage-full").hide();
+            $("#logstorage-list").hide();
+            $("#own_editor").hide();
+        }
+    });
+    $(".func-container").show();
+});
+</script>
+</body>
+
+</html>

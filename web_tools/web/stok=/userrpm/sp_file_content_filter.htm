@@ -1,0 +1,605 @@
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
+<html xmlns="http://www.w3.org/1999/xhtml">
+    <head>
+        <meta content="text/html; charset=utf-8" http-equiv="Content-Type"/>
+        <title>
+            FILE_CONTENT_SECURITY
+        </title>
+        <style type="text/css">
+        </style>
+    </head>
+    <body>
+        <div class="func-container">
+            <div id="rule_list">
+                <div id="filecontentfilter_rule_grid">
+                </div>
+            </div>
+            <div id="own_editor">
+                <input id="name" name="name"/>
+                <input id="app_list" name="app_list"/>
+                <input id="radio_direction" name="direction"/>
+                <input id="radio_method" name="method"/>
+                <textarea id="exname_list" name="exname_list"></textarea>
+                <input id="comment" name="comment"/>
+            </div>
+        </div>
+        <div id="link-detail-window-file">
+            <table class="link-detail-table detail">
+                <tr>
+                    <td class="detail-value">
+                    </td>
+                </tr>
+            </table>
+        </div>
+        <div id="link-detail-window-app">
+            <table class="link-detail-table detail">
+                <tr>
+                    <td class="detail-value">
+                    </td>
+                </tr>
+            </table>
+        </div>
+        <div class="notice">
+            <p id="caution">
+            </p>
+        </div>
+        <div id="filecontentfilter_help">
+        </div>
+        <script type="text/javascript">
+            try{
+        $
+    }catch(e){
+        location.href="../web-static//";
+    };
+
+$(document).ready(function(e){
+    $(".func-container").hide();
+
+    $("div#rule_list").panel({
+        title:$.su.CHAR.FILECONTENTFILTERCONF.RULE_LIST,
+        collapsible: false
+    });
+
+    var MAX_EXNAME_LIST_LENGTH = 254;
+    var MAX_EXNAME_LENGTH = 10;
+    var MAX_EXNAME_PER_LIST = 10;
+
+    var exname_list = $("#exname_list").textarea({
+        fieldLabel: $.su.CHAR.FILECONTENTFILTERCONF.EXNAME_LIST,
+        tips:"多个文件后缀以换行或者分号隔开，不区分大小写",
+        //allowBlank: false,
+        //vtype:"ascii_visible",
+        inputCls:"long",
+        setValueCb: function(data){
+            var dataString = data.join("\n");
+            return dataString;
+        },
+        getValueCb: function(data){
+            var tmp = data.replace(/\s/g,"\n")
+            var dataArray = tmp.split(/;|\n/);
+
+            for (var i = 0; i < dataArray.length; i++)
+            {
+                if (dataArray[i] == "")
+                {
+                    dataArray.splice(i , 1);
+                    i--;
+                }
+            }
+            return dataArray;
+        }
+    });
+
+    $("input#radio_method").radio({
+        fieldLabel:$.su.CHAR.FILECONTENTFILTERCONF.METHOD,
+        columns:3,
+        items:[
+              {boxlabel:$.su.CHAR.FILECONTENTFILTERCONF.ACCEPT,name:"method",inputValue:'accept'},
+              {boxlabel:$.su.CHAR.FILECONTENTFILTERCONF.ALERT,name:"method",inputValue:'alert'},
+              {boxlabel:$.su.CHAR.FILECONTENTFILTERCONF.FORBIDDEN,name:"method",inputValue:'drop',checked:true}
+        ]
+    });
+
+    var radio_direction = $("input#radio_direction").radio({
+        fieldLabel:$.su.CHAR.FILECONTENTFILTERCONF.DIRECTION,
+        columns:3,
+        items:[
+              {boxlabel:$.su.CHAR.FILECONTENTFILTERCONF.UPLOAD,name:"direction",inputValue:'upload'},
+              {boxlabel:$.su.CHAR.FILECONTENTFILTERCONF.DOWNLOAD,name:"direction",inputValue:'download'},
+              {boxlabel:$.su.CHAR.FILECONTENTFILTERCONF.BOTH_DIRECTION,name:"direction",inputValue:'both_direction',checked:true}
+        ]
+    });
+
+    var direction_items_only_up = [{boxlabel:$.su.CHAR.FILECONTENTFILTERCONF.UPLOAD,name:"direction",inputValue:'upload',checked:true}];
+    var direction_items_only_down = [{boxlabel:$.su.CHAR.FILECONTENTFILTERCONF.DOWNLOAD,name:"direction",inputValue:'download',checked:true}];
+    var direction_items_up = [{boxlabel:$.su.CHAR.FILECONTENTFILTERCONF.UPLOAD,name:"direction",inputValue:'upload'},
+        {boxlabel:$.su.CHAR.FILECONTENTFILTERCONF.BOTH_DIRECTION,name:"direction",inputValue:'both_direction',checked:true}];
+    var direction_items_down = [{boxlabel:$.su.CHAR.FILECONTENTFILTERCONF.DOWNLOAD,name:"direction",inputValue:'download'},
+        {boxlabel:$.su.CHAR.FILECONTENTFILTERCONF.BOTH_DIRECTION,name:"direction",inputValue:'both_direction',checked:true}];
+    var direction_items_both = [{boxlabel:$.su.CHAR.FILECONTENTFILTERCONF.BOTH_DIRECTION,name:"direction",inputValue:'both_direction',checked:true}];
+    var direction_items_all = [{boxlabel:$.su.CHAR.FILECONTENTFILTERCONF.UPLOAD,name:"direction",inputValue:'upload'},
+              {boxlabel:$.su.CHAR.FILECONTENTFILTERCONF.DOWNLOAD,name:"direction",inputValue:'download'},
+              {boxlabel:$.su.CHAR.FILECONTENTFILTERCONF.BOTH_DIRECTION,name:"direction",inputValue:'both_direction',checked:true}];
+
+    var app_list = $("#app_list").combobox({
+        fieldLabel : $.su.CHAR.FILECONTENTFILTERCONF.APP_LIST,
+        allowBlank:false,
+        multiSelect: true ,
+        items:[
+                {name:"--",value:"--", selected:true}
+            ]
+    }).on("ev_change", function(e, oldValue, newValue){
+        function hasId(list, id){
+            var mark = false;
+            $.map(list, function(d, index){
+                if(d == id) {
+                    mark = true;
+                }
+            });
+            return mark;
+        }
+
+        var has1 = hasId(newValue, '1'); // SMTP
+        var has3 = hasId(newValue, '3'); // POP
+
+        if(has1 && newValue.length == 1) {
+            radio_direction.radio('loadData',direction_items_only_up);
+        }
+        else if(has3 && newValue.length == 1) {
+            radio_direction.radio('loadData',direction_items_only_down);
+        }
+        else if(has1 && has3) {
+            radio_direction.radio('loadData',direction_items_both);
+        }
+        else if(has1 && newValue.length != 1) {
+            radio_direction.radio('loadData',direction_items_up);
+        }
+        else if(has3 && newValue.length != 1) {
+            radio_direction.radio('loadData',direction_items_down);
+        }
+        else{
+            radio_direction.radio('loadData',direction_items_all);
+        }
+    });
+
+    var appSupporting=[];
+    appSupporting.push({name:"HTTP", value:4});
+    appSupporting.push({name:"FTP", value:8});
+    appSupporting.push({name:"SMTP", value:1});
+    appSupporting.push({name:"POP3", value:3});
+    appSupporting.push({name:"IMAP", value:2});
+    app_list.combobox('loadData',appSupporting);
+
+    $("input#name").textbox({
+        fieldLabel:$.su.CHAR.FILECONTENTFILTERCONF.NAME,
+        tips:"(1-28个字符)",
+        allowBlank:false,
+        maxLength:28,
+        vtype:"name"
+    });
+
+    $("input#comment").textbox({
+        fieldLabel:$.su.CHAR.FILECONTENTFILTERCONF.COMMENT,
+        tips:"(可选,0-50个字符)",
+        allowBlank:true,
+        maxLength:50
+    });
+
+    var linkDetail_file = $("#link-detail-window-file").msg({
+        closeBtn: true,
+        cls:"l",
+        title: "文件后缀列表",
+        type: "window"
+    }).msg("hide");
+
+    var linkDetail_app = $("#link-detail-window-app").msg({
+        closeBtn: true,
+        cls:"l",
+        title: "应用",
+        type: "window"
+    }).msg("hide");
+
+    function showDetail(domain)
+    {
+        var domainString = "";
+        for(var i = 0; i < domain.length; i++)
+        {
+            if(i == domain.length - 1)
+            {
+                domainString += domain[i] + "</br>";
+            }else
+            {
+                domainString += domain[i] + "&nbsp&nbsp&nbsp&nbsp" + domain[i + 1] + "</br>";
+                i++;
+            }
+
+        }
+        linkDetail_file.find(".detail-value").html(domainString).css({
+            "lineHeight":"20px",
+            "textAlign":"center",
+            "wordBreak":"break-all"
+        });
+        linkDetail_file.msg('show');
+    }
+
+    function getAppName(id)
+    {
+        for(var app in appSupporting)
+        {
+            if(appSupporting[app].value == id)
+            {
+                return appSupporting[app].name;
+            }
+        }
+        return 'undefined';
+    }
+
+    function showDetail_appList(domain)
+    {
+        var domainString = "";
+        for(var i = 0; i < domain.length; i++)
+        {
+            if(i == domain.length - 1)
+            {
+                domainString += getAppName(domain[i]) + "</br>";
+            }else
+            {
+                domainString += getAppName(domain[i]) + "&nbsp&nbsp&nbsp&nbsp" + getAppName(domain[i+1]) + "</br>";
+                i++;
+            }
+        }
+        linkDetail_app.find(".detail-value").html(domainString).css({
+            "lineHeight":"20px",
+            "textAlign":"center",
+            "wordBreak":"break-all"
+        });
+        linkDetail_app.msg('show');
+    }
+
+    function textSelect(o, a, b)
+    {
+        var a = parseInt(a, 10), b = parseInt(b, 10);
+        if(o.createTextRange)
+        {//IE浏览器
+            var range = o.createTextRange();
+            range.moveStart("character", a);
+            range.moveEnd("character",b);
+            range.select();
+        }else
+        {
+            o.setSelectionRange(a, b);
+            o.focus();
+        }
+    }
+
+    function getArrayStrLen(a)
+    {
+        var strLen = 0;
+
+        if (!$.isArray(a))
+        {
+            a = [a];
+        }
+
+        for (var i = 0; i < a.length; i++)
+        {
+            strLen += a[i].length + strLen;
+        }
+
+        return strLen;
+    }
+
+    var ruleListProxy = new $.su.Proxy({
+    });
+
+    var ruleGrid = $("#filecontentfilter_rule_grid").grid({
+        maxRulesProperty: "max_rules",
+        editor:{
+            content:"#own_editor",
+            fields:[
+                {name:"name"},
+                {name:"app_list"},
+                {name:"exname_list"},
+                {name:"direction"},
+                {name:"method"},
+                {name:"comment"}
+            ],
+            validator:function(){
+                var name=$("#name").textbox('getValue');
+                var nameList = $("#filecontentfilter_rule_grid").grid('getStore').data;
+                var editingId = $($("#filecontentfilter_rule_grid").grid('getEditor')).editor("getEditingId");
+                var modify_flag = 0;
+                for(var i=0;i<nameList.length;i++){
+                    if(editingId == nameList[i].key)
+                    {
+                        modify_flag = 1;
+                        continue;
+                    }
+
+                    if(name == nameList[i].name)
+                    {
+                        $("#name").textbox("setError", "您输入的名称已经存在，请重新输入")
+                        return false;
+                    }
+                }
+
+                var extList = exname_list.textarea("getValue");
+
+                var errBegin = -1;
+                var errEnd = -1;
+                var reg =  new RegExp(/^\./);
+                var reg2 =  new RegExp(/^[0-9a-zA-Z]*$/);
+                var isValid = true;
+                var tmpExt = [];
+                var errString = "";
+
+                var exNameSet = new Set();
+                var fileProxy = new $.su.Proxy({async: false});
+                fileProxy.query({"sec_content_conf":{"table":"file_content_filter_conf"}}, function(data){
+                    for (var i=0; i<data.sec_content_conf.file_content_filter_conf.length; i++)
+                        for (var j in data.sec_content_conf.file_content_filter_conf[i])
+                        {
+                            if(data.sec_content_conf.file_content_filter_conf[i][j] != $("input#name").textbox("getValue"))
+                            {
+                                var list = data.sec_content_conf.file_content_filter_conf[i][j].exname_list;
+                                $.map(list, function(data, index){
+                                    exNameSet.add(data);
+                                });
+                            }
+                        }
+                });
+
+                $(extList).each(function(i, obj){
+                    if(reg.test(obj))
+                    {
+                        isValid = false;
+                        errBegin = getArrayStrLen(tmpExt);
+                        errEnd = errBegin + obj.length + 1;
+                        errString = "输入的文件后缀格式不正确，例：‘jpg’";
+                        return;
+                    }
+
+                    if(!reg2.test(obj))
+                    {
+                        isValid = false;
+                        errBegin = getArrayStrLen(tmpExt);
+                        errEnd = errBegin + obj.length + 1;
+                        errString = "输入的文件后缀仅允许包含数字、字母";
+                        return;
+                    }
+
+                    if(obj.length > MAX_EXNAME_LENGTH)
+                    {
+                        isValid = false;
+                        errBegin = getArrayStrLen(tmpExt);
+                        errEnd = errBegin + obj.length + 1;
+                        errString = "输入的文件后缀长度超过" + MAX_EXNAME_LENGTH;
+                        return;
+                    }
+                    tmpExt.push(obj);
+                    exNameSet.add(obj);
+                });
+
+                $(extList).each(function(i1, obj1){
+                    $(extList).each(function(i2, obj2){
+                        if(i1 != i2 && obj1 == obj2){
+                            errString = "重复的输入";
+                            isValid = false;
+                        }
+                    });
+                });
+
+                if(extList.length > MAX_EXNAME_PER_LIST)
+                {
+                    errString = "输入的文件后缀超过" + MAX_EXNAME_PER_LIST + "个";
+                    isValid = false;
+                }
+
+                if(exNameSet.size > MAX_EXNAME_LIST_LENGTH)
+                {
+                    errString = "所有配置文件中输入的文件后缀超过" + MAX_EXNAME_LIST_LENGTH + "个";
+                    isValid = false;
+                }
+
+                if(extList.length < 1 || "" == extList[0])
+                {
+                    errString = "请您输入文件后缀";
+                    isValid = false;
+                }
+
+                if(isValid)
+                {
+                    exname_list.textarea("setValue",tmpExt);
+                }
+                else
+                {
+                    textSelect($("textarea").get(0), errBegin, errEnd);
+                    exname_list.textarea("setError", errString);
+                    $("div.textarea-container").find("div.widget-error-tips").css("margin-top", "200px");
+                    return false;
+                }
+                return true;
+            },
+            transParams: function(params){
+                return params;
+            }
+        },
+        store:{
+            proxy:ruleListProxy,
+            fields:[
+                {name:"name"},
+                {name:"app_list"},
+                {name:"exname_list"},
+                {name:"direction"},
+                {name:"method"},
+                {name:"comment"}
+            ],
+            parseKey: {                 /* 此处在store中增加parseKey，便于store对象在底层对数据进行预处理，以实现SLP数据结构和SU数据结构的转变 */
+                moduleName:"sec_content_conf",      /* 此处的moduleName和tableName分别指数据块名和对应请求的table名 */
+                pageSizeName: "file_content_filter_conf_entry",
+                tableName:"file_content_filter_conf"
+            },
+            autoLoad:false,
+            isAppointIndex: true,
+            appointIndex: 0
+        },
+        paging_true:{
+            insertTofirst: true
+        },
+        columns:[
+            {
+                xtype: "checkcolumn"
+            },
+            {
+                xtype: "rownumberer"
+            },
+            {
+                text:$.su.CHAR.FILECONTENTFILTERCONF.NAME,
+                width:100,
+                dataIndex:"name"
+            },
+            {
+                text:$.su.CHAR.FILECONTENTFILTERCONF.APP_LIST,
+                width:120,
+                dataIndex:"app_list",
+                renderer:function(dd, index, data)
+                {
+                    if("---" == dd || typeof dd == "undefined")
+                    {
+                        return "---";
+                    }
+                    var apps = dd;
+
+                    switch(apps.length)
+                    {
+                        case 0:
+                            return "---";
+                            break;
+                        case 1:
+                            return getAppName(apps[0]);
+                            break;
+                        default:
+                            return getAppName(apps[0]) + "&nbsp&nbsp" + "<a href='javascript:void(0);' class='btn-detail-app' data-index='"+ index +"'>更多</a>";
+                            break;
+                    }
+
+                    return data;
+                }
+            },
+            {
+                text:$.su.CHAR.FILECONTENTFILTERCONF.DIRECTION,
+                width:60,
+                dataIndex:"direction",
+                renderer:function(val){
+                    if(val == "upload")
+                    {
+                        return $.su.CHAR.FILECONTENTFILTERCONF.UPLOAD;
+                    }
+                    else if(val == "download")
+                    {
+                        return $.su.CHAR.FILECONTENTFILTERCONF.DOWNLOAD;
+                    }
+                    else
+                    {
+                        return $.su.CHAR.FILECONTENTFILTERCONF.BOTH_DIRECTION;
+                    }
+                }
+            },
+            {
+                text:$.su.CHAR.FILECONTENTFILTERCONF.METHOD,
+                width:60,
+                dataIndex:"method",
+                renderer:function(val){
+                    if(val == "accept")
+                    {
+                        return $.su.CHAR.FILECONTENTFILTERCONF.ACCEPT;
+                    }
+                    else if(val == 'drop')
+                    {
+                        return $.su.CHAR.FILECONTENTFILTERCONF.FORBIDDEN;
+                    }
+                    else
+                    {
+                        return $.su.CHAR.FILECONTENTFILTERCONF.ALERT;
+                    }
+                }
+            },
+            {
+                text:$.su.CHAR.FILECONTENTFILTERCONF.EXNAME_LIST,
+                width:120,
+                dataIndex:"exname_list",
+                renderer:function(dd, index, data)
+                {
+                    if("---" == dd || typeof dd == "undefined")
+                    {
+                        return "---";
+                    }
+                    var exnames = dd;
+
+                    switch(exnames.length)
+                    {
+                        case 0:
+                            return "---";
+                            break;
+                        case 1:
+                            return exnames[0];
+                            break;
+                        default:
+                            return exnames[0] + "&nbsp&nbsp" + "<a href='javascript:void(0);' class='btn-detail-exname' data-index='"+ index +"'>更多</a>";
+                            break;
+                    }
+
+                    return data;
+                }
+            },
+            {
+                xtype:"comment",
+                dataIndex:"comment"
+            },
+            {
+                xtype: "settings"
+            }
+        ],
+        operation:"prompt|add|delete"
+    }).delegate('a.btn-detail-app', 'click', function(e){
+        var index = $(this).data('index');
+        showDetail_appList(ruleGrid.grid("getStore").data[index].app_list);
+    }).delegate('a.btn-detail-exname', 'click', function(e){
+        var index = $(this).data('index');
+        showDetail(ruleGrid.grid("getStore").data[index].exname_list);
+    }).on("ev_formatEditData", function(e, data){
+        if(typeof(data.app_list) == "string") {
+            data.app_list = [data.app_list];
+        }
+        else if(typeof(data.app_list) == "undefined") {
+            data.app_list = [];
+        }
+    });
+
+    var filecontentFilterEditor = $(ruleGrid.grid('getEditor'));
+    filecontentFilterEditor.on('ev_startEdit', function(e, index, key){
+        if(index != 'add')
+        {
+            var store = ruleGrid.grid("getStore");
+            var data = store.getData(key);
+            $("#radio_method").radio('setValue',data.method);
+            $("#radio_direction").radio('setValue',data.direction);
+        }
+    });
+
+    function web_init()
+    {
+        $('div#rule_list').show();
+        ruleGrid.grid("getStore").load();
+    }
+    web_init();
+
+    var helpImb = new $.su.Help({
+        container: "div#filecontentfilter_help",
+        content: ["FILECONTENTFILTER_CONF"]
+    });
+    $(".func-container").show();
+});
+        </script>
+    </body>
+</html>

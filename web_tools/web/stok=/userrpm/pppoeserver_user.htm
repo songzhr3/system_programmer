@@ -1,0 +1,551 @@
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
+<html xmlns="http://www.w3.org/1999/xhtml">
+<head>
+<meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
+<title>PPPOESERVER_USER</title>
+<style type="text/css">
+</style>
+</head>
+
+<body>
+
+<div class="func-container">
+	<div id="user">
+		<div id="user_grid"> </div>
+	</div>
+
+	<div id="own_editor">
+		<input id="username" name="username" value=""/>
+		<input id="password" name="password" value=""/>
+		<input id="ip_pool" name="ip_pool" value=""/>
+		<input id="max_sessions" name="max_sessions" value=""/>
+		<input id="expire_time" name="expire_time" value=""/>
+		<input id="bandwidth_mode" name="bandwidth_mode" value=""/>
+		<input id="uplink_bandwidth" name="uplink_bandwidth" value=""/>
+		<input id="downlink_bandwidth" name="downlink_bandwidth" value=""/>
+		<input id="note" name="note" value=""/>
+		<input id="enable" name="enable" value=""/>
+		<input id="adv_enable" name="adv_enable" value=""/>
+		<input id="mac_bind_type" name="mac_bind_type" value=""/>
+		<input id="bind_mac" name="bind_mac" value=""/>
+		<input id="timing_time" name="timing_time" value=""/>
+	</div>
+
+	<div id="user_help"></div>
+</div>
+
+<script type="text/javascript">
+
+try{
+$
+}catch(e){
+	location.href = "/";
+};
+
+$(document).ready(function(e){
+    $(".func-container").hide();
+	var max_sessions_num = 0;
+	var max_sessions_num_tips = "";
+	var rate_min = 100;
+	var rate_max = 10000000;
+	var rate_tips = "";
+	var rate_confirm = "";
+
+	function checkrate(value) {
+		if (parseInt(value) != 0 && (value > rate_max || value < rate_min)) {
+			return false;
+		}
+		return true;
+	}
+
+	var pppoe_server_sessons_proxy = new $.su.Proxy({async: false});
+	pppoe_server_sessons_proxy.query({"profile":{"name": "pppoe_server"}}, function(data){
+		data=data.profile.pppoe_server;
+		if (data && data.max_sessions) {
+			max_sessions_num = parseInt(data.max_sessions, 10);
+			max_sessions_num_tips = "（1-" + max_sessions_num.toString() + "）";
+		}
+		if (data && data.max_rate) {
+			rate_max = parseInt(data.max_rate, 10);
+		}
+		if (data && data.min_rate) {
+			rate_min = parseInt(data.min_rate, 10);
+		}
+		rate_tips = "Kbps（0或" + rate_min.toString() + "-" + rate_max.toString() + "，0表示不限制）";
+		rate_confirm = "错误的数值，请输入0或" + rate_min.toString() + "-" + rate_max.toString();
+	});
+
+	$('div#user').panel({
+		title: $.su.CHAR.PPPOESERVER_USER.USER,
+		collapsible: false
+	});
+
+	/* NAME:"账号" */
+	$("input#username").textbox({
+		fieldLabel: $.su.CHAR.PPPOESERVER_USER.NAME,
+		vtype: "string_visible_username",
+		maxLength: 100,
+		allowBlank: false,
+		tips: $.su.CHAR.PPPOESERVER_USER.NAME_TIP
+	});
+
+	/* PASSWD:"密码" */
+	$("input#password").textbox({
+		fieldLabel: $.su.CHAR.PPPOESERVER_USER.PASSWD,
+		vtype: "password",
+		maxLength: 100,
+		allowBlank: false,
+		tips: $.su.CHAR.PPPOESERVER_USER.PASSWD_TIP
+	});
+
+	$("input#ip_pool").combobox({
+		fieldLabel : $.su.CHAR.PPPOESERVER_USER.IP_POOL,
+		allowBlank:false,
+		multiSelect: false,
+		items: []
+	});
+
+	/* MAX_SESSIONS:'最大会话数' */
+	$("input#max_sessions").textbox({
+		fieldLabel: $.su.CHAR.PPPOESERVER_USER.MAX_SESSIONS,
+		allowBlank: false,
+		tips: max_sessions_num_tips,
+		vtype: {
+			vtype: "number",
+			max: max_sessions_num,
+			min: 1
+		}
+	}).on('ev_change', function(e, oldValue, newValue){
+		if ("on" == $("input#adv_enable").radio("getValue")) {
+			var mac_bind_type = $("input#mac_bind_type").combobox("getValue");
+			if ("dynamic" == mac_bind_type || "static" == mac_bind_type) {
+				$("input#max_sessions").textbox("setValue", "1");
+			}
+		}
+	});
+
+	/* DEALLINE:'账号到期时间' */
+	$("input#expire_time").textbox({
+		fieldLabel: $.su.CHAR.PPPOESERVER_USER.DEALLINE,
+		vtype:"string_visible_allow_blank",
+		allowBlank: false,
+		tips: $.su.CHAR.PPPOESERVER_USER.DEALLINE_TIP,
+		validator: function(value){
+			var arr = value.split("/");
+			if (arr.length != 3) {
+				return $.su.CHAR.VTYPETEXT.DATE;
+			}
+			var regYear = /^([0-9]{4})$/;
+			if (!regYear.test(arr[0])) {
+				return $.su.CHAR.PPPOESERVER_USER.ERR_EXPIRETIME_YEAR;
+			}
+			var regMonth = /^([1-9]|0[1-9]|1[0-2])$/;
+			if (!regMonth.test(arr[1])) {
+				return $.su.CHAR.PPPOESERVER_USER.ERR_EXPIRETIME_MONTH;
+			}
+			var regDay = /^([0-9]{4})\/([1-9]|0[1-9]|1[0-2])\/([1-9]|0[1-9]|1[0-9]|2[0-9]|3[0-1])$/;
+			if (!regDay.test(value)) {
+				return $.su.CHAR.PPPOESERVER_USER.ERR_EXPIRETIME_DAY;
+			}
+			var intYear = parseInt(arr[0], 10);
+			var intMonth = parseInt(arr[1], 10);
+			var intDay = parseInt(arr[2], 10);
+			if (intYear < 1970 || intYear > 2099) {
+				return $.su.CHAR.PPPOESERVER_USER.ERR_EXPIRETIME_RANGE;
+			}
+			if (intMonth > 12 || intMonth < 1 ) {
+				return $.su.CHAR.PPPOESERVER_USER.ERR_EXPIRETIME_MONTH;
+			}
+			if (intDay < 1 || intDay > 31) {
+				return $.su.CHAR.PPPOESERVER_USER.ERR_EXPIRETIME_DAY;
+			}
+			if ((intMonth == 4 || intMonth == 6|| intMonth==9 || intMonth == 11) && (intDay > 30)) {
+				return $.su.CHAR.PPPOESERVER_USER.ERR_EXPIRETIME_DAY;
+			}
+			if (intMonth == 2) {
+				if (intDay > 29) {
+					return $.su.CHAR.PPPOESERVER_USER.ERR_EXPIRETIME_DAY;
+				}
+				if ((((intYear%100 == 0) && (intYear%400 != 0)) || (intYear%4 != 0)) && (intDay > 28)) {
+					return $.su.CHAR.PPPOESERVER_USER.ERR_EXPIRETIME_DAY;
+				}
+			}
+			if (1 == arr[1].length) {
+				arr[1] = "0" + arr[1];
+			}
+			if (1 == arr[2].length) {
+				arr[2] = "0" + arr[2];
+			}
+			if (parseInt(arr[0], 10) == 2099 && (parseInt(arr[1], 10) != 1 || parseInt(arr[2], 10) != 1)) {
+				return $.su.CHAR.PPPOESERVER_USER.ERR_EXPIRETIME_RANGE;
+			}
+			$("#expire_time").textbox("setValue",arr[0] + "/" + arr[1] + "/" + arr[2]);
+			return true;
+		}
+	});
+
+	/* RATETYPE: "带宽模式" */
+	$("input#bandwidth_mode").radio({
+		fieldLabel: $.su.CHAR.PPPOESERVER_USER.RATETYPE,
+		columns: 2,
+		items:[
+			{boxlabel: $.su.CHAR.PPPOESERVER_USER.RATETYPE_SHARE, name:'bandwidth_mode', inputValue:'share'},
+			{boxlabel: $.su.CHAR.PPPOESERVER_USER.RATETYPE_INDEPENT, name:'bandwidth_mode', inputValue:'monopoly'}
+		]
+	}).on('ev_change', function(e, oldValue, newValue){});
+
+	/* TXRATE:"上行带宽"*/
+	$("input#uplink_bandwidth").textbox({
+		fieldLabel: $.su.CHAR.PPPOESERVER_USER.TXRATE,
+		textFormat: $.su.format.number,
+		vtype: {
+			vtype: "number"
+		},
+		allowBlank:false,
+		validator: function(value) {
+			if (false == checkrate(value)) {
+				return rate_confirm;
+			}
+			return true;
+		},
+		tips: rate_tips
+	});
+
+	/* RXRATE:"下行带宽"*/
+	$("input#downlink_bandwidth").textbox({
+		fieldLabel: $.su.CHAR.PPPOESERVER_USER.RXRATE,
+		textFormat: $.su.format.number,
+		vtype: {
+			vtype: "number"
+		},
+		allowBlank:false,
+		validator: function(value) {
+			if (false == checkrate(value)) {
+				return rate_confirm;
+			}
+			return true;
+		},
+		tips: rate_tips
+	});
+
+	/* NOTE:"备注"*/
+	$("input#note").textbox({
+		fieldLabel: $.su.CHAR.PPPOESERVER_USER.NOTE,
+		maxLength:50,
+		allowBlank:true,
+		tips: $.su.CHAR.PPPOESERVER_USER.NOTE_TIP
+	});
+
+	/* ENABLE:'启用/禁用规则' */
+	$("input#enable").radio({
+		fieldLabel: $.su.CHAR.PPPOESERVER_USER.ENABLE,
+		columns: 2,
+		items:[
+			{boxlabel: $.su.CHAR.PPPOESERVER_USER.ENABLE_ON, name:'enable', inputValue:'on'},
+			{boxlabel: $.su.CHAR.PPPOESERVER_USER.ENABLE_OFF, name:'enable', inputValue:'off'}
+		]
+	}).on('ev_change', function(e, oldValue, newValue){});
+
+	/* ADV_ENABLE: '启用高级账号设置'*/
+	$("input#adv_enable").radio({
+		fieldLabel: $.su.CHAR.PPPOESERVER_USER.ADV_ENABLE,
+		columns: 2,
+		items: [
+			{boxlabel: $.su.CHAR.PPPOESERVER_USER.ADV_ENABLE_ON, name:'adv_enable', inputValue:'on'},
+			{boxlabel: $.su.CHAR.PPPOESERVER_USER.ADV_ENABLE_OFF, name:'adv_enable', inputValue:'off'}
+		]
+	}).on("ev_change", function(e, oldValue, newValue){
+		if (null == $('input#mac_bind_type').combobox("getContainer") ||
+			null == $('input#timing_time').textbox("getContainer") ||
+			null == $("input#bind_mac").textbox("getContainer")) {
+			return;
+		}
+		if ("on" == newValue) {
+			$("input#mac_bind_type").combobox("show").combobox("enable");
+			$("input#timing_time").textbox("show").textbox("enable");
+			var bindMacType = $("input#mac_bind_type").combobox("getValue");
+			if ("static" == bindMacType) {
+				$("input#bind_mac").textbox("show").textbox("enable");
+			} else {
+				$("input#bind_mac").textbox("hide").textbox("disable");
+				if ("" == bindMacType) {
+					$("input#mac_bind_type").combobox("setValue", "0");
+				}
+			}
+
+			if ("dynamic" == bindMacType || "static" == bindMacType) {
+				$("input#max_sessions").textbox("setValue", "1");
+			}
+		} else {
+			$("input#mac_bind_type").combobox("hide").combobox("disable");
+			$("input#bind_mac").textbox("hide").textbox("disable");
+			$("input#timing_time").textbox("hide").textbox("disable");
+		}
+	});
+
+	/* MAC_BIND_TYPE */
+	$("input#mac_bind_type").combobox({
+		fieldLabel: $.su.CHAR.PPPOESERVER_USER.MAC_BIND_TYPE,
+		allowBlank: false,
+		items:[
+			{value:"none", name:$.su.CHAR.PPPOESERVER_USER.MAC_BIND_TYPE_NOBIND},
+			{value:"dynamic", name:$.su.CHAR.PPPOESERVER_USER.MAC_BIND_TYPE_DYNAMICBIND},
+			{value:"static", name:$.su.CHAR.PPPOESERVER_USER.MAC_BIND_TYPE_STATICBIND}
+		]
+	}).on("ev_change", function(e, oldValue, newValue){
+		if (null == $("input#bind_mac").textbox("getContainer")) {
+			return;
+		}
+		if ("static" == newValue[0]) {
+			$("input#bind_mac").textbox("show").textbox("enable");
+		} else {
+			$("input#bind_mac").textbox("hide").textbox("disable");
+		}
+
+		if ("on" == $("input#adv_enable").radio("getValue")) {
+			if ("static" == newValue[0] || "dynamic" == newValue[0]) {
+				$("input#max_sessions").textbox("setValue", "1");
+			}
+		}
+	});
+
+	/* BIND_MAC: "MAC地址" */
+	$("input#bind_mac").textbox({
+		fieldLabel: $.su.CHAR.PPPOESERVER_USER.BIND_MAC,
+		allowBlank: false,
+		vtype: "mac",
+		tips: $.su.CHAR.PPPOESERVER_USER.BIND_MAC_TIP,
+		validator: function(value){
+			var upVal = value.toLocaleUpperCase();
+			$("#bind_mac").textbox("setValue",upVal);
+			return true;
+		}
+	});
+
+	/* TIMEING_TIME:"定时断线设置"  */
+	$("input#timing_time").textbox({
+		fieldLabel: $.su.CHAR.PPPOESERVER_USER.TIMEING_TIME,
+		allowBlank: false,
+		vtype: {
+			vtype: "number",
+			max: 168,
+			min: 0
+		},
+		tips: $.su.CHAR.PPPOESERVER_USER.TIMEING_TIME_TIP
+	});
+
+	/* grip */
+	var o = $("div#user_grid").grid({
+		store:{
+			proxy: new $.su.Proxy(),
+			fields: [
+				{name: "username"},
+				{name: "password"},
+				{name: "ip_pool"},
+				{name: "max_sessions"},
+				{name: "expire_time"},
+				{name: "bandwidth_mode"},
+				{name: "uplink_bandwidth"},
+				{name: "downlink_bandwidth"},
+				{name: "note"},
+				{name: "enable"},
+				{name: "adv_enable"},
+				{name: "mac_bind_type"},
+				{name: "bind_mac"},
+				{name: "timing_time"}
+			],
+			parseKey:{
+				moduleName: "pppoe_server",
+				pageSizeName: "pppoeserver_user_entry",
+				tableName: "user"
+			},
+			autoLoad: true
+		},
+		editor: {
+			content: "#own_editor",
+			fields: [
+				{name: "username"},
+				{name: "password"},
+				{name: "ip_pool"},
+				{name: "max_sessions"},
+				{name: "expire_time"},
+				{name: "bandwidth_mode"},
+				{name: "uplink_bandwidth"},
+				{name: "downlink_bandwidth"},
+				{name: "note"},
+				{name: "enable"},
+				{name: "adv_enable"},
+				{name: "mac_bind_type"},
+				{name: "bind_mac"},
+				{name: "timing_time"}
+			]
+		},
+		paging_true:{},
+		columns: [
+			{
+				xtype: "checkcolumn",
+				width: $.su.CHAR.SETTING.PPPOESERVER_USER.CHECK_COLUMN_WIDTH
+			},
+			{
+				xtype: "rownumberer",
+				width: $.su.CHAR.SETTING.PPPOESERVER_USER.ROW_NUMBER_WIDTH
+			},
+			{
+				text: $.su.CHAR.PPPOESERVER_USER.COL_NAME,
+				width: $.su.CHAR.SETTING.PPPOESERVER_USER.NAME_WIDTH,
+				dataIndex: "username",
+				scan: {
+					cmp: $.search.compare.string
+				}
+			},
+			{
+				text: $.su.CHAR.PPPOESERVER_USER.IP_POOL,
+				width: $.su.CHAR.SETTING.PPPOESERVER_USER.IP_WIDTH,
+				dataIndex:"ip_pool"
+			},
+			{
+				text: $.su.CHAR.PPPOESERVER_USER.COL_MAX_SESSIONS,
+				width: $.su.CHAR.SETTING.PPPOESERVER_USER.MAX_SESSIONS_WIDTH,
+				dataIndex:"max_sessions"
+			},
+			{
+				text: $.su.CHAR.PPPOESERVER_USER.COL_DEALLINE,
+				width: $.su.CHAR.SETTING.PPPOESERVER_USER.DEALLINE_WIDTH,
+				dataIndex:"expire_time"
+			},
+			{
+				text: $.su.CHAR.PPPOESERVER_USER.COL_BIND_MAC,
+				width: $.su.CHAR.SETTING.PPPOESERVER_USER.BIND_MAC_WIDTH,
+				dataIndex:"bind_mac",
+				renderer: function(dd, index, data){
+					if (data["adv_enable"] == "on" && typeof(dd) != "undefined" && data["mac_bind_type"] != "none") return dd;
+					else return "---";
+				}
+			},
+			{
+				text: $.su.CHAR.PPPOESERVER_USER.COL_TIMING_TIME,
+				width: $.su.CHAR.SETTING.PPPOESERVER_USER.TIMING_TIME_WIDTH,
+				dataIndex:"timing_time",
+				renderer: function(dd, index, data){
+					if (data["adv_enable"] == "on" && typeof(dd) != "undefined") return dd;
+					else return "---";
+				}
+			},
+			{
+				text: $.su.CHAR.PPPOESERVER_USER.COL_NOTE,
+				width: $.su.CHAR.SETTING.PPPOESERVER_USER.COL_NOTE_WIDTH,
+				dataIndex:"note",
+				xtype:"comment",
+				scan: {
+					cmp: $.search.compare.string
+				}
+			},
+			{
+				text: $.su.CHAR.PPPOESERVER_USER.COL_ENABLE,
+				width: $.su.CHAR.SETTING.PPPOESERVER_USER.ENABLE_WIDTH,
+				dataIndex:"enable",
+				trueValue: "on",
+				falseValue: "off",
+				xtype: 'statuscolumn'
+			},
+			{
+				text: $.su.CHAR.PPPOESERVER_USER.COL_SET,
+				width: $.su.CHAR.PPPOESERVER_USER.SETTING_WIDTH,
+				xtype: "settings"
+			},
+			{
+				xtype: "globalSearch",
+				hidden: true,
+				columns: [
+					{
+						text: $.su.CHAR.PPPOESERVER_USER.COL_NAME,
+						width: $.su.CHAR.SETTING.PPPOESERVER_USER.NAME_WIDTH,
+						dataIndex: 'username',
+						scan: {
+							type: "textbox",
+							vtype: "string"
+						}
+					},
+					{
+						text: $.su.CHAR.PPPOESERVER_USER.COL_NOTE,
+						width: $.su.CHAR.SETTING.PPPOESERVER_USER.COL_NOTE_WIDTH,
+						dataIndex: 'note',
+						scan: {
+							type: "textbox",
+							vtype: "string"
+						}
+					}
+				],
+				render_search: function(){
+				},
+				render_show: function(){
+				},
+				render_return: function(){
+				}
+			}
+		],
+		operation: "prompt|add|delete|search|searchAll"
+	}).on("ev_load", function(e, data, others){
+		if(others){
+			maxrules = others.max_rules;
+		}
+		var ipPoolProxy = new $.su.Proxy({
+			async: false
+		});
+		ipPoolProxy.query({"ippool":{"table":"ippool"}}, function(data){
+			var ipPoolItems=[];
+			var data = data.ippool.ippool;
+			for (var i=0; i<data.length; i++)
+				for (var key in data[i])
+					ipPoolItems.push({name:data[i][key].name, value:data[i][key].name});
+
+			var editor = o.grid('getEditor');
+			var ippoolCombobox = $(editor).find('.combobox-value[name=ip_pool]');
+				ippoolCombobox.combobox('loadData',ipPoolItems);
+		});
+	});
+
+	var editor = $("div#user_grid").grid("getEditor");
+	$(editor).on("ev_startEdit", function(e, index, key){
+		if ("add" != index) {
+			var store = o.grid("getStore");
+			var store_data = store.getData(key);
+			if ("on" == store_data.adv_enable) {
+				$("input#mac_bind_type").combobox("show").combobox("enable");
+				$("input#timing_time").textbox("show").textbox("enable");
+				if ("static" == store_data.mac_bind_type) {
+					$("input#bind_mac").textbox("show").textbox("enable");
+				} else {
+					$("input#bind_mac").textbox("hide").textbox("disable");
+				}
+			} else {
+				$("input#mac_bind_type").combobox("hide").combobox("disable");
+				$("input#bind_mac").textbox("hide").textbox("disable");
+				$("input#timing_time").textbox("hide").textbox("disable");
+			}
+		 }else {
+			$("input#enable").radio("setValue", "on");
+			$("input#adv_enable").radio("setValue", "off");
+			$("input#mac_bind_type").combobox("setValue", "none");
+			$("input#mac_bind_type").combobox("hide").combobox("disable");
+			$("input#bind_mac").textbox("hide").textbox("disable");
+			$("input#timing_time").textbox("hide").textbox("disable");
+			$("input#expire_time").textbox("setValue", "2099/01/01");
+			$("input#bandwidth_mode").radio("setValue", "monopoly");
+			$("input#uplink_bandwidth").textbox("setValue", "0");
+			$("input#downlink_bandwidth").textbox("setValue", "0");
+		}
+	});
+
+	var pppoeserver_user_help = new $.su.Help({
+		container: "div#user_help",
+		content: ["PPPOE_SERVER_USER_HELP"]
+    });
+    $(".func-container").show();
+});
+
+</script>
+
+</body>
+
+</html>

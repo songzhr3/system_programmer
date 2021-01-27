@@ -1,0 +1,482 @@
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
+<html xmlns="http://www.w3.org/1999/xhtml">
+<head>
+	<meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
+	<title>Url Set</title>
+	<style type="text/css">
+		.divider{
+	        height: 30px;
+	        width: 95%;
+	        line-height: 30px;
+	        color: #555;
+	        font-size: 14px;
+	        font-weight: bold;
+	        margin: 25px 0;
+	        border-bottom: 1px solid #ccc;
+	    }
+	</style>
+</head>
+
+<body>
+	<div class="func-container">
+		<div id="own_editor">
+
+			<input id="textname" name="textname" >
+			<textarea id="members" name="members" ></textarea>
+			<button id="clear" name="clear" ></button>
+			<div style="margin-bottom:50px;"></div>
+			<form id="image-uploader">
+				<input id="imagefile" name="imagefile" type="file"/>
+				<button id="upload" name="upload" ></button>
+			</form>
+			<div style="margin-bottom:50px;"></div>
+			<input id="comment" name="comment"/>
+
+		</div>
+		<div id="urlset_list">
+			<div id="urlset_grid">
+	        </div>
+		 </div>
+		 <div id="link-detail-window">
+	        <table class="link-detail-table detail">
+	            <tr>
+	                <td class="detail-value"></td>
+	            </tr>
+	        </table>
+	    </div>
+		<div id="help"></div>
+        <div class="notice" style="top:-20px;position:relative;">
+            <hr/>
+            <h6>本页面仅显示自定义网址组。</h6>
+        </div>
+	</div>
+<script type="text/javascript">
+try{
+    $
+}catch(e){
+    location.href = "/";
+};
+
+$(document).ready(function(e){
+	$(".func-container").hide();
+	var urlset_proxy = new $.su.Proxy({
+	});
+
+	var upload_proxy = new $.su.Proxy({
+	});
+
+	var MAX_WEB_PER_RULE = 100;
+
+	$("div#urlset_list").panel({
+		title: "网站分组列表",
+		collapsible: false
+	});
+
+	$("div#urlset_setting").text("网站分组设置");
+
+	$("div#setting_upload").text("网站分组配置导入");
+
+	$("#name").textbox({
+		readOnly:true
+	});
+
+	var textname = $("#textname").textbox({
+		fieldLabel: "组名称",
+		cls: "l",
+		allowBlank: false,
+		//vtype: "name",
+		maxLength:28,
+		tips:"（1-28个字符）"
+	});
+	var members = $("#members").textarea({
+		fieldLabel: "自定义组成员",
+		inputCls:'dig xl',
+		allowBlank: true,
+		setValueCb: function(data){
+			if (typeof(data) != "undefined") {
+				if ($.isArray(data))
+				{
+					var dataString = data.join("\n");
+					return dataString;
+				}
+				else
+				{
+					return data;
+				}
+			}
+			return "";
+		},
+		getValueCb: function(data){
+			if (typeof(data) != "undefined") {
+				var tmp = data.replace(/\s/g,"\n")
+				var dataArray = tmp.split(/;|\n/);
+
+				for (var i = 0; i < dataArray.length; i++)
+				{
+					if (dataArray[i] == "")
+					{
+						dataArray.splice(i , 1);
+						i--;
+					}
+				}
+
+				return dataArray;
+			}
+			return "";
+		}
+	});
+	var clear = $("#clear").button({
+		text: "清空",
+		cls: "m inline",
+		tips:"请使用换行或者分号来分隔网址",
+		tipsCls:"tab",
+		handler:function(e){
+			members.textarea("reset");
+		}
+	});
+
+	$("#comment").textbox({
+		tips:"(可选，1-50个字符)",
+		maxLength:50,
+		fieldLabel:"备注"
+	});
+
+
+	var imageForm = $('#image-uploader').form({
+		autoLoad:false,
+        proxy: upload_proxy,
+        formEnctype: "multipart/form-data",
+        traditional: true,
+        hiddenFrame: true,
+		fileUrlCb: function(){
+			return $.su.url.subs + $.su.url.stok + "/admin/websort/websort_upload_conf";
+		},
+        fields: [
+            {name: "imageFile"}
+        ],
+        promptTextSuccessed:"上传成功",
+        showPromptFail:"上传失败"
+    });
+
+
+
+	var imagefile = $("#imagefile").file({
+		fieldLabel: "文件路径",
+		allowBlank: false,
+		tips:"（可选，文件格式为txt）",
+		extension:"txt"
+	});
+	var upload = $("#upload").button({
+		text: "导入",
+		cls: "l",
+		tips:"您还可以通过导入文件来配置组成员",
+		tipsCls:"tab",
+		handler:function(e){
+			if($("input#imagefile").val() == ""){
+				imagefile.file("setError", "请选择上传的文件！");
+				return false;
+			}
+			if(!$("input#imagefile").file("validate")){
+				return false;
+			}
+			$.su.loading.show();
+			imageForm.form('submit', {operation: 'upload'}, function(data){
+				imageForm.form("prompt", true);
+                $.su.loading.hide();
+                if(data.result != null && typeof data.result != "undefined"){
+                	var webStr = "";
+                	$(data.result).each(function(i, obj){
+						//console.log(obj)
+                		webStr += obj + "\n";
+                	});
+                	//console.log(webStr)
+                	members.textarea("setValue", webStr);
+                }
+            },function(error_code){
+                $.su.loading.hide();
+                imageForm.form("prompt", false);
+
+            },function(fail){
+				//console.log("error");
+                $.su.loading.hide();
+                imageForm.form("prompt", false);
+            });
+		}
+	});
+	//$("#note").html("您还可以通过导入文件来配置组成员");
+
+	var $linkDetail = $("#link-detail-window").msg({
+        closeBtn: true,
+        cls:"l",
+        title: "自定义组成员列表",
+        type: "window"
+    }).msg("hide");
+
+    function showDetail(domain){
+		var domainString = "";
+
+		if (typeof(domain) != "undefined")
+		{
+		for(var i = 0; i < domain.length; i++){
+			if(i == domain.length - 1){
+				domainString += domain[i] + "</br>";
+			}else{
+				domainString += domain[i] + "&nbsp&nbsp&nbsp&nbsp" + domain[i+1] + "</br>";
+				i++;
+			}
+		}
+		}
+		$linkDetail.find(".detail-value").html(domainString).css({
+			"lineHeight":"20px",
+			"textAlign":"center",
+			"wordBreak":"break-all"
+		});
+        $linkDetail.msg('show');
+    }
+
+    function textSelect(o, a, b){
+        var a = parseInt(a, 10), b = parseInt(b, 10);
+        if(o.createTextRange){//IE浏览器
+            var range = o.createTextRange();
+            range.moveStart("character", a);
+            range.moveEnd("character",b);
+            range.select();
+        }else{
+            o.setSelectionRange(a, b);
+            o.focus();
+        }
+
+    }
+
+	function getArrayStrLen(a)
+	{
+		var strLen = 0;
+
+		if (!$.isArray(a))
+		{
+			a = [a];
+		}
+
+		for (var i = 0; i < a.length; i++)
+		{
+			strLen += a[i].length + strLen;
+		}
+
+		return strLen;
+	}
+
+
+
+	var urlset_grid = $("#urlset_grid").grid({
+		editor:{
+			content:"#own_editor",
+			fields:[
+				{name:"textname"},
+				{name:"members"},
+				{name:"refer"},
+				{name:"config"},
+				{name:"comment"}
+			],
+			validator:function(){
+				var store = urlset_grid.grid("getStore");
+				var data = store.data;
+				var currentName = textname.textbox("getValue");
+				var isValid = true;
+				var errBegin = -1;
+                var errEnd = -1;
+				if($("#textname").attr("readOnly") != "readonly" && $("#textname").attr("readOnly") != true){
+					$(data).each(function(i, obj){
+						if(obj.textname == currentName){
+							textname.textbox("setError", "已存在该网站分组，请更换另一个名称！");
+							isValid = false;
+							return false;//相当于break
+						}
+					});
+				}
+
+
+				if(!isValid){
+					return false; //名称重名则不能提交
+				}
+
+				var webList = members.textarea("getValue");
+				if(("" == webList[0]) || (webList.length == 0)) return true;
+
+				var tmp = webList.join("\n")
+				if(tmp.length > 20 * MAX_WEB_PER_RULE){
+					members.textarea("setError", "网站分组成员总长度超过限制");
+					$("div.textarea-container").find("div.widget-error-tips").css("margin-top", "110px");
+					isValid = false;
+					return isValid;
+				}
+
+				if(webList.length > MAX_WEB_PER_RULE){
+					members.textarea("setError", "输入的网址超过上限，最多支持"+MAX_WEB_PER_RULE+"条网址");
+					$("div.textarea-container").find("div.widget-error-tips").css("margin-top", "110px");
+					isValid = false;
+					return isValid;
+				}
+
+				var tmpList = [];
+				var reg = new RegExp(/^((\d|[1-9]\d|1\d\d|2[0-4]\d|25[0-5])(\.(\d|[1-9]\d|1\d\d|2[0-4]\d|25[0-5])){3}$)|^([a-zA-Z0-9]([a-zA-Z0-9\-\/]{0,61}[a-zA-Z0-9])?\.){1,4}([a-zA-Z0-9]([a-zA-Z0-9\-\/]{0,61}[a-zA-Z0-9])?)$|^\*(([a-zA-Z0-9\-\/]{0,61}[a-zA-Z0-9])?\.){0,4}([a-zA-Z0-9]([a-zA-Z0-9\-\/]{0,61}[a-zA-Z0-9])?)$/);
+				var errString = "";
+				$(webList).each(function(i, obj){
+					if(obj == ""){
+						webList.splice(i,1);
+						return;
+					}
+					if(obj.toString().length > 256){
+						isValid = false;
+						errBegin = getArrayStrLen(tmpList);
+                        errEnd = errBegin + obj.length + 1;
+						errString = "输入的网址长度超过限制";
+						return;
+					}
+					if(!reg.test(obj)){
+						isValid = false;
+                        errBegin = getArrayStrLen(tmpList);
+                        errEnd = errBegin + obj.length + 1;
+                        errString = "输入的网址格式不正确";
+						return;
+					}
+					tmpList.push(obj);
+				});
+
+				//tmpList = tmpList.match(/(.*[\n]){0,}.*[^\n]/);
+				if(!isValid){
+					textSelect($("textarea").get(0), errBegin, errEnd);
+					members.textarea("setError", errString);
+					$("div.textarea-container").find("div.widget-error-tips").css("margin-top", "110px");
+					return isValid;
+				}
+
+				members.textarea("setValue", tmpList);
+
+				return isValid;
+			},
+			transParams: function(params){
+				for (var name in params)
+				{
+					if (name == "members")
+					{
+						params[name] = $("textarea#members").textarea("getValue");
+					}
+				}
+				return params;
+			}
+		},
+		store:{
+			proxy:urlset_proxy,
+			fields:[
+				{name:"textname"},
+				{name:"members"},
+				{name:"refer"},
+				{name:"config"},
+				{name:"comment"},
+				{name:"flag"}
+			],
+			parseKey: {					/* 此处在store中增加parseKey，便于store对象在底层对数据进行预处理，以实现SLP数据结构和SU数据结构的转变 */
+				moduleName:"websort",		/* 此处的moduleName和tableName分别指数据块名和对应请求的table名 */
+				tableName:"websort_list",
+				pageSizeName:"websort_entry"
+			},
+			autoLoad:true
+		},
+		paging_true:[],
+		columns:[
+			 {
+                xtype: "checkcolumn"
+            },
+            {
+                xtype: "rownumberer"
+            },
+			{
+				text: "组名称",
+				xtype: "comment",
+				dataIndex:"textname",
+				width:100
+			},
+			{
+				text:"自定义组成员",
+				dataIndex:"members",
+				width:100,
+				renderer:function(dd, index, data){
+					//console.log(dd,index,data);
+					if("" == dd || typeof dd == "undefined"){
+						return "---";
+					}
+					//var URL = dd.split("\n");
+					var URL = dd;
+
+					switch(URL.length){
+						case 0:
+							return "---";
+							break;
+						case 1:
+							return URL[0];
+							break;
+						case 2:
+							return URL[0] + "</br>" + URL[1];
+							break;
+						default:
+							return URL[0] + "&nbsp&nbsp" + "<a href='javascript:void(0);' class='btn-detail' data-index='"+ index +"'>更多</a>";
+							break;
+					}
+
+					return data;
+				}
+			},
+			{
+				dataIndex:"refer",
+				hidden:true
+			},
+			{
+				xtype:"comment"
+			},
+			{
+				xtype: "settings",
+                width: $.su.CHAR.SETTING.IMB.SETTING_WIDTH
+			}
+		],
+		operation: 'prompt|add|delete'
+	}).delegate('a.btn-detail', 'click', function(e){
+		var index = $(this).data('index');
+		showDetail(urlset_grid.grid("getStore").data[index].members);
+	}).on("ev_load", function(e, data, others){
+		if(others){
+			MAX_WEB_PER_RULE = others.max_num_per_rule;
+		}
+		//禁止删除预置的网站组
+		if (data)
+		{
+			for (i = 0; i < data.length; i++)
+			{
+				if (data[i].flag === "system")
+				{
+					$("div#urlset_grid").grid('disableCheckbox',i);
+				}
+			}
+		}
+	});
+
+	var editor = $(urlset_grid.grid("getEditor"));
+
+	editor.on("ev_startEdit", function(e, editingIndex){
+		imagefile.file("reset");
+		if(editingIndex != "add"){
+			textname.textbox("disableStyle");
+		}else{
+			textname.textbox("enableStyle");
+		}
+	});
+
+	var help = new $.su.Help({
+        container: "div#help",
+        content: ["WEB_GROUP"]
+	});
+	$(".func-container").show();
+});
+</script>
+</body>
+
+</html>

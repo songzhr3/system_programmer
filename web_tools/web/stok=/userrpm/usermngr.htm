@@ -1,0 +1,993 @@
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
+<html xmlns="http://www.w3.org/1999/xhtml">
+	<head>
+		<meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
+		<title>用户设置</title>
+		<style type="text/css">
+		</style>
+	</head>
+	<body>
+	
+		
+		
+		<div class="func-container">
+			<div id="usermngr_user">
+				<div id="usermngr_user_grid" class="natSeries">
+				</div>
+			</div>
+			
+			<div id="usermngr_entry">
+			<div id="usermngr_config">
+				<form id="usermngr_change">
+					<input id="usermngr_action" name="action"/>
+				</form>
+			</div>
+
+			</div>
+		
+			<div id="own_editor">
+				<input id="user_type" name="user_type" value="1" />
+				<input id="username" name="username" />
+				<input id="password" name="password" />
+				<input id="expire_time" name="expire_time" value = "2016/12/31" class="expiretime" />
+				<input id="allow_auth_time" name="allow_auth_time" value = "00:00-24:00" />
+				<input id="free_time" name="free_time" value = "30" class="freetime" />
+				
+				<div id="div_macBind">
+					<input id="mac_bind_type" name="mac_bind_type" value="1" />
+					<div id="div_macBindAddr" hidden>
+						<input id="mac" name="mac" value="" />
+					</div>
+				</div>
+				
+				<input id="allow_user" name="allow_user" value = "1" />
+				<input id="up_limit" name="up_limit" value="0" />
+				<input id="down_limit" name="down_limit" value="0" />
+				<div id="div_note">
+					<input id="name" name="name" value="" />
+					<input id="telephone" name="telephone" value="" />
+				</div>
+				
+				<input id="note" name="note" value="" />
+				<input id="enable" name="enable" />
+			</div>
+			
+			<span id="usermngr_notice" class="hidden"></span>
+			
+			<div id="usermngr_help"></div>
+		</div>
+
+<script type="text/javascript">
+
+//<![CDATA[
+
+try{
+$
+}catch(e){
+	location.href = "/";
+};
+
+function emptyVerify(str)
+{
+	var codeStr = /^\s*$/;
+
+	if(codeStr.test(str))
+	{
+		return true;
+	}
+	else
+	{
+		return false;
+	}
+}
+
+function checkMaxUser(value)
+{
+	var userType = $("input#user_type").combobox("getValue");
+	var macBindType =  $("input#mac_bind_type").combobox("getValue");
+
+	if(('formal' == userType &&('none' != macBindType && value != 1)))
+	{
+		$("input#allow_user").textbox("setValue",1);
+	}
+	return true;
+}
+
+function removeBlank(value)
+{
+	return value.replace(/(^\s*)|(\s*$)/g,'');
+}
+
+function checkExpTime(value)
+{  
+	var userType = $("input#user_type").combobox("getValue");
+	if ('formal' == userType)
+	{
+		value = removeBlank(value);
+		var pattern = /^([0-9]{4})\/([0-9]{1,2})\/([0-9]{1,2})$/;
+		if (!pattern.exec(value))
+		{
+			return $.su.CHAR.VTYPETEXT.DATE;
+		}
+		var arr = value.split("/"); 
+		if(arr.length != 3)
+		{
+			return $.su.CHAR.VTYPETEXT.DATE;
+		}
+
+		if(1 == arr[1].length){
+			arr[1] = "0" + arr[1];
+		}
+		if(1 == arr[2].length){
+			arr[2] = "0" + arr[2];
+		}
+		var formatDate = arr[0] + "/" + arr[1] + "/" + arr[2];
+		if(parseInt(new Date(formatDate).getDate()) != parseInt(arr[2],10))
+		{
+			return $.su.CHAR.VTYPETEXT.DATE;
+		}
+		if(parseInt(arr[0],10) < 1970)
+		{
+			return $.su.CHAR.VTYPETEXT.DATE_INVALID;
+		}
+		if(parseInt(arr[0],10) > 2030)
+		{
+			return $.su.CHAR.VTYPETEXT.DATE_INVALID;
+		}
+		$("#expire_time").textbox("setValue",arr[0] + "/" + arr[1] + "/" + arr[2]);
+		return true;
+	}
+	else if ('free' == userType)
+	{
+		 if (isNaN(value))
+		 { 
+			return false;
+		 }
+
+		 if (parseInt(value) > 43200 || parseInt(value) < 1)
+		 {
+			return false;
+		 }
+	}
+
+	return true;
+
+}
+
+function checkTmScale(period)
+{
+	period = removeBlank(period);
+	var pattern = /^([0-9]{2}):([0-9]{2})-([0-9]{2}):([0-9]{2})$/;
+	if (!pattern.exec(period))
+	{
+		return false;
+	}
+	var tmScaleArr = new Array();
+	var tmTmp = period.split('-');
+	if (tmTmp.length != 2)
+	{
+		return false;
+	}
+	var tmStart = tmTmp[0].split(':');
+	var tmEnd 	= tmTmp[1].split(':');
+	sHour = parseInt(tmStart[0]);
+	sMin = parseInt(tmStart[1]);
+	eHour = parseInt(tmEnd[0]);
+	eMin = parseInt(tmEnd[1]);
+
+	if (sHour < 0 || sHour >24 || sMin < 0 || sMin > 59 || eHour < 0 || eHour >24 || eMin < 0 || eMin > 59)
+	{
+		return $.su.CHAR.WPORTAL.USERMNGR_AUTH_TIME_SCALE_ERROR;
+	}
+	if ((sHour == 24) && (sMin != 0))
+	{
+		return $.su.CHAR.WPORTAL.USERMNGR_AUTH_TIME_SCALE_ERROR;
+	}
+	if ((eHour == 24) && (eMin != 0))
+	{
+		return $.su.CHAR.WPORTAL.USERMNGR_AUTH_TIME_SCALE_ERROR;
+	}
+	if(sHour == eHour && sMin == eMin)
+	{
+		return $.su.CHAR.WPORTAL.USERMNGR_AUTH_TIME_SAME_ERROR;
+	}
+	if(sHour == 24 && eHour == 0 && eMin == 0)
+	{
+		return $.su.CHAR.WPORTAL.USERMNGR_AUTH_TIME_COVER_ERROR;
+	}
+	return true;
+}
+
+function tagValidator(value)
+{
+	var pattern = /.*<\/script>/;
+	var pattern2 = /.*<script>/;
+	var pattern3 = /.*<style>/;
+	var pattern4 = /.*<\/style>/;
+	if (pattern.exec(value) || pattern2.exec(value) || pattern3.exec(value) || pattern4.exec(value))
+	{
+		return false;
+	}
+	else
+	{
+		return true;
+	}
+}
+
+function textValidator(value)
+{
+	var pa = /^(\S|\x20|　)+$/;
+	
+	if (pa.exec(value))
+	{
+		return tagValidator(value);
+	}
+	else
+	{
+		return false;
+	}
+}
+
+
+function nameValidator(value)
+{
+	var pattern_illegal_code = /[\+\#\&\=\|\>\<\^\,\"\'\\]/;
+
+	if (pattern_illegal_code.test(value))
+	{
+		return $.su.CHAR.WPORTAL.USERMNGR_NAME_ERR;
+	}
+	else
+	{
+		return true;
+	}
+}
+
+function checkBand(value)
+{
+	var bandMin = 10;
+	var bandMax = 1000000;
+	if(parseInt(value) != 0 && (value > bandMax || value < bandMin))
+	{
+		return false;
+	}
+	return true;
+}
+
+$(document).ready(function(e){
+	$(".func-container").hide();
+	var $freetime = $('.freetime');
+	var $expiretime = $('.expiretime');
+	var sys_year = 0;
+	var allow_user_origin = 0;
+
+	var usermngrProxy = new $.su.Proxy();
+	var LOAD_URL = "";
+	var BACKUP_URL = "";
+	
+	$("span#usermngr_notice").html($.su.CHAR.USERMNGR.NOTICE);
+	
+	$("div.func-container").page({
+		title: $.su.CHAR.WPORTAL.USERMNGR,
+		help: ""	//可能是个调用的id 也可能是个url
+	});
+	
+	$('div#usermngr_user').panel({
+		title: $.su.CHAR.WPORTAL.USERMNGR_LIST,
+		collapsible: false
+	});
+	
+	$("input#user_type").combobox({
+		fieldLabel: $.su.CHAR.WPORTAL.USERMNGR_TYPE,
+		inputCls: "l",
+		items: [
+			{"value": "formal", "name": $.su.CHAR.WPORTAL.USERMNGR_TYPE_FORMALUSER, selected:"selected"},
+			{"value": "free", "name": $.su.CHAR.WPORTAL.USERMNGR_TYPE_FREEUSER}
+		]
+	}).on('ev_change', function(e, oldValue, newValue){
+		var value = newValue[0];
+		var $editor = $(o.grid("getEditor"));
+		var macBindType = $("input#mac_bind_type").textbox('getValue');
+		
+		if ('formal' == value)
+		{
+			$('div#div_macBind').form("show");
+			$('div#div_note').form("show");
+
+			$.su.func.hideWidgets($freetime);
+			$.su.func.showWidgets($expiretime);
+			
+			var expTime = sys_year + "/12/31";
+			$("input#expire_time").textbox("setValue", expTime);
+			
+			if('dynamic' == macBindType || 'static' == macBindType)
+			{
+				$("input#mac").textbox('enableStyle');
+				$("input#allow_user").textbox('disableStyle');
+				$("input#allow_user").textbox("setValue", 1);
+			}
+			else
+			{
+				$("input#allow_user").textbox("setValue", allow_user_origin);
+				$("input#allow_user").textbox('enableStyle');
+			}
+		}
+		else
+		{
+			$('div#div_macBind').hide();
+			$('div#div_note').hide();
+
+			$("input#mac").textbox('disableStyle');
+			$.su.func.hideWidgets($expiretime);
+			$.su.func.showWidgets($freetime);
+			$("input#free_time").textbox("setValue",'30');
+
+			$("input#allow_user").textbox("setValue", allow_user_origin);
+			$("input#allow_user").textbox('enableStyle');
+		}
+	});
+	
+	$("input#username").textbox({
+		fieldLabel: $.su.CHAR.WPORTAL.USERMNGR_USERNAME,
+		vtype: "ascii_visible",
+		maxLength: 100,
+		allowBlank: false,
+		tips: $.su.CHAR.WPORTAL.USERMNGR_USERNAME_TIP,
+		tipsCls:"l",
+		validator: function(value)
+		{
+			return nameValidator(value);
+		}
+	});
+	
+	$("input#password").textbox({
+		fieldLabel: $.su.CHAR.WPORTAL.USERMNGR_PASSWORD,
+		vtype: "ascii_visible",
+		maxLength: 100,
+		allowBlank: false,
+		tips: $.su.CHAR.WPORTAL.USERMNGR_PASSWORD_TIP,
+		tipsCls:"l",
+		validator: function(value)
+		{
+			return nameValidator(value);
+		}
+	});
+
+	$("input#expire_time").textbox({
+		fieldLabel: $.su.CHAR.WPORTAL.USERMNGR_EXPIRETIME,
+		vtype: "string_visible",
+		maxLength: 10,
+		allowBlank: false,
+		tips: $.su.CHAR.WPORTAL.USERMNGR_EXPIRETIME_TIP,
+		validator: function(value)
+		{
+			return checkExpTime(value);
+		}
+	});
+	
+	$("input#free_time").textbox({
+		fieldLabel: $.su.CHAR.WPORTAL.USERMNGR_FREETIME,
+		vtype: {
+            vtype: "number",
+            max: 43200,
+            min: 1
+        },
+		maxLength: 5,
+		allowBlank: false,
+		tips: $.su.CHAR.WPORTAL.USERMNGR_FREETIME_TIP
+	});
+	
+	$("input#allow_auth_time").textbox({
+		fieldLabel: $.su.CHAR.WPORTAL.USERMNGR_VALIDPERIOD,
+		vtype: "string_visible",
+		maxLength: 11,
+		allowBlank: false,
+		tips: $.su.CHAR.WPORTAL.USERMNGR_VALIDPERIOD_TIP,
+		validator: function(value)
+		{
+			return checkTmScale(value);
+		}
+	});
+	
+	$("input#mac_bind_type").combobox({
+		fieldLabel: $.su.CHAR.WPORTAL.USERMNGR_MACBINDTYPE,
+		inputCls: "l",
+		items: [
+			{"value": "none", "name": $.su.CHAR.WPORTAL.USERMNGR_MACBINDTYPE_BINDNONE, selected:"selected"},
+			{"value": "static", "name": $.su.CHAR.WPORTAL.USERMNGR_MACBINDTYPE_BINDSTATIC},
+			{"value": "dynamic", "name": $.su.CHAR.WPORTAL.USERMNGR_MACBINDTYPE_BINDDYNAMIC}
+		],
+		allowBlank: false
+	}).on('ev_change', function(e, oldValue, newValue){
+		var value = newValue[0];
+		var $editor = $(o.grid("getEditor"));
+
+		if('static' == value)
+		{
+			$('div#div_macBindAddr').form("show");
+			$("input#mac").textbox('enableStyle');
+		}
+		else
+		{
+			$('div#div_macBindAddr').form("hide");
+			$("input#mac").textbox('disableStyle');
+		}
+		
+		if('static' == value || 'dynamic' == value)
+		{
+			$("input#allow_user").textbox('disableStyle');
+			$("input#allow_user").textbox("setValue", 1);
+		}
+		else
+		{
+			$("input#allow_user").textbox("setValue", allow_user_origin);
+			$("input#allow_user").textbox('enableStyle');
+		}
+	});
+	
+	$("input#mac").textbox({
+		fieldLabel: $.su.CHAR.WPORTAL.USERMNGR_MACBINDADDR,
+		allowBlank: false,
+		vtype: 'mac',
+		tips: $.su.CHAR.WPORTAL.USERMNGR_MACBINDADDR_TIP
+	});
+	
+	$("input#allow_user").textbox({
+		fieldLabel: $.su.CHAR.WPORTAL.USERMNGR_MAXUSER,
+		textFormat: $.su.format.number,
+		vtype: {
+			vtype: "number",
+			max: 2048,
+			min: 1
+		},
+		maxLength: 4,
+		allowBlank:false,
+		validator: function(value)
+		{
+			return checkMaxUser(value);
+		},
+		tips: $.su.CHAR.WPORTAL.USERMNGR_MAXUSER_TIP
+	});
+
+	$("input#up_limit").textbox({
+		fieldLabel: $.su.CHAR.WPORTAL.USERMNGR_UP_LIMIT,
+		textFormat: $.su.format.number,
+		vtype: {
+			vtype: "number"
+		},
+		maxLength: 7,
+		allowBlank:false,
+		validator: function(value) {
+			if(false == checkBand(value))
+			{
+				return "错误的数值，请输入0或10-1000000";
+			}
+			return true;
+		},
+		tips: $.su.CHAR.WPORTAL.USERMNGR_UP_LIMIT_TIP
+	});
+
+	$("input#down_limit").textbox({
+		fieldLabel: $.su.CHAR.WPORTAL.USERMNGR_DOWN_LIMIT,
+		textFormat: $.su.format.number,
+		vtype: {
+			vtype: "number"
+		},
+		maxLength: 7,
+		allowBlank:false,
+		validator: function(value) {
+			if(false == checkBand(value))
+			{
+				return "错误的数值，请输入0或10-1000000";
+			}
+			return true;
+		},
+		tips: $.su.CHAR.WPORTAL.USERMNGR_DOWN_LIMIT_TIP
+	});
+	
+	$("input#name").textbox({
+		fieldLabel: $.su.CHAR.WPORTAL.USERMNGR_NOTENAME,
+		//vtype: "string_visible_allow_blank",
+		maxLength: 50,
+		allowBlank: true,
+		tips: $.su.CHAR.WPORTAL.USERMNGR_NOTENAME_TIP
+	});
+	
+	$("input#telephone").textbox({
+		fieldLabel: $.su.CHAR.WPORTAL.USERMNGR_NOTETEL,
+		//vtype: "string_visible_allow_blank",
+		maxLength: 50,
+		allowBlank: true,
+		tips: $.su.CHAR.WPORTAL.USERMNGR_NOTETEL_TIP	
+	});
+	
+	$("input#note").textbox({
+		fieldLabel: $.su.CHAR.WPORTAL.USERMNGR_NOTE,
+		//vtype: "string_visible_allow_blank",
+		maxLength: 50,
+		allowBlank: true,
+		tips: $.su.CHAR.WPORTAL.USERMNGR_NOTE_TIP		
+	});
+	
+	$("input#enable").radio({
+		fieldLabel: $.su.CHAR.WPORTAL.STATUS,
+		columns: 5,
+		cls: "inline-block",
+		items: [
+			{boxlabel: $.su.CHAR.WPORTAL.ON, cls: '', inputValue: 'on', checked:true},
+			{boxlabel: $.su.CHAR.WPORTAL.OFF, cls: '', inputValue: 'off'}
+		]
+	});
+	
+	$("#usermngr_config").hide();
+	var $usermngr_form = $("#usermngr_change").form({
+		fields: [
+            {name: "action"}
+        ],
+		submitBtn: "default",
+		autoLoad: false,
+		callback: function(){
+            reloadGrid();
+        }
+	});
+	var $usermngr_action = $('#usermngr_action').textbox({
+        fieldLabel: ''
+    }).textbox('hide');
+
+	var timeSettingProxy = new $.su.Proxy(/*{
+		url: URL_TIME_SETTING
+	}*/);
+	
+	var o = $("div#usermngr_user_grid").grid({
+		store:{
+			proxy: usermngrProxy,
+			fieldLabel: $.su.CHAR.APMNGR.CLIENT_IDLE,
+			fields: [
+				{name: "entry_id"},
+				{name: "user_type"},
+				{name: "username"},
+				{name: "password"},
+				{name: "expire_time"},
+				{name: "allow_auth_time"},
+				{name: "free_time"},
+				{name: "mac_bind_type"},
+				{name: "mac"},
+				{name: "allow_user"},
+				{name: "up_limit"},
+				{name: "down_limit"},
+				{name: "name"},
+				{name: "telephone"},
+				{name: "note"},
+				{name: "enable"}
+			],
+			autoLoad: true,
+			keyProperty:["entry_id"],
+			rmField: ["entry_id"],
+			formField: ["entry_id"],
+			backup_url: BACKUP_URL,
+			cfg_backup: "backup",
+			cfg_load: "load",
+			parseKey:{
+				moduleName: "authentication",
+				tableName: "userlist",
+				pageSizeName: "user_mngr_entry",
+				maxSizeTableName: "wportal",
+				maxSizeOptionName: "usermngr_max",
+				setFilter:function(index, itemName, data){
+					var result = [];
+					var dataSet = $("div#usermngr_user_grid").grid("getStore").data;
+					result.push({"entry_id": dataSet[index].entry_id});
+					
+					return result;
+				},
+				delFilter:function(itemNames, data, indexes){
+					var result = [];
+					for (var i = 0; i < indexes.length; i++)
+					{
+						result.push({ "entry_id" : indexes[i].entry_id})
+					}
+					return result;
+				}
+			}
+		},
+		editor: {
+			validator:function()
+			{
+				return true;
+			},
+			content: "#own_editor",
+			
+			fields: [
+				{name: "user_type"},
+				{name: "username"},
+				{name: "password"},
+				{name: "expire_time"},
+				{name: "allow_auth_time"},
+				{name: "free_time"},
+				{name: "mac_bind_type"},
+				{name: "mac"},
+				{name: "allow_user"},
+				{name: "up_limit"},
+				{name: "down_limit"},
+				{name: "name"},
+				{name: "telephone"},
+				{name: "note"},
+				{name: "enable"}
+			]
+			
+		},
+		paging_true: {},
+		columns: [
+			{
+				xtype: "checkcolumn",
+				width: 30
+			},
+			{
+				xtype: "rownumberer",
+				width: 30
+			},
+			{
+				text: $.su.CHAR.WPORTAL.USERMNGR_TYPE,
+				width: 40,
+				dataIndex: "user_type",
+				renderer:function (v)
+				{
+					if ('formal' == v)
+						return $.su.CHAR.WPORTAL.USERMNGR_TYPE_FORMALUSER;
+					else
+						return $.su.CHAR.WPORTAL.USERMNGR_TYPE_FREEUSER;
+				},
+				scan: {
+					type: "combobox",
+					cmp: $.search.compare.stringStrict,
+					items: [
+						{value: "formal", name: $.su.CHAR.WPORTAL.USERMNGR_TYPE_FORMALUSER},
+						{value: "free", name: $.su.CHAR.WPORTAL.USERMNGR_TYPE_FREEUSER}
+					]
+				}
+			},
+			{
+				text: $.su.CHAR.WPORTAL.USERMNGR_USERNAME,
+				width: 130,
+				dataIndex: "username",
+				scan: {
+					cmp: $.search.compare.string
+				}
+			},
+			{
+				text: $.su.CHAR.WPORTAL.USERMNGR_EXPIRETIME,
+				width: 70,
+				dataIndex: "expire_time",
+				renderer: function(data)
+				{
+                    if (data == "")
+						return "---";
+                    else
+						return data;
+                }
+			},
+			{
+				text: $.su.CHAR.WPORTAL.USERMNGR_FREETIME,
+				width: 40,
+				dataIndex: "free_time",
+				renderer: function(data){
+                    if (data == "0")
+						return "---";
+                    else
+						return data;
+                }
+			},
+			{
+				text: $.su.CHAR.WPORTAL.USERMNGR_MACBINDADDR,
+				width: 90,
+				dataIndex: "mac",
+				renderer: function(data){
+					return data.toUpperCase();
+				},
+				scan: {
+					cmp: $.search.compare.string,
+					check: $.search.compare.mac
+				}
+			},
+			{
+				text: $.su.CHAR.WPORTAL.USERMNGR_NOTE,
+				width: 100,
+				dataIndex: "note",
+				scan: {
+					cmp: $.search.compare.string
+				}
+			},
+			{
+				text: $.su.CHAR.WPORTAL.STATUS,
+				width: 50,
+				dataIndex: 'enable',
+				xtype: 'statuscolumn',
+				renderer: function(data){
+					var result;
+					switch (data){
+						case "on":
+							result = $.su.CHAR.WPORTAL.STARTED;
+							break;
+						case "off":
+							result = $.su.CHAR.WPORTAL.STOPPED;
+							break;
+						default :
+							break;
+					}
+					return result;
+				}
+			},
+			{
+				width: 40,
+				xtype: "settings"
+			},
+			{
+				xtype: "globalSearch",
+				hidden: true,
+				columns: [
+					{
+						text: $.su.CHAR.WPORTAL.USERMNGR_TYPE,
+						dataIndex: "user_type",
+						scan: {
+							type: "combobox",
+							items: [
+								{value: "formal", name: $.su.CHAR.WPORTAL.USERMNGR_TYPE_FORMALUSER},
+								{value: "free", name: $.su.CHAR.WPORTAL.USERMNGR_TYPE_FREEUSER}
+							],
+							vtype: "string"
+						}
+					},
+					{
+						text: $.su.CHAR.WPORTAL.USERMNGR_USERNAME,
+						dataIndex: "username",
+						scan: {
+							vtype: "string"
+						}
+					},
+					{
+						text: $.su.CHAR.WPORTAL.USERMNGR_MACBINDADDR,
+						dataIndex: "mac",
+						scan: {
+							vtype: "string",
+							check: $.search.compare.mac
+						}
+					},
+					{
+						text: $.su.CHAR.WPORTAL.USERMNGR_NOTE,
+						dataIndex: "note",
+						scan: {
+							vtype: "string"
+						}
+					},
+					{
+						text: $.su.CHAR.MAC_AUTH.MAC_GROUP_STATUS, 
+						dataIndex: "enable",
+						scan: {
+							type: "combobox",
+							vtype: "string",
+							items: [
+								{value:"on", name: $.su.CHAR.WPORTAL.STARTED},
+								{value:"off", name: $.su.CHAR.WPORTAL.STOPPED}
+							]
+						}
+					}
+				]
+				
+			}
+		],
+		exportCfg:{
+			url: $.su.url.subs + $.su.url.stok + "/admin/authentication/backup",
+			checkCallback: function(callback){
+				var userBackupProxy = new $.su.Proxy();
+				userBackupProxy.query({"authentication":{"name":"user_backup_status"}}, function(data){
+					data = data.authentication.user_backup_status;
+					if (data.status == "1")
+					{
+						callback(true);
+					}
+					else
+					{
+						callback(false);
+					}
+				});
+
+			}
+		},
+		importCfg:{
+			url: $.su.url.subs + $.su.url.stok + "/admin/authentication/load",
+			checkCallback: function(callback){
+				var userLoadProxy = new $.su.Proxy();
+				userLoadProxy.query({"authentication":{"name":"user_load_status"}}, function(data){
+					data = data.authentication.user_load_status;
+					if (data.status == "1")
+					{
+						callback(true);
+					}
+					else
+					{
+						callback(false);
+					}
+				});
+			}
+		},
+
+		operation: "prompt|enable|disable|add|delete|search|searchAll|import|export",
+		autoRefresh: false
+		
+	}).on("ev_load", function(e, data, others){
+		//页面加载时执行
+		if (others)
+		{
+			maxrules = others.max_rules;
+		}
+	}).on("ev_operation", function(e, obj, action){
+		/*此处添加enable, disable代码*/
+		var selectedKeys = o.grid("getSelected");
+		var store = o.grid('getStore');
+		if (selectedKeys.length === 0)
+		{
+			o.get(0).noneSelectMsg_g.msg('show');
+			return;
+		}
+		else
+		{
+			o.grid("runProgress");
+			$.su.loading.show();
+			var value = action == "enable" ? "on" : "off";
+			var user_list = [];
+
+			var postData = {};
+			if (store.parseKey)
+			{
+				var moduleName = store.parseKey.moduleName;
+				var tableName = store.parseKey.tableName;
+
+				postData[moduleName] = {};
+				postData[moduleName]["table"] = tableName;
+
+				postData[moduleName]["filter"] = [];
+				for (i = 0; i < selectedKeys.length; i++)
+				{
+					postData[moduleName]["filter"].push({"entry_id":selectedKeys[i]})
+				}
+
+				postData[moduleName]["para"] = {enable:value};
+			}
+			else
+			{
+				return;
+			}
+
+			usermngrProxy.modify(postData, function(){
+					reloadGrid(function(){
+						o.grid("prompt", true);
+					});
+					setTimeout(function(){//延时时间根据各模块情况自行调整，与当前页条目数成正比
+						$.su.loading.hide();
+					}, selectedKeys.length * 0.5);
+			}, function(){
+				$.su.loading.hide();
+				o.grid("disGridChkbox");
+				o.grid("prompt", false, "");
+			});
+		}
+	}).on("ev_update", function(e){
+		//编辑页面点击保存时执行
+		var paging = o.get(0).paging;
+		if (paging && paging.search && paging.params){
+			o.grid("runProgress");
+			$.su.loading.show();
+			paging.params.pageNo = paging.currentPage;
+			reloadGrid(function(){
+				o.grid("prompt", true);
+			});
+			setTimeout(function(){//延时时间根据各模块情况自行调整
+				$.su.loading.hide();
+			}, paging.numPerPage * 0.7);
+		}
+	});
+
+	var editor = o.grid("getEditor");
+
+	timeSettingProxy.query({system:{name:"system_time"}},function(data){
+		data = data.system.system_time;
+		var date = data.date.split("/");
+		sys_year = date[0];
+    });
+	
+	$(editor).on("ev_startEdit", function(e, index, key){
+		//编辑时执行
+		var userType = $("input#user_type").textbox('getValue');
+		var macBindType = $("input#mac_bind_type").textbox('getValue');
+		
+		allow_user_origin = $("input#allow_user").textbox('getValue');
+		
+		if('formal' == userType)
+		{
+			
+			$('div#div_macBind').form("show");
+			$('div#div_note').form("show");
+			
+			$.su.func.showWidgets($expiretime);
+			$.su.func.hideWidgets($freetime);
+
+			if('static' == macBindType)
+			{
+				$('div#div_macBindAddr').form("show");
+				$("input#mac").textbox('enableStyle');
+			}
+			else
+			{
+				$('div#div_macBindAddr').form("hide");
+				$("input#mac").textbox('disableStyle');
+			}
+		}
+		else
+		{
+			$.su.func.hideWidgets($expiretime);
+			$.su.func.showWidgets($freetime);
+		
+			$('div#div_macBind').hide();
+			$('div#div_note').hide();
+			
+			$("input#mac").textbox('disableStyle');
+		}
+
+		if ("add" == index)
+		{
+			$("input#allow_user").textbox('enableStyle');
+			$("input#username").textbox('enableStyle');
+			
+			var expTime = sys_year + "/12/31";
+			$("input#expire_time").textbox("setValue", expTime);
+		}
+		else
+		{
+			var type = $("#mac_bind_type").textbox('getValue');
+			if ("dynamic" == type || "static" == type)
+			{
+				$("input#allow_user").textbox('disableStyle');
+			}
+			else
+			{
+				$("input#allow_user").textbox('enableStyle');
+			}
+			
+			$("input#username").textbox('disableStyle');
+			
+			if ("free" == userType)
+			{
+				$("input#allow_user").textbox('enableStyle');
+			}
+		}
+	});
+	
+	function reloadGrid(callback){
+		var usermngr_store = o.grid('getStore'),
+            selectedKeys = o.grid('getSelected');
+			
+		o.grid("disGridChkbox");
+		if (callback){
+			callback.call();
+		}
+        usermngr_store.keyLength = 0;
+		var paging = o.get(0).paging;
+		var params = {};
+		if (paging){
+			if (paging.search){
+				params = paging.params;
+			}
+		}
+        usermngr_store.load(params);
+    }
+
+	$(".func-container").show();
+	var helpUsermngr = new $.su.Help({
+		container: "div#usermngr_help",
+		content: ["AC_USER_MNGR"]
+	});
+});
+
+</script>
+</body>
+</html>

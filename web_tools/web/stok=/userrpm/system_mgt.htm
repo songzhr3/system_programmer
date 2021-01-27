@@ -1,0 +1,87 @@
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
+<html xmlns="http://www.w3.org/1999/xhtml">
+<head>
+<meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
+<title></title>
+</head>
+
+<body>
+<div class="func-container">
+	<div id="system_mgt_setting">
+	<form id="system-mgt-setting">
+		<input id="dev_alias" name="dev_alias"/>
+		<input style="display:none" />
+		<button type="button" id="set" name="set"></button>
+	</form>	
+	</div>
+	
+
+	<div id="help_system"></div>
+</div>
+
+<script type="text/javascript">
+try{
+    $
+}catch(e){
+    location.href = "/";
+};
+
+$(document).ready(function(e){
+	var $system_mgt_setting = $("div#system_mgt_setting").panel({
+		title: "设备信息设置",
+		collapsible: false
+	});
+	var seting_info_proxy = new $.su.Proxy({
+	});
+	var $system_mgt_setting_form = $('#system-mgt-setting').form({
+		proxy: seting_info_proxy,
+		fields:[
+			{name: "dev_alias"}
+		],
+		parseKey:{
+			moduleName: "system",
+			sectionName: "sys"
+		},
+		submitBtn: null
+	});
+	
+	$("#set").button({
+        text: "设置",
+        handler: function(){
+			// 校验设置内容
+			var dev_alias = $dev_alias.textbox("getValue")
+			var sys = {}
+			sys["dev_alias"] = dev_alias;
+			// 发送修改数据的请求
+			seting_info_proxy.modify({
+				system: {
+					"sys": sys
+				}
+			}, function() {
+				$system_mgt_setting_form.form("prompt", true);
+			}, function() {
+				$system_mgt_setting_form.form("prompt", false);
+			});
+		},
+		cls: "inline-block"
+    });
+	
+	var $dev_alias = $("#dev_alias").textbox({
+		fieldLabel: "设备名称",
+		labelCls: "s",
+		allowBlank: false,
+		vtype:"string_visible_allow_blank",
+		maxLength: 20,
+		tips: "（1-20个字符）"
+	});
+
+	var helpAdmin = new $.su.Help({
+		container: "div#help_system",
+		content: ["SYSTEM_MANAGEMENT_DEV_INFO"]
+	});
+	$(".func-container").show();
+});
+</script>
+</body>
+
+</html>

@@ -1,0 +1,677 @@
+<!DOCTYPE html
+    PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
+<html xmlns="http://www.w3.org/1999/xhtml">
+
+<head>
+    <meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
+    <title>IPS Profiles</title>
+</head>
+
+<body>
+    <div id="function_setting">
+        <form id="ipsprofiles_settings">
+            <input id="ipsprofiles_detect_nonstandard_ports" name="status" value="" />
+        </form>
+    </div>
+
+    <div class="func-container">
+        <div id="ipsprofiles_rule_list">
+            <div id="ipsprofiles_rule_grid"></div>
+        </div>
+
+        <div id="ipsprofiles_help"></div>
+    </div>
+
+    <div id="ips_exp_rule_list_msg">
+        <div>
+            <div id="ips_exp_grid"></div>
+        </div>
+    </div>
+
+    <div id="detail-window">
+        <table class="detail-table detail">
+            <tr>
+                <td class="detail-value"></td>
+            </tr>
+        </table>
+    </div>
+
+    <hr/><div class="notice"><p id="caution"/></div>
+
+    <script src="../web-static/js/ips/ips-common.js?random=20201217044300" type="text/javascript"></script>
+<script type="text/javascript">
+try {
+    $
+} catch (e) {
+    location.href = "/";
+};
+
+$(document).ready(function (e) {
+    var g_current_sig_details = {}; /* Contains only referenced signatures */
+    var g_current_filter_details = {}; /* Contains all filters */
+    var g_editor_fixed = false; /* Some workaround needed by the button */
+    var g_current_editing_idx = 0; /* ev_startEdit */
+    var g_editor_allow_exp = {}; /* ipsExpGrid/Msg */
+    var g_editor_block_exp = {}; /* ipsExpGrid/Msg */
+    var g_editor_blacklist_exp = {}; /* ipsExpGrid/Msg */
+    var g_popup_init = false;
+    var g_popup_editing_idx = 0;
+
+    $("#caution").text($.su.CHAR.IPS_PROFILE.DEFAULT_ENTRY_NOTES);
+
+    $("#function_setting").panel({
+        title: $.su.CHAR.IPS_PROFILE.GLOBAL_SETTINGS,
+        collapsible: false
+    }).hide();
+
+    $("#ipsprofiles_detect_nonstandard_ports").checkbox({
+        /*fieldLabel: $.su.CHAR.IPS_PROFILE.TITLE,*/
+        items: [
+            { boxlabel: $.su.CHAR.IPS_PROFILE.DETECT_ON_NONSTANDARD_PORTS, inputValue: "on", uncheckedValue: "off" }
+        ]
+    });
+
+    $("#ipsprofiles_settings").form({
+        fields: [
+            { name: "status", mapping: "status" }
+        ],
+        parseKey: {
+            moduleName: "ips",
+            sectionName: "global" /* Not yet implemented */
+        },
+        submitBtn: "default"
+    });
+
+    $("#ipsprofiles_rule_list").panel({
+        title: $.su.CHAR.IPS_PROFILE.PROFILE_LIST,
+        collapsible: false
+    });
+
+    var expSelectMsg = $("#ips_exp_rule_list_msg").msg({
+        cls: 'l',
+        closeBtn: true,
+        okHandler: function (e) {
+            hideExpMsg();
+            var storedata = ipsExpGrid.grid("getStore").data;
+            var exparray = storedata2exparray(storedata);
+            g_editor_allow_exp = exparray.allow_exception;
+            g_editor_block_exp = exparray.block_exception;
+            g_editor_blacklist_exp = exparray.blacklist_exception;
+        },
+        cancelHandler: function () { hideExpMsg(); },
+        noHandler: function () { hideExpMsg(); }
+    }).on("ev_fade_in", function(){
+        ipsExpGrid.grid.calculateTdWidth("ips_exp_grid");
+    });
+
+    function hideExpMsg() {
+        var edt = ipsExpGrid.grid("getEditor");
+        if (edt.editing) {
+            $(edt).editor("cancelEdit");
+        }
+        expSelectMsg.msg('hide');
+    }
+
+    function refreshExpireTimeVisibility(action) {
+        if (["blacklist_src", "blacklist_dst"].indexOf(action) != -1) {
+            showComboboxInEditor("expire_time");
+        } else {
+            hideComboboxInEditor("expire_time");
+        }
+    }
+
+    var fakeProxy = {
+        add: function (d, cb) { cb({error_code: 0, placeholder: {name: Math.random()}}); },
+        modify: function (d, cb) { cb({error_code: 0}); },
+        del: function (d, cb) { cb({error_code: 0}); },
+        isProxy: true
+    };
+
+    var ipsExpGrid = $("#ips_exp_grid").grid({
+        editor: {
+            content: "default",
+            fields: [
+                { name: "sid" },
+                { name: "action" },
+                { name: "expire_time" }
+            ]
+        },
+        store: {
+            proxy: fakeProxy,
+            fields: [
+                { name: "sid" },
+                { name: "action" },
+                { name: "expire_time" }
+            ],
+            parseKey: {
+                moduleName: "placeholder", /* 将会本地载入，所以只要保证 store 能完成初始化即可 */
+                tableName: "placeholder"
+            }
+        },
+        columns: [
+            {
+                xtype: "checkcolumn"
+            },
+            {
+                text: $.su.CHAR.IPS_PROFILE.SID,
+                dataIndex: "sid",
+                editor: {
+                    xtype: "textbox",
+                    allowBlank: false,
+                    vtype: "number"
+                }
+            },
+            {
+                text: $.su.CHAR.IPS_PROFILE.ACTION,
+                dataIndex: "action",
+                editor: {
+                    xtype: "combobox",
+                    allowBlank: false,
+                    items: [
+                        { name: $.su.CHAR.IPS_PROFILE.ALLOW, value: 'allow' },
+                        { name: $.su.CHAR.IPS_PROFILE.BLOCK, value: 'block' },
+                        { name: $.su.CHAR.IPS_PROFILE.BLACKLIST_SRC, value: 'blacklist_src' },
+                        { name: $.su.CHAR.IPS_PROFILE.BLACKLIST_DST, value: 'blacklist_dst' }
+                    ]
+                },
+                renderer: function (d, idx, data) {
+                    var map = {
+                        'allow': $.su.CHAR.IPS_PROFILE.ALLOW,
+                        'block': $.su.CHAR.IPS_PROFILE.BLOCK,
+                        'blacklist_src': $.su.CHAR.IPS_PROFILE.BLACKLIST_SRC,
+                        'blacklist_dst': $.su.CHAR.IPS_PROFILE.BLACKLIST_DST
+                    };
+                    if (["blacklist_src", "blacklist_dst"].indexOf(d) != -1) {
+                        return map[d] + (data.expire_time > 0 ? (" " + data.expire_time + " 分钟") : "");
+                    } else {
+                        return map[d];
+                    }
+                }
+            },
+            {
+                text: $.su.CHAR.IPS_PROFILE.EXPIRE_TIME,
+                dataIndex: "expire_time",
+                hidden: true,
+                editor: {
+                    xtype: "textbox",
+                    tips: $.su.CHAR.IP_BWLIST.MINUTES,
+                    tipsCls: "xxxs", /* 为了避免被强行设定宽度而刻意使用不存在的 cls */
+                    allowBlank: false,
+                    vtype: {
+                        vtype: "number",
+                        min: 0,
+                        max: 35280
+                    }
+                }
+            },
+            {
+                xtype: "settings"
+            }
+        ],
+        operation: 'add|delete'
+    }).on('ev_insert', function() {
+        ipsExpGrid.grid.calculateTdWidth('ips_exp_grid');
+    });
+
+    var signatureProxy = new $.su.Proxy();
+    var ruleGrid = $("#ipsprofiles_rule_grid").grid({
+        editor: {
+            content: "default",
+            fields: [
+                { name: "name" },
+                { name: "malicious_domain_check" },
+                { name: "signature_filter" },
+                { name: "allow_exception" },
+                { name: "block_exception" },
+                { name: "blacklist_exception" },
+                { name: "comment"}
+            ]
+        },
+        store: {
+            proxy: new $.su.Proxy(),
+            fields: [
+                { name: "name" },
+                { name: "malicious_domain_check" },
+                { name: "signature_filter" },
+                { name: "allow_exception" },
+                { name: "block_exception" },
+                { name: "blacklist_exception" },
+                { name: "comment"},
+                { name: "type" }
+            ],
+            parseKey: {
+                moduleName: "ips",
+                tableName: "ips_profile",
+                pageSizeName: "ips_profile_entry"
+            }
+        },
+        paging_true: {},
+        columns: [
+            {
+                xtype: "checkcolumn",
+                width: 50
+            },
+            {
+                xtype: "rownumberer",
+                width: 50
+            },
+            {
+                text: $.su.CHAR.IPS_PROFILE.NAME,
+                width: 120,
+                dataIndex: "name",
+                editor: {
+                    xtype: "textbox",
+                    allowBlank: false,
+                    vtype: "string_visible_allow_blank",
+                    tips: $.su.CHAR.IPS_PROFILE.NAME_TIP,
+                    maxLength: 28,
+                    minLength: 1
+                }
+            },
+            {
+                text: $.su.CHAR.IPS_PROFILE.MALICIOUS_DOMAIN_CHECK,
+                dataIndex: "malicious_domain_check",
+                width: 70,
+                editor: {
+                    xtype: "checkbox",
+                    allowBlank: false,
+                    multiSelect: false,
+                    items: [
+                        {
+                            boxlabel: $.su.CHAR.IPS_PROFILE.MALICIOUS_DOMAIN_CHECK_DESC,
+                            name:'malicious_domain_check',
+                            inputValue:'on',
+                            uncheckedValue:"off",
+                            checked:true
+                        }
+                    ]
+                },
+                renderer: function(v){
+                    if (v == "on") {
+                        return $.su.CHAR.GRID.IS_ENABLED;
+                    } else {
+                        return $.su.CHAR.GRID.IS_DISABLED;
+                    }
+                }
+            },
+            {
+                text: $.su.CHAR.IPS_PROFILE.SIGNATURE_FILTER,
+                width: 120,
+                dataIndex: "signature_filter",
+                editor: {
+                    xtype: "combobox",
+                    multiSelect: true,
+                    vtype: "string_visible_allow_blank"
+                },
+                renderer: function (dd, index, data) {
+                    var entries = filterIdsToName(dd);
+
+                    switch (entries.length) {
+                        case 0:
+                            return "---";
+                        case 1:
+                            return entries[0];
+                        case 2:
+                            return entries[0] + "</br>" + entries[1];
+                        default:
+                            return entries[0] + "&nbsp&nbsp" + "<a href='javascript:void(0);' class='btn-filter-detail btn-detail' data-index='" + index + "'>更多</a>";
+                    }
+                }
+            },
+            {
+                text: $.su.CHAR.IPS_PROFILE.SIGNATURE_EXCEPTION,
+                width: 70,
+                dataIndex: "exceptions",
+                editor: {
+                    xtype: "button"
+                },
+                renderer: function (dd, index, data) {
+                    var exps = exparray2storedata(data);
+
+                    if (exps.length > 0) {
+                        return exps.length + " " + $.su.CHAR.IPS_PROFILE.EXCEPTION_UNIT + "\n" +
+                            "<a href='javascript:void(0);' class='btn-exp-detail btn-detail' data-index='" + index + "'>" + $.su.CHAR.IPS_PROFILE.VIEW + "</a>";
+                    } else {
+                        return $.su.CHAR.IPS_PROFILE.NONE;
+                    }
+                }
+            },
+            {
+                text: $.su.CHAR.IPS_PROFILE.COMMENT,
+                dataIndex: "comment",
+                width: 110,
+                editor: {
+                    xtype: "textbox"
+                }
+            },
+            {
+                xtype: "settings",
+                width: 80,
+                renderer: function (btn, dd, idx, data) { return data.type != "system" || btn != "delete"; }
+            }
+        ],
+        operation: 'prompt|add|delete'
+    }).delegate('a.btn-filter-detail', 'click', function (e) {
+        var index = $(this).data('index');
+        var data = ruleGrid.grid("getStore").getDataByIndex(parseInt(index));
+        showDetail(data.name + "的签名过滤器", filterIdsToName(data.signature_filter));
+    }).delegate('a.btn-exp-detail', 'click', function (e) {
+        var index = $(this).data('index');
+        var profile = ruleGrid.grid("getStore").getDataByIndex(parseInt(index));
+        var exps = exparray2storedata(profile);
+        var sig_sids = [];
+
+        for (var i = 0; i < exps.length; i++) {
+            sig_sids.push(exps[i].sid);
+        }
+        signatureProxy.query({
+            ips: {
+                table: "signature",
+                filter: [{
+                    sid: sig_sids
+                }]
+            }
+        }, function (data) {
+            var lines = [];
+            data = data.ips.signature;
+            for (var i = 0; i < data.length; i++) { /* data = [{"sig_sid_31221": {"sid":...}}] */
+                var ucisection;
+                for (var k in data[i]) {
+                    ucisection = k;
+                    break;
+                }
+                g_current_sig_details[data[i][ucisection]["sid"] + ""] = data[i][ucisection];
+            }
+
+            for (var i = 0; i < exps.length; i++) {
+                var exp = exps[i];
+                var sid = exp.sid + "";
+                var sig = g_current_sig_details[sid];
+                var content = "";
+                if (sig == undefined) {
+                    /* This signature does not exist. Maybe it's removed from database */
+                    content = "（SID：" + sid + "，不存在）";
+                } else {
+                    content = sig["name"] + "（SID：" + sid + "，";
+                    switch (exp.action) {
+                        case "allow":
+                            content += $.su.CHAR.IPS_PROFILE.ALLOW + "）";
+                            break;
+                        case "block":
+                            content += $.su.CHAR.IPS_PROFILE.BLOCK + "）";
+                            break;
+                        case "blacklist_src":
+                            content += $.su.CHAR.IPS_PROFILE.BLACKLIST_SRC + " " + exp.expire_time + " 分钟）";
+                            break;
+                        case "blacklist_dst":
+                            content += $.su.CHAR.IPS_PROFILE.BLACKLIST_DST + " " + exp.expire_time + " 分钟）";
+                            break;
+                    }
+                }
+                lines.push(content);
+            }
+            showDetail(profile.name + "的例外签名", lines);
+        })
+    });
+
+    function injectFixupConf(e, editorData) {
+        editorData.allow_exception = g_editor_allow_exp;
+        editorData.block_exception = g_editor_block_exp;
+        editorData.blacklist_exception = g_editor_blacklist_exp;
+
+        /* Make this field appear in the request when all options are deselected */
+        var combo = findComboboxInGrid(ruleGrid, "signature_filter");
+        if (!$(combo).combobox("getContainer").hasClass("disabled")) {
+            editorData.signature_filter = $(combo).combobox("getValue");
+        }
+    }
+
+    $(ruleGrid.grid("getEditor")).on("ev_startEdit", function (e, editingIndex, editingId) {
+        /* Workaround a bug in button+grid combination */
+        g_current_editing_idx = editingIndex;
+        if (editingIndex == "add") {
+            g_editor_allow_exp = [];
+            g_editor_blacklist_exp = [];
+            g_editor_block_exp = [];
+        } else {
+            var d = ruleGrid.grid("getStore").getDataByIndex(editingIndex);
+            g_editor_allow_exp = d.allow_exception;
+            g_editor_blacklist_exp = d.blacklist_exception;
+            g_editor_block_exp = d.block_exception;
+        }
+
+        if (!g_editor_fixed) {
+            var btn = $("button[name=exceptions]");
+            btn.button("setText", $.su.CHAR.GRID.OPERATION);
+            btn.on("click", function (e) {
+                var title;
+                var store = ipsExpGrid.grid("getStore");
+                if (g_current_editing_idx != "add") {
+                    var exparray = {
+                        allow_exception: g_editor_allow_exp,
+                        block_exception: g_editor_block_exp,
+                        blacklist_exception: g_editor_blacklist_exp,
+                    }
+                    var data = exparray2storedata(exparray);
+                    store.dataFormat(data, false);
+                    store.loadData(data);
+                } else {
+                    store.loadData([]);
+                }
+                title = ($("input[name=name]").textbox("getValue") || "新签名") + "的例外签名设置";
+                expSelectMsg.msg("setTitle", title);
+                expSelectMsg.msg("show");
+            });
+            g_editor_fixed = true;
+        }
+
+        var data;
+        if (editingIndex != "add")
+            data = ruleGrid.grid("getStore").getDataByIndex(parseInt(editingIndex));
+        if (data && data.type == "system") {
+            $("input[name=name]").textbox("setReadonly");
+            $("input[name=malicious_domain_check]").checkbox("disable");
+            $("input[name=signature_filter]").combobox("disable");
+            $("input[name=comment]").textbox("setReadonly");
+        } else {
+            $("input[name=name]").textbox("removeReadonly");
+            $("input[name=malicious_domain_check]").checkbox("enable");
+            $("input[name=signature_filter]").combobox("enable");
+            $("input[name=comment]").textbox("removeReadonly");
+        }
+    })
+    .on("ev_formatEditData", injectFixupConf)
+    .on("ev_formatAddData", injectFixupConf);
+
+    $(ipsExpGrid.grid("getEditor")).on("ev_startEdit", function (e, editingIndex, editingId) {
+        g_popup_editing_idx = editingIndex;
+        refreshExpireTimeVisibility(editingIndex == "add" ?
+            "allow" : ipsExpGrid.grid("getStore").getDataByIndex(editingIndex).action);
+        if (!g_popup_init) {
+            $("input[name=action]").on("ev_change", function (e, oldv, newv) {
+                /* Do not accept the event on initial form load, otherwise the widget is not ready */
+                refreshExpireTimeVisibility(newv[0]);
+
+                /* This is the default value for expire_time */
+                var d = ipsExpGrid.grid("getStore").getDataByIndex(g_popup_editing_idx);
+                var box = $("input[name=expire_time]");
+                if (box.textbox("getValue") == "") {
+                    box.textbox("setValue", "10");
+                }
+            });
+            g_popup_init = true;
+        }
+    });
+
+    var detailMsg = $("#detail-window").msg({
+        closeBtn: true,
+        cls: "l",
+        title: $.su.CHAR.IPS_PROFILE.MEMBER_LIST,
+        type: "window"
+    }).msg("hide");
+
+    function showDetail(title, lines) {
+        var content = "";
+
+        for (var i = 0; i < lines.length; i++) {
+            if (i == lines.length - 1) {
+                content += lines[i] + "</br>";
+            } else {
+                content += lines[i] + "&nbsp&nbsp&nbsp&nbsp" + lines[i + 1] + "</br>";
+                i++;
+            }
+        }
+        detailMsg.find(".detail-value").html(content).css({
+            "lineHeight": "20px",
+            "textAlign": "center",
+            "wordBreak": "break-all"
+        });
+        detailMsg.msg('setTitle', title);
+        detailMsg.msg('show');
+    }
+
+    /* Now collect what we need */
+    $.su.loading.show();
+    var filtersProxy = new $.su.Proxy();
+    filtersProxy.query({
+        ips: {
+            table: "signature_filter"
+        }
+    }, function (data) {
+        var comboboxItems = [];
+        var combobox;
+        data = data.ips.signature_filter;
+        for (var i = 0; i < data.length; i++) { /* data = [{"filter_151273714": {"name":...}}] */
+            var ucisection;
+            for (var k in data[i]) {
+                ucisection = k;
+                break;
+            }
+            g_current_filter_details[ucisection] = data[i][ucisection];
+            comboboxItems.push({name: data[i][ucisection].name, value: ucisection});
+        }
+        combobox = findComboboxInGrid(ruleGrid, "signature_filter");
+        $(combobox).combobox("loadData", comboboxItems);
+        ruleGrid.grid("getStore").load();
+        $.su.loading.hide();
+    }, function () {$.su.loading.hide();}, function () {$.su.loading.hide();});
+
+    function filterIdsToName(ids) {
+        var entries = [];
+        if (typeof(ids) == "string") {
+            ids = [ids];
+        }
+        for (var i = 0; i < ids.length; i++) {
+            var filter_detail = g_current_filter_details[ids[i]];
+            entries.push(filter_detail ? filter_detail.name : ids[i]);
+        }
+        return entries;
+    }
+
+    function findComboboxInGrid(grid, field) {
+        return $(grid).grid("getEditor").querySelectorAll(".combobox-value[name=" + field + "]")[0];
+    }
+
+    function storedata2exparray(data) {
+        var allow = [];
+        var block = [];
+        var blacklist = [];
+        for (var i = 0; i < data.length; i++) {
+            var d = data[i];
+            switch (d.action) {
+                case "allow":
+                    allow.push(d.sid);
+                    break;
+                case "block":
+                    block.push(d.sid);
+                    break;
+                case "blacklist_src":
+                    blacklist.push(d.sid + ":" + d.expire_time + ":src");
+                    break;
+                case "blacklist_dst":
+                    blacklist.push(d.sid + ":" + d.expire_time + ":dst");
+                    break;
+            }
+        }
+        return {
+            allow_exception: allow,
+            block_exception: block,
+            blacklist_exception: blacklist
+        };
+    }
+
+    function exparray2storedata(ary) {
+        var stor = [];
+        var allow = ary.allow_exception || [];
+        var block = ary.block_exception || [];
+        var bl = ary.blacklist_exception || [];
+
+        for (var i = 0; i < allow.length; i++) {
+            stor.push({
+                sid: allow[i],
+                action: "allow",
+                key: "key-" + stor.length
+            });
+        }
+
+        for (var i = 0; i < block.length; i++) {
+            stor.push({
+                sid: block[i],
+                action: "block",
+                key: "key-" + stor.length
+            });
+        }
+
+        for (var i = 0; i < bl.length; i++) {
+            var parts = bl[i].split(":");
+            stor.push({
+                sid: parts[0],
+                action: parts[2] == "dst" ? "blacklist_dst" : "blacklist_src",
+                expire_time: parts[1],
+                key: "key-" + stor.length
+            });
+        }
+
+        return stor;
+    }
+
+    function hideComboboxInEditor(dataIndex) {
+        var control = $("input[name=" + dataIndex + "]");
+        if (!control) {
+            return;
+        }
+
+        var container = control.combobox("getContainer");
+        if (!container) {
+            return;
+        }
+
+        container.hide();
+        control.combobox("disable");
+    }
+
+    function showComboboxInEditor(dataIndex) {
+        var control = $("input[name=" + dataIndex + "]");
+        if (!control) {
+            return;
+        }
+
+        var container = control.combobox("getContainer");
+        if (!container) {
+            return;
+        }
+
+        control.combobox("enable");
+        container.show();
+    }
+
+    var helpProfile = new $.su.Help({
+        container: "div#ipsprofiles_help",
+        content: ["IPS_PROFILE_NON_STANDARD_PORT_DETECTION", "IPS_PROFILE_LIST"]
+    });
+
+});
+</script>
+</body>
+
+</html>

@@ -1,0 +1,71 @@
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
+<html xmlns="http://www.w3.org/1999/xhtml">
+<head>
+<meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
+<title>cloud_tip_open_cloud_mgt</title>
+</head>
+
+<body>
+<div class="func-container">
+	<div id="account">
+		<form id="cloud_tip_open_cloud_mgt">
+			<div id="tip_msg"></div>
+		</form>
+		<div id="cloudOpen_alert_cnt">
+			<h4 class="title"  id="cloudOpen_confirm_cnt">
+				<span class="icon"></span>
+				<span class="text" id="cloudOpen_confirm_content"></span>
+			</h4>
+		</div>
+	</div>
+</div>
+
+<style>
+#tip_msg span{
+	color: #115b96;
+	cursor: pointer
+}
+</style>
+<script type="text/javascript">
+try{
+    $
+}catch(e){
+    location.href = "/";
+};
+
+
+$(document).ready(function(e){
+	var title = $("#tab-menu-ul-need-cloud-open a.nav span").text();
+
+	$("div#account").panel({
+		title: title,
+		collapsible: false
+	});
+
+	$(".top-tip").hide();
+	$.su.menu.fixMarginTop(-32);
+	$('#tip_msg').html("云管理功能处于禁用状态，请前往&nbsp;<span id='jumpToCloudMngt'>系统&nbsp;->&nbsp;云管理&nbsp;->&nbsp;基本配置</span>&nbsp;打开云管理。");
+
+	$('#tip_msg span').unbind().bind("click",function(){
+		$.su.menu.advanced.open("cloud_mngr");
+		var li_fstId = "menu-"+$.su.menu.advanced.settings.idTag+"-cloud_mngr-li";
+		var tabId = $("ul.menu-tree li#"+li_fstId).find('a.sec').attr('tab-id');
+		$("#tab-menu-ul-wservice-setting").remove();
+		// 显示之前隐藏的tab栏
+		$("#"+tabId).show();
+		$("#"+li_fstId).addClass("selected").find('a.fst').addClass("selected");
+		//  触发云管理的click事件
+		$("#"+li_fstId).find('li.sec a.sec').each(function(i,o){
+			var $o = $(o);
+			if("global" === $o.attr('name'))
+			{
+				$o.trigger("click");
+			}
+		})
+	})
+})
+
+</script>
+</body>
+
+</html>

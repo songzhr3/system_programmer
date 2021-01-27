@@ -1,0 +1,97 @@
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
+<html xmlns="http://www.w3.org/1999/xhtml">
+<head>
+<meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
+<title>cloud_tip_goto_SMBCloud</title>
+</head>
+
+<body>
+<div class="func-container">
+	<div id="account">
+		<form id="cloud_tip_goto_SMBCloud">
+			<div id="openCloud_tip"></div>
+			<a class="gotoSmbcloud public" href='https://smbcloud.tp-link.com.cn/' target="_blank">登录TP-LINK商用网络云平台</a>
+			<div id="closeCloud_tip"></div>
+		</form>
+		<div id="cloudOpen_alert_cnt">
+			<h4 class="title"  id="cloudOpen_confirm_cnt">
+				<span class="icon"></span>
+				<span class="text" id="cloudOpen_confirm_content"></span>
+			</h4>
+		</div>
+	</div>
+</div>
+
+<script type="text/javascript">
+try{
+    $
+}catch(e){
+    location.href = "/";
+};
+
+
+$(document).ready(function(e){
+	var title = $("#tab-menu ul.tab-menu-ul:visible li.selected a.nav span").text();
+	var a = $("div.func-container").page({
+		title: title,
+		help:""
+	});
+	$("div#account").panel({
+		title: title,
+		collapsible: false
+	});
+
+
+	var switch_cloud_type = function(cloud_type) {
+		if (cloud_type == "public") {
+			$('#openCloud_tip').html($.su.CHAR.CLOUD_TIP.OPEN_CLOUD_TIP);
+		}
+		else if (cloud_type == "user_define") {
+			$("a.gotoSmbcloud.public").hide();
+			$('#openCloud_tip').html($.su.CHAR.CLOUD_TIP.OPEN_USER_CLOUD_TIP);
+		}
+	}
+
+	var proxy = new $.su.Proxy({
+		async: false
+	});
+
+	var g_cloud_type = "public";
+	proxy.query({
+		cloud_config: {
+			name: "cloud_type"
+		}
+	}, function(data) {
+		var cloud_type = data.cloud_config.cloud_type.cloud_type;
+
+		// 页面展示文字
+		switch_cloud_type(cloud_type);
+	})
+
+
+	$(".top-tip").hide();
+	$.su.menu.fixMarginTop(-32);
+	$('#closeCloud_tip').html($.su.CHAR.CLOUD_TIP.CLOSE_CLOUD_TIP);
+	$('#closeCloud_tip span').unbind().bind("click",function(){
+			$.su.menu.advanced.open("cloud_mngr");
+			var li_fstId = "menu-"+$.su.menu.advanced.settings.idTag+"-system-li";
+			var tabId = $("ul.menu-tree li#"+li_fstId).find('a.sec').attr('tab-id');
+			$("#tab-menu-ul-wservice-setting").remove();
+			// 显示之前隐藏的tab栏
+			$("#"+tabId).show();
+			$("#"+li_fstId).addClass("selected").find('a.fst').addClass("selected");
+			//  触发云管理的click事件
+			$("#"+li_fstId).find('li.sec a.sec').each(function(i,o){
+				var $o = $(o);
+				if("cloud_mngr" === $o.attr('name'))
+				{
+					$o.trigger("click");
+				}
+			})
+		})
+	})
+
+</script>
+</body>
+
+</html>

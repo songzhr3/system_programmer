@@ -1,0 +1,198 @@
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
+<html xmlns="http://www.w3.org/1999/xhtml">
+<head>
+<meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
+<title>BALANCE_BASIC</title>
+<style type="text/css"></style>
+</head>
+
+<body>
+<div class="func-container">
+    <div id="global_setting">
+        <form id="balance_global_settings">
+            <input id="balance_global_enable" name="state" value=""/>
+        </form>
+    </div>
+    <div id="function_setting">
+        <form id="balance_basic_settings_special">
+            <input id="special_route_enable" name="state" value=""/>
+        </form>
+        <form id="balance_basic_settings_load">
+            <input id="load_balance_enable" name="balance_state" value=""/>
+            <input id="interface_list" name="use_if" value=""/>
+            <button id="balance_submit"></button> <!-- Shared for two forms -->
+        </form>
+    </div>
+
+    <hr/>
+    <div class="notice">
+        <h6>注意：</h6>
+        <ul>
+            <li>若要使 智能均衡 生效，请您先设置各接口的上下行带宽。</li>
+            <li>智能均衡中各接口的流量比等于各接口的带宽比。</li>
+        </ul>
+    </div>
+
+    <div id="balance_basic_hlep">    </div>
+
+<script type="text/javascript">
+try{
+    $
+}catch(e){
+    location.href = "/";
+};
+
+
+$(document).ready(function(e){
+    $(".func-container").hide();
+
+    var enable_balance_basic_special_Proxy = new $.su.Proxy();
+    var enable_balance_basic_load_Proxy = new $.su.Proxy();
+    var enable_balance_global_Proxy = new $.su.Proxy();
+
+    $("#global_setting").panel({
+        title: $.su.CHAR.BALANCE_SETTING.GLOBAL_SETTINGS,
+        collapsible: false
+    });
+
+    $("#function_setting").panel({
+        title: $.su.CHAR.BALANCE_SETTING.SETTINGS,
+        collapsible: false
+    });
+
+    $("#special_route_enable").checkbox({
+        items: [
+            {boxlabel: $.su.CHAR.BALANCE_SETTING.SPECIAL_SETTING, inputValue: "on", uncheckedValue: "off"}
+        ]
+   });
+
+    $("#load_balance_enable").checkbox({
+        cls:'inline',
+        items: [
+            {boxlabel: $.su.CHAR.BALANCE_SETTING.LOAD_BALANCE_SETTING, inputValue: "on", uncheckedValue: "off"}
+        ]
+   }).on("ev_change", function(e, oldValue, newValue){
+        var val = (newValue[0] == "balance_state" || newValue[0]=="on" )? "on" : "off";
+        switch(val)
+        {
+            case "on":
+                $("#interface_list").combobox("enable");
+                $("#interface_list").combobox("reset");
+                break;
+            case "off":
+                $("#interface_list").combobox("disable");
+                $("#interface_list").combobox("setValue", "---");
+                break;
+        }
+   });
+
+    $("#interface_list").combobox({
+        multiSelect: true,
+        cls: 'inline',
+        labelCls: 'xxxxxs',
+        items: [
+            { name: "---", value: "---" }
+        ]
+    });
+
+    var interfaceItem=[];
+    var bridgeInf = [];
+    var interfaceInfoProxy = new $.su.Proxy({async: false});
+    var interfaceProxy = new $.su.Proxy({async: false});
+
+    interfaceInfoProxy.query({ "network": { "table": "if_info" } }, function (data) {
+        var data = data.network["if_info"];
+        for (var i = 0; i < data.length; i++) {
+            for (intf in data[i]) {
+                if (data[i][intf].isbridged == 1){
+                    bridgeInf.push(intf);
+                }
+            }
+        }
+    });
+
+    interfaceProxy.query({ "mwan3": { "table": "if" } }, function (data) {
+        var resp_data = data.mwan3["if"];
+        for (var i = 0; i < resp_data.length; i++) {
+            for (intf in resp_data[i]) {
+                var curr_if = resp_data[i][intf];
+                if (curr_if.balance == 1 && bridgeInf.indexOf(intf) < 0)
+                    interfaceItem.push({ name: intf, value: intf });
+            }
+            var combobox = $('#interface_list');
+            combobox.combobox('loadData', interfaceItem);
+        }
+    });
+
+    $("#balance_basic_settings_special").form({
+        proxy: enable_balance_basic_special_Proxy,
+        fields: [
+            {name: "state"}
+        ],
+        parseKey: {
+            moduleName: "mwan3",
+            sectionName: "special_rule"
+        }
+    });
+
+    $("#balance_basic_settings_load").form({
+        proxy: enable_balance_basic_load_Proxy,
+        fields: [
+            {name: "balance_state", mapping: "balance_state"},
+            {name: "use_if", mapping: "use_if"}
+        ],
+        parseKey: {
+            moduleName: "load_balance",
+            sectionName: "basic"
+        }
+    });
+
+    $("button#balance_submit").button({
+        text: $.su.CHAR.OPERATION.SAVE,
+        handler: function () {
+            var succ_count = 0;
+            function accumulate_success() {
+                succ_count++;
+
+                /* Only show one success tip if both forms succeed */
+                if (succ_count == 2) {
+                    $("#balance_basic_settings_special").form('prompt', true);
+                }
+            }
+
+            /* Disable auto-showing success tip */
+            $("#balance_basic_settings_special").form('submit', null, accumulate_success, null, null, false);
+            $("#balance_basic_settings_load").form('submit', null, accumulate_success, null, null, false);
+            return true;
+        },
+        cls: "submit"
+    });
+
+    $("#balance_global_enable").checkbox({
+        items: [
+            {boxlabel: $.su.CHAR.BALANCE_SETTING.ENABLE_BALANCE, inputValue: "on", uncheckedValue: "off"}
+        ]
+   });
+
+    $("#balance_global_settings").form({
+        proxy: enable_balance_global_Proxy,
+        fields: [
+            {name: "state", mapping: "state"}
+        ],
+        parseKey: {
+            moduleName: "mwan3",
+            sectionName: "global"
+        },
+        submitBtn: "default"
+    })
+
+    var helpBalanceBasic = new $.su.Help({
+        container: "div#balance_basic_hlep",
+        content: ["BALANCE_GLOBAL_SETTING","BALANCE_BASIC_SETTING"]
+    });
+    $(".func-container").show();
+});
+</script>
+</body>
+
+</html>

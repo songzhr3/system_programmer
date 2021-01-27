@@ -1,0 +1,724 @@
+<!DOCTYPE html
+    PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
+<html xmlns="http://www.w3.org/1999/xhtml">
+
+<head>
+    <meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
+    <title>IPS Signature</title>
+    <style type="text/css">
+        #ips_sig_detail_msg td:nth-child(1) {
+            text-align: right;
+        }
+
+        #ips_sig_detail_msg td:nth-child(2) {
+            text-align: left;
+        }
+
+        #ips_sig_detail_msg table {
+            width: 100%;
+            line-height: 2em;
+        }
+
+        .checkbox-label, .radio-label {
+            min-width: 110px;
+        }
+
+        .top {
+            min-width: 1460px !important;
+        }
+
+        .top-main .top-content {
+            min-width: 1385px !important;
+        }
+    </style>
+</head>
+
+<body>
+    <div class="func-container">
+        <div id="ips_signature_rule_list">
+            <div id="ips_signature_rule_grid"></div>
+        </div>
+
+        <div id="ips_signature_help"></div>
+    </div>
+
+    <div id="ips_sig_lines_msg">
+        <div class="lines-value"></div>
+    </div>
+
+    <div id="ips_sig_detail_msg">
+        <div id="title-container">
+            <div id="title" />
+            <table>
+                <tr>
+                    <td id="sig-detail-sid-name">签名 ID：</td>
+                    <td id="sig-detail-sid-value"></td>
+                </tr>
+                <tr>
+                    <td id="sig-detail-target-name">对象：</td>
+                    <td id="sig-detail-target-value"></td>
+                </tr>
+                <tr>
+                    <td id="sig-detail-os-name">操作系统：</td>
+                    <td id="sig-detail-os-value"></td>
+                </tr>
+                <tr>
+                    <td id="sig-detail-app-name">应用程序：</td>
+                    <td id="sig-detail-app-value"></td>
+                </tr>
+                <tr>
+                    <td id="sig-detail-proto-name">协议：</td>
+                    <td id="sig-detail-proto-value"></td>
+                </tr>
+                <tr>
+                    <td id="sig-detail-threat-name">威胁类别：</td>
+                    <td id="sig-detail-threat-value"></td>
+                </tr>
+                <tr>
+                    <td id="sig-detail-cve-name">CVE：</td>
+                    <td id="sig-detail-cve-value"></td>
+                </tr>
+                <tr>
+                    <td id="sig-detail-bulletin-name">厂商公告：</td>
+                    <td id="sig-detail-bulletin-value"></td>
+                </tr>
+            </table>
+        </div>
+        <div id="desc-container">
+            <div id="desc"></div>
+        </div>
+        <div id="solution-container">
+            <div id="solution"></div>
+        </div>
+    </div>
+    <script src="../web-static/js/ips/ips-common.js?random=20201217044300" type="text/javascript"></script>
+
+<script type="text/javascript">
+try {
+    $
+} catch (e) {
+    location.href = "/";
+};
+
+$(document).ready(function (e) {
+    var g_current_app_category = {};
+    var g_current_classification = {};
+    var g_current_classification_boxitems = {};
+
+    $("#ips_signature_rule_list").panel({
+        title: $.su.CHAR.IPS_SIGNATURE.SIG_LIST,
+        collapsible: false
+    });
+
+    $("#title-container").panel({
+        title: $.su.CHAR.IPS_SIGNATURE.BASIC_INFO,
+        collapsible: false
+    });
+    $("#desc-container").panel({
+        title: $.su.CHAR.IPS_SIGNATURE.DESC,
+        collapsible: false
+    });
+    $("#solution-container").panel({
+        title: $.su.CHAR.IPS_SIGNATURE.SOLUTION,
+        collapsible: false
+    });
+
+    var sigDetailMsg = $("#ips_sig_detail_msg").msg({
+        grid: ruleGrid,
+        cls: 'l',
+        closeBtn: true,
+        type: "alert",
+        okHandler: function (e) {
+            sigDetailMsg.msg('hide');
+        },
+        cancelHandler: function () {
+            sigDetailMsg.msg('hide');
+        }
+    });
+
+    var linesMsg = $("#ips_sig_lines_msg").msg({
+        grid: ruleGrid,
+        cls: 'l',
+        closeBtn: true,
+        type: "alert",
+        okHandler: function () {
+            linesMsg.msg('hide');
+        },
+        cancelHandler: function () {
+            linesMsg.msg('hide');
+        }
+    });
+
+    var ruleGrid;
+    function initGrid() {
+        ruleGrid = $("#ips_signature_rule_grid").grid({
+            editor: {
+                content: "default",
+                fields: [
+                    { name: "sid" },
+                    { name: "name" },
+                    { name: "description" },
+                    { name: "target" },
+                    { name: "severity" },
+                    { name: "os" },
+                    { name: "app" },
+                    { name: "proto" },
+                    { name: "threat_type" },
+                    { name: "action" },
+                    { name: "comment" },
+                    { name: "signature" }
+                ]
+            },
+            store: {
+                proxy: new $.su.Proxy(),
+                fields: [
+                    { name: "sid" },
+                    { name: "name" },
+                    { name: "description" },
+                    { name: "target" },
+                    { name: "severity" },
+                    { name: "os" },
+                    { name: "app" },
+                    { name: "proto" },
+                    { name: "threat_type" },
+                    { name: "action" },
+                    { name: "comment" },
+                    { name: "signature" },
+                    { name: "enable" },
+                    { name: "type" },
+                    { name: "cve" },
+                    { name: "bulletin" }
+                ],
+                parseKey: {
+                    moduleName: "ips",
+                    tableName: "signature",
+                    pageSizeName: "ips_signature_entry",
+                    setFilter: function (index, itemName, data) {
+                        if (data["opt"] != undefined) {
+                            /* Click to disable/enable */
+                            return { sid: data.updateData.sid };
+                        } else {
+                            /* Form submit, use original IP as filter */
+                            return { sid: ruleGrid.grid("getStore").getDataByIndex(index).sid };
+                        }
+                    },
+                    delFilter: function (index, itemName, data) {
+                        /* Form submit, use original IP as filter */
+                        var res = [];
+                        for (var i = 0; i < data.length; i++) {
+                            res.push(data[i].sid);
+                        }
+                        return { sid: res };
+                    }
+                }
+            },
+            paging_true: {},
+            columns: [
+                {
+                    xtype: "checkcolumn",
+                    width: 50
+                },
+                {
+                    text: $.su.CHAR.IPS_SIGNATURE.SID,
+                    dataIndex: "sid",
+                    width: 60,
+                    editor: {
+                        xtype: "textbox",
+                        readOnly: true,
+                        allowBlank: false,
+                        vtype: "string_visible_allow_blank",
+                        maxLength: 32,
+                        minLength: 1
+                    },
+                    scan: {
+                        cmp: $.search.compare.string
+                    }
+                },
+                {
+                    text: $.su.CHAR.IPS_SIGNATURE.TITLE,
+                    width: 250,
+                    dataIndex: "name",
+                    editor: {
+                        xtype: "textbox",
+                        id: "sig_name",
+                        allowBlank: false,
+                        vtype: "string_visible_allow_blank",
+                        maxLength: 32,
+                        minLength: 1
+                    }
+                },
+                {
+                    text: $.su.CHAR.IPS_SIGNATURE.TARGET,
+                    dataIndex: "target",
+                    editor: {
+                        xtype: "checkbox",
+                        id: "sig_target",
+                        allowBlank: false,
+                        multiSelect: true,
+                        columns: 5,
+                        items: g_current_classification_boxitems["target"],
+                        vtype: "string_visible_allow_blank"
+                    },
+                    renderer: function (data) {
+                        return translateCriteria(data, g_current_classification, 5, "target").join("<br/>");
+                    },
+                    scan: {
+                        type: "combobox",
+                        items: searchDialogItemGen("target"),
+                        cmp: searchDialogCmp
+                    }
+                },
+                {
+                    text: $.su.CHAR.IPS_SIGNATURE.SEVERITY,
+                    dataIndex: "severity",
+                    editor: {
+                        xtype: "checkbox",
+                        id: "sig_severity",
+                        allowBlank: false,
+                        multiSelect: true,
+                        columns: 5,
+                        items: g_current_classification_boxitems["severity"],
+                        vtype: "string_visible_allow_blank"
+                    },
+                    renderer: function (data) {
+                        return translateCriteria(data, g_current_classification, 5, "severity").join("<br/>");
+                    },
+                    scan: {
+                        type: "combobox",
+                        items: searchDialogItemGen("severity"),
+                        cmp: searchDialogCmp
+                    }
+                },
+                {
+                    text: $.su.CHAR.IPS_SIGNATURE.OS,
+                    dataIndex: "os",
+                    editor: {
+                        xtype: "checkbox",
+                        id: "sig_os",
+                        allowBlank: false,
+                        multiSelect: true,
+                        columns: 5,
+                        items: g_current_classification_boxitems["os"],
+                        vtype: "string_visible_allow_blank"
+                    },
+                    renderer: function (dd, index, data) {
+                        if ("" == dd || typeof dd == "undefined") {
+                            return "---";
+                        }
+                        var translated = translateCriteria(dd, g_current_classification, 4, "os");
+
+                        switch (translated.length) {
+                            case 0:
+                                return "---";
+                            case 1:
+                                return translated[0];
+                            case 2:
+                                return translated[0] + "</br>" + translated[1];
+                            default:
+                                return translated[0] + "…&nbsp&nbsp" + "<a href='javascript:void(0);' class='btn-misc-detail btn-detail' data-field='os' data-index='" + index + "'>更多</a>";
+                        }
+                    },
+                    scan: {
+                        type: "combobox",
+                        items: searchDialogItemGen("os"),
+                        cmp: searchDialogCmp
+                    }
+                },
+                {
+                    text: $.su.CHAR.IPS_SIGNATURE.APP,
+                    dataIndex: "app",
+                    editor: {
+                        xtype: "tree",
+                        placeholder: $.su.CHAR.IPS_SIGNATURE.TYPE_TO_SEARCH,
+                        minExpandLevel: 1,
+                        maxWidth: 250,
+                        maxHeight: 250,
+                        type: "editorTree",
+                        id: "sig_app",
+                        source: $.su.tree.convertSlpTreeData(g_current_app_category, "name", "cn_name", "app", "app_cn_name"),
+                        /* 只允许返回第二级节点，待后端筛选完成后接受第一级节点 */
+                        nodeShallGet: function (node) { return node.isSelected() && node.type == "level2"}
+                    },
+                    renderer: function (dd, index, data) {
+                        if ("" == dd || typeof dd == "undefined") {
+                            return "---";
+                        }
+                        var translated = translateAppName(dd, g_current_app_category, 4);
+
+                        switch (translated.length) {
+                            case 0:
+                                return "---";
+                            case 1:
+                                return translated[0];
+                            case 2:
+                                return translated[0] + "</br>" + translated[1];
+                            default:
+                                return translated[0] + "…&nbsp&nbsp" + "<a href='javascript:void(0);' class='btn-app-detail btn-detail' data-index='" + index + "'>更多</a>";
+                        }
+                    },
+                    scan: {
+                        type: "combobox",
+                        items: searchDialogItemGen("app"),
+                        cmp: searchDialogCmp
+                    }
+                },
+                {
+                    text: $.su.CHAR.IPS_SIGNATURE.PROTO,
+                    dataIndex: "proto",
+                    editor: {
+                        xtype: "checkbox",
+                        id: "sig_proto",
+                        allowBlank: false,
+                        multiSelect: true,
+                        columns: 4,
+                        items: g_current_classification_boxitems["proto"],
+                        vtype: "string_visible_allow_blank"
+                    },
+                    renderer: function (dd, index, data) {
+                        if ("" == dd || typeof dd == "undefined") {
+                            return "---";
+                        }
+                        var translated = translateCriteria(dd, g_current_classification, 4, "proto");
+
+                        switch (translated.length) {
+                            case 0:
+                                return "---";
+                            case 1:
+                                return translated[0];
+                            case 2:
+                                return translated[0] + "</br>" + translated[1];
+                            default:
+                                return translated[0] + "…&nbsp&nbsp" + "<a href='javascript:void(0);' class='btn-misc-detail btn-detail' data-field='proto' data-index='" + index + "'>更多</a>";
+                        }
+                    },
+                    scan: {
+                        type: "combobox",
+                        items: searchDialogItemGen("proto"),
+                        cmp: searchDialogCmp
+                    }
+                },
+                {
+                    text: $.su.CHAR.IPS_SIGNATURE.THREAT_TYPE,
+                    dataIndex: "threat_type",
+                    editor: {
+                        xtype: "checkbox",
+                        id: "sig_threat",
+                        allowBlank: false,
+                        multiSelect: true,
+                        columns: 4,
+                        items: g_current_classification_boxitems["threat_type"],
+                        vtype: "string_visible_allow_blank"
+                    },
+                    renderer: function (dd, index, data) {
+                        if ("" == dd || typeof dd == "undefined") {
+                            return "---";
+                        }
+                        var translated = translateCriteria(dd, g_current_classification, 4, "threat_type");
+
+                        switch (translated.length) {
+                            case 0:
+                                return "---";
+                            case 1:
+                                return translated[0];
+                            case 2:
+                                return translated[0] + "</br>" + translated[1];
+                            default:
+                                return translated[0] + "…&nbsp&nbsp" + "<a href='javascript:void(0);' class='btn-misc-detail btn-detail' data-field='threat_type' data-index='" + index + "'>更多</a>";
+                        }
+                    },
+                    scan: {
+                        type: "combobox",
+                        items: searchDialogItemGen("threat_type"),
+                        cmp: searchDialogCmp
+                    }
+                },
+                {
+                    text: $.su.CHAR.IPS_SIGNATURE.ACTION,
+                    dataIndex: "action",
+                    editor: {
+                        xtype: "radio",
+                        id: "sig_action",
+                        allowBlank: false,
+                        vtype: "string_visible_allow_blank",
+                        columns: 3,
+                        items: [
+                            { boxlabel: $.su.CHAR.IPS_SIGNATURE.ALLOW, inputValue: 'allow' },
+                            { boxlabel: $.su.CHAR.IPS_SIGNATURE.BLOCK, inputValue: 'block' }
+                        ]
+                    },
+                    renderer: function (text, idx, data) {
+                        var map = {
+                            'allow': $.su.CHAR.IPS_SIGNATURE.ALLOW,
+                            'block': $.su.CHAR.IPS_SIGNATURE.BLOCK
+                        };
+                        return map[text];
+                    }
+                },
+                {
+                    text: $.su.CHAR.IPS_SIGNATURE.COMMENT,
+                    dataIndex: "comment",
+                    hidden: true,
+                    editor: {
+                        cls: "l",
+                        xtype: "textbox",
+                        id: "sig_comment",
+                    }
+                },
+                {
+                    text: $.su.CHAR.IPS_SIGNATURE.DETAILS,
+                    dataIndex: "placeholder",
+                    renderer: function (d, index, data) {
+                        if (data.type == "system") {
+                            return "<a href='javascript:void(0);' class='btn-full-detail btn-detail' data-index='" + index + "'>" + $.su.CHAR.IPS_SIGNATURE.VIEW + "</a>";
+                        } else {
+                            return "---";
+                        }
+                    }
+                },
+                {
+                    text: $.su.CHAR.IPS_SIGNATURE.SIG,
+                    hidden: true,
+                    dataIndex: "signature",
+                    editor: {
+                        xtype: "textarea",
+                        id: "signature",
+                        multiLine: true,
+                        inputCls: "xl"
+                    }
+                },
+                {
+                    text: $.su.CHAR.IPS_SIGNATURE.STATUS,
+                    xtype: "statuscolumn",
+                    dataIndex: "enable",
+                    width: 70,
+                    editor: {
+                        xtype: "checkbox",
+                        fieldLabel: '',
+                        items: [
+                            { boxlabel: $.su.CHAR.GRID.ENABLE, inputValue: 'on', uncheckedValue: 'off', checked: true }
+                        ]
+                    }
+                },
+                {
+                    xtype: "settings",
+                    width: 75,
+                    renderer: function (btn, dd, idx, data) { return data.type != "system" || btn != "delete"; }
+                }
+            ],
+            operation: 'enable|disable|search|searchAll'
+        }).delegate('a.btn-full-detail', 'click', function (e) {
+            var index = $(this).data('index');
+            var data = ruleGrid.grid("getStore").getDataByIndex(parseInt(index));
+            showDetail(data.name + "的详情", data.sid);
+        }).delegate("a.btn-misc-detail", "click", function (e) {
+            var index = $(this).data('index');
+            var field = $(this).data('field');
+            var data = ruleGrid.grid("getStore").getDataByIndex(parseInt(index));
+            showLinesMsg(data.name + "的" + $.su.CHAR.IPS_SIGNATURE[field.toUpperCase()],
+                translateCriteria(data[field], g_current_classification, -1, field));
+        }).delegate("a.btn-app-detail", "click", function (e) {
+            var index = $(this).data('index');
+            var data = ruleGrid.grid("getStore").getDataByIndex(parseInt(index));
+            showLinesMsg(data.name + "的" + $.su.CHAR.IPS_SIGNATURE.APP,
+                translateAppName(data.app, g_current_app_category, -1));
+        }).on("ev_startEdit", function (e, idx, key) {
+            var data;
+            if (idx != "add")
+                data = ruleGrid.grid("getStore").getDataByIndex(parseInt(idx));
+
+            if (data && data.type == "system") {
+                $("#sig_name").textbox("setReadonly");
+                $("#sig_target").checkbox("disableAllItem");
+                $("#sig_severity").checkbox("disableAllItem");
+                $("#sig_os").checkbox("disableAllItem");
+                $("#sig_app").tree("disable");
+                $("#sig_proto").checkbox("disableAllItem");
+                $("#sig_threat").checkbox("disableAllItem");
+                $("#signature").textarea("disable");
+                $("#signature").textarea("getContainer").hide();
+                $("#sig_detail").button("show");
+            } else {
+                if (idx == "add") {
+                    $("[name=sid]").textbox("setValue", $.su.CHAR.IPS_SIGNATURE.AUTO_GENERATED);
+                }
+                $("#sig_name").textbox("removeReadonly");
+                $("#sig_target").checkbox("enableAllItem");
+                $("#sig_severity").checkbox("enableAllItem");
+                $("#sig_os").checkbox("enableAllItem");
+                $("#sig_app").tree("enable");
+                $("#sig_proto").checkbox("enableAllItem");
+                $("#sig_threat").checkbox("enableAllItem");
+                $("#signature").textarea("getContainer").show();
+                $("#signature").textarea("enable");
+                $("#sig_detail").button("hide");
+            }
+        }).on('ev_operation', function(e, me, action) {
+
+            var selectedKeys = ruleGrid.grid("getSelected");
+            var store = ruleGrid.grid('getStore');
+            var data_len = store.data.length;
+            var data = store.data;
+            var map = {};
+            var data_key = [];
+
+
+            if (0 === selectedKeys.length) {
+                ruleGrid.get(0).noneSelectMsg_g.msg('show');
+            } else {
+                ruleGrid.grid("runProgress");
+                $.su.loading.show();
+
+                if (!$.isArray(selectedKeys)) {
+                    selectedKeys = [selectedKeys];
+                }
+                if (!$.isArray(data)) {
+                    data = [data];
+                }
+
+
+                for (var i = 0; i < data.length; i++) {
+                    map[data[i].key] = data[i]['sid'].toString();
+                }
+
+                for (var i = 0; i < selectedKeys.length; i++) {
+                    data_key.push(map[selectedKeys[i]]);
+                }
+
+                var postData = {};
+                postData["ips"] = {};
+                postData["ips"]["table"] = "signature";
+                postData["ips"]["filter"] = {
+                    sid: data_key
+                };
+                postData["ips"]["para"] = {};
+                postData["ips"]["para"]["enable"] = (action == "enable" ? "on" : "off");
+
+                var statusProxy = new $.su.Proxy();
+                statusProxy.modify(postData, function(){
+                    setTimeout(function(){
+                        ruleGrid.grid('refresh');
+                    }, 1000);
+                    ruleGrid.grid("prompt", true);
+                    setTimeout(function(){
+                        $.su.loading.hide();
+                    }, data_len*1);
+                }, function(){
+                    $.su.loading.hide();
+                    ruleGrid.grid("disGridChkbox");
+                    ruleGrid.grid("prompt", false, "");
+                });
+            }
+
+        });
+    }
+
+    function showLinesMsg(title, lines) {
+        var content = "";
+
+        for (var i = 0; i < lines.length; i++) {
+            if (i == lines.length - 1) {
+                content += lines[i] + "</br>";
+            } else {
+                content += lines[i] + "&nbsp&nbsp&nbsp&nbsp" + lines[i + 1] + "</br>";
+                i++;
+            }
+        }
+        linesMsg.find(".lines-value").html(content).css({
+            "lineHeight": "20px",
+            "textAlign": "center",
+            "wordBreak": "break-all"
+        });
+        linesMsg.msg('setTitle', title);
+        linesMsg.msg('show');
+    }
+
+    function showDetail(title, sid) {
+        var proxy = new $.su.Proxy();
+        proxy.query({ips: {table: "signature", filter: [{sid: sid}]}}, function (data) {
+            for (var k in data.ips.signature[0]) {
+                data = data.ips.signature[0][k];
+                break;
+            }
+            $("#sig-detail-sid-value").text(data.sid);
+            $("#desc").text(data.details || "暂无");
+            $("#solution").text(data.solution || "暂无");
+            $("#sig-detail-target-value").text(translateCriteria(data.target, g_current_classification, -1, "target").join("、"));
+            $("#sig-detail-os-value").text(translateCriteria(data.os, g_current_classification, -1, "os").join("、"));
+            $("#sig-detail-app-value").text(translateAppName(data.app, g_current_app_category, -1).join("、") || "暂无");
+            $("#sig-detail-proto-value").text(translateCriteria(data.proto, g_current_classification, -1, "proto").join("、"));
+            $("#sig-detail-threat-value").text(translateCriteria(data.threat_type, g_current_classification, -1, "threat_type").join("、"));
+            $("#sig-detail-cve-value").text(data.cve || "暂无");
+            $("#sig-detail-bulletin-value").text(data.bulletin || "暂无");
+
+            sigDetailMsg.msg('setTitle', title);
+            sigDetailMsg.msg('show');
+        })
+    }
+
+    function setupCheckboxSelection() {
+        for (var k in g_current_classification) {
+            var field = k;
+            var data = g_current_classification[field];
+
+            if (g_current_classification_boxitems[field] == undefined) {
+                g_current_classification_boxitems[field] = [];
+            }
+
+            if (data.values) {
+                for (var i = 0; i < data.values.length; i++) {
+                    g_current_classification_boxitems[field].push(
+                        {boxlabel: data.cn_values[i], inputValue: data.values[i]})
+                }
+            }
+        }
+    }
+
+    $.su.loading.show();
+    var filtersProxy = new $.su.Proxy();
+    filtersProxy.query({
+        ips: {
+            table: ["signature_classification", "signature_app_category"]
+        }
+    }, function (data) {
+        slpClassificationToObject(data.ips.signature_classification, g_current_classification);
+        setupCheckboxSelection();
+        g_current_app_category = data.ips.signature_app_category;
+        initGrid();
+        ruleGrid.grid("getStore").load();
+        $.su.loading.hide();
+    }, function () {$.su.loading.hide();}, function () {$.su.loading.hide();});
+
+    function searchDialogItemGen(field) {
+        return function () {
+            var res = [];
+            for (var i = 0; i < g_current_classification_boxitems[field].length; i++) {
+                var elem = g_current_classification_boxitems[field][i];
+                res.push({ name: elem.boxlabel, value: elem.inputValue });
+            }
+            return res;
+        };
+    }
+
+    function searchDialogCmp(src, dst, index) {
+        /* src from web. dst from the `items` above. */
+        if (typeof(src) == "string") {
+            src = [src];
+        }
+        for (var i = 0; i < src.length; i++) {
+            if (src[i] == dst) {
+                return true;
+            }
+        }
+        return false;
+    }
+
+    var helpSignature = new $.su.Help({
+        container: "div#ips_signature_help",
+        content: ["IPS_SIGNATURE_LIST"]
+    });
+
+});
+</script>
+</body>
+
+</html>

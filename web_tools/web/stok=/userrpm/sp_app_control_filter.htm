@@ -1,0 +1,1132 @@
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
+<html xmlns="http://www.w3.org/1999/xhtml">
+    <head>
+        <meta content="text/html; charset=utf-8" http-equiv="Content-Type"/>
+        <title>
+            APP_SECURITY
+        </title>
+        <style type="text/css">
+        </style>
+    </head>
+    <body>
+        <div class="func-container">
+            <div id="rule_list">
+                <div id="appcontrolfilter_rule_grid">
+                </div>
+            </div>
+            <div id="own_editor">
+                <input id="name" name="name"/>
+                <p>HTTP相关</p>
+                <div style="border: 1px solid #ccc; padding: 4px 8px; width: 800px; margin-top: 8px">
+                    <input id="radio_http_post_method" name="http_post_method"/>
+                    <input id="checkbox_http_post" name="has_http_post_threshold"/>
+                    <input id="http_post_alert" name="http_post_alert"/>
+                    <input id="http_post_forbidden" name="http_post_forbidden"/>
+                    <input id="radio_http_web_method" name="http_web_method"/>
+                    <input id="radio_http_proxy_method" name="http_proxy_method"/>
+                    <input id="radio_http_upload_method" name="http_upload_method"/>
+                    <input id="checkbox_http_upload" name="has_http_upload_threshold"/>
+                    <input id="http_upload_alert" name="http_upload_alert"/>
+                    <input id="http_upload_forbidden" name="http_upload_forbidden"/>
+                    <input id="radio_http_download_method" name="http_download_method"/>
+                    <input id="checkbox_http_download" name="has_http_download_threshold"/>
+                    <input id="http_download_alert" name="http_download_alert"/>
+                    <input id="http_download_forbidden" name="http_download_forbidden"/>
+                </div>
+
+                <p>FTP相关</p>
+                <div style="border: 1px solid #ccc; padding: 4px 8px; width: 800px; margin-top: 8px">
+                    <input id="radio_ftp_upload_method" name="ftp_upload_method"/>
+                    <input id="checkbox_ftp_upload" name="has_ftp_upload_threshold"/>
+                    <input id="ftp_upload_alert" name="ftp_upload_alert"/>
+                    <input id="ftp_upload_forbidden" name="ftp_upload_forbidden"/>
+                    <input id="radio_ftp_download_method" name="ftp_download_method"/>
+                    <input id="checkbox_ftp_download" name="has_ftp_download_threshold"/>
+                    <input id="ftp_download_alert" name="ftp_download_alert"/>
+                    <input id="ftp_download_forbidden" name="ftp_download_forbidden"/>
+                    <input id="radio_ftp_delete_method" name="ftp_delete_method"/>
+                </div>
+
+                <p>IM相关</p>
+                <div style="border: 1px solid #ccc; padding: 4px 8px; width: 800px; margin-top: 8px">
+                    <input id="radio_qq_login_method" name="qq_login_method"/>
+                    <input id="checkbox_qq_black_list" name="has_qq_black_list"/>
+                    <input id="checkbox_qq_white_list" name="has_qq_white_list"/>
+                    <textarea id="qq_black_list" name="qq_black_list"></textarea>
+                    <textarea id="qq_white_list" name="qq_white_list"></textarea>
+                </div>
+
+                <input id="comment" name="comment"/>
+            </div>
+        </div>
+        <div id="link-detail-window">
+            <table class="link-detail-table detail">
+                <tr>
+                    <td class="detail-value">
+                    </td>
+                </tr>
+            </table>
+        </div>
+        <div class="notice">
+            <p id="caution">
+            </p>
+        </div>
+        <div id="appcontrolfilter_help">
+        </div>
+        <script type="text/javascript">
+            try{
+        $
+    }catch(e){
+        location.href="../web-static//";
+    };
+
+$(document).ready(function(e){
+    $(".func-container").hide();
+
+    $("div#rule_list").panel({
+        title:$.su.CHAR.APPCONTROLFILTERCONF.RULE_LIST,
+        collapsible: false
+    });
+
+    var MAX_QQ_LIST_LENGTH = 10;
+
+    var http_post_alert = $("input#http_post_alert").textbox({
+        fieldLabel:$.su.CHAR.APPCONTROLFILTERCONF.ALERT_THRESHOLD,
+        tips:"<1-1048576>B",
+        allowBlank:true,
+        vtype:{
+            vtype:"number",
+            min:1,
+            max:1048576
+        }
+    });
+
+    var http_post_forbidden = $("input#http_post_forbidden").textbox({
+        fieldLabel:$.su.CHAR.APPCONTROLFILTERCONF.FORBIDDEN_THRESHOLD,
+        tips:"<1-1048576>B",
+        allowBlank:true,
+        vtype:{
+            vtype:"number",
+            min:1,
+            max:1048576
+        }
+    });
+
+    var http_upload_alert = $("input#http_upload_alert").textbox({
+        fieldLabel:$.su.CHAR.APPCONTROLFILTERCONF.ALERT_THRESHOLD,
+        tips:"<1-1024000>KB",
+        allowBlank:true,
+        vtype:{
+            vtype:"number",
+            min:1,
+            max:1024000
+        }
+    });
+
+    var http_upload_forbidden = $("input#http_upload_forbidden").textbox({
+        fieldLabel:$.su.CHAR.APPCONTROLFILTERCONF.FORBIDDEN_THRESHOLD,
+        tips:"<1-1024000>KB",
+        allowBlank:true,
+        vtype:{
+            vtype:"number",
+            min:1,
+            max:1024000
+        }
+    });
+
+    var http_download_alert = $("input#http_download_alert").textbox({
+        fieldLabel:$.su.CHAR.APPCONTROLFILTERCONF.ALERT_THRESHOLD,
+        tips:"<1-1024000>KB",
+        allowBlank:true,
+        vtype:{
+            vtype:"number",
+            min:1,
+            max:1024000
+        }
+    });
+
+    var http_download_forbidden = $("input#http_download_forbidden").textbox({
+        fieldLabel:$.su.CHAR.APPCONTROLFILTERCONF.FORBIDDEN_THRESHOLD,
+        tips:"<1-1024000>KB",
+        allowBlank:true,
+        vtype:{
+            vtype:"number",
+            min:1,
+            max:1024000
+        }
+    });
+
+    var checkbox_http_post = $("input#checkbox_http_post").checkbox({
+        items: [{boxlabel: $.su.CHAR.APPCONTROLFILTERCONF.HAS_THRESHOLD, name:"has_http_post_threshold",inputValue: "enable", uncheckedValue: "disable"}],
+        defaultValue:["disable"]
+    }).on("ev_change", function (e, oldValue, newValue) {
+        var val = newValue[0];
+        if(val == "enable" || val == "has_http_post_threshold")
+        {
+            http_post_alert.textbox('show');
+            http_post_alert.textbox('enable');
+            http_post_forbidden.textbox('show');
+            http_post_forbidden.textbox('enable');
+        }
+        else
+        {
+            http_post_alert.textbox('hide');
+            http_post_alert.textbox('disable');
+            http_post_forbidden.textbox('hide');
+            http_post_forbidden.textbox('disable');
+        }
+    });
+
+    var checkbox_http_upload = $("input#checkbox_http_upload").checkbox({
+        items: [{boxlabel: $.su.CHAR.APPCONTROLFILTERCONF.HAS_THRESHOLD, name:"has_http_upload_threshold", inputValue: "enable", uncheckedValue: "disable"}],
+        defaultValue:["disable"]
+    }).on("ev_change", function (e, oldValue, newValue) {
+        var val = newValue[0];
+        if(val == "enable" || val == "has_http_upload_threshold")
+        {
+            http_upload_alert.textbox('show');
+            http_upload_alert.textbox('enable');
+            http_upload_forbidden.textbox('show');
+            http_upload_forbidden.textbox('enable');
+        }
+        else
+        {
+            http_upload_alert.textbox('hide');
+            http_upload_alert.textbox('disable');
+            http_upload_forbidden.textbox('hide');
+            http_upload_forbidden.textbox('disable');
+        }
+    });
+
+    var checkbox_http_download = $("input#checkbox_http_download").checkbox({
+        items: [{boxlabel: $.su.CHAR.APPCONTROLFILTERCONF.HAS_THRESHOLD, name:"has_http_download_threshold", inputValue: "enable", uncheckedValue: "disable"}],
+        defaultValue:["disable"]
+    }).on("ev_change", function (e, oldValue, newValue) {
+        var val = newValue[0];
+        if(val == "enable" || val == "has_http_download_threshold")
+        {
+            http_download_alert.textbox('show');
+            http_download_alert.textbox('enable');
+            http_download_forbidden.textbox('show');
+            http_download_forbidden.textbox('enable');
+        }
+        else
+        {
+            http_download_alert.textbox('hide');
+            http_download_alert.textbox('disable');
+            http_download_forbidden.textbox('hide');
+            http_download_forbidden.textbox('disable');
+        }
+    });
+
+    $("input#radio_http_post_method").radio({
+        fieldLabel:$.su.CHAR.APPCONTROLFILTERCONF.HTTP_POST_METHOD,
+        columns:2,
+        items:[
+              {boxlabel:$.su.CHAR.APPCONTROLFILTERCONF.ACCEPT,name:"http_post_method",inputValue:'accept'},
+              {boxlabel:$.su.CHAR.APPCONTROLFILTERCONF.FORBIDDEN,name:"http_post_method",inputValue:'drop',checked:true}
+        ]
+    }).on("ev_change", function(e, oldValue, newValue) {
+        if(newValue === 'accept'){
+            checkbox_http_post.checkbox('show');
+            checkbox_http_post.checkbox("setValue", "disable");
+        }else{
+            checkbox_http_post.checkbox('hide');
+            http_post_alert.textbox('hide');
+            http_post_alert.textbox('disable');
+            http_post_forbidden.textbox('hide');
+            http_post_forbidden.textbox('disable');
+        }
+    });
+
+    $("input#radio_http_web_method").radio({
+        fieldLabel:$.su.CHAR.APPCONTROLFILTERCONF.HTTP_WEB_METHOD,
+        columns:2,
+        items:[
+              {boxlabel:$.su.CHAR.APPCONTROLFILTERCONF.ACCEPT,name:"http_web_method",inputValue:'accept'},
+              {boxlabel:$.su.CHAR.APPCONTROLFILTERCONF.FORBIDDEN,name:"http_web_method",inputValue:'drop',checked:true}
+        ]
+    });
+
+    $("input#radio_http_proxy_method").radio({
+        fieldLabel:$.su.CHAR.APPCONTROLFILTERCONF.HTTP_PROXY_METHOD,
+        columns:2,
+        items:[
+              {boxlabel:$.su.CHAR.APPCONTROLFILTERCONF.ACCEPT,name:"http_proxy_method",inputValue:'accept'},
+              {boxlabel:$.su.CHAR.APPCONTROLFILTERCONF.FORBIDDEN,name:"http_proxy_method",inputValue:'drop',checked:true}
+        ]
+    });
+
+    $("input#radio_http_upload_method").radio({
+        fieldLabel:$.su.CHAR.APPCONTROLFILTERCONF.HTTP_UPLOAD_METHOD,
+        columns:2,
+        items:[
+              {boxlabel:$.su.CHAR.APPCONTROLFILTERCONF.ACCEPT,name:"http_upload_method",inputValue:'accept'},
+              {boxlabel:$.su.CHAR.APPCONTROLFILTERCONF.FORBIDDEN,name:"http_upload_method",inputValue:'drop',checked:true}
+        ]
+    }).on("ev_change", function(e, oldValue, newValue) {
+        if(newValue === 'accept'){
+            checkbox_http_upload.checkbox('show');
+            checkbox_http_upload.checkbox("setValue", "disable");
+        }else{
+            checkbox_http_upload.checkbox('hide');
+            http_upload_alert.textbox('hide');
+            http_upload_alert.textbox('disable');
+            http_upload_forbidden.textbox('hide');
+            http_upload_forbidden.textbox('disable');
+        }
+    });
+
+    $("input#radio_http_download_method").radio({
+        fieldLabel:$.su.CHAR.APPCONTROLFILTERCONF.HTTP_DOWNLOAD_METHOD,
+        columns:2,
+        items:[
+              {boxlabel:$.su.CHAR.APPCONTROLFILTERCONF.ACCEPT,name:"http_download_method",inputValue:'accept'},
+              {boxlabel:$.su.CHAR.APPCONTROLFILTERCONF.FORBIDDEN,name:"http_download_method",inputValue:'drop',checked:true}
+        ]
+    }).on("ev_change", function(e, oldValue, newValue) {
+        if(newValue === 'accept'){
+            checkbox_http_download.checkbox('show');
+            checkbox_http_download.checkbox("setValue", "disable");
+        }else{
+            checkbox_http_download.checkbox('hide');
+            http_download_alert.textbox('hide');
+            http_download_alert.textbox('disable');
+            http_download_forbidden.textbox('hide');
+            http_download_forbidden.textbox('disable');
+        }
+    });
+
+        var ftp_upload_alert = $("input#ftp_upload_alert").textbox({
+        fieldLabel:$.su.CHAR.APPCONTROLFILTERCONF.ALERT_THRESHOLD,
+        tips:"<1-4096000>KB",
+        allowBlank:true,
+        vtype:{
+            vtype:"number",
+            min:1,
+            max:4096000
+        }
+    });
+
+    var ftp_upload_forbidden = $("input#ftp_upload_forbidden").textbox({
+        fieldLabel:$.su.CHAR.APPCONTROLFILTERCONF.FORBIDDEN_THRESHOLD,
+        tips:"<1-4096000>KB",
+        allowBlank:true,
+        vtype:{
+            vtype:"number",
+            min:1,
+            max:4096000
+        }
+    });
+
+    var ftp_download_alert = $("input#ftp_download_alert").textbox({
+        fieldLabel:$.su.CHAR.APPCONTROLFILTERCONF.ALERT_THRESHOLD,
+        tips:"<1-4096000>KB",
+        allowBlank:true,
+        vtype:{
+            vtype:"number",
+            min:1,
+            max:4096000
+        }
+    });
+
+    var ftp_download_forbidden = $("input#ftp_download_forbidden").textbox({
+        fieldLabel:$.su.CHAR.APPCONTROLFILTERCONF.FORBIDDEN_THRESHOLD,
+        tips:"<1-4096000>KB",
+        allowBlank:true,
+        vtype:{
+            vtype:"number",
+            min:1,
+            max:4096000
+        }
+    });
+
+    var checkbox_ftp_upload = $("input#checkbox_ftp_upload").checkbox({
+        items: [{boxlabel: $.su.CHAR.APPCONTROLFILTERCONF.HAS_THRESHOLD, name:"has_ftp_upload_threshold", inputValue: "enable", uncheckedValue: "disable"}],
+        defaultValue:["disable"]
+    }).on("ev_change", function (e, oldValue, newValue) {
+        var val = newValue[0];
+        if(val == "enable" || val == "has_ftp_upload_threshold")
+        {
+            ftp_upload_alert.textbox('show');
+            ftp_upload_alert.textbox('enable');
+            ftp_upload_forbidden.textbox('show');
+            ftp_upload_forbidden.textbox('enable');
+        }
+        else
+        {
+            ftp_upload_alert.textbox('hide');
+            ftp_upload_alert.textbox('disable');
+            ftp_upload_forbidden.textbox('hide');
+            ftp_upload_forbidden.textbox('disable');
+        }
+    });
+
+    var checkbox_ftp_download = $("input#checkbox_ftp_download").checkbox({
+        items: [{boxlabel: $.su.CHAR.APPCONTROLFILTERCONF.HAS_THRESHOLD, name:"has_ftp_download_threshold", inputValue: "enable", uncheckedValue: "disable"}],
+        defaultValue:["disable"]
+    }).on("ev_change", function (e, oldValue, newValue) {
+        var val = newValue[0];
+        if(val == "enable" || val == "has_ftp_download_threshold")
+        {
+            ftp_download_alert.textbox('show');
+            ftp_download_alert.textbox('enable');
+            ftp_download_forbidden.textbox('show');
+            ftp_download_forbidden.textbox('enable');
+        }
+        else
+        {
+            ftp_download_alert.textbox('hide');
+            ftp_download_alert.textbox('disable');
+            ftp_download_forbidden.textbox('hide');
+            ftp_download_forbidden.textbox('disable');
+        }
+    });
+
+    $("input#radio_ftp_upload_method").radio({
+        fieldLabel:$.su.CHAR.APPCONTROLFILTERCONF.FTP_UPLOAD_METHOD,
+        columns:2,
+        items:[
+              {boxlabel:$.su.CHAR.APPCONTROLFILTERCONF.ACCEPT,name:"ftp_upload_method",inputValue:'accept'},
+              {boxlabel:$.su.CHAR.APPCONTROLFILTERCONF.FORBIDDEN,name:"ftp_upload_method",inputValue:'drop',checked:true}
+        ]
+    }).on("ev_change", function(e, oldValue, newValue) {
+        if(newValue === 'accept'){
+            checkbox_ftp_upload.checkbox('show');
+            checkbox_ftp_upload.checkbox("setValue", "disable");
+        }else{
+            checkbox_ftp_upload.checkbox('hide');
+            ftp_upload_alert.textbox('hide');
+            ftp_upload_alert.textbox('disable');
+            ftp_upload_forbidden.textbox('hide');
+            ftp_upload_forbidden.textbox('disable');
+        }
+    });
+
+    $("input#radio_ftp_download_method").radio({
+        fieldLabel:$.su.CHAR.APPCONTROLFILTERCONF.FTP_DOWNLOAD_METHOD,
+        columns:2,
+        items:[
+              {boxlabel:$.su.CHAR.APPCONTROLFILTERCONF.ACCEPT,name:"ftp_download_method",inputValue:'accept'},
+              {boxlabel:$.su.CHAR.APPCONTROLFILTERCONF.FORBIDDEN,name:"ftp_download_method",inputValue:'drop',checked:true}
+        ]
+    }).on("ev_change", function(e, oldValue, newValue) {
+        if(newValue === 'accept'){
+            checkbox_ftp_download.checkbox('show');
+            checkbox_ftp_download.checkbox("setValue", "disable");
+        }else{
+            checkbox_ftp_download.checkbox('hide');
+            ftp_download_alert.textbox('hide');
+            ftp_download_alert.textbox('disable');
+            ftp_download_forbidden.textbox('hide');
+            ftp_download_forbidden.textbox('disable');
+        }
+    });
+
+    $("input#radio_ftp_delete_method").radio({
+        fieldLabel:$.su.CHAR.APPCONTROLFILTERCONF.FTP_DELETE_METHOD,
+        columns:2,
+        items:[
+              {boxlabel:$.su.CHAR.APPCONTROLFILTERCONF.ACCEPT,name:"ftp_delete_method",inputValue:'accept'},
+              {boxlabel:$.su.CHAR.APPCONTROLFILTERCONF.FORBIDDEN,name:"ftp_delete_method",inputValue:'drop',checked:true}
+        ]
+    });
+
+    var qq_black_list = $("#qq_black_list").textarea({
+        fieldLabel: $.su.CHAR.APPCONTROLFILTERCONF.QQ_BLACK_LIST,
+        tips:"多个账号以换行或者分号隔开",
+        allowBlank:false,
+        //vtype:"ascii_visible",
+        inputCls:"long",
+        setValueCb: function(data){
+            var dataString = data.join("\n");
+            return dataString;
+        },
+        getValueCb: function(data){
+            var tmp = data.replace(/\s/g,"\n")
+            var dataArray = tmp.split(/;|\n/);
+
+            for (var i = 0; i < dataArray.length; i++)
+            {
+                if (dataArray[i] == "")
+                {
+                    dataArray.splice(i , 1);
+                    i--;
+                }
+            }
+            return dataArray;
+        }
+    });
+
+    var qq_white_list = $("#qq_white_list").textarea({
+        fieldLabel: $.su.CHAR.APPCONTROLFILTERCONF.QQ_WHITE_LIST,
+        tips:"多个账号以换行或者分号隔开",
+        allowBlank:false,
+        //vtype:"ascii_visible",
+        inputCls:"long",
+        setValueCb: function(data){
+            var dataString = data.join("\n");
+            return dataString;
+        },
+        getValueCb: function(data){
+            var tmp = data.replace(/\s/g,"\n")
+            var dataArray = tmp.split(/;|\n/);
+
+            for (var i = 0; i < dataArray.length; i++)
+            {
+                if (dataArray[i] == "")
+                {
+                    dataArray.splice(i , 1);
+                    i--;
+                }
+            }
+            return dataArray;
+        }
+    });
+
+    var checkbox_qq_black_list = $("input#checkbox_qq_black_list").checkbox({
+        items: [{boxlabel: $.su.CHAR.APPCONTROLFILTERCONF.HAS_QQ_BLACK_LIST, name:"has_qq_black_list", inputValue: "enable", uncheckedValue: "disable"}],
+        defaultValue:["disable"]
+    });
+
+    var checkbox_qq_white_list = $("input#checkbox_qq_white_list").checkbox({
+        items: [{boxlabel: $.su.CHAR.APPCONTROLFILTERCONF.HAS_QQ_WHITE_LIST, name:"has_qq_white_list", inputValue: "enable", uncheckedValue: "disable"}],
+        defaultValue:["disable"]
+    });
+
+    var qq_login_method = $("input#radio_qq_login_method").radio({
+        fieldLabel:$.su.CHAR.APPCONTROLFILTERCONF.QQ_LOGIN_METHOD,
+        columns:2,
+        items:[
+              {boxlabel:$.su.CHAR.APPCONTROLFILTERCONF.ACCEPT,name:"qq_login_method",inputValue:'accept'},
+              {boxlabel:$.su.CHAR.APPCONTROLFILTERCONF.FORBIDDEN,name:"qq_login_method",inputValue:'drop',checked:true}
+        ]
+    }).on("ev_change", function(e, oldValue, newValue) {
+        if(newValue === 'accept'){
+            checkbox_qq_black_list.checkbox('show');
+            checkbox_qq_white_list.checkbox('hide');
+            qq_white_list.textarea('hide');
+            qq_white_list.textarea('disable');
+            if(checkbox_qq_black_list.checkbox('getValue') == 'enable' || checkbox_qq_black_list.checkbox('getValue') == 'has_qq_black_list')
+            {
+                qq_black_list.textarea('show');
+                qq_black_list.textarea('enable');
+            }
+            else
+            {
+                qq_black_list.textarea('hide');
+                qq_black_list.textarea('disable');
+            }
+        }
+        else
+        {
+            checkbox_qq_black_list.checkbox('hide');
+            checkbox_qq_white_list.checkbox('show');
+            qq_black_list.textarea('hide');
+            qq_black_list.textarea('disable');
+            if(checkbox_qq_white_list.checkbox('getValue') == 'enable' || checkbox_qq_white_list.checkbox('getValue') == 'has_qq_white_list')
+            {
+                qq_white_list.textarea('show');
+                qq_white_list.textarea('enable');
+            }
+            else
+            {
+                qq_white_list.textarea('hide');
+                qq_white_list.textarea('disable');
+            }
+        }
+    });
+
+    checkbox_qq_black_list.on("ev_change", function (e, oldValue, newValue) {
+        var val = newValue[0];
+        if(val == "enable")
+        {
+            qq_black_list.textarea('show');
+            qq_black_list.textarea('enable');
+        }
+        else
+        {
+            qq_black_list.textarea('hide');
+            qq_black_list.textarea('disable');
+        }
+    });
+
+    checkbox_qq_white_list.on("ev_change", function (e, oldValue, newValue) {
+        var val = newValue[0];
+        if(val == "enable")
+        {
+            qq_white_list.textarea('show');
+            qq_white_list.textarea('enable');
+        }
+        else
+        {
+            qq_white_list.textarea('hide');
+            qq_white_list.textarea('disable');
+        }
+    });
+
+    $("input#name").textbox({
+        fieldLabel:$.su.CHAR.APPCONTROLFILTERCONF.NAME,
+        tips:"(1-28个字符)",
+        allowBlank:false,
+        maxLength:28,
+        vtype:"name"
+    });
+
+    $("input#comment").textbox({
+        fieldLabel:$.su.CHAR.APPCONTROLFILTERCONF.COMMENT,
+        tips:"(可选,0-50个字符)",
+        allowBlank:true,
+        maxLength:50
+    });
+
+    function textSelect(o, a, b)
+    {
+        var a = parseInt(a, 10), b = parseInt(b, 10);
+        if(o.createTextRange)
+        {//IE浏览器
+            var range = o.createTextRange();
+            range.moveStart("character", a);
+            range.moveEnd("character",b);
+            range.select();
+        }else
+        {
+            o.setSelectionRange(a, b);
+            o.focus();
+        }
+
+    }
+
+    function getArrayStrLen(a)
+    {
+        var strLen = 0;
+
+        if (!$.isArray(a))
+        {
+            a = [a];
+        }
+
+        for (var i = 0; i < a.length; i++)
+        {
+            strLen += a[i].length + strLen;
+        }
+
+        return strLen;
+    }
+
+    var ruleListProxy = new $.su.Proxy({
+    });
+
+    var ruleGrid = $("#appcontrolfilter_rule_grid").grid({
+        maxRulesProperty: "max_rules",
+        editor:{
+            content:"#own_editor",
+            fields:[
+                {name:"name"},
+                {name:"http_post_method"},
+                {name:"has_http_post_threshold"},
+                {name:"http_post_alert"},
+                {name:"http_post_forbidden"},
+                {name:"http_web_method"},
+                {name:"http_proxy_method"},
+                {name:"http_upload_method"},
+                {name:"has_http_upload_threshold"},
+                {name:"http_upload_alert"},
+                {name:"http_upload_forbidden"},
+                {name:"http_download_method"},
+                {name:"has_http_download_threshold"},
+                {name:"http_download_alert"},
+                {name:"http_download_forbidden"},
+                {name:"ftp_upload_method"},
+                {name:"has_ftp_upload_threshold"},
+                {name:"ftp_upload_alert"},
+                {name:"ftp_upload_forbidden"},
+                {name:"ftp_download_method"},
+                {name:"has_ftp_download_threshold"},
+                {name:"ftp_download_alert"},
+                {name:"ftp_download_forbidden"},
+                {name:"ftp_delete_method"},
+                {name:"qq_login_method"},
+                {name:"has_qq_black_list"},
+                {name:"has_qq_white_list"},
+                {name:"qq_black_list"},
+                {name:"qq_white_list"},
+                {name:"comment"}
+            ],
+            validator:function(){
+                var name=$("#name").textbox('getValue');
+                var nameList = $("#appcontrolfilter_rule_grid").grid('getStore').data;
+                var editingId = $($("#appcontrolfilter_rule_grid").grid('getEditor')).editor("getEditingId");
+                var modify_flag = 0;
+                for(var i=0;i<nameList.length;i++){
+                    if(editingId == nameList[i].key)
+                    {
+                        modify_flag = 1;
+                        continue;
+                    }
+
+                    if(name == nameList[i].name)
+                    {
+                        $("#name").textbox("setError", "您输入的名称已经存在，请重新输入")
+                        return false;
+                    }
+                }
+
+                function testAlertForbiddenThreshold(radioId, checkboxId, alertObj, forbiddenObj, checkboxName)
+                {
+                    var method = $("#" + radioId).radio("getValue");
+                    var has_threshold = $("#" + checkboxId).checkbox("getValue");
+                    if(method == "accept" && (has_threshold[0] == "enable" || has_threshold[0] == checkboxName))
+                    {
+                        var alertThreshold = parseInt(alertObj.textbox("getValue"));
+                        var forbiddenThreshold = parseInt(forbiddenObj.textbox("getValue"));
+                        if(isNaN(alertThreshold))
+                        {
+                            alertObj.textbox("setError","请输入阈值");
+                            return false;
+                        }
+                        if(isNaN(forbiddenThreshold))
+                        {
+                            forbiddenObj.textbox("setError","请输入阈值");
+                            return false;
+                        }
+                        if(alertThreshold >= forbiddenThreshold)
+                        {
+                            forbiddenObj.textbox("setError","阻断阈值需大于告警阈值");
+                            return false;
+                        }
+                    }
+                    return true;
+                }
+
+                if(testAlertForbiddenThreshold("radio_http_post_method", "checkbox_http_post", http_post_alert, http_post_forbidden, "has_http_post_threshold") == false) return false;
+
+                if(testAlertForbiddenThreshold("radio_http_upload_method", "checkbox_http_upload", http_upload_alert, http_upload_forbidden, "has_http_upload_threshold") == false) return false;
+
+                if(testAlertForbiddenThreshold("radio_http_download_method", "checkbox_http_download", http_download_alert, http_download_forbidden, "has_http_download_threshold") == false) return false;
+
+                if(testAlertForbiddenThreshold("radio_ftp_upload_method", "checkbox_ftp_upload", ftp_upload_alert, ftp_upload_forbidden, "has_ftp_upload_threshold") == false) return false;
+
+                if(testAlertForbiddenThreshold("radio_ftp_download_method", "checkbox_ftp_download", ftp_download_alert, ftp_download_forbidden, "has_ftp_download_threshold") == false) return false;
+
+                function testQQListTextArea(testAreaObj)
+                {
+                    var extList = testAreaObj.textarea("getValue");
+                    var errBegin = -1;
+                    var errEnd = -1;
+                    var reg =  new RegExp(/^[1-9][0-9]{4,14}$/);
+                    var isValid = true;
+                    var tmpExt = [];
+                    var errString = "";
+
+                    $(extList).each(function(i, obj)
+                    {
+                        if(!reg.test(obj))
+                        {
+                            isValid = false;
+                            errBegin = getArrayStrLen(tmpExt);
+                            errEnd = errBegin + obj.length + 1;
+                            errString = "输入的QQ账号不正确";
+                            return;
+                        }
+                        tmpExt.push(obj);
+                    });
+
+                    $(extList).each(function(i1, obj1){
+                        $(extList).each(function(i2, obj2){
+                            if(i1 != i2 && obj1 == obj2){
+                                errString = "重复的输入";
+                                isValid = false;
+                            }
+                        });
+                    });
+
+                    if(extList.length < 1 || extList[0] == "")
+                    {
+                        errString = "请您输入QQ账号";
+                        isValid = false;
+                    }
+
+                    if(extList.length > MAX_QQ_LIST_LENGTH)
+                    {
+                        errString = "输入的QQ账号超过"+MAX_QQ_LIST_LENGTH+"个";
+                        isValid = false;
+                    }
+
+                    if(isValid)
+                    {
+                        testAreaObj.textarea("setValue",tmpExt);
+                    }
+                    else
+                    {
+                        textSelect($("textarea").get(0), errBegin, errEnd);
+                        testAreaObj.textarea("setError", errString);
+                        $("div.textarea-container").find("div.widget-error-tips").css("margin-top", "200px");
+                        return false;
+                    }
+                    return true;
+                }
+
+                var method = $("#radio_qq_login_method").radio("getValue");
+                var has_black_list = $("#checkbox_qq_black_list").checkbox("getValue");
+                var has_white_list = $("#checkbox_qq_white_list").checkbox("getValue");
+                if(method == "accept" && (has_black_list[0] == "enable" || has_black_list[0] == "has_qq_black_list"))
+                {
+                    if(testQQListTextArea(qq_black_list) == false) return false;
+                }
+                else if(method == "drop" && (has_white_list[0] == "enable" || has_white_list[0] == "has_qq_white_list"))
+                {
+                    if(testQQListTextArea(qq_white_list) == false) return false;
+                }
+                return true;
+            },
+            transParams: function(params){
+                for (var name in params)
+                {
+                    if (name == "qq_black_list")
+                    {
+                        params[name] = $("textarea#qq_black_list").textarea("getValue");
+                    }
+                    if (name == "qq_white_list")
+                    {
+                        params[name] = $("textarea#qq_white_list").textarea("getValue");
+                    }
+                }
+                return params;
+            }
+        },
+        store:{
+            proxy:ruleListProxy,
+            fields:[
+                {name:"name"},
+                {name:"http_post_method"},
+                {name:"has_http_post_threshold"},
+                {name:"http_post_alert"},
+                {name:"http_post_forbidden"},
+                {name:"http_web_method"},
+                {name:"http_proxy_method"},
+                {name:"http_upload_method"},
+                {name:"has_http_upload_threshold"},
+                {name:"http_upload_alert"},
+                {name:"http_upload_forbidden"},
+                {name:"http_download_method"},
+                {name:"has_http_download_threshold"},
+                {name:"http_download_alert"},
+                {name:"http_download_forbidden"},
+                {name:"ftp_upload_method"},
+                {name:"has_ftp_upload_threshold"},
+                {name:"ftp_upload_alert"},
+                {name:"ftp_upload_forbidden"},
+                {name:"ftp_download_method"},
+                {name:"has_ftp_download_threshold"},
+                {name:"ftp_download_alert"},
+                {name:"ftp_download_forbidden"},
+                {name:"ftp_delete_method"},
+                {name:"qq_login_method"},
+                {name:"has_qq_black_list"},
+                {name:"has_qq_white_list"},
+                {name:"qq_black_list"},
+                {name:"qq_white_list"},
+                {name:"comment"}
+            ],
+            parseKey: {                 /* 此处在store中增加parseKey，便于store对象在底层对数据进行预处理，以实现SLP数据结构和SU数据结构的转变 */
+                moduleName:"sec_content_conf",      /* 此处的moduleName和tableName分别指数据块名和对应请求的table名 */
+                pageSizeName: "app_control_filter_conf_entry",
+                tableName:"app_control_filter_conf"
+            },
+            autoLoad:false,
+            isAppointIndex: true,
+            appointIndex: 0
+        },
+        paging_true:{
+            insertTofirst: true
+        },
+        columns:[
+            {
+                xtype: "checkcolumn"
+            },
+            {
+                xtype: "rownumberer"
+            },
+            {
+                text:$.su.CHAR.APPCONTROLFILTERCONF.NAME,
+                width:100,
+                dataIndex:"name"
+            },
+            {
+                text:$.su.CHAR.APPCONTROLFILTERCONF.TABLE_HTTP_POST_METHOD,
+                width:60,
+                dataIndex:"http_post_method",
+                renderer:function(val){
+                    if(val == "accept")
+                    {
+                        return $.su.CHAR.APPCONTROLFILTERCONF.ACCEPT;
+                    }
+                    else{
+                        return $.su.CHAR.APPCONTROLFILTERCONF.FORBIDDEN;
+                    }
+                }
+            },
+            {
+                text:$.su.CHAR.APPCONTROLFILTERCONF.TABLE_HTTP_WEB_METHOD,
+                width:60,
+                dataIndex:"http_web_method",
+                renderer:function(val){
+                    if(val == "accept")
+                    {
+                        return $.su.CHAR.APPCONTROLFILTERCONF.ACCEPT;
+                    }
+                    else{
+                        return $.su.CHAR.APPCONTROLFILTERCONF.FORBIDDEN;
+                    }
+                }
+            },
+            {
+                text:$.su.CHAR.APPCONTROLFILTERCONF.TABLE_HTTP_PROXY_METHOD,
+                width:60,
+                dataIndex:"http_proxy_method",
+                renderer:function(val){
+                    if(val == "accept")
+                    {
+                        return $.su.CHAR.APPCONTROLFILTERCONF.ACCEPT;
+                    }
+                    else{
+                        return $.su.CHAR.APPCONTROLFILTERCONF.FORBIDDEN;
+                    }
+                }
+            },
+            {
+                text:$.su.CHAR.APPCONTROLFILTERCONF.TABLE_HTTP_UPLOAD_METHOD,
+                width:60,
+                dataIndex:"http_upload_method",
+                renderer:function(val){
+                    if(val == "accept")
+                    {
+                        return $.su.CHAR.APPCONTROLFILTERCONF.ACCEPT;
+                    }
+                    else{
+                        return $.su.CHAR.APPCONTROLFILTERCONF.FORBIDDEN;
+                    }
+                }
+            },
+            {
+                text:$.su.CHAR.APPCONTROLFILTERCONF.TABLE_HTTP_DOWNLOAD_METHOD,
+                width:60,
+                dataIndex:"http_download_method",
+                renderer:function(val){
+                    if(val == "accept")
+                    {
+                        return $.su.CHAR.APPCONTROLFILTERCONF.ACCEPT;
+                    }
+                    else{
+                        return $.su.CHAR.APPCONTROLFILTERCONF.FORBIDDEN;
+                    }
+                }
+            },
+            {
+                text:$.su.CHAR.APPCONTROLFILTERCONF.TABLE_FTP_UPLOAD_METHOD,
+                width:60,
+                dataIndex:"ftp_upload_method",
+                renderer:function(val){
+                    if(val == "accept")
+                    {
+                        return $.su.CHAR.APPCONTROLFILTERCONF.ACCEPT;
+                    }
+                    else{
+                        return $.su.CHAR.APPCONTROLFILTERCONF.FORBIDDEN;
+                    }
+                }
+            },
+            {
+                text:$.su.CHAR.APPCONTROLFILTERCONF.TABLE_FTP_DOWNLOAD_METHOD,
+                width:60,
+                dataIndex:"ftp_download_method",
+                renderer:function(val){
+                    if(val == "accept")
+                    {
+                        return $.su.CHAR.APPCONTROLFILTERCONF.ACCEPT;
+                    }
+                    else{
+                        return $.su.CHAR.APPCONTROLFILTERCONF.FORBIDDEN;
+                    }
+                }
+            },
+            {
+                text:$.su.CHAR.APPCONTROLFILTERCONF.TABLE_FTP_DELETE_METHOD,
+                width:60,
+                dataIndex:"ftp_delete_method",
+                renderer:function(val){
+                    if(val == "accept")
+                    {
+                        return $.su.CHAR.APPCONTROLFILTERCONF.ACCEPT;
+                    }
+                    else{
+                        return $.su.CHAR.APPCONTROLFILTERCONF.FORBIDDEN;
+                    }
+                }
+            },
+            {
+                text:$.su.CHAR.APPCONTROLFILTERCONF.TABLE_QQ_LOGIN_METHOD,
+                width:60,
+                dataIndex:"qq_login_method",
+                renderer:function(val){
+                    if(val == "accept")
+                    {
+                        return $.su.CHAR.APPCONTROLFILTERCONF.ACCEPT;
+                    }
+                    else{
+                        return $.su.CHAR.APPCONTROLFILTERCONF.FORBIDDEN;
+                    }
+                }
+            },
+            {
+                xtype:"comment",
+                dataIndex:"comment"
+            },
+            {
+                xtype: "settings"
+            }
+        ],
+        operation:"prompt|add|delete"
+    });
+
+
+    var appcontrolfilterEditor = $(ruleGrid.grid('getEditor'));
+    appcontrolfilterEditor.on('ev_startEdit', function(e, index, key){
+        if(index == 'add'){
+            $('#checkbox_http_post').checkbox('hide');
+            $('#checkbox_http_upload').checkbox('hide');
+            $('#checkbox_http_download').checkbox('hide');
+            $('#checkbox_ftp_upload').checkbox('hide');
+            $('#checkbox_ftp_download').checkbox('hide');
+            $('#checkbox_qq_black_list').checkbox('hide');
+            $('#checkbox_qq_white_list').checkbox('show');
+            $('#http_post_alert').textbox('hide');
+            $('#http_post_forbidden').textbox('hide');
+            $('#http_upload_alert').textbox('hide');
+            $('#http_upload_forbidden').textbox('hide');
+            $('#http_download_alert').textbox('hide');
+            $('#http_download_forbidden').textbox('hide');
+            $('#ftp_upload_alert').textbox('hide');
+            $('#ftp_upload_forbidden').textbox('hide');
+            $('#ftp_download_alert').textbox('hide');
+            $('#ftp_download_forbidden').textbox('hide');
+            $('#qq_black_list').textarea('hide');
+            $('#qq_white_list').textarea('hide');
+
+            $('#http_post_alert').textbox('disable');
+            $('#http_post_forbidden').textbox('disable');
+            $('#http_upload_alert').textbox('disable');
+            $('#http_upload_forbidden').textbox('disable');
+            $('#http_download_alert').textbox('disable');
+            $('#http_download_forbidden').textbox('disable');
+            $('#ftp_upload_alert').textbox('disable');
+            $('#ftp_upload_forbidden').textbox('disable');
+            $('#ftp_download_alert').textbox('disable');
+            $('#ftp_download_forbidden').textbox('disable');
+        }else{
+            var store = ruleGrid.grid("getStore");
+            var data = store.getData(key);
+
+            $("#radio_http_post_method").radio('setValue',data.http_post_method);
+            $("#radio_http_web_method").radio('setValue',data.http_web_method);
+            $("#radio_http_proxy_method").radio('setValue',data.http_proxy_method);
+            $("#radio_http_upload_method").radio('setValue',data.http_upload_method);
+            $("#radio_http_download_method").radio('setValue',data.http_download_method);
+            $("#radio_ftp_upload_method").radio('setValue',data.ftp_upload_method);
+            $("#radio_ftp_download_method").radio('setValue',data.ftp_download_method);
+            $("#radio_ftp_delete_method").radio('setValue',data.ftp_delete_method);
+            $("#radio_qq_login_method").radio('setValue',data.qq_login_method);
+
+            $('#checkbox_http_post').checkbox('setValue',data.has_http_post_threshold);
+            $('#checkbox_http_upload').checkbox('setValue',data.has_http_upload_threshold);
+            $('#checkbox_http_download').checkbox('setValue',data.has_http_download_threshold);
+            $('#checkbox_ftp_upload').checkbox('setValue',data.has_ftp_upload_threshold);
+            $('#checkbox_ftp_download').checkbox('setValue',data.has_ftp_download_threshold);
+            $('#checkbox_qq_black_list').checkbox('setValue',data.has_qq_black_list);
+            $('#checkbox_qq_white_list').checkbox('setValue',data.has_qq_white_list);
+
+            function setVisibleAndIsenable(checkboxObj, alertObj, forbiddenObj, data, checkboxData)
+            {
+                if(data == "accept"){
+                    checkboxObj.checkbox("show");
+                }
+                else{
+                    checkboxObj.checkbox("hide");
+                }
+
+                if(data == 'accept' && checkboxData == "enable"){
+                    alertObj.textbox('show');
+                    alertObj.textbox('enable');
+                    forbiddenObj.textbox('show');
+                    forbiddenObj.textbox('enable');
+                }else {
+                    alertObj.textbox('hide');
+                    alertObj.textbox('disable');
+                    forbiddenObj.textbox('hide');
+                    forbiddenObj.textbox('disable');
+                }
+            }
+
+            setVisibleAndIsenable(checkbox_http_post, http_post_alert, http_post_forbidden, data.http_post_method, data.has_http_post_threshold);
+            setVisibleAndIsenable(checkbox_http_upload, http_upload_alert, http_upload_forbidden, data.http_upload_method, data.has_http_upload_threshold);
+            setVisibleAndIsenable(checkbox_http_download, http_download_alert, http_download_forbidden, data.http_download_method, data.has_http_download_threshold);
+            setVisibleAndIsenable(checkbox_ftp_upload, ftp_upload_alert, ftp_upload_forbidden, data.ftp_upload_method, data.has_ftp_upload_threshold);
+            setVisibleAndIsenable(checkbox_ftp_download, ftp_download_alert, ftp_download_forbidden, data.ftp_download_method, data.has_ftp_download_threshold);
+
+            if(data.qq_login_method == 'accept')
+            {
+                checkbox_qq_black_list.checkbox('show');
+                checkbox_qq_white_list.checkbox('hide');
+                qq_white_list.textarea("hide");
+                qq_white_list.textarea("disable");
+
+                if(data.has_qq_black_list == 'enable')
+                {
+                    qq_black_list.textarea('show');
+                    qq_black_list.textarea('enable');
+                }
+                else
+                {
+                    qq_black_list.textarea('hide');
+                    qq_black_list.textarea('disable');
+                }
+            }
+            else
+            {
+                checkbox_qq_black_list.checkbox('hide');
+                checkbox_qq_white_list.checkbox('show');
+
+                qq_black_list.textarea("hide");
+                qq_black_list.textarea("disable");
+
+                if(data.has_qq_white_list == 'enable')
+                {
+                    qq_white_list.textarea('show');
+                    qq_white_list.textarea('enable');
+                }
+                else
+                {
+                    qq_white_list.textarea('hide');
+                    qq_white_list.textarea('disable');
+                }
+            }
+        }
+    });
+
+    function web_init()
+    {
+        $('div#rule_list').show();
+        ruleGrid.grid("getStore").load();
+    }
+    web_init();
+
+    var helpImb = new $.su.Help({
+        container: "div#appcontrolfilter_help",
+        content: ["APPCONTROLFILTER_CONF"]
+    });
+    $(".func-container").show();
+});
+        </script>
+    </body>
+</html>

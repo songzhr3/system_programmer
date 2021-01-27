@@ -1,0 +1,340 @@
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
+<html xmlns="http://www.w3.org/1999/xhtml">
+<head>
+<meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
+<title>disk_mngt</title>
+</head>
+
+<body>
+<div class="func-container">
+    <div id="disk_status">
+        <div id="disk_online_staus"></div>
+        <div id="disk_usage"></div>
+    </div>
+
+    <div id="disk_cmd">
+        <p><button type="button" id="mount" name="mount"></button></p>
+        <p><button type="button" id="umount" name="umount"></button></p>
+        <p><button type="button" id="reset" name="reset"></button></p>
+    </div>
+
+    <div id="disk_cmd_alert">
+        <h4 class="title" id="disk_cmd_confirm">
+            <span class="icon"></span>
+            <span class="text" id="cmd_confirm_content"></span>
+        </h4>
+    </div>
+
+    <div id="disk_cmd_pro_bar_div" style="display: none;">
+        <div id="disk_cmd_pro" class="reboot-loading-msg hidden">
+            <input id="cmd_pro_bar" type="text" />
+        </div>
+    </div>
+
+    <div id="cmd_failed_cnt">
+    <h4 class="title">
+        <span class="icon" ></span>
+        <span class="text" id="error_str"></span>
+    </h4>
+    </div>
+
+    <div id="cmd_mount_success_cnt">
+        <h4 class="title">
+            <span class="icon" ></span>
+            <span class="text" id="error_str"></span>
+        </h4>
+    </div>
+
+    <div id="cmd_unmount_success_cnt">
+        <h4 class="title">
+            <span class="icon" ></span>
+            <span class="text" id="error_str"></span>
+        </h4>
+    </div>
+
+    <div id="cmd_reset_success_cnt">
+        <h4 class="title">
+            <span class="icon" ></span>
+            <span class="text" id="error_str"></span>
+        </h4>
+    </div>
+
+    <div id="cmd_mount_fail_cnt">
+        <h4 class="title">
+            <span class="icon" ></span>
+            <span class="text" id="error_str"></span>
+        </h4>
+    </div>
+
+    <div id="cmd_umount_fail_cnt">
+        <h4 class="title">
+            <span class="icon" ></span>
+            <span class="text" id="error_str"></span>
+        </h4>
+    </div>
+
+    <div id="cmd_reset_fail_cnt">
+        <h4 class="title">
+            <span class="icon" ></span>
+            <span class="text" id="error_str"></span>
+        </h4>
+    </div>
+
+    <div id="help_disk_mngt"></div>
+</div>
+
+<script type="text/javascript">
+try{
+    $
+}catch(e){
+    location.href = "/";
+};
+
+$(document).ready(function(e){
+    var cmdProxy = new $.su.Proxy();
+    var statusProxy = new $.su.Proxy({
+        async: false
+    });
+
+    $("div.func-container").page({
+        title: $.su.CHAR.DISK_MNGT.TITLE,
+        help: ""
+    });
+
+    var status=0;
+    function setDiskStatus()
+    {
+        statusProxy.query({"system":{"name":"disk_status"}}, function(data){
+            status = data.system.disk_status.status;
+            var usage = data.system.disk_status.usage;
+            var statStr = $("#disk_online_staus");
+            var usgStr = $("#disk_usage");
+            if (status == "online") {
+                statStr.text($.su.CHAR.DISK_MNGT.ONLINESTAUS + "    " + $.su.CHAR.DISK_MNGT.ONLINE);
+            }
+            else {
+                statStr.text($.su.CHAR.DISK_MNGT.ONLINESTAUS + "    " + $.su.CHAR.DISK_MNGT.OFFLINE);
+            }
+            usgStr.text($.su.CHAR.DISK_MNGT.DISKUSAGE + "    " + usage);
+        });
+    }
+    setDiskStatus();
+    $("#disk_status").panel({
+        title: $.su.CHAR.DISK_MNGT.DISKSTATUS,
+        collapsible: false
+    });
+
+    $("#disk_cmd").panel({
+        title: $.su.CHAR.DISK_MNGT.DISKCMD,
+        collapsible: false
+    });
+
+    $("#cmd_failed_cnt").msg({
+        cls: 'warning reboot-confirm-size',
+        type: "alert"
+    });
+
+    $("#cmd_mount_success_cnt").msg({
+        cls: 'warning reboot-confirm-size',
+        msg: $.su.CHAR.DISK_MNGT.MOUNT_SUCCESS,
+        type: "alert"
+    });
+
+    $("#cmd_unmount_success_cnt").msg({
+        cls: 'warning reboot-confirm-size',
+        msg: $.su.CHAR.DISK_MNGT.UMOUNT_SUCCESS,
+        type: "alert"
+    });
+
+    $("#cmd_reset_success_cnt").msg({
+        cls: 'warning reboot-confirm-size',
+        msg: $.su.CHAR.DISK_MNGT.RESET_SUCCESS,
+        type: "alert"
+    });
+
+    $("#cmd_mount_fail_cnt").msg({
+        cls: 'warning reboot-confirm-size',
+        msg: $.su.CHAR.DISK_MNGT.MOUNT_STATUS_FAIL,
+        type: "alert"
+    });
+
+    $("#cmd_umount_fail_cnt").msg({
+        cls: 'warning reboot-confirm-size',
+        msg: $.su.CHAR.DISK_MNGT.UMOUNT_STATUS_FAIL,
+        type: "alert"
+    });
+
+    $("#cmd_reset_fail_cnt").msg({
+        cls: 'warning reboot-confirm-size',
+        msg: $.su.CHAR.DISK_MNGT.RESET_STATUS_FAIL,
+        type: "alert"
+    });
+
+    function runwatingbar()
+    {
+        $("#disk_cmd_alert").hide();
+        $('#disk_cmd_confirm').show();
+        $("#disk_cmd_pro_bar_div").msg('show');
+        $("#disk_cmd_pro").show();
+        $("#cmd_pro_bar").waitingbar("run");
+    }
+
+    function hideWaitingbar()
+    {
+        $("#disk_cmd_alert").hide();
+        $("#cmd_pro_bar").waitingbar("stop");
+        $("#cmd_pro_bar").waitingbar("reset");
+        $("#disk_cmd_pro").hide();
+        setTimeout(function() {
+            $("#disk_cmd_pro_bar_div").msg('hide');
+        }, 200);
+
+        $("#mask").hide();
+    }
+
+    function mountExec() {
+        if (status == "online")
+        {
+            $("#cmd_mount_fail_cnt").msg("show");
+            return;
+        }
+        runwatingbar();
+        cmdProxy.action({"system":{"disk_mount":{}}}, function(data)
+        {
+            var err = data.error_code;
+            if (err == 0)
+            {
+                hideWaitingbar();
+                setDiskStatus();
+                $("#cmd_mount_success_cnt").msg("show");
+            }
+        },function(){
+            hideWaitingbar();
+        },function(){
+            hideWaitingbar();
+        });
+    }
+
+    function umountExec() {
+        if (status != "online")
+        {
+            $("#cmd_umount_fail_cnt").msg("show");
+            return;
+        }
+        runwatingbar();
+        cmdProxy.action({"system":{"disk_umount":{}}}, function(data)
+        {
+            var err = data.error_code;
+            if (err == 0)
+            {
+                hideWaitingbar();
+                setDiskStatus();
+                $("#cmd_unmount_success_cnt").msg("show");
+            }
+        },function(){
+            hideWaitingbar();
+        },function(){
+            hideWaitingbar();
+        });
+    }
+    function resetExec() {
+        if (status != "online")
+        {
+            $("#cmd_reset_fail_cnt").msg("show");
+            return;
+        }
+        runwatingbar();
+        cmdProxy.action({"system":{"disk_reset":{}}}, function(data)
+        {
+            var err = data.error_code;
+            if (err == 0)
+            {
+                hideWaitingbar();
+                setDiskStatus();
+                $("#cmd_reset_success_cnt").msg("show");
+            }
+        },function(){
+            hideWaitingbar();
+        },function(){
+            hideWaitingbar();
+        });
+    }
+
+    var hitButton=0;
+    $("#mount").button({
+        text: $.su.CHAR.DISK_MNGT.MOUNT,
+        handler: function(){
+            hitButton=1;
+            $("#cmd_confirm_content").html($.su.CHAR.DISK_MNGT.CONFIRM_MOUNT);
+            cmd_alert_msg.msg("show");
+        },
+        cls: "submit"
+    });
+
+    $("#umount").button({
+        text: $.su.CHAR.DISK_MNGT.UMOUNT,
+        handler: function(){
+            hitButton=2;
+            $("#cmd_confirm_content").html($.su.CHAR.DISK_MNGT.CONFIRM_UMOUNT);
+            cmd_alert_msg.msg("show");
+        },
+        cls: "submit"
+    });
+
+    $("#reset").button({
+        text: $.su.CHAR.DISK_MNGT.RESET,
+        handler: function(){
+            hitButton=3;
+            $("#cmd_confirm_content").html($.su.CHAR.DISK_MNGT.CONFIRM_RESET);
+            cmd_alert_msg.msg("show");
+        },
+        cls: "submit"
+    });
+
+    var cmd_alert_msg = $("#disk_cmd_alert").msg({
+        okHandler:function(){
+            switch (hitButton){
+            case 1:
+                mountExec();
+                break;
+            case 2:
+                umountExec();
+                break;
+            case 3:
+                resetExec();
+                break;
+            default:
+                break;
+            }
+            return true;
+        },
+        // cls:"m warning",
+        cancelHandler:function(){
+            return true;
+        },
+        cls: 'warning reboot-confirm-size',
+        closeBtn: false,
+        type: "confirm"
+    });
+
+    $("#disk_cmd_pro_bar_div").msg({
+        cls: 'warning reboot-confirm-size',
+        closeBtn: false,
+        type: "window"
+    });
+
+    var cmd_pro_bar  = $('input#cmd_pro_bar').waitingbar({
+        fieldLabel: $.su.CHAR.DISK_MNGT.WAITTIP,
+        labelCls:"xxl",
+        waitTime: 1000
+    });
+
+    var helpBackup = new $.su.Help({
+        container: "div#help_disk_mngt",
+        content: ["DISK_MNGT"]
+    });
+});
+</script>
+</body>
+
+</html>

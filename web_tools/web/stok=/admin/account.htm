@@ -1,0 +1,468 @@
+<%
+uci_r = require ("luci.model.uci"):cursor()
+
+model = uci_r:get("device_info", "info", "device_model")
+has_set_pwd = (uci_r:get("system", "sys", "has_set_pwd") == "0") and "false" or "true"
+-- 编译镜像的时间 YYYY-mm-DD hh:MM:ss
+build_year = uci_r:get_profile("global", "factory_time")
+build_year = string.split(build_year, '-')[1]
+-%>
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
+<html xmlns="http://www.w3.org/1999/xhtml">
+<head>
+<meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
+<meta http-equiv="X-UA-Compatible" content="IE=edge,chrome=1" />
+<meta data-interface-type="SLP" />
+<link rel="shortcut icon" href="../web-static/favicon.ico?random=20201217044300"/>
+<!-- <link type="text/css" href="css/reset.css?random=20201217044300" rel="stylesheet" /> -->
+<link type="text/css" href="../web-static/css/widget.css?random=20201217044300" rel="stylesheet" />
+
+<link type="text/css" href="../web-static/themes/old/css/widget.css?random=20201217044300" rel="stylesheet" />
+<link type="text/css" href="../web-static/themes/old/css/style.css?random=20201217044300" rel="stylesheet" />
+
+
+<script type="text/javascript" src="../web-static/js/libs/jquery.min.js?random=20201217044300"></script>
+
+<script type="text/javascript" src="../web-static/js/su/locale.js?random=20201217044300"></script>
+<script type="text/javascript">
+//<![CDATA[
+    try{
+        $.su.locale.URL_LAN_CHECK =  $.su.url("/locale?form=lang");//"./data/lan.json";
+        $.su.locale.get();
+    }catch(error){
+        location.href = "./error.htm";
+    };
+    var has_set_pwd = "<%=has_set_pwd%>" == "true";
+    if (has_set_pwd) {
+        location.href = "./login.htm";
+    }
+//]]>
+</script>
+<script type="text/javascript" src="../web-static/js/libs/encrypt.js?random=20201217044300"></script>
+<!--<script type="text/javascript" src="js/su/su.full.min.js?random=20201217044300"></script>-->
+<script type="text/javascript" src="../web-static/js/su/su.js?random=20201217044300"></script>
+
+<script type="text/javascript" src="../web-static/js/su/data/proxy.js?random=20201217044300"></script>
+<script type="text/javascript" src="../web-static/js/su/widget/widget.js?random=20201217044300"></script>
+<script type="text/javascript" src="../web-static/js/su/widget/window/msg.js?random=20201217044300"></script>
+
+<script type="text/javascript" src="../web-static/js/su/widget/form/form.js?random=20201217044300"></script>
+<script type="text/javascript" src="../web-static/js/su/widget/form/combobox.js?random=20201217044300"></script>
+<script type="text/javascript" src="../web-static/js/su/widget/form/textbox.js?random=20201217044300"></script>
+<script type="text/javascript" src="../web-static/js/su/widget/form/password.js?random=20201217044300"></script>
+<script type="text/javascript" src="../web-static/js/su/widget/form/checkbox.js?random=20201217044300"></script>
+<script type="text/javascript" src="../web-static/js/su/widget/form/button.js?random=20201217044300"></script>
+<script type="text/javascript" src="../web-static/js/su/widget/form/status.js?random=20201217044300"></script>
+
+
+<title>Opening...</title>
+
+</head>
+
+<body id="login-body">
+
+<noscript>
+    <meta http-equiv="refresh" content="0; url=error.htm"/>
+</noscript>
+
+<style>
+    #login-username, #form-login .password-text{
+        height: 18px;
+    }
+    .setting_form{
+        margin: 30px auto;
+        padding: 10px 40px;
+    }
+    .top-content-acc{
+        width: 490px;
+        margin: 0 auto;
+        border-radius: 3px;
+        border: 1px solid #388BA9;
+        background: #F7F8F9;
+    }
+    #warning{
+        color: #ff0000;
+        font-size: 14px;
+        margin-bottom: 30px;
+    }
+    #account_tips{
+        color: #333;
+        font-size: 12px;
+        line-height: 20px;
+        margin-top: 20px;
+    }
+    #description{
+        color: #333;
+        font-size: 12px;
+        line-height: 20px;
+        margin-top: 20px;
+    }
+    #button_wrap{
+        margin: 30px auto 0;
+        text-align: center;
+    }
+    #comfirm{
+        width: 200px;
+        height: 40px;
+        background: #21628E;
+        color:#fff;
+        font-size: 12px;
+        line-height: 30px;
+        border-radius: 3px;
+    }
+
+</style>
+
+<div class="top" >
+
+    <div class="top-main">
+    	<div class="top-main-wrap" style="margin-top: 94px;">
+            <div class="top-content-acc">
+                <div class="logon_logo" style="height:60px;background: url(../web-static/themes/old/img/top_bg_top.gif?random=20201217044300) no-repeat center top;">
+                    <img align="left" style="cursor:pointer;" onclick="javascript:window.open('http://www.tp-link.com.cn');" src="../web-static/themes/old/img/logo_smb.jpg?random=20201217044300"/>
+                </div>
+            	<div class="top-content-wrap" id="top-content">
+                <form id="account-setting" class="setting_form">
+                    <div id="warning"></div>
+                    <!-- <p  id="note" name="note"></p> -->
+                    <input type="text"  id="old_acc" name="old_acc" value="" />
+                    <input type="password"  id="old_pwd" name="old_pwd" value="" />
+
+                    <input type="text"  id="new_acc" name="new_acc" value="" />
+                    <input type="password"  id="new_pwd" name="new_pwd" value="" />
+                    <input type="password"  id="cfm_pwd" name="cfm_pwd" value="" />
+
+                    <div id="account_tips"></div>
+                    <div id="description"></div>
+                    <div id="button_wrap">
+                        <button id="comfirm">确认</button>
+                    </div>
+
+                </form>
+
+                </div>
+            </div>
+
+            <p class="logon_footer">
+                <span class="logon_cr">Copyright</span>
+                <span class="logon_copy">&copy;</span>
+                <span class="logon_c_year" id="span_date"><%=build_year%></span>
+                <span class="logon_tp">普联技术有限公司&nbsp;版权所有</span>
+            </p>
+
+            <div class="top-footer">
+                <div class="top-footer-wrap">
+                    <span class="help-faq">
+                        <a id="btn-faq" class="btn-faq" target="_blank" href="http://www.tp-link.com/en/Support/"></a>
+                    </span>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+
+
+<!-- 无开cookie的操作提示 -->
+<div id="no-cookie-msg-container" class="hidden warning">
+    <h4 class="title">
+        <span class="icon"></span>
+        <span class="text" id="no-cookie-text"></span>
+    </h4>
+</div>
+
+
+
+
+<script type="text/javascript">
+//<![CDATA[
+$(document).ready(function(e){
+    /*加载产品信息*/
+	var MODEL_DESC = "<%=model%>";
+    document.title = MODEL_DESC;
+    try{
+        $.su.url.stok = localStorage.getItem("token") || (function(){
+            var stok = "12345",
+                href = top.location.href;
+            var stokPos = href.indexOf("stok=");
+            if (stokPos >= 0){
+                stok = href.substring(stokPos+5);
+            };
+            return stok;
+        })();
+    }catch(e){
+        var h = function(){
+            location.href = "/";
+        };
+
+        if (logoutProxy){
+            logoutProxy.write({}, h, h, h)
+        };
+    };
+
+    var old_acc = $("input#old_acc").textbox({
+        fieldLabel: $.su.CHAR.ACCOUNT.OLDUSER,
+        vtype:"ascii_visible",
+        minLength:1,
+        maxLength:15,
+        allowBlank: false,
+        inputCls:"xl"
+    });
+    old_acc.textbox("hide");
+
+    var old_pass = $("input#old_pwd").password({
+        fieldLabel: $.su.CHAR.ACCOUNT.OLDPWD,
+        allowBlank: false,
+        vtype:"ascii_visible",
+        showLevel:false,
+        minLength:1,
+        maxLength:15,
+        inputCls:"xl"
+
+    });
+
+    old_pass.password("hide");
+
+    $("input#new_acc").textbox({
+        fieldLabel: $.su.CHAR.LOGIN.ACCOUNT_USERNAME_SET,
+        //tips:"1-15个英文字母、数字或英文特殊字符",
+        cls:"part-separate",
+        allowBlank: false,
+        vtype:"ascii_visible",
+        minLength:1,
+        maxLength:15,
+        inputCls:"xl"
+    });
+
+    var passwordCheck = function(new_pwd, cfm_val){
+
+        if(cfm_val == new_pwd){
+            //$("#pwd_status").status("setSuccess");
+            return true;
+        }else{
+            //$("#pwd_status").status("setFailed");
+            return false;
+        };
+    };
+
+    var new_pwd = $("input#new_pwd").password({
+        fieldLabel: $.su.CHAR.LOGIN.ACCOUNT_PASSWORD_SET,
+        allowBlank: false,
+        vtype:"ascii_visible",
+        //tips:"8-15个英文字母、数字或英文特殊字符，为保证安全性密码需要包含英文大写和小写字母以及数字",
+        minLength:8,
+        maxLength:15,
+        cls:"inline",
+        inputCls:"xl",
+        validator:function(val){
+            var min_length = 8;
+            var max_length = 15;
+            if(val.length < min_length || val.length > max_length){
+                var ret_str = $.su.CHAR.LOGIN.ACCOUNT_PASSWORD_LENGTH_ERR.replace("%num1", min_length);
+                ret_str = ret_str.replace("%num2", max_length);
+                return ret_str;
+            }
+            return true;
+        }
+    }).on("ev_change", function(item, data){
+        //$("#pwd_status").status('setNormal');
+        $("input#cfm_pwd").password('setNormal');
+
+        var new_pwd = $("input#new_pwd").password("getValue");
+        var cfm_val = $("input#cfm_pwd").password("getValue");
+        if ( cfm_val){
+            passwordCheck(new_pwd, cfm_val);
+        }
+    }).on("ev_validatechange", function(item, data){
+        var new_pwd = $("input#new_pwd").password("getValue");
+        var cfm_val = $("input#cfm_pwd").password("getValue");
+
+        if( cfm_val=='' ){
+            //$("#pwd_status").status('setNormal');
+            return true;
+        }else{
+            passwordCheck(new_pwd, cfm_val);
+        };
+    });
+
+
+    var cfm_pwd = $("input#cfm_pwd").password({
+        fieldLabel: $.su.CHAR.LOGIN.ACCOUNT_PASSWORD_CONFIRM,
+        vtype:"ascii_visible",
+        minLength:8,
+        maxLength:15,
+        cls:"inline",
+        allowBlank: false,
+        inputCls:"xl",
+        showLevel:false,
+        validator: function(val){
+            var min_length = 8;
+            var max_length = 15;
+            if(val.length < min_length || val.length > max_length){
+                var ret_str = $.su.CHAR.LOGIN.ACCOUNT_PASSWORD_LENGTH_ERR.replace("%num1", min_length);
+                ret_str = ret_str.replace("%num2", max_length);
+                return ret_str;
+            }
+            return true;
+        }
+    }).on("ev_change ev_validatechange", function(){
+        var new_pwd = $("input#new_pwd").password("getValue");
+        var cfm_val = $("input#cfm_pwd").password("getValue");
+
+        if (new_pwd == ""){
+            if ( cfm_val == "" ){
+                //$("#pwd_status").status("setNormal");
+            }else{
+                if (!passwordCheck(new_pwd, cfm_val)){
+                    $("input#cfm_pwd").password("setError");
+                };
+            }
+        }else{
+            if (!passwordCheck(new_pwd, cfm_val)){
+                $("input#cfm_pwd").password("setError");
+            }
+        }
+    });
+
+
+    $("span.level").css("width", "76px");
+    /*
+    $("#pwd_status").status({
+        cls:"inline"
+    });*/
+
+
+    /*设置用户密码*/
+    // var ACC_PWD_URL_NEW = $.su.url("/admin/administration?form=accountfirstset");
+    var pwdProxy = new $.su.Proxy({
+        // url: ACC_PWD_URL_NEW,
+        url: "/",
+        autoLoad:false
+    });
+    $("#account-setting").form({
+        proxy: pwdProxy,
+        fields: [
+            {name: "new_acc", mapping: "new_acc"},
+            {name: "new_pwd", mapping: "new_pwd"},
+            {name: "cfm_pwd", mapping: "cfm_pwd"}
+        ],
+        validator:function(e){
+            var nPass = new_pwd.password("getValue");
+            var cPass = cfm_pwd.password("getValue");
+
+            var regNumber = /\d+/; //验证0-9的任意数字最少出现1次。
+            var regLowerString = /[a-z]+/; //验证小写26个字母任意字母最少出现1次。
+            var regUpperString = /[A-Z]+/; //验证大写26个字母任意字母最少出现1次。
+
+            if(nPass.length < 8 || nPass.length > 15){
+                new_pwd.password("setError", $.su.CHAR.ERROR["00000073"]);
+                return false;
+            }
+            if(cPass.length < 8 || cPass.length > 15){
+                cfm_pwd.password("setError", $.su.CHAR.ERROR["00000073"]);
+                return false;
+            }
+
+            if(nPass == cPass){
+                if (! regNumber.test(cPass)){
+                $("input#new_pwd").password("setError", $.su.CHAR.LOGIN.ACCOUNT_PASSWORD_NUM_ERR);
+                return false;
+                }
+                if (! regUpperString.test(cPass)){
+                    $("input#new_pwd").password("setError", $.su.CHAR.LOGIN.ACCOUNT_PASSWORD_UPSTR_ERR);
+                    return false;
+                }
+                if (! regLowerString.test(cPass)){
+                    $("input#new_pwd").password("setError", $.su.CHAR.LOGIN.ACCOUNT_PASSWORD_LOWSTR_ERR);
+                    return false;
+                }
+                return true;
+            }else{
+                cfm_pwd.password("setError", $.su.CHAR.LOGIN.ACCOUNT_PASSWORD_CFM_ERR);
+                return false;
+            }
+        }
+    });
+
+
+    $("#account-setting").delegate("#comfirm", "click", function(e){
+        e.stopPropagation();
+        e.preventDefault();
+
+        if ($("#account-setting").form("validate")) {
+            $("#account-setting").form("prompt", true, "请稍候", 1000);
+
+            $("input#cfm_pwd").password("doEncrypt");
+            var _password = $.su.orgAuthPwd($("input#cfm_pwd").val());
+
+            pwdProxy.action({
+                administration: {
+                    set_pwd_before_login: {
+                        username: $("input#new_acc").val(),
+                        password: _password
+                    }
+                }
+            }, function(data) {
+                $.su.loading.hide();
+                $("#account-setting").form("prompt", true);
+                setTimeout(function() {
+                    location.href = "./login.htm";
+                }, 1000);
+            }, function(error_code) {
+                $.su.loading.hide();
+                $("#account-setting").form("prompt", false);
+                setTimeout(function() {
+                    location.href = "./login.htm";
+                }, 1000);
+            })
+        }
+    });
+
+    /*cookie check*/
+    $("span#no-cookie-text").html($.su.CHAR.LOGIN.NO_COOKIE);
+    var noCookieMsg = $("div#no-cookie-msg-container").msg({
+        type: "alert",
+        cls: "m",
+        closeBtn: false,
+        okHandler: function(){
+            $("button#login-btn").button("enable");
+        }
+    });
+
+    var checkCookie = function(){
+        try{
+            localStorage.setItem("private", 100);
+            if (!navigator.cookieEnabled){
+                noCookieMsg.msg("show");
+                return false;
+            };
+        }catch(e){
+            noCookieMsg.msg("show");
+            return false;
+        };
+        noCookieMsg.msg("close");
+        return true;
+
+    };
+
+    checkCookie();
+
+    //$.su.loading.show();
+
+
+    /*调整登陆框高度*/
+    var actHeight = parseInt(document.documentElement.clientHeight);
+    var marginTop = actHeight * 0.30 - 306 / 2;
+    $($.find("div.top-main-wrap")).css("marginTop", marginTop.toString() + "px");
+
+    /*显示说明*/
+    $("#warning").text($.su.CHAR.LOGIN.ACCOUNT_WARNING_INFO);
+    $('#account_tips').text($.su.CHAR.LOGIN.ACCOUNT_TIPS_1);
+    $("#description").text($.su.CHAR.LOGIN.ACCOUNT_TIPS_2);
+
+    $("input#new_acc").focus();
+});
+//]]>
+</script>
+</body>
+</html>

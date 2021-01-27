@@ -1,0 +1,624 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <title>综合报表</title>
+</head>
+
+<body>
+    <div class="func_container">
+        <div id="grid_container">
+            <div id="own-editor">
+                <input id="name" name="name" />
+                <input id="description" name="description" />
+                <input id="flow_report_all" name="flow_report_all" />
+                <input id="flow_report" name="flow_report" />
+                <input id="sphit_report_access" name="sphit_report_access" />
+                <input id="threat_report_all" name="threat_report_all" />
+                <input id="threat_report" name="threat_report" />
+            </div>
+            <div id="combo_grid"></div>
+        </div>
+
+        <div id="combo_report_container" style="display: none; position: relative">
+            <button id="close_combo_report" style=""></button>
+            <div id="combo_report_panel" style="margin-bottom: 0"></div>
+            <div id="flow_report_container"></div>
+            <div id="sphit_report_container"></div>
+            <div id="threat_report_container"></div>
+        </div>
+    </div>
+    <script type="text/javascript" src="../web-static/js/report_new/initPage.js?random=20201217044300"></script>
+    <script type="text/javascript" src="../web-static/js/report_new/constant.js?random=20201217044300"></script>
+    <script type="text/javascript">
+        try {
+            $
+        } catch (e) {
+            location.href = "/";
+        }
+        $(document).ready(function(e) {
+            $('#grid_container').panel({
+                title: '综合报表',
+                collapsible: false
+            });
+            // editor初始化
+            $('#name').textbox({
+                fieldLabel: '名称',
+                allowBlank: false,
+                inputCls: "xxxl",
+                vtype: {},
+                maxLength: 100
+            });
+
+            $('#description').textbox({
+                fieldLabel: '描述',
+                inputCls: "xxxl",
+                vtype: {},
+                maxLength: 100
+            });
+
+            $("#flow_report").checkbox({
+                fieldLabel: '流量报表',
+                labelCls: 'xl',
+                columns: 10,
+                items: REPORT_INFO.COMBO_REPORT.CHECKBOX.FLOW_REPORT
+            }).on("ev_change", function(e, oldValue, newValue) {
+                console.log(oldValue, newValue);
+                if (newValue.length === REPORT_INFO.FLOW_REPORT.CHECKBOX_CONDITION.length) {
+                    $('#flow_report_all').checkbox('setValue', ['all']);
+                } else {
+                    $('#flow_report_all').checkbox('setValue', []);
+                }
+            });
+
+            // 流量报表全选
+            $("#flow_report_all").checkbox({
+                fieldLabel: null,
+                cls: 'inline-block flow_report_all',
+                items: REPORT_INFO.COMBO_REPORT.CHECKBOX.SELECT_ALL
+            }).on("ev_click", function(e, newValue) {
+                console.log(newValue);
+                if (newValue === 'all') {
+                    $('#flow_report').checkbox('setValue', REPORT_INFO.FLOW_REPORT.CHECKBOX_CONDITION);
+                } else {
+                    $('#flow_report').checkbox('setValue', []);
+                }
+            });
+
+            $("#sphit_report_access").checkbox({
+                fieldLabel: '策略命中报表',
+                columns: 1,
+                items: REPORT_INFO.COMBO_REPORT.CHECKBOX.SPHIT_REPORT
+            }).on("ev_change", function(e, oldValue, newValue) {
+                console.log(oldValue, newValue);
+                if (newValue.indexOf('all') !== -1) {
+                    $(this).checkbox('setvalue', ["sphit_sp"])
+                }
+            });
+
+            // 威胁报表全选
+            $("#threat_report_all").checkbox({
+                fieldLabel: null,
+                cls: 'inline-block threat_report_all',
+                items: REPORT_INFO.COMBO_REPORT.CHECKBOX.SELECT_ALL
+            }).on("ev_click", function(e, value) {
+                console.log(value);
+                if (value === 'all') {
+                    $('#threat_report').checkbox('setValue', REPORT_INFO.THREAT_REPORT.CHECKBOX_CONDITION);
+                } else {
+                    $('#threat_report').checkbox('setValue', []);
+                }
+            });
+
+            $("#threat_report").checkbox({
+                fieldLabel: '威胁报表',
+                labelCls: 'xl',
+                columns: 10,
+                items: REPORT_INFO.COMBO_REPORT.CHECKBOX.THREAT_REPORT
+            }).on("ev_change", function(e, oldValue, newValue) {
+                console.log(oldValue);
+                console.log(newValue);
+                if (newValue.length === REPORT_INFO.THREAT_REPORT.CHECKBOX_CONDITION.length) {
+                    $('#threat_report_all').checkbox('setValue', ['all']);
+                } else {
+                    $('#threat_report_all').checkbox('setValue', []);
+                }
+            });
+
+
+            // grid初始化
+            var combo_grid = $('#combo_grid').grid({
+                store: {
+                    proxy: new $.su.Proxy(),
+                    fields: [{
+                        name: "name"
+                    }, {
+                        name: "description"
+                    }, {
+                        name: "sphit_report_access"
+                    }, {
+                        name: "flow_report_access"
+                    }, {
+                        name: "flow_report"
+                    }, {
+                        name: "threat_report_access"
+                    }, {
+                        name: "threat_report"
+                    }],
+                    parseKey: {
+                        moduleName: "report_new",
+                        tableName: "combo_report"
+                    },
+                    autoLoad: true
+                },
+                editor: {
+                    validator: function() {
+                        return true;
+                    },
+                    content: "#own-editor",
+                    fields: [{
+                        name: "name"
+                    }, {
+                        name: "description"
+                    }, {
+                        name: "sphit_report_access"
+                    }, {
+                        name: "flow_report_access"
+                    }, {
+                        name: "flow_report"
+                    }, {
+                        name: "threat_report_access"
+                    }, {
+                        name: "threat_report"
+                    }],
+                },
+                columns: [{
+                    xtype: "checkcolumn",
+                    width: 20
+                }, {
+                    text: '序号',
+                    xtype: "rownumberer"
+                }, {
+                    text: '名称',
+                    dataIndex: "name",
+                    width: 100
+                }, {
+                    text: '描述',
+                    dataIndex: "description",
+                    width: 100
+                }, {
+                    text: '报表内容',
+                    dataIndex: "sphit_report_access",
+                    width: 200,
+                    renderer: function(dd, index, data) {
+                        console.log(data);
+                        var html = '<div class="combo-report-content-container">';
+                        // 流量报表
+                        switch (data.flow_report_access) {
+                            case 'on':
+                                html += '<div class="combo-report-content-item">' +
+                                    '<span class="combo-report-content-item-tittle">' + REPORT_INFO.FLOW_REPORT.NAME + '</span>' +
+                                    '<ul class="combo-report-content-item-detail">';
+                                $.each(REPORT_INFO.FLOW_REPORT.CONDITION, function(index, item) {
+                                    html += '<li>' + item.label + '</li>'
+                                });
+                                html += '</ul>' +
+                                    '</div>';
+                                break;
+                            case 'off':
+                                break;
+                            case 'specify':
+                                html += '<div class="combo-report-content-item">';
+                                html += '<span class="combo-report-content-item-tittle">' + REPORT_INFO.FLOW_REPORT.NAME + '</span>' +
+                                    '<ul class="combo-report-content-item-detail">';
+                                $.each(data.flow_report, function(index, item) {
+                                    html += '<li>' + REPORT_INFO.FLOW_REPORT.TYPE[item] + '</li>'
+                                });
+                                html += '</ul>' +
+                                    '</div>';
+                                break;
+                            default:
+                                {}
+                        }
+
+                        // 策略命中报表
+                        switch (data.sphit_report_access) {
+                            case 'on':
+                                html += '<div class="combo-report-content-item">' +
+                                    '<span class="combo-report-content-item-tittle">' + REPORT_INFO.SPHIT_REPORT.NAME + '</span>' +
+                                    '<ul class="combo-report-content-item-detail">';
+                                $.each(REPORT_INFO.SPHIT_REPORT.CONDITION, function(index, item) {
+                                    html += '<li>' + item.label + '</li>'
+                                });
+                                html += '</ul>' +
+                                    '</div>';
+                                break;
+                            case 'off':
+                                break;
+                            default:
+                                {}
+                        }
+
+                        // 威胁报表
+                        switch (data.threat_report_access) {
+                            case 'on':
+                                html += '<div class="combo-report-content-item">' +
+                                    '<span class="combo-report-content-item-tittle">' + REPORT_INFO.THREAT_REPORT.NAME + '</span>' +
+                                    '<ul class="combo-report-content-item-detail">';
+                                $.each(REPORT_INFO.THREAT_REPORT.CONDITION, function(index, item) {
+                                    html += '<li>' + item.label + '</li>'
+                                });
+                                html += '</ul>' +
+                                    '</div>';
+                                break;
+                            case 'off':
+                                break;
+                            case 'specify':
+                                html += '<div class="combo-report-content-item">';
+                                html += '<span class="combo-report-content-item-tittle">' + REPORT_INFO.THREAT_REPORT.NAME + '</span>' +
+                                    '<ul class="combo-report-content-item-detail">';
+                                $.each(data.threat_report, function(index, item) {
+                                    html += '<li>' + REPORT_INFO.THREAT_REPORT.TYPE[item] + '</li>'
+                                });
+                                html += '</ul>' +
+                                    '</div>';
+                                break;
+
+                            default:
+                                {}
+                        }
+
+                        html += '</div>';
+                        return html;
+                    }
+                }, {
+                    text: '操作',
+                    dataIndex: "none",
+                    width: 100,
+                    renderer: function(dd, index, data) {
+                        var inHTML = '<div class="button-container interface-operation" style="text-align:center">';
+                        inHTML += '<a href="javascript:void(0);"' +
+                            'data-index="' + index +
+                            '"data-key="' + data.key +
+                            '"title="' + '生成报表' + '"class="grid-content-btn btn-query">';
+                        inHTML += '<span class="icon"></span>';
+                        inHTML += '<span class="text">"' + '生成报表' + '</span>';
+                        inHTML += '</a>';
+
+                        inHTML += '<a href="javascript:void(0);"' +
+                            'data-index="' + index +
+                            '"data-key="' + data.key +
+                            '"title="' + $.su.CHAR.OPERATION.EDIT + '"class="grid-content-btn grid-content-btn-edit btn-edit">';
+                        inHTML += '<span class="icon"></span>';
+                        inHTML += '<span class="text">"' + $.su.CHAR.OPERATION.EDIT + '</span>';
+                        inHTML += '</a>';
+
+                        inHTML += "<a href=\"javascript:void(0);\"" +
+                            " data-index=\"" + index + "\"" +
+                            " data-key=\"" + data.key + "\" " +
+                            "title=\"" + $.su.CHAR.OPERATION.DELETE + "\" " +
+                            "class=\"grid-content-btn grid-content-btn-delete btn-delete\">";
+                        inHTML += '<span class="icon"></span>';
+                        inHTML += '<span class="text">' + $.su.CHAR.OPERATION.DELETE + '</span>';
+                        inHTML += '</a>';
+                        inHTML += '</div>';
+                        return inHTML;
+                    }
+                }],
+                operation: [
+                    "prompt",
+                    "add",
+                    "delete"
+                ],
+                paging_true: {}
+            }).delegate('span.combo-report-content-item-tittle', 'click', function() {
+                var brother = $(this).next('ul.combo-report-content-item-detail');
+                if (brother.hasClass('show')) {
+                    brother.hide();
+                    brother.removeClass('show');
+                } else {
+                    brother.show();
+                    brother.addClass('show');
+                }
+            }).delegate('a.btn-query', 'click', function() {
+                // 生成报表
+                var index = $(this).data('index'),
+                    data = combo_store.getDataByIndex(index);
+                console.log(data);
+                initComboReport(data);
+            });
+
+            var combo_store = combo_grid.grid('getStore');
+            var $combo_editor = $(combo_grid.grid('getEditor'));
+
+            // 编辑
+            $combo_editor.on('ev_startEdit', function(e, index, key) {
+                console.log(index, key);
+
+                // add
+                if (index === 'add') {
+                    $('#flow_report_all').checkbox('setValue', []);
+                    $('#threat_report_all').checkbox('setValue', []);
+
+                } else { // edit
+                    var data = combo_store.getData(key);
+                    console.log(data);
+                    if (data.flow_report_access === 'on') {
+                        $('#flow_report_all').checkbox('setValue', ['all']);
+                    }
+                    if (data.threat_report_access === 'on') {
+                        $('#threat_report_all').checkbox('setValue', ['all']);
+                    }
+                }
+            });
+
+            // 新增 编辑条目 点击确定格式化参数
+            $combo_editor.on("ev_formatEditData", function(e, data) {
+                console.log(data);
+                // 流量报表
+                if (!data.flow_report.length) {
+                    data.flow_report_access = REPORT_INFO.ACCESS.OFF;
+                } else {
+                    if (data.flow_report_all) {
+                        data.flow_report_access = REPORT_INFO.ACCESS.ON;
+                    } else {
+                        data.flow_report_access = REPORT_INFO.ACCESS.SPECIFY;
+                    }
+                }
+                // 威胁报表
+                if (!data.threat_report.length) {
+                    data.threat_report_access = REPORT_INFO.ACCESS.OFF
+                } else {
+                    if (data.threat_report_all) {
+                        data.threat_report_access = REPORT_INFO.ACCESS.ON
+                    } else {
+                        data.threat_report_access = REPORT_INFO.ACCESS.SPECIFY
+                    }
+                }
+
+            }).on("ev_formatAddData", function(e, data) {
+                console.log(data);
+                // 流量报表
+                if (!data.flow_report.length) {
+                    data.flow_report_access = REPORT_INFO.ACCESS.OFF;
+                } else {
+                    if (data.flow_report_all) {
+                        data.flow_report_access = REPORT_INFO.ACCESS.ON;
+                    } else {
+                        data.flow_report_access = REPORT_INFO.ACCESS.SPECIFY;
+                    }
+                }
+                // 威胁报表
+                if (!data.threat_report.length) {
+                    data.threat_report_access = REPORT_INFO.ACCESS.OFF
+                } else {
+                    if (data.threat_report_all) {
+                        data.threat_report_access = REPORT_INFO.ACCESS.ON
+                    } else {
+                        data.threat_report_access = REPORT_INFO.ACCESS.SPECIFY
+                    }
+                }
+            });
+
+            // 关闭自定义报表
+            $('#close_combo_report').button({
+                text: '关闭',
+                handler: function() {
+                    $('#grid_container').show();
+                    $('#combo_report_container').hide();
+                    $('#combo_report_panel').empty();
+                    $('#flow_report_container').empty();
+                    $('#sphit_report_container').empty();
+                    $('#threat_report_container').empty();
+                },
+                cls: "report-page inline-block close-combo-report"
+            });
+            // 立即生成报表
+            function initComboReport(data) {
+
+                $('#combo_report_panel').panel({
+                    title: '查看自定义报表内容—' + data.name,
+                    collapsible: false
+                });
+
+                // 流量报表
+                if (data.flow_report_access !== REPORT_INFO.ACCESS.OFF) {
+                    var flow_report_options_condition = [];
+                    $.each(data.flow_report, function(dataIndex, dataItem) {
+                        $.each(REPORT_INFO.FLOW_REPORT.CONDITION, function(index, item) {
+                            if (dataItem === item.value) {
+                                flow_report_options_condition.push(item);
+                            }
+                        })
+                    });
+                    var flow_report_options = {
+                        pageId: 'flow_report_container',
+                        panel: '流量报表分析',
+                        graphType: REPORT_INFO.GRAPHTYPE.FLOW_REPORT,
+                        condition: flow_report_options_condition,
+                        radioOption: REPORT_INFO.FLOW_REPORT.RADIO_OPTION,
+                        currentCondition: 'flow_src_ip',
+                        grid: {
+                            store: {
+                                proxy: new $.su.Proxy(),
+                                fields: [{
+                                    name: "index"
+                                }, {
+                                    name: "up_flow"
+                                }, {
+                                    name: "down_flow"
+                                }, {
+                                    name: "total_flow"
+                                }, {
+                                    name: "up_flow_sum"
+                                }, {
+                                    name: "down_flow_sum"
+                                }, {
+                                    name: "total_flow_sum"
+                                }],
+                                parseKey: {
+                                    moduleName: "report_new",
+                                    tableName: "flow_report_list"
+                                },
+                                autoLoad: true
+                            },
+                            columns: [{
+                                text: '序号',
+                                xtype: "rownumberer"
+                            }, {
+                                text: '源地址',
+                                dataIndex: "index",
+                                width: 100
+                            }, {
+                                text: '上行流量',
+                                dataIndex: "up_flow",
+                                width: 200,
+                                renderer: function(val, index, data) {
+                                    var percent = toPercent(val / data.up_flow_sum);
+                                    var progressDom = '<div class="report-new-Progress">' +
+                                        '<div class="report-new-bar" style="width: {}"></div><span class="percent-value">{}</span></div>'.replace(/{}/g, percent)
+                                    return progressDom;
+                                }
+                            }, {
+                                text: '下行流量',
+                                dataIndex: "down_flow",
+                                width: 200,
+                                renderer: function(val, index, data) {
+                                    var percent = toPercent(val / data.down_flow_sum);
+                                    var progressDom = '<div class="report-new-Progress">' +
+                                        '<div class="report-new-bar" style="width: {}"></div><span class="percent-value">{}</span></div>'.replace(/{}/g, percent)
+                                    return progressDom;
+                                }
+                            }, {
+                                text: '总流量',
+                                dataIndex: "total_flow",
+                                width: 200,
+                                renderer: function(val, index, data) {
+                                    var percent = toPercent(val / data.total_flow_sum);
+                                    var progressDom = '<div class="report-new-Progress">' +
+                                        '<div class="report-new-bar" style="width: {}"></div><span class="percent-value">{}</span></div>'.replace(/{}/g, percent)
+                                    return progressDom;
+                                }
+                            }]
+                        }
+                    };
+                    initPage(flow_report_options);
+                }
+
+                // 策略命中报表
+                if (data.sphit_report_access !== REPORT_INFO.ACCESS.OFF) {
+                    var sphit_report_options = {
+                        pageId: 'sphit_report_container',
+                        panel: '策略命中报表分析',
+                        graphType: REPORT_INFO.GRAPHTYPE.SPHIT_REPORT,
+                        condition: [{
+                            label: '安全策略',
+                            value: 'sphit_sp'
+                        }],
+                        radioOption: REPORT_INFO.SPHIT_REPORT.RADIO_OPTION,
+                        currentCondition: 'sphit_sp',
+                        grid: {
+                            store: {
+                                proxy: new $.su.Proxy(),
+                                fields: [{
+                                    name: "index"
+                                }, {
+                                    name: "cnt"
+                                }, {
+                                    name: "cnt_sum"
+                                }],
+                                parseKey: {
+                                    moduleName: "report_new",
+                                    tableName: "sphit_report_list"
+                                },
+                                autoLoad: true
+                            },
+                            columns: [{
+                                text: '序号',
+                                xtype: "rownumberer"
+                            }, {
+                                text: '安全策略',
+                                dataIndex: "index",
+                                width: 100
+                            }, {
+                                text: '安全策略命中次数',
+                                dataIndex: "cnt",
+                                width: 200,
+                                renderer: function(val, index, data) {
+                                    var percent = toPercent(val / data.cnt_sum);
+                                    var progressDom = '<div class="report-new-Progress">' +
+                                        '<div class="report-new-bar" style="width: {}"></div><span class="percent-value">{}</span></div>'.replace(/{}/g, percent)
+                                    return progressDom;
+                                }
+                            }]
+                        }
+                    };
+
+                    initPage(sphit_report_options);
+                }
+
+
+                // 威胁报表
+                if (data.threat_report_access !== REPORT_INFO.ACCESS.OFF) {
+                    var threat_report_options_condition = [];
+                    $.each(data.threat_report, function(dataIndex, dataItem) {
+                        $.each(REPORT_INFO.THREAT_REPORT.CONDITION, function(index, item) {
+                            if (dataItem === item.value) {
+                                threat_report_options_condition.push(item);
+                            }
+                        })
+                    });
+                    var threat_report_options = {
+                        pageId: 'threat_report_container',
+                        panel: '威胁报表分析',
+                        graphType: REPORT_INFO.GRAPHTYPE.THREAT_REPORT,
+                        condition: threat_report_options_condition,
+                        radioOption: REPORT_INFO.THREAT_REPORT.RADIO_OPTION,
+                        currentCondition: 'threat_threat_type',
+                        grid: {
+                            store: {
+                                proxy: new $.su.Proxy(),
+                                fields: [{
+                                    name: "index"
+                                }, {
+                                    name: "cnt"
+                                }, {
+                                    name: "cnt_sum"
+                                }],
+                                parseKey: {
+                                    moduleName: "report_new",
+                                    tableName: "threat_report_list"
+                                },
+                                autoLoad: true
+                            },
+                            columns: [{
+                                text: '序号',
+                                xtype: "rownumberer"
+                            }, {
+                                text: '源地址',
+                                dataIndex: "index",
+                                width: 100
+                            }, {
+                                text: '威胁次数',
+                                dataIndex: "cnt",
+                                width: 200,
+                                renderer: function(val, index, data) {
+                                    var percent = toPercent(val / data.cnt_sum);
+                                    var progressDom = '<div class="report-new-Progress">' +
+                                        '<div class="report-new-bar" style="width: {}"></div><span class="percent-value">{}</span></div>'.replace(/{}/g, percent)
+                                    return progressDom;
+                                }
+                            }]
+                        }
+                    };
+                    initPage(threat_report_options);
+                }
+                $('#grid_container').hide();
+                $('#combo_report_container').show();
+            }
+        });
+    </script>
+</body>
+
+</html>

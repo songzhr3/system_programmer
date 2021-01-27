@@ -1,0 +1,86 @@
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
+<html xmlns="http://www.w3.org/1999/xhtml">
+<head>
+	<meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
+	<title>action_check</title>
+	<style type="text/css">
+	</style>
+</head>
+
+<body>
+	<div class="func-container">
+		<div id="action_check">
+			<form id="log_settings">
+				<input id="log_send" name="log_send" />
+				<input id="send_server" name="send_server" />
+			</form>
+		</div>
+
+	</div>
+	<div id="help"></div>
+<script type="text/javascript">
+try{
+    $
+}catch(e){
+    location.href = "/";
+};
+
+$(document).ready(function(e){
+	var actionCheck_proxy = new $.su.Proxy({
+	})
+
+
+	$("div#action_check").panel({
+		title: "上网行为分析",
+		collapsible: false
+	});
+
+	$("#send_server").textbox({
+		fieldLabel:"行为审计服务器地址",
+		vtype:"ip",
+		allowBlank:false
+	});
+
+	$("#log_send").checkbox({
+		fieldLabel:"上传用户上网行为",
+		defaultValue:["on"],
+		items: [
+			{boxlabel: $.su.CHAR.VIRTUAL_SERVERS.ENABLE_THIS_ENTRY, uncheckedValue:"off", inputValue: "on", id: "chk_enable",  checked:true}
+		]
+	}).on("ev_change", function(e, oldValue, newValue){
+        var val = (newValue[0]=="log_send"||newValue[0]=="on") ? "on" : "off";
+        switch(val)
+        {
+            case "on":
+                $("#send_server").textbox("enable");
+                break;
+            case "off":
+                $("#send_server").textbox("disable");
+                break;
+        }
+    });
+
+	$("#log_settings").form({
+		autoLoad:true,
+		proxy: actionCheck_proxy,
+        fields: [
+			{name:"log_send"},
+			{name:"send_server"}
+        ],
+		parseKey: {					/* 此处在store中增加parseKey，便于store对象在底层对数据进行预处理，以实现SLP数据结构和SU数据结构的转变 */
+			moduleName:"behave_audit",		/* 此处的moduleName和tableName分别指数据块名和对应请求的table名 */
+			sectionName:"setting"
+		},
+        submitBtn: "default"
+	});
+
+	var help = new $.su.Help({
+        container: "div#help",
+        content: "ACTION_CHECK"
+    });
+
+});
+</script>
+</body>
+
+</html>

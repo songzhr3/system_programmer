@@ -1,0 +1,466 @@
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
+<html xmlns="http://www.w3.org/1999/xhtml">
+<head>
+<meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
+<title>Interface</title>
+<style type="text/css">
+	.container .widget-container .text-container{
+		display: inline-block;
+	}
+	.container .widget-container .password-container{
+		display: block;
+		margin-bottom: 10px;
+	}
+	.add-pc{
+		 background: url(../web-static/themes/old/img/icons-02.png?random=20190712140849) no-repeat -198px -432px;
+		 background-position: -72px 0px;
+		 display: inline-block;
+		 width: 18px;
+		 height: 18px;
+         visibility: hidden;
+		 border: transparent;
+		 vertical-align: middle;
+		margin-right: 500px;
+	 }
+	.add-pc:hover{
+		background: url(../web-static/themes/old/img/icons-02.png?random=20190712140849) no-repeat -198px -432px;
+		background-position: 0px -54px;
+		display: inline-block;
+		width: 18px;
+		height: 18px;
+		border: transparent;
+		vertical-align: middle;
+		margin-right: 500px;
+	}
+	.del-pc{
+		background: url(../web-static/themes/old/img/icons-02.png?random=20190712140849) no-repeat -198px -432px;
+		background-position: -90px 0px;
+		display: inline-block;
+		width: 18px;
+		height: 18px;
+		border: transparent;
+		vertical-align: middle;
+		margin-left: 4px;
+		margin-right: 500px;
+	}
+	.del-pc:hover{
+		background: url(../web-static/themes/old/img/icons-02.png?random=20190712140849) no-repeat -198px -432px;
+		background-position: -18px -54px;
+		display: inline-block;
+		width: 18px;
+		height: 18px;
+		border: transparent;
+		vertical-align: middle;
+		margin-left: 4px;
+		margin-right: 500px;
+	}
+
+</style>
+</head>
+
+<body>
+<div class="func-container">
+	<div id="account-list">
+		<div id="account-grid">
+		</div>
+	</div>
+
+	<div id="own-editor">
+		<input id="username" name="username"/>
+		<input type="password" id="password" name="password"/>
+        <input type="password" id="cfm_pwd" name="cfm_pwd" value="" />
+		<input id="role_name" name="role_name"/>
+		<input id="trust_pc0" name="trust_pc0" class="trust_pc"/>
+		<span id="add-pc"  class="add-pc"></span>
+		<!--<div class="operate-btn add-pc"><span class="icon"></span></div>-->
+
+		<!--<button id="add-pc" class="add-pc"></button>-->
+		<div id="pc-group">
+
+		</div>
+	</div>
+    <div id="account-list-help"></div>
+</div>
+
+<script type="text/javascript">
+    try{
+        $
+    }catch(e){
+        location.href = "/";
+    };
+
+
+
+    $(document).ready(function(e){
+        $(".func-container").hide();
+
+        var maxTrustPcCount = 32;
+
+        $('#account-list').panel({
+            title: $.su.CHAR.ACCOUNT_LIST.ACCOUNT_LIST
+        });
+        var accountListProxy = new $.su.Proxy();
+
+        $("#username").textbox({
+            fieldLabel: $.su.CHAR.ACCOUNT_LIST.ACCOUNT_NAME,
+            tips: $.su.CHAR.ACCOUNT_LIST.ACCOUNT_TIPS,
+            // labelCls: 's',
+            minLength:1,
+            maxLength:15,
+            allowBlank: false,
+            vtype:"ascii_visible"
+        });
+    var passwordCheck = function(password, cfm_val){
+
+        if(cfm_val == password){
+            $("#pwd_status").status("setSuccess");
+            return true;
+        }else{
+            $("#pwd_status").status("setFailed");
+            return false;
+        };
+    };
+
+    $("input#password").password({
+        fieldLabel: $.su.CHAR.ACCOUNT_LIST.PASSWORD,
+        allowBlank: false,
+        vtype:"ascii_visible",
+        tips: $.su.CHAR.ACCOUNT_LIST.NEW_PWD_TIPS,
+        minLength:8,
+        maxLength:15,
+        validator:function(val){
+            if (val == '') {
+                return "该项不能为空";
+            }
+            if(val.length < 8 || val.length > 15){
+                return "密码长度最少为8位,最多为15位";
+            }
+            return true;
+        }
+    }).on("ev_change", function(item, data){
+        $("#pwd_status").status('setNormal');
+        $("input#cfm_pwd").password('setNormal');
+
+        var password = $("input#password").password("getValue");
+        var cfm_val = $("input#cfm_pwd").password("getValue");
+        if ( cfm_val){
+            passwordCheck(password, cfm_val);
+        }
+    }).on("ev_validatechange", function(item, data){
+        var password = $("input#password").password("getValue");
+        var cfm_val = $("input#cfm_pwd").password("getValue");
+
+        if( cfm_val=='' ){
+            $("#pwd_status").status('setNormal');
+            return true;
+        }else{
+            passwordCheck(password, cfm_val);
+        };
+    });
+
+
+    $("input#cfm_pwd").password({
+        fieldLabel: $.su.CHAR.ACCOUNT_LIST.CONFIRM,
+        vtype:"ascii_visible",
+        minLength:8,
+        maxLength:15,
+        cls:"inline",
+        allowBlank: false,
+        validator:function(val){
+            if (val == '') {
+                return "该项不能为空";
+            }
+            if(val.length < 8 || val.length > 15){
+                return "密码长度最少为8位,最多为15位";
+            }
+            return true;
+        },
+        showLevel:false
+    }).on("ev_change ev_validatechange", function(){
+        var password = $("input#password").password("getValue");
+        var cfm_val = $("input#cfm_pwd").password("getValue");
+
+        if (password == ""){
+            if ( cfm_val == "" ){
+                $("#pwd_status").status("setNormal");
+            }else{
+                if (!passwordCheck(password, cfm_val)){
+                    $("input#cfm_pwd").password("setError");
+                };
+            }
+        }else{
+            if (!passwordCheck(password, cfm_val)){
+                $("input#cfm_pwd").password("setError");
+            }
+        }
+    });
+
+
+    //todo 此处数据未提供
+    $("#role_name").combobox({
+        fieldLabel:$.su.CHAR.ACCOUNT_LIST.ROLE_NAME,
+        items:[
+            {name: $.su.CHAR.ACCOUNT_LIST.SYS_ADMIN,value:'sys_admin',selected:true},
+            {name: $.su.CHAR.ACCOUNT_LIST.CONFIG_ADMIN,value:'config_admin'},
+            //{name: $.su.CHAR.ACCOUNT_LIST.MONITOR_ADMIN,value:'admin3'},
+            {name: $.su.CHAR.ACCOUNT_LIST.AUDIT_ADMIN,value:'audit_admin'}
+        ]
+    });
+    $("#trust_pc0").textbox({
+        fieldLabel: $.su.CHAR.ACCOUNT_LIST.TRUST_PC,
+        maxLength: 32,
+        allowBlank: false,
+        vtype:'ip'
+    }).on("ev_change", function(e, NewValue) {
+		// todo 校验新数据
+		var index = $(this).attr('id').substr(8);
+        data.trust_pc.splice(index, 1,NewValue);
+    }).textbox("hide");
+
+    function formatPCHtml(trust_pc){
+        var pcHtml ="";
+        if(trust_pc.length>1){
+            for(i=1;i<trust_pc.length;i++){
+                // pcHtml += "<li class=\"block\">";
+                pcHtml +=     "<input id=\"trust_pc" + i + "\" name=\"trust_pc" + i + "\" value=\"\" class=\"trust_pc\"/>";
+                pcHtml +=     "<span id=\"del-pc" + i +  "\" class=\"del-pc\"></span>";
+                // pcHtml += "</li>";
+            }
+        }
+
+        $("#pc-group").html(pcHtml);
+        if(trust_pc.length>1) {
+            for (i = 1; i < trust_pc.length; i++) {
+                var obj = "input#trust_pc" + i.toString();
+                $(obj).textbox({
+                    fieldLabel: $.su.CHAR.ACCOUNT_LIST.TRUST_PC,
+                    maxLength: 32,
+                    allowBlank: false,
+					vtype:'ip'
+                }).on("ev_change", function(e, NewValue) {
+                    // todo 校验新数据
+					var index= $(this).attr('id').substr(8);
+                    data.trust_pc.splice(index, 1,NewValue);
+                });
+            }
+        }
+
+        trust_pc.forEach(function (item,index) {
+            var obj = "input#trust_pc" + index.toString();
+            $(obj).textbox("setValue",item);
+        });
+
+
+        editor.find(".del-pc").unbind("click").on("click",function () {
+            me = this;
+            var rownuber = parseInt($(me).attr('id').substr(6));
+            data.trust_pc.splice(rownuber, 1);
+            formatPCHtml(data.trust_pc);
+        });
+
+    }
+
+    function renderer_to_name(data){
+        if (typeof(data) == "undefined" || data == "---") return "---";
+        var name = null
+        if (data == "sys_admin")
+            name =  "系统管理员"
+        else if (data == "config_admin")
+            name =  "配置管理员"
+        else if (data == "audit_admin")
+            name =  "审计管理员"
+        else
+            name = "---"
+        return name
+    }
+
+	var trustPc = [];
+    var accountGrid = $('#account-grid').grid({
+        editor:{
+            validator:function()
+            {
+
+                //输入框参数错误时，不允许提交
+                if (!$("input#password").password("validate")
+                || !$("input#cfm_pwd").password("validate")) {
+                    return false
+                }
+                var  val = $("input#cfm_pwd").password("getValue");
+                var password = $("input#password").password("getValue");
+
+                var regNumber = /\d+/; //验证0-9的任意数字最少出现1次。
+                var regLowerString = /[a-z]+/; //验证小写26个字母任意字母最少出现1次。
+                var regUpperString = /[A-Z]+/; //验证大写26个字母任意字母最少出现1次。
+
+                if(password.length < 8 || password.length > 15){
+                    $("input#password").password("setError", $.su.CHAR.ACCOUNT_LIST.NEW_PWD_LENHTH_ERR);
+                    return false;
+                }
+                if(val.length < 8 || val.length > 15){
+                    $("input#cfm_pwd").password("setError", $.su.CHAR.ACCOUNT_LIST.NEW_PWD_LENHTH_ERR);
+                    return false;
+                }
+                if (! regNumber.test(password)){
+                    $("input#password").password("setError", $.su.CHAR.ACCOUNT_LIST.NEW_PWD_NUM_ERR);
+                    return false;
+                }
+                if (! regUpperString.test(password)){
+                    $("input#password").password("setError", $.su.CHAR.ACCOUNT_LIST.NEW_PWD_UPSTR_ERR);
+                    return false;
+                }
+                if (! regLowerString.test(password)){
+                    $("input#password").password("setError", $.su.CHAR.ACCOUNT_LIST.NEW_PWD_LOWSTR_ERR);
+                    return false;
+                }
+                if(val == password)
+                {
+                    return true;
+                }
+                else
+                {
+                    $("input#cfm_pwd").password("setError", $.su.CHAR.ERROR["00000148"]);
+                    return false;
+                }
+                return true;
+            },
+
+            content:'#own-editor',
+            fields:[
+                {name:'username'},
+                {name:'password'},
+                {name:'role_name'},
+                {name:'trust_pc',mapping:'trust_pc'}
+            ],
+            transParams: function(params){
+                params.trust_pc = [];
+                for (var name in params)
+                {
+                    if ((name.indexOf("trust_pc")!==-1) && (name!=="trust_pc"))
+                    {
+                        params.trust_pc.push(params[name]);
+                    }
+                }
+
+                return params;
+            }
+        },
+        store:{
+            proxy: accountListProxy,
+            fields:[
+                {name:'username'},
+                {name:'password'},
+                {name:'role_name'},
+                {name:'trust_pc',mapping:'trust_pc'}
+            ],
+            parseKey: {
+                moduleName: "administrator",
+                // pageSizeName: "",
+                tableName: "account"
+            },
+            autoLoad: true,
+            updateMode: "operation"
+        },
+        paging_true:{},
+        columns: [
+            {
+                xtype: "checkcolumn"
+            },
+            {
+                xtype: "rownumberer"
+            },
+            {
+                text:$.su.CHAR.ACCOUNT_LIST.ACCOUNT_NAME,
+                dataIndex: "username",
+                scan: {
+                    cmp: $.search.compare.string
+                }
+            },
+            {
+                text:$.su.CHAR.ACCOUNT_LIST.ROLE_NAME,
+                dataIndex: "role_name",
+                renderer:function(data){
+                    return renderer_to_name(data)
+                },
+                scan: {
+                    cmp: $.search.compare.string,
+                    items:[
+                        {value:"sys_admin", name:"系统管理员"},
+                        {value:"config_admin", name:"配置管理员"},
+                        {value:"audit_admin", name:"审计管理员"}
+                    ]
+                }
+            },
+            {
+                xtype:'settings'
+            }
+        ],
+        operation: 'add|delete|refresh|search'
+
+        }).on("ev_startEdit",function(e,index,key){
+            $("input#password").password("setValue","");
+            $("input#cfm_pwd").password("setValue","");
+        });
+
+    var editor= $(accountGrid.grid("getEditor"));
+    var store = accountGrid.grid("getStore");
+    var data = store.data;
+
+    editor.on("ev_startEdit", function(e, index, key){
+
+        if (index == "add"){
+            editor.find("#role_name").combobox("enableStyle");
+        }
+        else{
+            editor.find("#role_name").combobox("disableStyle");
+        }
+    })
+
+
+    // $.extend(data,{'trust_pc':[1,2,3,4,5,6]});
+
+    //editor.on("ev_startEdit", function(e, editingIndex, editingId) {
+    //    formatPCHtml(data.trust_pc);
+    //});
+
+    //editor.find('#add-pc').unbind("click").on("click",function () {
+    //    data.trust_pc.push("");
+    //    formatPCHtml(data.trust_pc);
+    //});
+
+    //console.log(editor.find("#pc-group"),editor.find("#pc-group").find(".del-pc"),editor.find(".del-pc"));
+
+    // editor.find(".del-pc").unbind("click").on("click",function () {
+    //     me = this;
+    //     var rownuber = parseInt($(me).attr('id').match(/[0-9]{1,}/));
+    //     data.trust_pc.splice(rownuber-1, 1);
+    //     formatPCHtml(data.trust_pc);
+    // });
+
+    // $("#add-pc").on("click",function () {
+		// console.log(1);
+		// // me = this;
+		// // data.trust_pc.push("");
+		// // formatPCHtml(data.trust_pc);
+    // });
+
+
+    // $(".add-pc").click(function(){
+    //     me = this;
+    //     data.trust_pc.push("");
+    //     formatPCHtml(data.trust_pc);
+    // });
+
+    var helpaccountMngtGrid = new $.su.Help({
+        container: "div#account-list-help",
+        content: ["ACCOUNT_LIST"]
+    });/* TODO */
+
+
+        $(".func-container").show();
+    });
+
+    //]]>
+</script>
+</body>
+
+</html>

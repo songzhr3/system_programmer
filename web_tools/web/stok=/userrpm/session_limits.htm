@@ -1,0 +1,217 @@
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
+<html xmlns="http://www.w3.org/1999/xhtml">
+<head>
+<meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
+<title>Session Limit</title>
+<style type="text/css">
+</style>
+</head>
+
+<body>
+<div class="func-container">
+    <div id="function_setting">
+        <form id="sessionlimit_settings">
+            <input id="sessionlimit_enable" name="status" value=""/>
+        </form>
+    </div>
+
+    <div id="sessionlimit_rule_list">
+        <div id="sessionlimit_rule_grid"></div>
+    </div>
+
+    <div id="sessionlimit_help"></div>
+</div>
+
+<script type="text/javascript">
+try{
+    $
+}catch(e){
+    location.href = "/";
+};
+
+$(document).ready(function(e){
+
+    var ipgroupNameTrans = {};
+
+    $("#function_setting").panel({
+        title: $.su.CHAR.SESSIONLIMIT.SETTINGS,
+        collapsible: false
+    });
+
+    var enableProxy = new $.su.Proxy({
+        /* async: false*/
+    });
+
+    $("#sessionlimit_enable").checkbox({
+        /*fieldLabel: $.su.CHAR.SESSIONLIMIT.TITLE,*/
+        items: [
+            {boxlabel: $.su.CHAR.SESSIONLIMIT.GLOBAL_ENABLE, inputValue: "on", uncheckedValue: "off"}
+        ]
+   });
+
+   $("#sessionlimit_settings").form({
+        proxy: enableProxy,
+        fields: [
+            {name: "status", mapping: "status"}
+        ],
+		parseKey: {					/* 此处在store中增加parseKey，便于store对象在底层对数据进行预处理，以实现SLP数据结构和SU数据结构的转变 */
+			moduleName:"session_limits",		/* 此处的moduleName和sectionName分别指数据块名和对应请求的section名 */
+			sectionName:"global"
+		},
+        submitBtn: "default"
+    });
+
+    $("#sessionlimit_rule_list").panel({
+        title: $.su.CHAR.SESSIONLIMIT.RULE_LIST,
+        collapsible: false
+    });
+
+    var ruleListProxy = new $.su.Proxy({
+    });
+
+
+    var ruleGrid = $("#sessionlimit_rule_grid").grid({
+        editor: {
+            content:"default",
+            fields: [
+                {name: "name"},
+                {name: "ipgroup"},
+                {name: "max_conn"},
+                {name: "status"}
+            ]
+        },
+        store:{
+            proxy: ruleListProxy,
+            fields: [
+                {name: "name"},
+                {name: "ipgroup"},
+                {name: "max_conn"},
+                {name: "status"}
+            ],
+			parseKey: {					/* 此处在store中增加parseKey，便于store对象在底层对数据进行预处理，以实现SLP数据结构和SU数据结构的转变 */
+				moduleName:"session_limits",		/* 此处的moduleName和tableName分别指数据块名和对应请求的table名 */
+				tableName:"limit_rule",
+				pageSizeName: "sessionlimits_entry"
+			}
+        },
+        paging_true:[],
+        columns: [
+            {
+                xtype: "checkcolumn",
+                width: $.su.CHAR.SETTING.SESSIONLIMIT.CHECK_COLUMN_WIDTH
+            },
+            {
+                xtype: "rownumberer",
+                width: $.su.CHAR.SETTING.SESSIONLIMIT.ROW_NUMBER_WIDTH
+            },
+            {
+                text: $.su.CHAR.SESSIONLIMIT.NAME,
+                width: $.su.CHAR.SETTING.SESSIONLIMIT.NAME_WIDTH,
+                dataIndex: "name",
+                editor: {
+                    xtype: "textbox",
+                    allowBlank: false,
+                    vtype:"string_visible_allow_blank",
+                    maxLength: 32,
+                    minLength:1
+                }
+            },
+            {
+                text: $.su.CHAR.SESSIONLIMIT.IPGROUP,
+                width: $.su.CHAR.SETTING.SESSIONLIMIT.IPGROUP_WIDTH,
+                dataIndex: "ipgroup",
+                editor: {
+                    xtype: "combobox",
+                    allowBlank: false,
+                    vtype:"string_visible_allow_blank",
+                    items:[
+                    {name:"---",value:'---'}
+                    ]
+                },
+                renderer: function (v) {
+                    return ipgroupNameTrans[v] || v;
+                }
+            },
+            {
+                text: $.su.CHAR.SESSIONLIMIT.MAX_CONN,
+                width: $.su.CHAR.SETTING.SESSIONLIMIT.MAX_CONN_WIDTH,
+                dataIndex: "max_conn",
+                editor: {
+                    xtype: "textbox",
+                    allowBlank: false,
+                    vtype: {
+                        vtype: "number",
+                        max: 65535,
+                        min: 1
+                    },
+                    tips:"(数值范围:1-65535)"
+                }
+            },
+            {
+                text: $.su.CHAR.SESSIONLIMIT.STATUS,
+                width: $.su.CHAR.SETTING.SESSIONLIMIT.ENABLE_WIDTH,
+                xtype: "statuscolumn",
+                dataIndex: "status",
+                editor: {
+                    xtype: "checkbox",
+                    fieldLabel: '',
+                    items: [
+                        {boxlabel: $.su.CHAR.SESSIONLIMIT.ENABLE_THIS_ENTRY, inputValue:'on', uncheckedValue:'off', checked:true}
+                    ]
+                }
+            },
+            {
+                xtype: "settings",
+                width: $.su.CHAR.SETTING.SESSIONLIMIT.SETTING_WIDTH
+            }
+        ],
+        operation: 'prompt|add|delete'
+    });
+
+    var ipgroupProxy = new $.su.Proxy({
+        async: false
+    });
+    ipgroupProxy.query({ipgroup:{table:"rule_ipgroup"}}, function(data){
+        var i
+        var ipgroupItem=[];
+        //预处理
+        data = data["ipgroup"]["rule_ipgroup"];
+
+        for (i=0; i< data.length; i++){
+            for (var key in data[i])
+            {
+                data[i] = data[i][key];
+            }
+
+            if (data[i].name == "IPGROUP_ANY"){
+                continue;
+            }
+
+            var item = slpIpgroupToItem(data[i]);
+            ipgroupItem.push(item);
+            ipgroupNameTrans[item.value] = item.name;
+        }
+        var editor = ruleGrid.grid('getEditor');
+        var combobox = $(editor).find('.combobox-value[name=ipgroup]');
+            combobox.combobox('loadData',ipgroupItem);
+        ruleGrid.grid('getStore').load();
+    });
+
+    function slpIpgroupToItem(ipgroup_obj) {
+        if (ipgroup_obj.flag == "system" && typeof(ipgroup_obj.comment) == "string" && ipgroup_obj.comment.length > 1) {
+            return {name: ipgroup_obj.comment, value: ipgroup_obj.name};
+        } else {
+            return {name: ipgroup_obj.name, value: ipgroup_obj.name};
+        }
+    }
+
+    var helpConnlimit = new $.su.Help({
+        container: "div#sessionlimit_help",
+        content: ["SESSIONLIMIT_ENABLE", "SESSIONLIMIT_LIST"]
+    });
+
+});
+</script>
+</body>
+
+</html>

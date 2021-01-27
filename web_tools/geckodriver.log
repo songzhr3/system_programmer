@@ -1,0 +1,11 @@
+1611735435075	mozrunner::runner	INFO	Running command: "/usr/bin/firefox" "-marionette" "-foreground" "-no-remote" "-profile" "/tmp/rust_mozprofileybRM5X"
+Running without a11y support!
+1611735445963	Marionette	INFO	Listening on port 45395
+1611735446006	Marionette	WARN	TLS certificate errors will be ignored for this session
+JavaScript warning: http://172.28.184.184:8010/web/web-static/js/libs/jquery.min.js?random=20201217044300, line 2: Using //@ to indicate sourceMappingURL pragmas is deprecated. Use //# instead
+JavaScript warning: http://172.28.184.184:8010/web/web-static/js/su/su.js?random=20201217044300, line 1117: unreachable code after return statement
+JavaScript warning: http://172.28.184.184:8010/web/web-static/js/su/su.js?random=20201217044300, line 1129: unreachable code after return statement
+console.error: "Store does not have a valid reducer. Make sure the argument passed to combineReducers is an object whose values are reducers."
+JavaScript warning: http://172.28.184.184:8010/web/web-static/js/libs/jquery.min.js?random=20201217044300, line 150: unreachable code after return statement
+1611736137868	Marionette	INFO	Stopped listening on port 45395
+console.warn: "IGNORED REDUX ACTION:" ({type:"AUTOCOMPLETE_CLEAR"})

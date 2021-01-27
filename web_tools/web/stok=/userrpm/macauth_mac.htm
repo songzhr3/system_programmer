@@ -1,0 +1,222 @@
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
+<html xmlns="http://www.w3.org/1999/xhtml">
+	<head>
+		<meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
+		<title>MAC地址</title>
+		<style type="text/css">
+		</style>
+	</head>
+	<body>
+		<div class="func-container">
+			<div id="mac_auth_mac">
+				<div id="mac_auth_mac_grid" class="natSeries">
+				</div>
+			</div>
+			<div id="own_editor" style="display:none">
+				<input id="name" name="name" />
+				<input id="mac" name="mac" />
+			</div>
+			
+			<div id="mac_auth_mac_help"></div>
+		</div>
+
+<script type="text/javascript">
+
+//<![CDATA[
+
+try{
+$
+}catch(e){
+	location.href = "/";
+};
+
+var BACKUP_URL_NEW = $.su.url("/admin/macauth_mac?form=usercfg");
+$(document).ready(function(e){
+	var URL_MACAUTH_MAC = $.su.url("/admin/macauth_mac?form=maclist");
+	var URL_MACAUTH_MAC_FOR_SSID = $.su.url("/admin/macauth_mac?form=maclistForSSID");
+	var URL_AUTH_PARA = $.su.url("/admin/macauth_group?form=global_para");
+	var URL_WSERV_LIST = $.su.url("/admin/ac_wservice?form=wserv_list");
+	
+	$('div#mac_auth_mac').panel({
+		title: $.su.CHAR.MAC_AUTH.MAC_LIST,
+		collapsible: false
+	});
+	
+	$("input#name").textbox({
+		fieldLabel: $.su.CHAR.MAC_AUTH.MAC_NAME,
+		vtype: "string_visible_allow_blank",
+		maxLength: 50,
+		allowBlank: false,
+		tips: $.su.CHAR.MAC_AUTH.MAC_NAME_TIP
+	});
+	$("input#mac").textbox({
+		fieldLabel: $.su.CHAR.MAC_AUTH.MAC_ADDRESS,
+		vtype: "mac",
+		allowBlank: false,
+		tips: $.su.CHAR.MAC_AUTH.MAC_ADDRESS_TIP,
+		maxLength: 17
+	});
+
+	var macAuthMacProxy = new $.su.Proxy({
+		//url: URL_MACAUTH_MAC
+	});
+
+	var mac_addr_grid = $("div#mac_auth_mac_grid").grid({
+		store:{
+			proxy: macAuthMacProxy,
+			fields: [
+				{name: "name"},
+				{name: "mac"},
+				{name: "id"}
+			],
+			parseKey:{
+				moduleName: "authentication",
+				tableName: "mac_addr_list",
+
+				pageSizeName: "mac_auth_entry",
+				maxSizeTableName: "mac_auth",
+				maxSizeOptionName: "max_mac",
+				setFilter:function(index, itemName, data){
+					var result = [];
+					if (!$.isArray(itemName))
+					{
+						itemName = [itemName]
+					}
+					for (var i = 0; i < itemName.length; i++)
+					{
+						result.push({"id": itemName[i].split("mac_addr_list_")[1]});
+					}
+					return result;
+                },
+				delFilter:function(itemNames, data, indexes){
+					var result = [];
+					for (var i = 0; i < indexes.length; i++)
+					{
+						result.push({"id": indexes[i].id});
+					}
+					return result;
+                }
+			},
+			autoLoad: true,
+			rmField: ["key"],
+			backup_url: BACKUP_URL_NEW,
+			cfg_backup: "backup",
+			cfg_load: "load"
+		},
+		
+		editor: {
+			validator:function()
+			{
+				var editor  = $(mac_addr_grid.grid("getEditor"));
+				return true;
+			},
+			content: "#own_editor",
+			
+			fields: [
+				{name: "name"},
+				{name: "mac"}
+			]
+			
+		},
+		paging_true: {},
+		columns: [
+			{
+				xtype: "checkcolumn",
+				width: $.su.CHAR.SETTING.MAC_AUTH.CHECK_COLUMN_WIDTH
+			},
+			{
+				xtype: "rownumberer",
+				width: $.su.CHAR.SETTING.MAC_AUTH.ROW_NUMBER_WIDTH
+			},
+			{
+				text: $.su.CHAR.MAC_AUTH.MAC_NAME,
+				width: $.su.CHAR.SETTING.MAC_AUTH.MAC_NAME_WIDTH,
+				dataIndex: "name",
+				scan: {
+					cmp: $.search.compare.string,
+					vtype: "string"
+				}
+			},
+			{
+				text: $.su.CHAR.MAC_AUTH.MAC_ADDRESS,
+				width: $.su.CHAR.SETTING.MAC_AUTH.MAC_ADDRESS_WIDTH,
+				dataIndex: "mac",
+				scan: {
+					cmp: $.search.compare.string,
+					vtype: "string",
+					check: $.search.compare.mac
+				}
+			},
+			{
+				width: $.su.CHAR.MAC_AUTH.SETTING_WIDTH,
+				xtype: "settings"
+			}
+		],
+		exportCfg:{
+			url: $.su.url.subs + $.su.url.stok + "/admin/authentication/mac_backup",
+			checkCallback: function(callback){
+				var exportCheckProxy = new $.su.Proxy();
+
+				exportCheckProxy.query({"authentication":{"name":"mac_backup_status"}}, function(data){
+					data = data.authentication.mac_backup_status;
+
+					if (data.status == "1")
+					{
+						callback(true);
+					}
+					else
+					{
+						callback(false);
+					}
+				});
+			}
+		},
+		importCfg:{
+			url: $.su.url.subs + $.su.url.stok + "/admin/authentication/mac_load",
+			checkCallback: function(callback){
+				var importCheckProxy = new $.su.Proxy();
+
+				importCheckProxy.query({"authentication":{"name":"mac_load_status"}}, function(data){
+					data = data.authentication.mac_load_status;
+
+					if (data.status == "1")
+					{
+						callback(true);
+					}
+					else
+					{
+						callback(false);
+					}
+				});
+			}
+		},
+		
+		operation: "prompt|add|delete|search|searchAll|import|export"
+		
+	}).on("ev_load", function(e, data, others){
+		if (others)
+		{
+			maxrules = others.max_rules;
+		}
+	}).on("ev_update", function(e){
+		var paging = mac_addr_grid.get(0).paging;		
+		if (paging && paging.search && paging.params){
+			paging.params.pageNo = paging.currentPage;
+			var store = mac_addr_grid.grid("getStore");
+			store.load(paging.params);
+		}
+	});
+	var editor = mac_addr_grid.grid("getEditor");
+	$(editor).on("ev_startEdit", function(e, index, key){
+		$("#own_editor").show();
+	});
+	var helpUsermngr = new $.su.Help({
+		container: "div#mac_auth_mac_help",
+		content: ["MAC_AUTH_MAC_HELP"]
+	});
+	$(".grid-panel").css("marginBottom","30px");
+});
+
+</script>
+</body>
+</html>

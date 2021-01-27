@@ -1,0 +1,298 @@
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN"
+		"http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
+<html xmlns="http://www.w3.org/1999/xhtml">
+<head>
+	<meta http-equiv="Content-Type" content="text/html; charset=utf-8"/>
+	<style type="text/css">
+
+	</style>
+	<title>zone</title>
+</head>
+
+<body>
+<div class="func-container">
+	<div id="userzone-list">
+		<div id="userzone-grid">
+		</div>
+	</div>
+
+	<div id = "own_editor">
+		<div id = "userzone-name">
+			<input id = "name" name = "name" >
+		</div>
+		<div id = "userzone-priority">
+			<input id = "priority" name = "priority" >
+		</div>
+		<div id = "userzone-comment" >
+			<input id = "comment" name = "comment" >
+		</div>
+		<div id="userzone-iface">
+			<input id = "iface" name = "iface" >
+		</div>
+	</div>
+
+	<div id="userzone-help"></div>
+</div>
+
+<script type="text/javascript">
+	try{
+		$
+	}catch(e){
+		location.href = "/";
+	};
+
+	$(document).ready(function(e){
+		$(".func-container").hide();
+
+		$("#userzone-list").panel({
+			title: $.su.CHAR.USERZONE.ZONE_LIST
+		});
+
+		var userZoneListProxy = new $.su.Proxy();
+
+		$("input#iface").combobox({
+			fieldLabel: $.su.CHAR.USERZONE.IFACE,
+			multiSelect: true,
+			items:[
+				{name:"---",value:"---", selected:true}
+			]
+		})
+
+		$("input#name").textbox({
+			fieldLabel: $.su.CHAR.USERZONE.NAME,
+			tips:"(1-28个字符)",
+			tipsCls:"s",
+			allowBlank:false,
+			maxLength:28,
+			vtype: "name"
+		});
+
+		$("input#priority").textbox({
+			fieldLabel: $.su.CHAR.USERZONE.PRIORITY,
+			tipsCls:"s",
+			allowBlank:false,
+			maxLength:3,
+			vtype: {
+				vtype: "number",
+				max: 100,
+				min: 1
+			},
+			tips:$.su.CHAR.USERZONE.PRIORITY_TIPS
+		});
+
+		$("input#comment").textbox({
+			fieldLabel: $.su.CHAR.USERZONE.COMMENT,
+			tips:"(1-50个字符)",
+			tipsCls:"s",
+			allowBlank:true
+		});
+
+		var userZoneGrid = $("#userzone-grid").grid({
+			editor: {
+				validator:function()
+				{
+					var editor	= $(userZoneGrid.grid("getEditor"));
+					var priority = editor.find(".text-text[name=priority]").textbox("getValue");
+					var name = editor.find(".text-text[name=name]").textbox("getValue");
+					var store	= userZoneGrid.grid("getStore");
+					var keyProperty = store.keyProperty;
+					var grid_array	= store.data;
+
+					var editingId = editor.editor("getEditingId");
+
+					if($.isArray(grid_array) && grid_array.length > 0)
+					{
+						for(var k = 0; k < grid_array.length;k++)
+						{
+							var data = grid_array[k];
+
+							if(data[keyProperty] == editingId)
+							{
+								continue;
+							} else if(data["name"] == name)
+							{
+								$($("div#userzone-grid").grid("getEditor")).form('setError', "名称不能重复！");
+								return false;
+							}else if(data["priority"] == priority)
+							{
+								$($("div#userzone-grid").grid("getEditor")).form('setError', "优先级不能重复！");
+								return false;
+							}
+						}
+					}
+					return true;
+				},
+				content:"#own_editor",
+				fields: [
+					{name: "name"},
+					{name: "priority"},	//取值范围0-100，不能与其他条目重复
+					{name: "iface"},   //query({network: {table: "if_info"}})获取接口列表
+					{name: "comment"}
+				]
+			},
+			store:{
+				proxy: userZoneListProxy,
+				fields: [
+					{name: "name"},
+					{name: "priority"},	//取值范围0-100，不能与其他条目重复
+					{name: "iface"},   //query({network: {table: "if_info"}})获取接口列表
+					{name: "comment"},
+					{name: "flag"}
+				],
+				parseKey: {
+					moduleName: "zone",
+					pageSizeName: "zone_entry",
+					tableName: "zone"
+				},
+				autoLoad: true
+			},
+			paging_true:{},
+			columns: [
+				{
+					xtype: "checkcolumn"
+				},
+				{
+					xtype: "rownumberer"
+				},
+				{
+					text:"",
+					dataIndex: "flag",
+					hidden: true
+				},
+				{
+					text: $.su.CHAR.USERZONE.NAME,
+					width: 150,
+					dataIndex: "name",
+					scan: {
+						cmp: $.search.compare.string
+					}
+				},
+				{
+					text: $.su.CHAR.USERZONE.PRIORITY,
+					width: 50,
+					dataIndex: "priority"
+				},
+				{
+					text: $.su.CHAR.USERZONE.IFACE,
+					width: 250,
+					dataIndex: "iface"
+				},
+				{
+					text: $.su.CHAR.USERZONE.COMMENT,
+					width: 150,
+					dataIndex: "comment",
+					scan: {
+						cmp: $.search.compare.string
+					}
+				},
+				{
+					width: 50,
+					text: $.su.CHAR.USERZONE.EDIT,
+					dataIndex: "none",
+					renderer: function(dd, index, data){
+						var inHTML="<div class=\"button-container zone-operation\" style=\"text-align:center\">";
+						inHTML +=	"<a href=\"javascript:void(0);\" data-index=\""+index+"\" data-key=\""+data.key+"\" title=\""+ $.su.CHAR.OPERATION.EDIT +"\" class=\"grid-content-btn grid-content-btn-edit btn-edit\">";
+						inHTML +=		"<span class=\"icon\"></span>";
+						inHTML +=		"<span class=\"text\">"+$.su.CHAR.OPERATION.EDIT+"</span>";
+						inHTML +=	"</a>";
+						inHTML +="</div>";
+						return inHTML;
+					}
+				}
+			],
+			operation: 'add|delete|refresh'
+		}).on("ev_load", function(e, data, others){
+			for (var i=0; i<data.length; i++){
+				if (data[i].name === "local") {
+					$("div#userzone-grid").grid('disableRow',i);
+				}else if (data[i].flag=== "system") {
+					$("div#userzone-grid").grid('disableCheckbox',i);
+				}
+			}
+			var ruleItem=[];
+			var ruleProxy = new $.su.Proxy({
+				async: false
+			});
+
+			ruleProxy.query({"network":{"table":"if"}}, function(data){
+				for (var i=0; i<data.network.if.length; i++){
+					var userif_obj = data.network.if[i];
+					for (var userif in userif_obj)
+						if (userif_obj[userif].if_type != "bridge" && userif_obj[userif].if_type != "vpn")
+							ruleItem.push({name:userif_obj[userif].if_name,value:userif});
+				}
+				var editor = userZoneGrid.grid('getEditor');
+				var combobox = $(editor).find('.combobox-value[name=iface]');
+				combobox.combobox('loadData',ruleItem);
+			});
+		}).on("ev_formatAddData", function(e, data){
+			if(typeof(data.iface) == "string"){
+				data.iface = [data.iface];
+			}
+		}).on("ev_formatEditData", function(e, data){
+			if(typeof(data.iface) == "string"){
+				data.iface = [data.iface];
+			}else if(typeof(data.iface) == "undefined"){
+				data.iface = [];
+			}
+		}).on("ev_update",function () {
+			var store = userZoneGrid.grid("getStore");
+			for (var i=0; i<store.data.length; i++){
+				if (store.data[i].name === "local") {
+					$("div#userzone-grid").grid('disableRow',i);
+				}else if (store.data[i].flag=== "system") {
+					$("div#userzone-grid").grid('disableCheckbox',i);
+				}
+			}
+		}).on("ev_complete",function () {
+			var store = userZoneGrid.grid("getStore");
+			for (var i=0; i<store.data.length; i++){
+				if (store.data[i].name === "local") {
+					$("div#userzone-grid").grid('disableRow',i);
+				}else if (store.data[i].flag=== "system") {
+					$("div#userzone-grid").grid('disableCheckbox',i);
+				}
+			}
+		});
+		var editor = $(userZoneGrid.grid("getEditor"));
+		editor.on("ev_startEdit", function(e, index, key){
+			var store	= userZoneGrid.grid("getStore");
+			var grid_array	= store.data;
+			var UsedIface = [];
+			var selfUsedIface = $('input#iface').combobox("getValue");
+			userZoneListProxy.query({"zone":{"table":"zone"}}, function(data){
+				data.zone.zone.forEach(function (item,index) {
+					for (x in item)
+					{
+						if(item[x].iface!==undefined){
+							UsedIface = UsedIface.concat(item[x].iface);
+						}
+					}
+				});
+
+				$('input#iface').combobox("disableItem",UsedIface);
+				$('input#iface').combobox("enableItem",selfUsedIface);
+
+				if (index == "add"){
+					editor.find("#name").textbox("enableStyle");
+					editor.find("#priority").textbox("enableStyle");
+				}
+				else{
+					editor.find("#name").textbox("disableStyle");
+					if($.isArray(grid_array) && grid_array[index].flag && grid_array[index].flag==='system'){
+						editor.find("#priority").textbox("disableStyle");
+					}
+				}
+			});
+		});
+		var helpuserZoneGrid = new $.su.Help({
+			container: "div#userzone-help",
+			content: ["USERZONE_SETTING"]
+		});/* TODO */
+
+		$(".func-container").show();
+	});
+</script>
+</body>
+
+</html>

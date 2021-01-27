@@ -1,0 +1,302 @@
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
+<html xmlns="http://www.w3.org/1999/xhtml">
+<head>
+<meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
+<title>DNS_PROXY</title>
+<style type="text/css">
+</style>
+</head>
+
+<body>
+<div class="func-container">
+    <div id="function_setting">
+        <form id="dns_proxy_settings">
+            <input id="dns_ttl" name="dns_ttl" value=""/>
+        </form>
+    </div>
+    <div id="own-editor">
+        <input id="name" name="name"/>
+        <input id="service_if" name="service_if"/>
+		 <input id="out_if" name="out_if"/>
+    </div>
+    <div id="dnsproxy_list">
+        <div id="dnsproxy_grid">
+        </div>
+    </div>
+    <div id="note_cnt" class="">
+        <p><span id="note"></span></p>
+    </div>
+    <div id="dns_proxy_help"></div>
+</div>
+
+<script type="text/javascript">
+try{
+    $
+}catch(e){
+    location.href = "/";
+};
+
+
+$(document).ready(function(e){
+    var dns_proxy_global = new $.su.Proxy();
+    var capabilityproxy = new $.su.Proxy({async: false});
+    var has_dns_ttl = 1;
+
+    capabilityproxy.query({"dns":{"name": "global_capability"}}, function(data){
+        if(data.error_code == 0 && data.dns.global_capability && data.dns.global_capability.dns_ttl_set_request_attr == "0")
+        {
+            has_dns_ttl = 0;
+        }
+    });
+    if(has_dns_ttl)
+    {
+        $("#function_setting").panel({
+            title: $.su.CHAR.DNS_SETTING.SETTINGS,
+            collapsible: false
+        });
+
+        $('#dns_ttl').textbox({
+            fieldLabel: $.su.CHAR.DNS_SETTING.DNS_TTL,
+            allowBlank: false,
+            tips: $.su.CHAR.DNS_SETTING.DNS_TTL_DESC,
+            vtype: {
+                vtype: "number",
+                max: 3600,
+                min: 0
+            }
+        });
+
+        $("#dns_proxy_settings").form({
+            proxy: dns_proxy_global,
+            fields: [
+                {name: "dns_ttl", mapping: "dns_ttl"}
+            ],
+            parseKey:{
+                moduleName: "dns",
+                sectionName: "global"
+            },        
+            submitBtn: "default"
+        });
+        $("#dnsproxy_list").hide();        
+    }
+    else
+    {
+        $("#function_setting").hide();
+    }
+    
+    var Dnsproxy_Proxy = new $.su.Proxy();
+
+    $("#dnsproxy_list").panel({
+        title: $.su.CHAR.DNS_SETTING.DNSPROXY_LIST,
+        collapsible: false
+    });
+
+    $('#name').textbox({
+        fieldLabel: $.su.CHAR.DNS_SETTING.NAME,
+        allowBlank: false,
+        maxLength:50,
+        tips:"（1-50个字符）",
+        vtype: "name"
+
+    });
+
+    $("#service_if").combobox({
+        fieldLabel: $.su.CHAR.DNS_SETTING.SERVICE_IF,
+        allowBlank: false,
+        items:[
+                /*{name:"---",value:"---"}*/
+            ]
+    });
+
+	$("#out_if").combobox({
+        fieldLabel: $.su.CHAR.DNS_SETTING.OUT_IF,
+        allowBlank: false,
+        items:[
+               /* {name:"auto",value:"auto"}*/
+            ]
+    });
+
+    var phyItem = {};
+    var Dnsproxy_Grid = $("#dnsproxy_grid").grid({
+        editor: {
+            validator: function()
+            {
+                var editor  = $(Dnsproxy_Grid.grid("getEditor"));
+                var store 	= Dnsproxy_Grid.grid("getStore");
+                var grid_array  = store.data;
+                var editingId = editor.editor("getEditingId");
+                var keyProperty = store.keyProperty;
+                var ruleName = editor.find(".text-text[name=name]").textbox("getValue");
+
+                /* check the grid, the rulename can't be repeated */
+                if(($.isArray(grid_array)) && (grid_array.length > 0))
+                {
+                    for(var index = 0; index < grid_array.length; index ++)
+                    {
+                        var data = grid_array[index];
+                        if(data[keyProperty] == editingId)
+                        {
+                            continue;
+                        }
+                        else if(data["name"] == ruleName)
+                        {
+                            $($("div#dnsproxy_grid").grid("getEditor")).form('setError', "规则名称不能重复！");
+                            return false;
+                        }
+                    }
+                }
+
+                /* check the grid, the service interface and the out interface can't be repeated */
+                var serviceIf = editor.find("[name=service_if]").combobox("getValue");
+                var outIf = editor.find("[name=out_if]").combobox("getValue");
+                if( serviceIf.toString() == outIf.toString())
+                {
+                    $($("div#dnsproxy_grid").grid("getEditor")).form('setError', "服务接口和出接口不能重复！");
+                    return false;
+                }
+
+                return true;
+            },
+            content:"#own-editor",
+            fields: [
+                {name: "name"},
+                {name: "service_if"},
+                {name: "out_if"}
+            ]
+        },
+        store:{
+            proxy: Dnsproxy_Proxy,
+            extraProperty: "name",
+            fields: [
+                {name: "name"},
+                {name: "service_if"},
+                {name: "out_if"}
+            ],
+			parseKey:
+			{
+				moduleName: "dns",
+				tableName: "rule"
+			},
+            autoLoad: true
+        },
+        columns: [
+            {
+                xtype: "checkcolumn",
+                width: 40
+            },
+            {
+                xtype: "rownumberer",
+                width: 40
+            },
+            {
+                text: $.su.CHAR.DNS_SETTING.NAME,
+                width: 80,
+                dataIndex: "name"
+            },
+            {
+                text: $.su.CHAR.DNS_SETTING.SERVICE_IF,
+                width: 50,
+                dataIndex: "service_if"
+            },
+			{
+                text: $.su.CHAR.DNS_SETTING.OUT_IF,
+                width: 50,
+                dataIndex: "out_if"
+            },
+            {
+                xtype: "settings",
+				width: 40
+            }
+        ],
+        operation: 'prompt|add|delete'
+    }).on("ev_load", function(e,data, others){
+        if(others)/* 通过json里的others参数传递动态阀值 */
+        {
+            maxrules = others.max_rules;
+        }
+
+        var interfaceProxy = new $.su.Proxy({ async: false});
+		var interfaceItem=[];
+		interfaceProxy.query({"network":{"table": "if","filter":[{"zone":"WAN"},{"zone":"VPN"}]}}, function(data){
+			interfaceItem.push({name:"auto",value:"auto"});
+            data = data.network["if"];
+            for (var i = 0; i < data.length; i++){
+                for (var key in data[i]){
+                    if(data[i][key].isbridged != 1){
+                        interfaceItem.push({name:data[i][key].if_name,value:key});
+                    }
+				}
+            }
+
+            var editor = $("div#dnsproxy_grid").grid('getEditor');
+            var comboboxOut = $(editor).find('.combobox-value[name=out_if]');
+            comboboxOut.combobox('loadData',interfaceItem);
+        });
+    }).on("ev_startEdit",function(e){
+
+        var editor  = $(Dnsproxy_Grid.grid("getEditor"));
+        var store 	= Dnsproxy_Grid.grid("getStore");
+        var grid_array  = store.data;
+        var editingId = editor.editor("getEditingId");
+        var keyProperty = store.keyProperty;
+        var usedInterface = [];
+        var editingValue = null;
+
+        /* get the interfaces which were used */
+        if(($.isArray(grid_array)) && (grid_array.length > 0))
+        {
+            for(var index = 0; index < grid_array.length; index ++)
+            {
+                var data = grid_array[index];
+                if(data[keyProperty] == editingId)
+                {
+                    editingValue = data["service_if"];
+                    continue;
+                }
+                usedInterface.push(data["service_if"]);
+            }
+        }
+
+        /* get the vpn interface and the normal interface from the proxy */
+        var interfaceItem=[];
+        var interfaceProxy = new $.su.Proxy({async: false});
+        interfaceProxy.query({"network":{"table": "if","filter":[{"zone":"LAN"}]}}, function(data){
+            var interfaceIndex = -1;
+            data = data.network["if"];
+            for (var i = 0; i < data.length; i++)
+            {
+                for (var key in data[i])
+                {
+                    interfaceIndex = usedInterface.indexOf(data[i][key].if_name);
+                    if(interfaceIndex == -1 && data[i][key].isbridged != 1)
+                    {
+                        interfaceItem.push({name:data[i][key].if_name,value:key});
+                    }
+                }
+            }
+            var combobox = $(editor).find('.combobox-value[name=service_if]');
+            combobox.combobox('loadData',interfaceItem);
+            combobox.combobox('setValue', editingValue);
+        });
+    });
+
+    if(has_dns_ttl)
+    {
+        $("#note").html($.su.CHAR.DNS_SETTING.NOTE);
+        var helpDns = new $.su.Help({
+            container: "div#dns_proxy_help",          
+            content: ["DNS_SETTING_HELP"]
+        });        
+    }
+    else
+    {
+        var helpDns = new $.su.Help({
+            container: "div#dns_proxy_help",
+            content: ["DNS_RULE_LIST_HELP"]
+        });
+    }
+});
+</script>
+</body>
+
+</html>

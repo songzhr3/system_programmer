@@ -1,0 +1,1157 @@
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
+<html xmlns="http://www.w3.org/1999/xhtml">
+<head>
+<meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
+<title>Redundancy Analysis</title>
+<style type="text/css">
+	.top{
+		min-width: 1500px !important;
+	}
+	.top-content{
+		width: 1445px !important;
+		min-width: 1405px !important;
+	}
+</style>
+</head>
+
+<body>
+<div class="func-container">
+	<button id = "start_analysis"></button>
+	<p id="no_redundancy">无冗余策略</p>
+	<div id="start_analysis_alert">
+		<input type="text" id="analysis_progress" />
+		<button id="stop_analysis"></button>
+	</div>
+	<div id="sec_policy">
+		<div id="sec_policy_grid">
+		</div>
+	</div>
+
+	<div id="app_grouping_selector"></div>
+
+	<div id="own_editor">
+		<input id="rule_name" name="name" />
+		<input id="comment" name="comment" />
+		<input id="src_zone" name="src_zone" />
+		<input id="dst_zone" name="dst_zone" />
+		<input id="src_ipgroup" name="src_ipgroup" />
+		<input id="dst_ipgroup" name="dst_ipgroup" />
+        <input id="user_group" name="user_group" />
+		<input id="service_group" name="service_group" />
+		<input id="text_app_grouping" />
+		<textarea id="textarea_app_grouping_id" name="app_groups"></textarea>
+		<button id="button_app_grouping">点击修改</button>
+		<input id="time" name="time" />
+		<input id="action" name="action" />
+		<p>内容安全:</p>
+		<div style="border: 1px solid #ccc; padding: 4px 8px; width: 500px; margin-top: 8px">
+			<input id="url_filter_conf" name="url_filter_conf" />
+			<input id="av_profile" name="av_profile" />
+			<input id="ips_conf" name="ips_conf" />
+			<input id="file_content_filter_conf" name="file_content_filter_conf" />
+			<input id="app_control_filter_conf" name="app_control_filter_conf" />
+			<input id="email_filter_conf" name="email_filter_conf" />
+		</div>
+
+		<input id="record_log" name="record_log" />
+		<input id="enable" name="enable" />
+	</div>
+
+	<div id="link-detail-window">
+		<table class="link-detail-table detail">
+			<tr>
+				<td class="detail-value"></td>
+			</tr>
+		</table>
+	</div>
+
+	<div id="sec_policy_help">
+	</div>
+</div>
+
+<script type="text/javascript">
+try{
+	$
+}catch(e){
+	location.href = "/";
+};
+
+$(document).ready(function(e){
+	$(".func-container").hide();
+	
+	var clean_dataProxy = new $.su.Proxy();
+	var clean_data = {
+		redundancy_analysis:{
+			clean_data:{}
+		}
+	};
+	clean_dataProxy.action(clean_data, function(){
+		console.log("cleaning");
+	});
+
+	var zoneMap=[];
+	var zoneItem=[];
+	var ipgroupMap=[];
+	var ipgroupItem=[];
+    var userGroupMap=[];
+	var userGroupItem=[];
+	var serviceGroupMap=[];
+	var serviceGroupItem=[];
+	var timeObjMap=[];
+	var timeObjItem=[];
+	// var appgroupObjMap=[];
+	// var appgroupObjItem=[];
+	var urlFilterConfMap=[];
+	var urlFilterConfItem=[];
+	var ipsProfileConfMap=[];
+	var ipsProfileConfItem=[];
+	var avProfileConfMap=[];
+	var avProfileConfItem=[];
+	var fileContentFilterConfMap=[];
+	var fileContentFilterConfItem=[];
+	var appControlFilterConfMap=[];
+	var appControlFilterConfItem=[];
+	var emailFilterConfMap=[];
+	var emailFilterConfItem=[];
+	var appMap = $.su.app_list.getAppList();
+	var catalogueMap=[];
+	var itemProxy = new $.su.Proxy({async: false});
+	itemProxy.query(
+		{
+			"zone":{"table":"zone"},
+			"ipgroup":{"table":"rule_ipgroup"},
+            "usergroup":{"table":"rule_group"},
+			"service":{"table":"service_group"},
+			"time_mngt":{"table":"time_obj"},
+			"sec_content_conf":{"table":["url_filter_conf","file_content_filter_conf", "app_control_filter_conf", "email_filter_conf"]},
+			"ips":{"table":"ips_profile"},
+			"av_profile":{"table":"av_profile"},
+			"app_library":{"table":["app_grouping"]},
+			"app_library_conf":{"table":"catalogue_list"}
+		}, function(data){
+		zoneItem.push({name:"Any",value:""});
+		urlFilterConfItem.push({name:"---",value:""});
+		ipsProfileConfItem.push({name:"---",value:""});
+		avProfileConfItem.push({name:"---",value:""});
+		fileContentFilterConfItem.push({name:"---",value:""});
+		appControlFilterConfItem.push({name:"---",value:""});
+		emailFilterConfItem.push({name:"---",value:""});
+		for (var i=0; i<data.zone.zone.length; i++)
+			for (var j in data.zone.zone[i])
+			{
+				zoneMap[j] = data.zone.zone[i][j].name;
+				zoneItem.push({name:data.zone.zone[i][j].name,value:j});
+				break;
+			}
+		for (var i=0; i<data.ipgroup.rule_ipgroup.length; i++)
+			for (var j in data.ipgroup.rule_ipgroup[i])
+			{
+				var translatedGroupName = slpIpgroupToName(data.ipgroup.rule_ipgroup[i][j]);
+				ipgroupMap[j] = translatedGroupName;
+				if (data.ipgroup.rule_ipgroup[i][j].name == "IPGROUP_ANY"){
+					ipgroupItem.push({name:translatedGroupName,value:j,selected:true});
+				}else{
+					ipgroupItem.push({name:translatedGroupName,value:j});
+					//！后加空格使得看上去更清晰
+					ipgroupMap["!"+j] = "! "+translatedGroupName;
+					ipgroupItem.push({name:"! "+translatedGroupName,value:"!"+j});
+				}
+				break;
+			}
+        for (var i=0; i<data.usergroup.rule_group.length; i++)
+			for (var j in data.usergroup.rule_group[i])
+			{
+				if (data.usergroup.rule_group[i][j].name == "Any") {
+					userGroupMap["any"] = data.usergroup.rule_group[i][j].name;
+					userGroupItem.push({name:data.usergroup.rule_group[i][j].name,value:"any",selected:true});
+				}
+				else {
+					userGroupMap[j] = data.usergroup.rule_group[i][j].name;
+					userGroupItem.push({name:data.usergroup.rule_group[i][j].name,value:j});
+				}
+				break;
+			}
+		for (var i=0; i<data.service.service_group.length; i++)
+			for (var j in data.service.service_group[i])
+			{
+				serviceGroupMap[j] = data.service.service_group[i][j].name;
+				if (data.service.service_group[i][j].name == "Any")serviceGroupItem.push({name:data.service.service_group[i][j].name,value:j,selected:true});
+				else serviceGroupItem.push({name:data.service.service_group[i][j].name,value:j});
+				break;
+			}
+		for (var i=0; i<data.time_mngt.time_obj.length; i++)
+			for (var j in data.time_mngt.time_obj[i])
+			{
+				timeObjMap[j] = data.time_mngt.time_obj[i][j].name;
+				if (data.time_mngt.time_obj[i][j].name == "Any")timeObjItem.push({name:data.time_mngt.time_obj[i][j].name,value:j,selected:true});
+				else timeObjItem.push({name:data.time_mngt.time_obj[i][j].name,value:j});
+				break;
+			}
+			var src_data = data.sec_content_conf
+		for (var i=0; i<src_data.url_filter_conf.length; i++)
+			for (var j in src_data.url_filter_conf[i])
+			{
+				urlFilterConfMap[j] = src_data.url_filter_conf[i][j].name;
+				urlFilterConfItem.push({name:src_data.url_filter_conf[i][j].name,value:j});
+				break;
+			}
+		for (var i=0; i<src_data.file_content_filter_conf.length; i++)
+			for (var j in src_data.file_content_filter_conf[i])
+			{
+				fileContentFilterConfMap[j] = src_data.file_content_filter_conf[i][j].name;
+				fileContentFilterConfItem.push({name:src_data.file_content_filter_conf[i][j].name,value:j});
+				break;
+			}
+		for (var i=0; i<src_data.app_control_filter_conf.length; i++)
+			for (var j in src_data.app_control_filter_conf[i])
+			{
+				appControlFilterConfMap[j] = src_data.app_control_filter_conf[i][j].name;
+				appControlFilterConfItem.push({name:src_data.app_control_filter_conf[i][j].name,value:j});
+				break;
+			}
+		for (var i=0; i<src_data.email_filter_conf.length; i++)
+			for (var j in src_data.email_filter_conf[i])
+			{
+				emailFilterConfMap[j] = src_data.email_filter_conf[i][j].name;
+				emailFilterConfItem.push({name:src_data.email_filter_conf[i][j].name,value:j});
+				break;
+			}
+		for (var i=0; i<data.ips.ips_profile.length; i++)
+			for (var j in data.ips.ips_profile[i])
+			{
+				ipsProfileConfMap[j] = data.ips.ips_profile[i][j].name;
+				ipsProfileConfItem.push({name:data.ips.ips_profile[i][j].name,value:j});
+				break;
+			}
+		for (var i=0; i<data.av_profile.av_profile.length; i++)
+			for (var j in data.av_profile.av_profile[i])
+			{
+				avProfileConfMap[j] = data.av_profile.av_profile[i][j].name;
+				avProfileConfItem.push({name:data.av_profile.av_profile[i][j].name,value:j});
+				break;
+			}
+		for (var i=0; i<data.app_library.app_grouping.length; i++)
+			for (var j in data.app_library.app_grouping[i])
+			{
+				catalogueMap.push({name:data.app_library.app_grouping[i][j].name,value:data.app_library.app_grouping[i][j].group_id});
+				break;
+			}
+		for (var i=0; i<data.app_library_conf.catalogue_list.length; i++)
+			for (var j in data.app_library_conf.catalogue_list[i])
+			{
+				catalogueMap.push({name:data.app_library_conf.catalogue_list[i][j].name,value:data.app_library_conf.catalogue_list[i][j].id});
+				break;
+			}
+		});
+
+	var sec_policy_proxy = new $.su.Proxy();
+	var maxrules;
+	var defaultRulesCnt = 0;
+
+	$("#sec_policy").panel({
+		title: $.su.CHAR.REDUNDANCY_ANALYSIS.RULE_LIST,
+		collapsible: false
+	});
+	$("#rule_name").textbox({
+		fieldLabel:$.su.CHAR.REDUNDANCY_ANALYSIS.NAME,
+		tips:"(1-28个字符)",
+		allowBlank:false,
+		maxLength:28,
+		vtype:"name"
+	});
+	$("#comment").textbox({
+		fieldLabel:$.su.CHAR.REDUNDANCY_ANALYSIS.DESC,
+		tips:"(1-50个字符)",
+		allowBlank:true,
+		maxLength:50,
+		vtype:"string_visible_allow_blank"
+	});
+	var text_app_grouping = $("#text_app_grouping").textbox({
+		fieldLabel:$.su.CHAR.REDUNDANCY_ANALYSIS.APP_GROUPING_BUTTON,
+		allowBlank:true,
+		tips:"(点击查看已选列表)"
+	});
+	$("#src_zone").combobox({
+		fieldLabel:$.su.CHAR.REDUNDANCY_ANALYSIS.SRC_ZONE,
+		tips:$.su.CHAR.REDUNDANCY_ANALYSIS.OPTIONAL,
+		items:zoneItem
+	});
+	$("#dst_zone").combobox({
+		fieldLabel:$.su.CHAR.REDUNDANCY_ANALYSIS.DST_ZONE,
+		tips:$.su.CHAR.REDUNDANCY_ANALYSIS.OPTIONAL,
+		items:zoneItem
+	});
+	$("#url_filter_conf").combobox({
+		fieldLabel:$.su.CHAR.REDUNDANCY_ANALYSIS.URL_FILTER_CONF,
+		items:urlFilterConfItem
+	});
+	$("#file_content_filter_conf").combobox({
+		fieldLabel:$.su.CHAR.REDUNDANCY_ANALYSIS.FILE_CONTENT_FILTER_CONF,
+		items:fileContentFilterConfItem
+	});
+	$("#app_control_filter_conf").combobox({
+		fieldLabel:$.su.CHAR.REDUNDANCY_ANALYSIS.APP_CONTROL_FILTER_CONF,
+		items:appControlFilterConfItem
+	});
+	$("#email_filter_conf").combobox({
+		fieldLabel:$.su.CHAR.REDUNDANCY_ANALYSIS.EMAIL_FILTER_CONF,
+		items:emailFilterConfItem
+	});
+	$("#ips_conf").combobox({
+		fieldLabel:$.su.CHAR.REDUNDANCY_ANALYSIS.IPS_CONF,
+		items:ipsProfileConfItem
+	});
+	$("#av_profile").combobox({
+		fieldLabel:$.su.CHAR.REDUNDANCY_ANALYSIS.AV_PROFILE,
+		items:avProfileConfItem
+	});
+	var action_radio = $("#action").radio({
+		fieldLabel:$.su.CHAR.REDUNDANCY_ANALYSIS.ACTION,
+		columns:2,
+		items:[
+			{boxlabel:$.su.CHAR.REDUNDANCY_ANALYSIS.ACCEPT,name:"action",inputValue:'custom',checked:true},
+			{boxlabel:$.su.CHAR.REDUNDANCY_ANALYSIS.DROP,name:"action",inputValue:'drop'}
+		]
+	}).on("ev_change", function(e, oldValue, newValue) {
+		if(newValue === 'custom'){
+			var name = policyEditor.find("#rule_name").textbox('getValue')
+			if (name != "default")
+			{
+				$('#url_filter_conf').combobox('enableStyle');
+				$('#ips_conf').combobox('enableStyle');
+				$('#av_profile').combobox('enableStyle');
+				$('#file_content_filter_conf').combobox('enableStyle');
+				$('#app_control_filter_conf').combobox('enableStyle');
+				$('#email_filter_conf').combobox('enableStyle');
+			}
+		}else{
+			$('#url_filter_conf').combobox('disableStyle');
+			$('#ips_conf').combobox('disableStyle');
+			$('#av_profile').combobox('disableStyle');
+			$('#file_content_filter_conf').combobox('disableStyle');
+			$('#app_control_filter_conf').combobox('disableStyle');
+			$('#email_filter_conf').combobox('disableStyle');
+		}
+	});
+	var textarea_app_grouping_id = $("#textarea_app_grouping_id").textarea({
+		readOnly: true,
+		inputCls:"long",
+		allowBlank:true,
+		setValueCb: function(data){
+			var dataString = data.join("\n");
+			return dataString;
+		},
+		getValueCb: function(data){
+			var tmp = data.replace(/\s/g,"\n")
+			var dataArray = tmp.split(/;|\n/);
+
+			for (var i = 0; i < dataArray.length; i++)
+			{
+				if (dataArray[i] == "")
+				{
+					dataArray.splice(i , 1);
+					i--;
+				}
+			}
+			return dataArray;
+		}
+	});
+	$("#button_app_grouping").button({
+		text:"点击修改",
+		fieldLabel:''
+	});
+	var app_grouping_selector = $('#app_grouping_selector').catalogueSelector({
+	});
+	var $linkDetail = $("#link-detail-window").msg({
+		closeBtn: true,
+		cls:"l",
+		title: "应用组已选列表",
+		type: "window"
+	}).msg("hide");
+	$("input#enable").checkbox({
+		fieldLabel:$.su.CHAR.REDUNDANCY_ANALYSIS.STATUS,
+		columns:1,
+		items:[
+		{
+			boxlabel:$.su.CHAR.REDUNDANCY_ANALYSIS.ENABLE,inputValue:'on',uncheckedValue:"off",checked:true
+			}]
+	});
+	$("#record_log").checkbox({
+		fieldLabel: $.su.CHAR.REDUNDANCY_ANALYSIS.RECORD_LOG,
+		defaultValue:["no"],
+		items: [
+			{boxlabel: $.su.CHAR.REDUNDANCY_ANALYSIS.ON, uncheckedValue:"no", inputValue: "yes"}
+		]
+	})
+	/*should dymically add here*/
+    $("#user_group").combobox({
+		fieldLabel:$.su.CHAR.REDUNDANCY_ANALYSIS.USER_GROUP,
+		items:userGroupItem,
+		allowBlank:false
+	});
+	$("#service_group").combobox({
+		fieldLabel:$.su.CHAR.REDUNDANCY_ANALYSIS.SERVICE,
+		items:serviceGroupItem,
+		allowBlank:false
+	});
+	$("#src_ipgroup").combobox({
+		fieldLabel:$.su.CHAR.REDUNDANCY_ANALYSIS.SRC_IPGROUP,
+		allowBlank:false,
+		items:ipgroupItem
+	});
+	$("#dst_ipgroup").combobox({
+		fieldLabel:$.su.CHAR.REDUNDANCY_ANALYSIS.DST_IPGROUP,
+		items:ipgroupItem,
+		allowBlank:false
+	});
+	$("#time").combobox({
+		fieldLabel:$.su.CHAR.REDUNDANCY_ANALYSIS.TIME,
+		items:timeObjItem,
+		allowBlank:false
+	});
+
+	$("#no_redundancy").hide();
+
+	var query_interval = false;
+
+	//add a start analysis button
+	$("button#start_analysis").button({
+		text:"开始分析",
+		handler:function(){
+			var tmpObj = $($(sec_policy_grid).grid("getEditor"))
+			if(true == tmpObj.editor("isEditing")){//如果有正在编辑修改的策略，退出编辑修改的框
+				tmpObj.editor("cancelEdit");
+			}
+			$("button#start_analysis").button("disable");
+			$("#start_analysis_alert").msg("show");
+			analysis_pro_bar.waitingbar("run");
+
+			var tmpProxy = new $.su.Proxy();
+			var data = {
+				redundancy_analysis:{
+					start_analysis:{}
+				}
+			};
+			tmpProxy.action(data, function(){
+				ruleGrid.grid("getStore").load();
+				query_interval = setInterval(function(){
+					var progressProxy = new $.su.Proxy();
+					var progressData = {
+						redundancy_analysis:{
+							get_progress:{}
+						}
+					};
+					progressProxy.action(progressData, function(data){
+						if("done" == data.progress){
+							analysis_pro_bar.waitingbar("stop");
+							$("#start_analysis_alert").msg("close");
+							clearInterval(query_interval);
+						}
+					});
+				}, 1000)
+			});
+			$("button#start_analysis").button("enable");
+		}
+	});
+
+	$("#start_analysis_alert").msg("close");
+	$("#start_analysis_alert").msg({
+		width:326,
+		type:"prompt",
+		closeBtn:false,
+	})
+	$("#start_analysis_alert").msg("hideButtons");
+
+	var analysis_pro_bar = $("input#analysis_progress");
+	analysis_pro_bar.waitingbar({
+		fieldLabel:$.su.CHAR.REDUNDANCY_ANALYSIS.ANALYZING
+	});
+
+	$("button#stop_analysis").button({
+		text:$.su.CHAR.REDUNDANCY_ANALYSIS.STOP,
+		handler:function(){
+			var stopProxy = new $.su.Proxy();
+			var data = {
+				redundancy_analysis:{
+					stop_analysis:{}
+				}
+			};
+			stopProxy.action(data, function(){
+				$("#start_analysis_alert").msg("close");
+				clearInterval(query_interval);
+				$("button#start_analysis").button("enable");
+			})
+		}
+	})
+
+
+	function renderer_to_name(data, map){
+		if (typeof(data) == "undefined" || data == "---") return "---";
+		if (typeof(data) == "string") data = [data];
+
+		//把value转换为name
+		var namelist=[];
+		data.forEach(function(item,index){
+			namelist[index]=map[item];
+		});
+		return namelist;
+	}
+
+	function getNameFromId(id, searchMap)
+	{
+		var name = '';
+		$.map(searchMap, function(data, index){
+			if(data.value == id){
+				name = data.name;
+			}
+		});
+		return name;
+	}
+
+	function getIdFromName(name, searchMap)
+	{
+		var id = 0;
+		$.map(searchMap, function(data, index){
+			if(data.name == name){
+				id = data.value;
+			}
+		});
+		return id;
+	}
+
+	function showDetailOfAppGroups(list){
+		var extString = "<table border='1' frame='void' style='width:100%'><tr><th><b>名称</b></th><th><b>所属类</b></th></tr>";
+		$.map(list, function(line, index){
+			var paras = line.split("]");
+			var catalogue = paras[0].substr(1, paras[0].length - 1);
+			var sub_catalogue = catalogue;
+			var tmp = catalogue.split("/");
+			if(tmp.length == 2){
+				catalogue = tmp[0];
+				sub_catalogue = tmp[1];
+			}
+			catalogue = getNameFromId(catalogue, catalogueMap);
+			sub_catalogue = getNameFromId(sub_catalogue, catalogueMap);
+
+			if(catalogue == sub_catalogue) {
+				catalogue = "";
+			}
+
+			// 选择组
+			if(line[line.length - 1] == "]"){
+				extString = extString + "<tr><td>" + sub_catalogue + "</td><td> " + catalogue + "</td></tr>";
+			}
+			// 选择客户端
+			else{
+				tmp = paras[1].split(",");
+				if(catalogue != "") {
+					sub_catalogue = catalogue + "/" + sub_catalogue;
+				}
+				$.map(tmp, function(id, index){
+					var app = getNameFromId(id, appMap);
+					extString = extString + "<tr><td>" + app + "</td><td> " + sub_catalogue + "</td></tr>";
+				})
+			}
+		});
+		extString = extString + "</table>";
+		$linkDetail.find(".detail-value").html(extString).css({
+			"lineHeight":"20px",
+			"textAlign":"center",
+			"wordBreak":"break-all"
+		});
+		$linkDetail.msg('show');
+	}
+
+	var ruleGrid = $("#sec_policy_grid").grid({
+		orderSensitive: "insert_index",
+		editor:{
+			content:"#own_editor",
+			fields:[
+				{name:"fold"},
+				{name: "name"},
+				{name: "comment"},
+				{name: "src_zone"},
+				{name: "dst_zone"},
+				{name: "src_ipgroup"},
+				{name: "dst_ipgroup"},
+				{name: "app_groups"},
+                {name: "user_group"},
+				{name: "service_group"},
+				{name: "time"},
+				{name: "action"},
+				{name: "url_filter_conf"},
+				{name: "ips_conf"},
+				{name: "av_profile"},
+				{name: "file_content_filter_conf"},
+				{name: "app_control_filter_conf"},
+				{name: "email_filter_conf"},
+				{name: "record_log"},
+				{name:"enable"}
+			],
+			validator:function(){
+				var name=$("#rule_name").textbox('getValue');
+				var nameList = $("#sec_policy_grid").grid('getStore').data;
+				var editingId = $($("#sec_policy_grid").grid('getEditor')).editor("getEditingId");
+				var modify_flag = 0;
+				for(var i=0;i<nameList.length;i++){
+					if(editingId == nameList[i].key){
+						modify_flag = 1;
+						continue;
+					}
+					// if(name == nameList[i].name){
+					// 	$($("#sec_policy_grid").grid("getEditor")).form('setError',"您输入的名称已经存在，请重新输入");
+					// 	return false;
+					// }
+				}
+				return true;
+			}
+			},
+		store:{
+			proxy:sec_policy_proxy,
+			fields:[
+				{name:"fold"},
+				{name: "name"},
+				{name: "comment"},
+				{name: "src_zone"},
+				{name: "dst_zone"},
+				{name: "src_ipgroup"},
+				{name: "dst_ipgroup"},
+				{name: "app_groups"},
+                {name: "user_group"},
+				{name: "service_group"},
+				{name: "time"},
+				{name: "action"},
+				{name: "url_filter_conf"},
+				{name: "ips_conf"},
+				{name: "av_profile"},
+				{name: "file_content_filter_conf"},
+				{name: "app_control_filter_conf"},
+				{name: "email_filter_conf"},
+				{name: "record_log"},
+				{name: "enable"}
+			],
+			parseKey:{
+				moduleName: "redundancy_analysis",
+				tableName: "redundancy_analysis",
+				pageSizeName: "security_policy_entry",
+				setFilter:function(index, itemName, data){
+					var tmp = ruleGrid.grid("getStore").getDataByIndex(index);
+					return {name:tmp.name};
+				},
+				delFilter:function(index, itemName, data){
+					var res = []
+					for(var i = 0; i < data.length; i++){
+						res.push({name:data[i].name});
+					}
+					return res;
+				}
+			},
+			autoLoad:true
+		},
+		paging_true:[],
+		columns:[
+			{
+				dataIndex:"fold",
+				width:30,
+				renderer:function(data){
+					var ch = '';
+
+					if("$" == data[0]){
+						ch = '-';
+					}
+					else if("!" == data[0]){
+						ch = '';
+					}
+					else{
+						ch = '+';
+					}
+					return '<a href="javascript:void(0);" onclick="foldChilren(\''+ data + '\')">'+ ch +'</href>';
+				}
+			},
+			{
+				xtype: "checkcolumn",
+				width: 32
+			},
+			{
+				text:$.su.CHAR.REDUNDANCY_ANALYSIS.NAME,
+				width:70,
+				dataIndex:"name"
+			},
+			{
+				text:$.su.CHAR.REDUNDANCY_ANALYSIS.DESC,
+				width:70,
+				dataIndex:"comment"
+			},
+			{
+				text:$.su.CHAR.REDUNDANCY_ANALYSIS.SRC_ZONE,
+				width:75,
+				dataIndex:"src_zone",
+				renderer:function(data){
+					if (typeof(data) == "undefined" || data == "---")
+					{
+						return "Any";
+					}
+					else
+					{
+						return renderer_to_name(data, zoneMap)
+					}
+				}
+			},
+			{
+				text:$.su.CHAR.REDUNDANCY_ANALYSIS.DST_ZONE,
+				width:75,
+				dataIndex:"dst_zone",
+				renderer:function(data){
+					if (typeof(data) == "undefined" || data == "---")
+					{
+						return "Any";
+					}
+					else
+					{
+						return renderer_to_name(data, zoneMap)
+					}
+				}
+			},
+			{
+				text:$.su.CHAR.REDUNDANCY_ANALYSIS.SRC_IPGROUP,
+				width:100,
+				dataIndex:"src_ipgroup",
+				renderer:function(data){
+					return renderer_to_name(data, ipgroupMap)
+				}
+			},
+			{
+				text:$.su.CHAR.REDUNDANCY_ANALYSIS.DST_IPGROUP,
+				width:100,
+				dataIndex:"dst_ipgroup",
+				renderer:function(data){
+					return renderer_to_name(data, ipgroupMap)
+				}
+			},
+			{
+				text:$.su.CHAR.REDUNDANCY_ANALYSIS.APP_GROUP,
+				width:70,
+
+				dataIndex:"app_groups",
+				renderer:function(dd, index, data){
+					if("" == dd || typeof dd == "undefined" || dd == "---"){
+						return "ANY";
+					}
+					else{
+						return "<a href='javascript:void(0);' class='btn-detail' data-index='"+ index +"'>详情</a>";
+					}
+				}
+			},
+            {
+				text:$.su.CHAR.REDUNDANCY_ANALYSIS.USER_GROUP,
+				width:70,
+				dataIndex:"user_group",
+				renderer:function(data){
+					return renderer_to_name(data, userGroupMap)
+				}
+			},
+			{
+				text:$.su.CHAR.REDUNDANCY_ANALYSIS.SERVICE,
+				width:70,
+				dataIndex:"service_group",
+				renderer:function(data){
+					return renderer_to_name(data, serviceGroupMap)
+				}
+			},
+			{
+				text:$.su.CHAR.REDUNDANCY_ANALYSIS.TIME,
+				width:70,
+				dataIndex:"time",
+				renderer:function(data){
+					return renderer_to_name(data, timeObjMap)
+				}
+			},
+			{
+				text:$.su.CHAR.REDUNDANCY_ANALYSIS.ACTION,
+				width:50,
+				dataIndex:"action",
+				renderer:function(data){
+					if(data == "custom"){
+						return $.su.CHAR.REDUNDANCY_ANALYSIS.ACCEPT;
+					}
+					else if(data == "drop")
+					{
+						return $.su.CHAR.REDUNDANCY_ANALYSIS.BLOCK;
+					} else {
+						return data;
+					}
+				}
+			},
+			{
+				text:$.su.CHAR.REDUNDANCY_ANALYSIS.CONTENT_SECURITY,
+				width:150,
+				dataIndex:"content_security",
+				renderer: function(dd, index, data) {
+					var url_filter_conf = urlFilterConfMap[data.url_filter_conf];
+					var ips_conf = ipsProfileConfMap[data.ips_conf];
+					var av_conf = avProfileConfMap[data.av_profile];
+					var file_content_filter_conf = fileContentFilterConfMap[data.file_content_filter_conf];
+					var app_control_filter_conf = appControlFilterConfMap[data.app_control_filter_conf];
+					var email_filter_conf = emailFilterConfMap[data.email_filter_conf];
+					if (undefined == url_filter_conf)
+					{
+						url_filter_conf = "---";
+					}
+					if (undefined == file_content_filter_conf)
+					{
+						file_content_filter_conf = "---";
+					}
+					if (undefined == app_control_filter_conf)
+					{
+						app_control_filter_conf = "---";
+					}
+					if (undefined == email_filter_conf)
+					{
+						email_filter_conf = "---";
+					}
+					if (undefined == ips_conf)
+					{
+						ips_conf = "---"
+					}
+
+					if (undefined == av_conf)
+					{
+						av_conf = "---"
+					}
+					return "<div><span style='margin-right: 8px'>URL过滤:</span><span>" +
+						url_filter_conf + "</span></div>" +
+						"<div><span style='margin-right: 8px'>入侵防御:</span><span>" +
+						ips_conf + "</span></div>" +
+						"<div><span style='margin-right: 8px'>反病毒:</span><span>" +
+						av_conf + "</span></div>" +
+						"<div><span style='margin-right: 8px'>文件过滤:</span><span>" +
+						file_content_filter_conf + "</span></div>" +
+						"<div><span style='margin-right: 8px'>应用行为控制:</span><span>" +
+						app_control_filter_conf + "</span></div>" +
+						"<div><span style='margin-right: 8px'>邮件内容过滤:</span><span>" +
+						email_filter_conf + "</span></div>";
+				}
+			},
+			{
+				text: $.su.CHAR.REDUNDANCY_ANALYSIS.STATUS,
+				xtype: "statuscolumn",
+				width: 50,
+				dataIndex: "enable",
+				hidden: false
+			},
+			{
+				xtype: "settings",
+				width: $.su.CHAR.SETTING.IMB.SETTING_WIDTH
+			}
+		],
+		operation: 'prompt|delete'
+	}).on("ev_load", function(e,data, others){
+		defaultRulesCnt = 0;
+		for (var i = 0; i < data.length; i++){
+			if (data[i].user == "0"){
+				$(sec_policy_grid).grid('disableRow',i);
+				defaultRulesCnt = defaultRulesCnt + 1;
+			}
+		}
+		check_redundacy();
+	}).on("ev_insert",function(){
+		// ruleGrid.grid("getStore").load();
+	}).on("ev_remove", function(){
+		// ruleGrid.grid("getStore").load();
+	}).on("ev_update", function(){
+		 ruleGrid.grid("getStore").load();
+	}).delegate('a.btn-detail', 'click', function(e){
+		var index = $(this).data('index');
+		showDetailOfAppGroups(ruleGrid.grid("getStore").data[index].app_groups);
+	}).on("ev_formatEditData", function(e, data){
+		if(typeof(data.app_groups) == "string") {
+			data.app_groups = [data.app_groups];
+		}
+		else if(typeof(data.app_groups) == "undefined") {
+			data.app_groups = [];
+		}
+		if(data.name == "default") {
+			delete data.app_groups;
+		}
+	});
+
+	function check_redundacy(){
+		var tmpProxy = new $.su.Proxy();
+		var data = {
+			redundancy_analysis:{
+				get_progress:{}
+			}
+		};
+		tmpProxy.action(data, function(data){
+			if("done" == data.progress){
+				if(0 == $("#sec_policy_grid").grid("getStore").data.length){
+					$("#no_redundancy").show();
+				}
+				else{
+					$("#no_redundancy").hide();
+				}
+			}
+		});
+	}
+
+	var policyEditor = $($(sec_policy_grid).grid("getEditor"));
+
+	foldChilren = function _foldChilren(fold_data)
+	{
+		var tmpObj = $($(sec_policy_grid).grid("getEditor"))
+		if(true == tmpObj.editor("isEditing")){//如果有正在编辑修改的策略，退出编辑修改的框
+			tmpObj.editor("cancelEdit");
+		}
+		var tmpProxy = new $.su.Proxy();
+		var data = {
+			redundancy_analysis:{
+				fold_child:{
+					module:fold_data
+				}
+			}
+		};
+		tmpProxy.action(data);
+		ruleGrid.grid("getStore").load();
+	}
+
+
+	policyEditor.on("ev_startEdit", function(e, index, key){
+		$('#textarea_app_grouping_id').textarea('hide');
+		$('#text_app_grouping').textbox('disableStyle');
+
+		if (index != "add")
+		{
+			$("#rule_name").textbox("disableStyle");
+			var name = policyEditor.find("#rule_name").textbox('getValue');
+			if (name == "default")
+			{
+				$('#comment').textbox('disableStyle');
+				$('#src_zone').combobox('disableStyle');
+				$('#dst_zone').combobox('disableStyle');
+				$('#src_zone').combobox('disableStyle');
+				$('#src_ipgroup').combobox('disableStyle');
+				$('#dst_ipgroup').combobox('disableStyle');
+                $('#user_group').combobox('disableStyle');
+				$('#service_group').combobox('disableStyle');
+				$('#time').combobox('disableStyle');
+				$('#url_filter_conf').combobox('disableStyle');
+				$('#ips_conf').combobox('disableStyle');
+				$('#av_profile').combobox('disableStyle');
+				$('#file_content_filter_conf').combobox('disableStyle');
+				$('#app_control_filter_conf').combobox('disableStyle');
+				$('#email_filter_conf').combobox('disableStyle');
+				$('#record_log').checkbox('disable');
+				$('#enable').checkbox('disable');
+				$('#text_app_grouping').textbox('disable');
+				$('#textarea_app_grouping_id').textarea('disable');
+				$('#button_app_grouping').button('disable');
+			}
+			else
+			{
+				$('#comment').textbox('enableStyle');
+				$('#src_zone').combobox('enableStyle');
+				$('#dst_zone').combobox('enableStyle');
+				$('#src_zone').combobox('enableStyle');
+				$('#src_ipgroup').combobox('enableStyle');
+				$('#dst_ipgroup').combobox('enableStyle');
+                $('#user_group').combobox('enableStyle');
+				$('#service_group').combobox('enableStyle');
+				$('#time').combobox('enableStyle');
+				$('#url_filter_conf').combobox('enableStyle');
+				$('#ips_conf').combobox('enableStyle');
+				$('#av_profile').combobox('enableStyle');
+				$('#file_content_filter_conf').combobox('enableStyle');
+				$('#app_control_filter_conf').combobox('enableStyle');
+				$('#email_filter_conf').combobox('enableStyle');
+				$('#record_log').checkbox('enable');
+				$('#enable').checkbox('enable');
+				$('#text_app_grouping').textbox('enable');
+				$('#textarea_app_grouping_id').textarea('enable');
+				$('#button_app_grouping').button('enable');
+				var action=$("#action").textbox('getValue');
+				if (action == "drop")
+				{
+					$('#url_filter_conf').combobox('disableStyle');
+					$('#ips_conf').combobox('disableStyle');
+					$('#av_profile').combobox('disableStyle');
+					$('#file_content_filter_conf').combobox('disableStyle');
+					$('#app_control_filter_conf').combobox('disableStyle');
+					$('#email_filter_conf').combobox('disableStyle');
+				}
+			}
+		}
+		else
+		{
+			$("#rule_name").textbox("enableStyle");
+			$('#comment').textbox('enableStyle');
+			$('#src_zone').combobox('enableStyle');
+			$('#dst_zone').combobox('enableStyle');
+			$('#src_zone').combobox('enableStyle');
+			$('#src_ipgroup').combobox('enableStyle');
+			$('#dst_ipgroup').combobox('enableStyle');
+            $('#user_group').combobox('enableStyle');
+			$('#service_group').combobox('enableStyle');
+			$('#time').combobox('enableStyle');
+			$('#url_filter_conf').combobox('enableStyle');
+			$('#ips_conf').combobox('enableStyle');
+			$('#av_profile').combobox('enableStyle');
+			$('#file_content_filter_conf').combobox('enableStyle');
+			$('#app_control_filter_conf').combobox('enableStyle');
+			$('#email_filter_conf').combobox('enableStyle');
+			$('#record_log').checkbox('enable');
+			$('#enable').checkbox('enable');
+			$('#text_app_grouping').textbox('enable');
+			$('#textarea_app_grouping_id').textarea('enable');
+			$('#button_app_grouping').button('enable');
+		}
+
+		$('#app_grouping_selector').on("confirm", function(e, data){
+			var text = '';
+			var idList = [];
+			$.map(data, function(chosen, index){
+				var idText = '';
+				if(chosen.catalogue != chosen.sub_catalogue){
+					text = text + "[" + chosen.catalogue + "/" + chosen.sub_catalogue + "]";
+					idText = "[" + getIdFromName(chosen.catalogue, catalogueMap) + "/" + getIdFromName(chosen.sub_catalogue, catalogueMap) + "]";
+				}
+				else{
+					text = text + "[" + chosen.catalogue + "]";
+					idText = "[" + getIdFromName(chosen.catalogue, catalogueMap) + "]";
+				}
+				if(chosen["apps"].length != 0) {
+					$.map(chosen["apps"], function(name, index_2){
+						text = text + name + ",";
+						idText = idText + getIdFromName(name, appMap) + ",";
+					});
+				}
+				if(text[text.length - 1] == ","){
+					text = text.substring(0, text.length - 1);
+				}
+				if(idText[idText.length - 1] == ","){
+					idText = idText.substring(0, idText.length - 1);
+				}
+				text = text + ";"
+				idList.push(idText);
+			});
+			if(text != ''){
+				text_app_grouping.textbox('setValue', text);
+				text_app_grouping.on('click', function(e, data){
+					if(text_app_grouping.textbox('getValue') != 'ANY'){
+						showDetailOfAppGroups(idList);
+					}
+				});
+			}
+			else{
+				text_app_grouping.textbox('setValue', "ANY");
+			}
+			textarea_app_grouping_id.textarea('setValue', idList);
+
+			$("#button_app_grouping").unbind("click");
+			$("#button_app_grouping").on('click', function(e, d){
+				$('#app_grouping_selector').catalogueSelector("show", data);
+			});
+		});
+
+		if(index == 'add') {
+			$("#button_app_grouping").unbind("click");
+			$("#button_app_grouping").on('click', function(e, d){
+				$('#app_grouping_selector').catalogueSelector("show", []);
+			});
+
+			text_app_grouping.textbox('setValue', 'ANY');
+		}
+		else{
+			var store = ruleGrid.grid("getStore");
+			var data = store.getData(key);
+			var chosen_app_grouping_data = [];
+			var text = '';
+
+			if(data.name != "default" && typeof(data.app_groups) != "undefined")
+			{
+				var list = data.app_groups;
+				$.map(list, function(line, index){
+					var paras = line.split("]");
+					var catalogue = paras[0].substr(1, paras[0].length - 1);
+					var sub_catalogue = catalogue;
+					var tmp = catalogue.split("/");
+					if(tmp.length == 2){
+						catalogue = tmp[0];
+						sub_catalogue = tmp[1];
+					}
+
+					catalogue = getNameFromId(catalogue, catalogueMap);
+					sub_catalogue = getNameFromId(sub_catalogue, catalogueMap);
+					if(catalogue == sub_catalogue) {
+						text = text + "[" + catalogue + "]";
+					}
+					else {
+						text = text + "[" + catalogue + "/" + sub_catalogue + "]";
+					}
+
+					// 选择组
+					if(line[line.length - 1] == "]"){
+						var item = {
+							catalogue: catalogue,
+							sub_catalogue: sub_catalogue,
+							apps : []
+						}
+						chosen_app_grouping_data.push(item);
+					}
+					// 选择客户端
+					else{
+						tmp = paras[1].split(",");
+						var apps = $.map(tmp, function(id, index){
+							var name = getNameFromId(id, appMap);
+							text = text + name + ",";
+							return name;
+						})
+						var item = {
+							catalogue: catalogue,
+							sub_catalogue: sub_catalogue,
+							apps : apps
+						}
+						chosen_app_grouping_data.push(item);
+					}
+
+					if(text[text.length - 1] == ","){
+						text = text.substring(0, text.length - 1);
+					}
+					text = text + ";";
+				});
+
+				text_app_grouping.textbox("setValue", text);
+				text_app_grouping.on('click', function(e, data){
+					if(text_app_grouping.textbox('getValue') != 'ANY'){
+						showDetailOfAppGroups(list);
+					}
+				});
+			}
+
+			if(text == '') text = 'ANY';
+			text_app_grouping.textbox("setValue", text);
+
+			$("#button_app_grouping").unbind("click");
+			$("#button_app_grouping").on('click', function(e, d){
+			$('#app_grouping_selector').catalogueSelector("show", chosen_app_grouping_data);
+			});
+		}
+	});
+	
+
+	function slpIpgroupToName(ipgroup_obj) {
+		if (ipgroup_obj.flag == "system" && typeof(ipgroup_obj.comment) == "string" && ipgroup_obj.comment.length > 1) {
+			return ipgroup_obj.comment;
+		} else {
+			return ipgroup_obj.name;
+		}
+	}
+
+	 var sec_policy_help = new $.su.Help({
+		container: "div#sec_policy_help",
+		content: ["REDUNDANCY_ANALYSIS"] });
+
+	$(".func-container").show();
+});
+</script>
+</body>
+</html>

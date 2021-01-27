@@ -1,0 +1,449 @@
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
+<html xmlns="http://www.w3.org/1999/xhtml">
+<head>
+<meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
+<style type="text/css">
+</style>
+<title>WEB_SECURITY</title>
+</head>
+
+<body>
+<div class="func-container">
+    <div id="func-setting">
+        <form id="global-setting">
+            <input id="global-enable" name="enable" value=""/>
+        </form>
+    </div>
+
+    <div id="own-editor">
+        <input id="addr" name="addr"/>
+		<input id="websubmit" name="websubmit" />
+		<textarea id="fileext" name="fileext" />
+        <input id="timeobj" name="timeobj" />
+        <input id="comment" name="comment" />
+        <input id="enable" name="enable" />
+    </div>
+
+    <div id="appdist-list">
+        <div id="appdist-grid">
+        </div>
+    </div>
+
+    <div id="link-detail-window">
+        <table class="link-detail-table detail">
+            <tr>
+                <td class="detail-value"></td>
+            </tr>
+        </table>
+    </div>
+
+    <div id="bwlist_help"></div>
+</div>
+
+<script type="text/javascript">
+
+//<![CDATA[
+try{
+    $
+}catch(e){
+    location.href = "/";
+};
+
+$(document).ready(function(e){
+
+    var ipgroupNameTrans = {};
+
+    $("#func-setting").panel({
+        title: "功能设置"//$.su.CHAR.MAC_FILTERING.SETTINGS
+    });
+
+    $("#global-enable").checkbox({
+        items: [
+            {boxlabel: "启用网页安全功能", inputValue: "on", uncheckedValue: "off"}
+        ]
+    });
+
+    var globalProxy = new $.su.Proxy({
+    });
+    $("#global-setting").form({
+        proxy: globalProxy,
+        fields: [
+            {name: "enable", mapping: "enable"}
+        ],
+		parseKey: {					/* 此处在store中增加parseKey，便于store对象在底层对数据进行预处理，以实现SLP数据结构和SU数据结构的转变 */
+			moduleName:"web_security",		/* 此处的moduleName和tableName分别指数据块名和对应请求的table名 */
+			sectionName:"global"
+		},
+        submitBtn: "default"
+    });
+
+	$("#appdist-list").panel({
+        title: "规则列表"//$.su.CHAR.MAC_FILTERING.SETTINGS
+    });
+
+    $("#addr").combobox({
+        fieldLabel: "用户组", //$.su.CHAR.INTERFACE.IFTYPE,
+        allowBlank: false,
+        items:[
+            {value:"IPGROUP_ANY", name: "IPGROUP_ANY"}
+        ]
+    });
+
+	var fileext = $("#fileext").textarea({
+		fieldLabel: "过滤文件扩展类型",
+        inputCls:"long",
+        tips:"请使用换行或者分号来隔开文件名后缀",
+		setValueCb: function(data){
+			var dataString = data.join("\n");
+			return dataString;
+		},
+		getValueCb: function(data){
+			var tmp = data.replace(/\s/g,"\n")
+			var dataArray = tmp.split(/;|\n/);
+
+			for (var i = 0; i < dataArray.length; i++)
+			{
+				if (dataArray[i] == "")
+				{
+					dataArray.splice(i , 1);
+					i--;
+				}
+			}
+
+			return dataArray;
+		}
+	});
+
+	$("#websubmit").checkbox({
+        fieldLabel:"禁止网页提交",
+    	items: [
+            {boxlabel: "启用", inputValue: "on", uncheckedValue: "off"}
+        ]
+    });
+
+    $("#timeobj").combobox({
+        fieldLabel: "生效时间", //$.su.CHAR.INTERFACE.IFTYPE,
+        allowBlank: false,
+        items:[
+            {value:"Any", name: "Any", selected:true}
+        ]
+    });
+
+    $("#comment").textbox({
+        fieldLabel: "备注",
+		allowBlank: true,
+		maxLength:32,
+		tips: "（可选）"
+    });
+
+    $("#enable").checkbox({
+        fieldLabel: "状态",
+        items:[
+            {boxlabel: "启用", name:'enable', inputValue:'on',uncheckedValue:"off", checked:true}
+        ]
+    });
+
+    var $linkDetail = $("#link-detail-window").msg({
+        closeBtn: true,
+        cls:"l",
+        title: "文件后缀名列表",
+        type: "window"
+    }).msg("hide");
+
+
+    function textSelect(o, a, b){
+        var a = parseInt(a, 10), b = parseInt(b, 10);
+        if(o.createTextRange){//IE浏览器
+            var range = o.createTextRange();
+            range.moveStart("character", a);
+            range.moveEnd("character",b);
+            range.select();
+        }else{
+            o.setSelectionRange(a, b);
+            o.focus();
+        }
+    }
+
+	function getArrayStrLen(a)
+	{
+		var strLen = 0;
+
+		if (!$.isArray(a))
+		{
+			a = [a];
+		}
+
+		for (var i = 0; i < a.length; i++)
+		{
+			strLen += a[i].length + strLen;
+		}
+
+		return strLen;
+	}
+
+    var MAX_WEB_PER_RULE = 30;
+
+	var appdistListProxy = new $.su.Proxy({
+	});
+	var appdistGrid = $("#appdist-grid").grid({
+        editor: {
+            content:"#own-editor",
+            fields: [
+                {name: "addr"},
+				{name: "websubmit"},
+				{name: "fileext"},
+                {name: "timeobj"},
+				{name: "comment"},
+                {name: "enable"}
+            ],
+            validator:function(e){
+                var extList = fileext.textarea("getValue");
+                if("" == extList[0]){
+                    fileext.textarea("setError", "请您输入文件后缀名");
+                    $("div.textarea-container").find("div.widget-error-tips").css("margin-top", "200px");
+                    return false;
+                }
+				/*
+                extList = extList.match(/(.*[\n]){0,}.*[^\n]/);
+                extList = extList[0];
+                extList = extList.split(/[\s,;]+/);
+				*/
+
+                var reg =  new RegExp("^[a-zA-Z0-9\_]{1,8}$");
+                var isValid = true;
+                var tmpExt = [];
+                var errBegin = -1;
+                var errEnd = -1;
+                $(extList).each(function(i, obj){
+                    if(obj == ""){		//去除值为""的数组项
+                        extList.splice(i,1);
+                        return;
+                    }
+                    if(!reg.test(obj)){	//如果不符合合法性检验
+                        isValid = false;
+                        errBegin = getArrayStrLen(tmpExt);
+                        errEnd = errBegin + obj.length + 1;
+                    }
+                    tmpExt.push(obj);
+                });
+                //tmpExt = tmpExt.match(/(.*[\n]){0,}.*[^\n]/);
+
+                if(extList.length > MAX_WEB_PER_RULE){
+                    fileext.textarea("setError", "输入的后缀名超过上限，最多支持"+MAX_WEB_PER_RULE+"个后缀名");
+                    $("div.textarea-container").find("div.widget-error-tips").css("margin-top", "210px");
+                    isValid = false;
+                    return false;
+                };
+				if(extList.length == 0){
+                    fileext.textarea("setError", "输入的有效内容不能为空");
+                    $("div.textarea-container").find("div.widget-error-tips").css("margin-top", "210px");
+                    isValid = false;
+                    return false;
+                }
+                if(isValid){
+                    fileext.textarea("setValue",tmpExt);
+                    return true;
+                }else{
+                    textSelect($("textarea").get(0), errBegin, errEnd);
+                    fileext.textarea("setError", "文件名后缀格式不正确");
+                    $("div.textarea-container").find("div.widget-error-tips").css("margin-top", "200px");
+                    return false;
+                }
+            },
+			transParams: function(params){
+				for (var name in params)
+				{
+					if (name == "fileext")
+					{
+						params[name] = $("textarea#fileext").textarea("getValue");
+					}
+				}
+				return params;
+			}
+        },
+		store:{
+			proxy: appdistListProxy,
+			fields: [
+                {name: "addr"},
+				{name: "websubmit"},
+				{name: "fileext"},
+                {name: "timeobj"},
+				{name: "comment"},
+                {name: "enable"}
+			],
+			parseKey: {					/* 此处在store中增加parseKey，便于store对象在底层对数据进行预处理，以实现SLP数据结构和SU数据结构的转变 */
+				moduleName:"web_security",		/* 此处的moduleName和tableName分别指数据块名和对应请求的table名 */
+				tableName:"security_rule"
+			},
+			autoLoad: true
+		},
+        paging:[],
+		columns: [
+			{
+				xtype: "checkcolumn"
+			},
+			{
+				xtype: "rownumberer"
+			},
+			{
+				text: "用户组",//$.su.CHAR.APPDIST.ADDRESS,
+				width: 80,
+				dataIndex: "addr",
+				renderer: function (v) {
+					return ipgroupNameTrans[v] || v;
+				}
+			},
+			{
+				dataIndex:"websubmit",
+				hidden:true
+			},
+			{
+				dataIndex:"fileext",
+                text:"文件名后缀",
+                width:120,
+                renderer:function(dd, index, data){
+                    //console.log(dd,index,data);
+                    if("" == dd || typeof dd == "undefined"){
+                        return "---";
+                    }
+                    var EXT = dd;
+                    switch(EXT.length){
+                        case 0:
+                            return "---";
+                            break;
+                        case 1:
+                            return EXT[0];
+                            break;
+                        case 2:
+                            return EXT[0] + "</br>" + EXT[1];
+                            break;
+                        default:
+                            return EXT[0] + "&nbsp&nbsp" + "<a href='javascript:void(0);' class='btn-detail' data-index='"+ index +"'>更多</a>";
+                            break;
+                    }
+
+                    return data;
+                }
+			},
+            {
+                text: "生效时间",//$.su.CHAR.APPDIST.IFNAME,
+                width: 80,
+                dataIndex: "timeobj"
+            },
+            {
+                text: "备注",//$.su.CHAR.APPDIST.IFSTATUS,
+                xtype: "comment"
+            },
+            {
+                xtype: "statuscolumn",
+                dataIndex: "enable"
+            },
+            {
+                xtype: "settings"
+            }
+		],
+		operation: "prompt|add|delete"
+	}).delegate('a.btn-detail', 'click', function(e){
+        var index = $(this).data('index');
+        showDetail(appdistGrid.grid("getStore").data[index].fileext);
+    }).on("ev_load", function(e,data, others){
+        if(others)
+		{
+			MAX_WEB_PER_RULE = others.max_num_per_rule;
+		}
+
+		var groupItem = [];
+        var editor = appdistGrid.grid('getEditor');
+        var groupProxy = new $.su.Proxy({
+            async: false
+        });
+
+        groupProxy.query({ipgroup:{table:"rule_ipgroup"}}, function(data){
+            var i = 0;
+			data = data["ipgroup"]["rule_ipgroup"];
+            for (i = 0; i < data.length; i++){
+				for (var key in data[i])
+				{
+					data[i] = data[i][key];
+                }
+                var item = slpIpgroupToItem(data[i]);
+                groupItem.push(item);
+                ipgroupNameTrans[item.value] = item.name;
+            }
+            $(editor).find('#addr').combobox('loadData',groupItem);
+        });
+
+		 /*发送form请求,获取时间对象列表 */
+        var timeItem=[];
+        var timeProxy = new $.su.Proxy({
+                async: false
+        });
+
+        timeProxy.query({time_mngt:{table:"time_obj"}}, function(data){
+			data = data["time_mngt"]["time_obj"];
+            for (i=0; i<data.length; i++){
+				for (var key in data[i])
+				{
+					data[i] = data[i][key];
+				}
+                timeItem.push({name:data[i].name,value:data[i].name});
+            }
+
+            var combobox = $(editor).find('.combobox-value[name=timeobj]');
+            combobox.combobox('loadData',timeItem);
+        });
+    }
+	);
+
+	var editor = $("div#appdist-grid").grid("getEditor");
+		$(editor).on("ev_startEdit", function(e, index, key){
+		/*
+		if( (index != "add") && (index != "delete") )
+		{
+			var qq_value = $("textarea#fileext").textarea("getValue");
+			qq_value = qq_value.replace(/,/g,"\n");
+			$("textarea#fileext").textarea("setValue", qq_value);
+		}
+		*/
+	});
+
+    function showDetail(ext){
+        var extString = "";
+        //var extArray = ext.split("\n");
+
+        for(var i = 0; i < ext.length; i++){
+            if(i == ext.length - 1){
+                extString += ext[i] + "</br>";
+            }else{
+                extString += ext[i] + "&nbsp&nbsp&nbsp&nbsp" + ext[i+1] + "</br>";
+                i++;
+            }
+
+        }
+        $linkDetail.find(".detail-value").html(extString).css({
+            "lineHeight":"20px",
+            "textAlign":"center",
+            "wordBreak":"break-all"
+        });
+        $linkDetail.msg('show');
+    }
+
+    function slpIpgroupToItem(ipgroup_obj) {
+        if (ipgroup_obj.flag == "system" && typeof(ipgroup_obj.comment) == "string" && ipgroup_obj.comment.length > 1) {
+            return {name: ipgroup_obj.comment, value: ipgroup_obj.name};
+        } else {
+            return {name: ipgroup_obj.name, value: ipgroup_obj.name};
+        }
+    }
+
+	 var helpIspRouting = new $.su.Help({
+        container: "div#bwlist_help",
+        content: ["WEBSEC_ENABLE","WEBSEC_SETTING"]
+    });
+});
+
+//]]>
+</script>
+</body>
+
+</html>

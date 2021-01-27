@@ -1,0 +1,477 @@
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN"
+        "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
+<html xmlns="http://www.w3.org/1999/xhtml">
+<head>
+    <meta http-equiv="Content-Type" content="text/html; charset=utf-8"/>
+    <style type="text/css">
+
+    </style>
+    <title>sp_hit_log</title>
+</head>
+
+<body>
+<div class="func-container">
+    <div id="sp_hitlog_list">
+        <div id="sp_hitlog_list_grid">
+
+        </div>
+        <div id="sort_remind"></div>
+
+    </div>
+
+    <div id="sp_hitlog-detail"></div>
+
+    <div id="clean_alarm_cnt">
+        <h4 class="title">
+            <span class="icon" ></span>
+            <span class="text" id="error_str"></span>
+        </h4>
+    </div>
+
+    <div id="sp_hitlog_help"></div>
+</div>
+
+<script type="text/javascript">
+    try{
+        $
+    }catch(e){
+        location.href = "/";
+    };
+
+    $(document).ready(function(e){
+        $("#sp_hitlog-detail").msg({
+            cls: 'warning reboot-confirm-size',
+            type: "confirm",
+            closeBtn: true,
+            _title: $.su.CHAR.SP_HITLOG.DETAIL,
+            okHandler:function(){},
+            cancelHandler:function(){}
+        });
+        $("#sp_hitlog-detail").msg('hideButtons');
+        var clean_proxy = new $.su.Proxy({});
+        $("#sp_hitlog_list").panel({
+            title: $.su.CHAR.SP_HITLOG.SP_HITLOG_LIST,
+            collapsible: false
+        });
+
+        var zoneItem=[];
+        var appGroupItem=[];
+        var secPolicyItem=[];
+        var disk_status = "";
+        var itemProxy = new $.su.Proxy({async: false});
+        itemProxy.query(
+        {
+            "zone":{"table":"zone"},
+            "app_group":{"table":"app_group"},
+            "security_policy":{"table": "stat_list"},
+            "system": {"name": "check_disk_status"}
+        }, function(data){
+            for(var i=0; i<data.zone.zone.length;i++){
+                for(var j in data.zone.zone[i]){
+                    zoneItem.push({name:data.zone.zone[i][j].name,value:data.zone.zone[i][j].name});
+                    break;
+                }
+            }
+            var appGroupList = data.app_group.app_group;
+            for(var i=0; i<appGroupList.length;i++){
+
+                for(var j in appGroupList[i]){
+                    appGroupItem.push({name:appGroupList[i][j].name,value:appGroupList[i][j].name});
+                    break;
+                }
+            }
+            var secPolicyList = data.security_policy.stat_list;
+            for(var i=0; i<secPolicyList.length;i++){
+
+                for(var j in secPolicyList[i]){
+                    if (secPolicyList[i][j].name != "default")
+                    {
+                        secPolicyItem.push({name:secPolicyList[i][j].name,value:secPolicyList[i][j].name});
+                    }
+                    break;
+                }
+            }
+            disk_status = data.system.check_disk_status.status;
+        });
+
+        $("#clean_alarm_cnt").msg({
+            cls: 'warning reboot-confirm-size',
+            msg: $.su.CHAR.SYSLOG.LOG_CLEAN_ALARM,
+            type: "alert"
+        });
+
+        var order = "down";
+
+        var sp_hitlogProxy = new $.su.Proxy({});
+
+        var sp_hitlog_grid = $("div#sp_hitlog_list_grid").grid({
+            store:{
+                proxy: sp_hitlogProxy,
+                parseKey: {					/* 此处在store中增加parseKey，便于store对象在底层对数据进行预处理，以实现SLP数据结构和SU数据结构的转变 */
+                    moduleName: "security_policy",
+                    pageSizeName: "sp_hitlog_entry",
+                    tableName: "sp_hit_log"
+                },
+                fields: [
+                    {name: "time"},
+                    {name: "src_zone"},
+                    {name: "dst_zone"},
+                    {name: "src_ip"},
+                    {name: "dst_ip"},
+                    {name: "src_port"},
+                    {name: "dst_port"},
+                    {name: "user"},
+                    {name: "proto"},
+                    {name: "app"},
+                    {name: "action"},
+                    {name: "security_policy"}
+                ],
+                autoLoad: true
+            },
+            selectionDisplay: true,
+            maxLines: 11,
+            minLines: 0,
+            paging_true:{},
+            columns: [
+                {
+                    text: $.su.CHAR.SP_HITLOG.ID,
+                    xtype: "rownumberer",
+                    width:40
+                },
+                {
+                    text: $.su.CHAR.SP_HITLOG.TIME,
+                    width:160,
+                    dataIndex: "time",
+                    scan: {
+                        cmp: $.search.compare.string
+                    }
+                },
+                {
+                    text: $.su.CHAR.SP_HITLOG.SRC_ZONE,
+                    width:80,
+                    dataIndex: "src_zone",
+                    scan: {
+                        cmp: $.search.compare.string
+                    }
+                },
+                {
+                    text: $.su.CHAR.SP_HITLOG.DST_ZONE,
+                    width:80,
+                    dataIndex: "dst_zone",
+                    scan: {
+                        cmp: $.search.compare.string
+                    }
+                },
+                {
+                    text: $.su.CHAR.SP_HITLOG.SRC_IP,
+                    width:100,
+                    dataIndex: "src_ip",
+                    scan: {
+                        cmp: $.search.compare.ip
+                    }
+                },
+                {
+                    text: $.su.CHAR.SP_HITLOG.DST_IP,
+                    width:100,
+                    dataIndex: "dst_ip",
+                    scan: {
+                        cmp: $.search.compare.ip
+                    }
+                },
+                {
+                    text: $.su.CHAR.SP_HITLOG.SRC_PORT,
+                    width:50,
+                    dataIndex: "src_port",
+                    scan: {
+                        cmp: $.search.compare.string
+                    },
+                    renderer: function(dd, index, data){
+                        if (data.proto == "UDP" || data.proto == "TCP") return dd;
+                        else return "---";
+                    }
+                },
+                {
+                    text: $.su.CHAR.SP_HITLOG.DST_PORT,
+                    width:50,
+                    dataIndex: "dst_port",
+                    scan: {
+                        cmp: $.search.compare.string
+                    },
+                    renderer: function(dd, index, data){
+                        if (data.proto == "UDP" || data.proto == "TCP") return dd;
+                        else return "---";
+                    }
+                },
+                {
+                    text: $.su.CHAR.SP_HITLOG.USER,
+                    width:60,
+                    dataIndex: "user",
+                    scan: {
+                        cmp: $.search.compare.string
+                    }
+                },
+                {
+                    text: $.su.CHAR.SP_HITLOG.PROTO,
+                    width:60,
+                    dataIndex: "proto",
+                    scan: {
+                        cmp: $.search.compare.string
+                    }
+                },
+                {
+                    text: $.su.CHAR.SP_HITLOG.APP,
+                    width:60,
+                    dataIndex: "app",
+                    scan: {
+                        cmp: $.search.compare.string
+                    }
+                },
+                {
+                    text: $.su.CHAR.SP_HITLOG.ACTION,
+                    width:60,
+                    dataIndex: "action",
+                    scan: {
+                        cmp: $.search.compare.string
+                    }
+                },
+                {
+                    text: $.su.CHAR.SP_HITLOG.SECURITY_POLICY,
+                    width:80,
+                    dataIndex: "security_policy",
+                    scan: {
+                        cmp: $.search.compare.string
+                    }
+                },
+                //todo 全局搜索时间端的字段待确定
+                {
+                    xtype: "globalSearch",
+                    hidden: true,
+                    columns: [
+                        {
+                            text: $.su.CHAR.SP_HITLOG.SRC_ZONE,
+                            width: 100,
+                            dataIndex: "src_zone",
+                            scan: {
+                                type: "combobox",
+                                vtype: "string",
+                                items: zoneItem
+                            }
+                        },
+                        {
+                            text: $.su.CHAR.SP_HITLOG.DST_ZONE,
+                            width: 100,
+                            dataIndex: "dst_zone",
+                            scan: {
+                                type: "combobox",
+                                vtype: "string",
+                                items: zoneItem
+                            }
+                        },
+                        {
+                            text: $.su.CHAR.SP_HITLOG.SRC_IP,
+                            width: 100,
+                            dataIndex: "src_ip",
+                            scan: {
+                                type: "textbox",
+                                vtype : "string"
+                            }
+                        },
+                        {
+                            text: $.su.CHAR.SP_HITLOG.DST_IP,
+                            width: 100,
+                            dataIndex: "dst_ip",
+                            scan: {
+                                type: "textbox",
+                                vtype : "string"
+                            }
+                        },
+                        {
+                            text: $.su.CHAR.SP_HITLOG.SRC_PORT,
+                            width: 100,
+                            dataIndex: "src_port",
+                            scan: {
+                                type: "textbox",
+                                vtype : "string"
+                            }
+                        },
+                        {
+                            text: $.su.CHAR.SP_HITLOG.DST_PORT,
+                            width: 100,
+                            dataIndex: "dst_port",
+                            scan: {
+                                type: "textbox",
+                                vtype : "string"
+                            }
+                        },
+                        {
+                            text: $.su.CHAR.SP_HITLOG.USER,
+                            width: 100,
+                            dataIndex: "user",
+                            scan: {
+                                type: "textbox",
+                                vtype : "string"
+                            }
+                        },
+                        {
+                            text: $.su.CHAR.SP_HITLOG.PROTO,
+                            width: 100,
+                            dataIndex: "proto",
+                            scan: {
+                                type: "textbox",
+                                vtype : "string"
+                            }
+                        },
+                        {
+                            text: $.su.CHAR.SP_HITLOG.APP,
+                            width: 100,
+                            dataIndex: "app",
+                            scan: {
+                                type: "textbox",
+                                vtype: "string",
+                            }
+                        },
+                        {
+                            text:$.su.CHAR.SP_HITLOG.ACTION,
+                            width: 100,
+                            dataIndex: "action",
+                            scan: {
+                                type: "combobox",
+                                vtype: "string",
+                                items: [{name:"阻止",value:"阻止"},{name:"放行",value:"放行"}]
+                            }
+                        },
+                        {
+                            text: $.su.CHAR.SP_HITLOG.SECURITY_POLICY,
+                            width: 100,
+                            dataIndex: "security_policy",
+                            scan: {
+                                type: "combobox",
+                                vtype: "string",
+                                items: secPolicyItem
+                            }
+                        }
+                    ],
+                    render_search: function(){
+                    },
+                    render_show: function(){
+                    },
+                    render_return: function(){
+                    }
+                }
+            ],
+            exportCfg:{
+                text:$.su.CHAR.SP_HITLOG.SAVE_LOG,
+                url: $.su.url.subs + $.su.url.stok + "/admin/security_policy/download_sp_hitlog",
+                checkCallback: function(callback){
+                    var exportCheckProxy = new $.su.Proxy();
+
+                    exportCheckProxy.query({security_policy:{name:"sp_hitlog_download"}}, function(data){
+                        data = data.security_policy.sp_hitlog_download;
+
+                        if (data.status == "1")
+                        {
+                            callback(true);
+                        }
+                        else
+                        {
+                            callback(false);
+                        }
+                    });
+                }
+            },
+            operation: ["clear","search","searchLog","refreshLog","autoRefresh","export"],
+            autoRefresh: false
+        }).on("ev_clear", function(e, obj, action){
+            if ("online" == disk_status){
+                $(clean_alarm_cnt).msg("show");
+            }else{
+                clean_proxy.action({"security_policy":{"sp_hitlog_clean":{}}}, function(data){
+                    $(sp_hitlog_grid.get(0).store).trigger("ev_refresh", []);
+                });
+            }
+        }).delegate('a.btn-detail', 'click', function(e){
+            var index = $(this).data('index');
+            showDetail(sp_hitlog_grid.grid('getStore').data[index].detail);
+        });
+
+        function showDetail(detail) {
+            $("#sp_hitlog-detail").msg("setTitle",$.su.CHAR.SP_HITLOG.DETAIL+':'+detail);
+            $("#sp_hitlog-detail").msg("show");
+        }
+
+        var g_dataIndex = "time";
+        function dataSort(x, y) {
+            if(order == "down"){
+                if (x[g_dataIndex] > y[g_dataIndex]) {
+                    return -1;
+                }else if (x[g_dataIndex] < y[g_dataIndex]) {
+                    return 1;
+                }
+            }else{
+                if (x[g_dataIndex] > y[g_dataIndex]) {
+                    return 1;
+                }else if (x[g_dataIndex] < y[g_dataIndex]) {
+                    return -1;
+                }
+            }
+        }
+
+        var g_dataIndex = "time";
+        function dataSort(x, y) {
+            if(order == "down"){
+                if (x[g_dataIndex] > y[g_dataIndex]) {
+                    return -1;
+                }else if (x[g_dataIndex] < y[g_dataIndex]) {
+                    return 1;
+                }
+            }else{
+                if (x[g_dataIndex] > y[g_dataIndex]) {
+                    return 1;
+                }else if (x[g_dataIndex] < y[g_dataIndex]) {
+                    return -1;
+                }
+            }
+        }
+
+        function sort_click_cb(dataIndex) {
+            var store = sp_hitlog_grid.grid("getStore");
+            var data = store.data;
+            g_dataIndex = dataIndex;
+            store.loadData(data.sort(dataSort));
+            if(order == "down"){
+                order = "up";
+            }else{
+                order = "down";
+            }
+        }
+        sp_hitlog_grid.delegate("th.grid-header-1", "click", function(e){sort_click_cb("time")});
+        sp_hitlog_grid.delegate("th.grid-header-2", "click", function(e){sort_click_cb("src_zone")});
+        sp_hitlog_grid.delegate("th.grid-header-3", "click", function(e){sort_click_cb("dst_zone")});
+        sp_hitlog_grid.delegate("th.grid-header-4", "click", function(e){sort_click_cb("src_ip")});
+        sp_hitlog_grid.delegate("th.grid-header-5", "click", function(e){sort_click_cb("dst_ip")});
+        sp_hitlog_grid.delegate("th.grid-header-6", "click", function(e){sort_click_cb("src_port")});
+        sp_hitlog_grid.delegate("th.grid-header-7", "click", function(e){sort_click_cb("dst_port")});
+        sp_hitlog_grid.delegate("th.grid-header-8", "click", function(e){sort_click_cb("user")});
+        sp_hitlog_grid.delegate("th.grid-header-9", "click", function(e){sort_click_cb("proto")});
+        sp_hitlog_grid.delegate("th.grid-header-10", "click", function(e){sort_click_cb("app")});
+        sp_hitlog_grid.delegate("th.grid-header-11", "click", function(e){sort_click_cb("action")});
+        sp_hitlog_grid.delegate("th.grid-header-12", "click", function(e){sort_click_cb("security_policy")});
+
+
+        $("th").css({
+            "color": "#00E",
+            "cursor": "pointer"
+        });
+
+        $("#sort_remind").html("<hr/>如需要按指定内容排序，请点击表头切换排序方式。");
+        $(".grid-panel").css("marginBottom","40px");
+
+        var SP_HITLOG_help = new $.su.Help({
+            container: "div#sp_hitlog_help",
+            content: ["SP_HITLOG"]
+        });
+    });
+</script>
+</body>
+
+</html>

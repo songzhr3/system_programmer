@@ -1,0 +1,196 @@
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
+<html xmlns="http://www.w3.org/1999/xhtml">
+<head>
+<meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
+<style type="text/css">
+.icon-radio {
+	display: inline-block;
+	width: 13px;
+	height: 13px;
+	background: url('../web-static/themes/old/img/icons-02.png') no-repeat;
+	margin-right: 7px;
+	background-position: -92px -74px;
+}
+.radio-unit.checked  .icon-radio{
+	background-position: -128px -74px;
+
+}
+.radio-unit{
+	line-height:24px;
+	padding: 4px 10px;
+}
+.radio-unit p{
+	padding-left: 25px;
+}
+.radio-unit .text{
+	font-weight: bold;
+}
+.cloud-platform{
+	color:#115b96;
+}
+</style>
+<title>cloud_management</title>
+</head>
+
+<body>
+<div class="func-container">
+	<div id="account">
+		<form id="sfp-setting">
+			<input id="speed_type" name="speed_type"/>
+			<br/>
+			<button type="button" id="save" name="save"></button>
+		</form>
+		<form id="backup-setting" enctype="multipart/form-data">
+		</form>
+	</div>
+	<br/>
+	<hr/>
+	<div id="confirm-msg">
+    <h4 class="title">
+        <span class="icon"></span>
+        <span class="text" id="confirm-msg-text"></span>
+    </h4>
+	</div>
+	<div id="reboot-msg" class="reboot-loading-msg">
+		<input id="progress-bar" type="text" />
+	</div>
+    <div class="notice">
+        <div id="tips"></div>
+    </div>
+	<div id="optical_port_setting_help"></div>
+</div>
+
+<script type="text/javascript">
+try{
+	$
+}catch(e){
+	location.href = "/";
+};
+
+$(document).ready(function(e){
+	var modify_speed_value;
+
+	var ifaceProxy = new $.su.Proxy({
+		autoLoad:false
+	});
+
+    $(".notice #tips").text($.su.CHAR.INTERFACE.OPTICAL_NOTE_LABEL);
+
+	var setting_form = $("form#sfp-setting").form({
+		proxy: ifaceProxy,
+		/*去掉默认提示框*/
+		//showPrompt: false,
+		fields: [
+		]
+	}).on("ev_loadData", function(e, data){
+		old_speed = data.network.if_info[0]["10GE1"].speed;
+	});
+
+	var speed_type = $('#speed_type').combobox({
+        fieldLabel: $.su.CHAR.INTERFACE.OPTICAL_SPEED_SELECT_SETTING,
+        alwaysTrigger: true,
+        items:[
+            {name:"---",value:"---"}
+        ]
+    }).on('ev_change', function(e, oldValue, newValue){
+	});
+
+	$("#save").button({
+		text: "设置",
+		handler: function(){
+			modify_speed_value = speed_type.combobox("getValue");
+			if(old_speed != modify_speed_value[0])
+				$confirmMsg.msg('show');
+		},
+		cls: "submit inline-block"
+	});
+	
+	var $confirmMsg = $("div#confirm-msg").msg({
+		type: "confirm",
+		cls: 'reboot-confirm-size',
+		closeBtn: false,
+		okHandler: function(e){
+			var postData = {
+			"network":{
+				"table":"if_info",
+				"filter":[{"if_name":["10GE1"]}, {"if_name":["10GE2"]}],
+				"para":{
+					"speed":modify_speed_value[0]
+				}
+			}
+			};
+			ifaceProxy.modify(postData, function(data) {
+				$rebootMsg.msg('show');
+				$waitingBar.waitingbar('run');
+				$confirmMsg.msg('hide');
+			});
+		},
+		cancelHandler: function(){
+			$confirmMsg.msg('hide');
+		}
+	});
+	$('#confirm-msg-text').text('切换光口速率后会导致系统重启，是否继续？');
+
+	var form_load_data = function() {
+		ifaceProxy.query({
+			"network": {
+				table: "if_info",
+				filter:[{base_name:["10GE1", "10GE2"]}]}
+			}, function(data) {
+				var data = data.network.if_info;
+				var flag = true
+
+				$.each(data, function(_, item){
+					for (var key in item)
+					{
+						var items = []
+						items.length = 0;
+
+						if (flag) {
+							flag = false
+
+							if (item[key].speed == "10000"){
+								items.push({value:10000, name: $.su.CHAR.INTERFACE.OPTICAL_SPEED_OPTION_10Gbps, selected: true});
+								items.push({value:1000, name: $.su.CHAR.INTERFACE.OPTICAL_SPEED_OPTION_1000Mbps, selected: false});
+								modify_speed_value = "10000"
+							}
+							else{
+								items.push({value:10000, name: $.su.CHAR.INTERFACE.OPTICAL_SPEED_OPTION_10Gbps, selected: false});
+								items.push({value:1000, name: $.su.CHAR.INTERFACE.OPTICAL_SPEED_OPTION_1000Mbps, selected: true});
+								modify_speed_value = "1000"
+							}
+
+							$('#speed_type').combobox('reset');
+							$('#speed_type').combobox('loadData', items);
+
+							break;
+						}
+					}
+				});
+
+		})
+	}
+
+	form_load_data();
+	
+	var $rebootMsg = $('#reboot-msg').msg({
+			closeBtn: false,
+			cls:"l",
+			type: 'window'
+	}).msg('hide');
+	var $waitingBar  = $('#progress-bar').waitingbar({
+		labelCls:"xxl",
+		fieldLabel: "正在进行配置，配置完成后设备会自动重启，在此期间请不要进行任何其他操作",
+		separator: "",
+		barWidth:450
+	});
+
+	var optical_port_setting_help = new $.su.Help({
+		container: "div#optical_port_setting_help",
+		content: ["OPTICAL_PORT_SETTING"]
+	});
+});
+</script>
+</body>
+
+</html>

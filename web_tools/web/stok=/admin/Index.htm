@@ -1,0 +1,1975 @@
+<%
+uci_r = require ("luci.model.uci"):cursor()
+
+model = uci_r:get("device_info", "info", "device_model")
+factory_url = uci_r:get_profile("global", "factory_url")
+-- 编译镜像的时间
+build_year = uci_r:get_profile("global", "factory_time")
+build_year = string.split(build_year, '-')[1]
+%>
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
+<html xmlns="http://www.w3.org/1999/xhtml">
+<head>
+<meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
+<meta http-equiv="X-UA-Compatible" content="IE=edge,chrome=1" />
+<meta data-interface-type="SLP" />
+
+<link rel="shortcut icon" href="../web-static/favicon.ico?random=20201217044300"/>
+<!-- <link rel="icon" type="img/vnd.microsoft.icon" href="../web-static/favicon.ico?random=20201217044300"/> -->
+
+<!-- <link type="text/css" href="../web-static/css/reset.css?random=20201217044300" rel="stylesheet" /> -->
+<link type="text/css" href="../web-static/css/widget.css?random=20201217044300" rel="stylesheet" />
+
+<link type="text/css" href="../web-static/themes/old/css/widget.css?random=20201217044300" rel="stylesheet" />
+<link type="text/css" href="../web-static/themes/old/css/style.css?random=20201217044300" rel="stylesheet" />
+<link type="text/css" href="../web-static/themes/old/css/ui.fancytree.min.css?random=20201217044300" rel="stylesheet" />
+<script type="text/javascript" src="../web-static/js/libs/echarts.js?random=20201217044300"></script>
+<script type="text/javascript">g_is_ie = false;</script>
+
+<!--[if lte IE 8]>
+<meta http-equiv="X-UA-Compatible" content="IE=8" />
+<link href="../web-static/themes/old/css/ie.css?random=20201217044300" rel="stylesheet" type="text/css" />
+<script type="text/javascript">g_is_ie = true;</script>
+<![endif]-->
+
+<!--[if lte IE 7]>
+<link href="../web-static/themes/old/css/ie.css?random=20201217044300" rel="stylesheet" type="text/css" />
+<script type="text/javascript">g_is_ie = true;</script>
+<![endif]-->
+
+<!--[if lte IE 6]>
+<link href="../web-static/themes/old/css/ie.css?random=20201217044300" rel="stylesheet" type="text/css" />
+<script type="text/javascript">g_is_ie = true;</script>
+<![endif]-->
+
+
+<title>Opening...</title>
+<script type="text/javascript">
+//TODO:初始化两个页面按钮 ->返回顶部和到达底部
+function goTopEx() {
+	var obj = document.getElementById("goTopBtn");
+	var obj1 = document.getElementById("goBottomBtn");
+	obj.onclick = function() {
+		$("div.top-main").scrollTop(0);
+	}
+	obj1.onclick = function() {
+		$("div.top-main").scrollTop($("div.top-main")[0].scrollHeight);
+	}
+	obj.onmouseover = function(e) {
+		$(".scrollToTop").css({
+			"background-position":"0px -29px"
+		});
+	}
+	obj.onmouseout = function(e) {
+		$(".scrollToTop").css({
+			"background-position":"0px 0px"
+		});
+	}
+	obj1.onmouseover = function(e) {
+		$(".scrollToBottom").css({
+			"background-position":"-91px -29px"
+		});
+	}
+	obj1.onmouseout = function(e) {
+		$(".scrollToBottom").css({
+			"background-position":"-91px 0px"
+		});
+	}
+}
+function scrollFunc(){
+	var obj = document.getElementById("goTopBtn");
+	var obj1 = document.getElementById("goBottomBtn");
+	$("div.top-main").scrollTop() > 0 ? obj.style.display = "": obj.style.display = "none";
+	$("div.top-main").scrollTop() + $("div.top-main").height() >= $("div.top-main")[0].scrollHeight - 18 ? obj1.style.display = "none": obj1.style.display = "";
+}
+
+/* 在没有 token 时不等待页面加载，立即跳转到登录页 */
+if (!localStorage.getItem("token")) {
+	document.location = "/login.htm";
+}
+</script>
+<style>
+#goTopBtn {
+POSITION: fixed; TEXT-ALIGN: center; LINE-HEIGHT: 30px; WIDTH: 100px; TOP: 450px; HEIGHT: 33px; FONT-SIZE: 12px; CURSOR: pointer; RIGHT: 20px; _position: absolute; _right: auto ;z-index:99;
+}
+#goBottomBtn {
+POSITION: fixed; TEXT-ALIGN: center; LINE-HEIGHT: 30px; WIDTH: 100px; TOP: 480px; HEIGHT: 33px; FONT-SIZE: 12px; CURSOR: pointer; RIGHT: 20px; _position: absolute; _right: auto ;z-index:99;
+}
+.scrollToTop {
+	display: block;
+	width: 80px;
+	height: 23px;
+	padding: 3px 5px;
+	line-height: 12px;
+	text-align: center;
+	color: red;
+	text-decoration: none;
+	background: url(../web-static/themes/old/img/icons-04.png?random=20201217044300) no-repeat 0 0;
+	background-position:0px 0px;
+}
+.scrollToBottom {
+	display: block;
+	width: 80px;
+	height: 23px;
+	padding: 3px 5px;
+	line-height: 12px;
+	text-align: center;
+	color: red;
+	text-decoration: none;
+	background: url(../web-static/themes/old/img/icons-04.png?random=20201217044300) no-repeat 0 0;
+	background-position:-91px 0px;
+}
+.link-detail-model-header {
+background-color: #fafafa;
+}
+td.detail-key td.detail-value{
+height: 42px;
+line-height: inherit;
+border: 0px none;
+border-right: 1px solid #d9d9d9;
+word-wrap: break-word;
+}
+</style>
+</head>
+
+<body style="display: none;">
+
+<noscript>
+	<meta http-equiv="refresh" content="0; url=error.html"/>
+</noscript>
+
+<!--主界面-->
+<div class="top" id="top-wrapper">
+	<div class="top-bg">
+		<div class="top-bg-l"></div>
+		<!-- <div class="top-bg-r"></div> -->
+	</div><!-- background -->
+	<div class="top-header">
+		<div class="top-header-wrap">
+			<h1 id="product-tag" onclick="javascript:window.open('http://www.tp-link.com.cn');"></h1>
+			<div class="top-nav" id="top-nav" style="display: none">
+				<!-- 菜单需要考虑的问题：1、动态加载；2、字符由charset控制 -->
+				<ul id="ul-nav">
+					<li class="fst">
+						<div class="nav-wrap">
+							<a class="nav" name="quick_setup" href="../frame/quick-setup.htm">
+								<span></span>
+							</a>
+						</div>
+					</li>
+					<li>
+						<div class="nav-wrap">
+							<a class="nav" name="basic" href="../frame/basic.htm">
+						<span></span>
+							</a>
+						</div>
+					</li>
+					<li>
+						<div class="nav-wrap">
+							<a class="nav" name="advanced" href="../frame/advanced.htm">
+						<span></span>
+							</a>
+						</div>
+					</li>
+				</ul><!-- <li class="separator"></li> -->
+			</div><!-- top-nav -->
+
+			<div id="top-control" class="top-control">
+				<!--<div id="lan-select" class="lan-select-container">
+					<select id="lan-select">
+						<option>English</option>
+						<option>中文</option>
+					</select>--><!-- lan-select -->
+				<!--</div>-->
+				<div class="lan-select-container">
+					<input id="lan-select" />
+				</div>
+
+<!--				<a class="top-control-btn" id="top-control-reboot" href="javascript:void(0);" >
+					&lt;!&ndash;<span class="icon"></span>&ndash;&gt;
+					<span id="txt-reboot" class="text"></span>
+				</a>-->
+                <div id="product-type" class="top-banner"></div>
+                <div id="product-name" class="top-banner"></div>
+			</div>
+		</div>
+	</div><!-- top-header -->
+	<div class="user-info">
+		<div id="user-info">
+			<span id="user-info-name"></span>
+			<span id="user-login-time"></span>
+		</div>
+		<a class="top-control-btn" id="top-control-logout" href="javascript:void(0);" >
+            <!--<span class="icon"></span>-->
+            <span id="txt-logout" class="text"></span>
+        </a>
+        <a class="top-control-btn" id="top-control-save-config" href="javascript:void(0);" >
+            <!--<span class="icon"></span>-->
+            <span id="config-save" class="text"></span>
+        </a>
+        <a class="top-control-btn" id="top-control-submit-config" href="javascript:void(0);" >
+            <!--<span class="icon"></span>-->
+            <span id="config-submit" class="text"></span>
+        </a>
+        <a class="top-control-btn" id="top-control-config-status" href="javascript:void(0);" >
+            <!--<span class="icon"></span>-->
+            <span id="config-status" class="text"></span>
+        </a>
+        <a class="top-control-btn" id="top-control-config-status2" href="javascript:void(0);" >
+            <!--<span class="icon"></span>-->
+            <span id="config-status2" class="text"></span>
+        </a>
+		<div id='top-control-btns'>
+			<a class="top-control-btn" id="top-control-unknown-ap" href="javascript:void(0);" title="点击查看不支持的AP型号列表">
+				<!--<span class="icon"></span>-->
+				<span id="unknown-ap" class="text"></span>
+			</a>
+			<a class="top-control-btn" id="top-control-upgrade-status" href="javascript:void(0);" >
+				<!--<span class="icon"></span>-->
+				<span id="upgrade-status" class="text"></span>
+			</a>
+			<a class="top-control-btn" id="top-control-apexceed-status" href="javascript:void(0);" >
+				<!--<span class="icon"></span>-->
+				<span id="apexceed-status" class="text"></span>
+			</a>
+		</div>
+	</div>
+	<div class="top-tip">开启云管理后，AP设置、射频设置、无线设置、认证设置可以在TP-LINK商用网络云平台上进行远程集中配置，后续管理维护更加方便。&nbsp;&nbsp;&nbsp;
+		<span id='opencloud'>开启云管理</span>
+		<div class='option'>
+			<span class='nomore'>不再提示</span>
+			<span class='close'>关闭</span>
+		</div>
+	</div>
+    <div class="tab-menu-wrapper">
+        <div id="tab-menu" class="tab-menu">
+
+<!--
+            <ul id="tab-menu-ul-3578729847" class="tab-menu-ul">
+                <li class="fst selected">
+                    <div class="nav-wrap">
+                        <a class="nav" name="quick_setup" href="../web-static/pages/frame/quick-setup.html">
+                            <span>tabMenu11</span>
+                        </a>
+                    </div>
+                </li>
+                <li class="">
+                    <div class="nav-wrap">
+                        <a class="nav" name="advanced" href="../web-static/pages/frame/advanced2.html">
+                            <span>tabMenu12</span>
+                        </a>
+                    </div>
+                </li>
+            </ul>
+-->
+        </div>
+
+    </div>
+
+	<div class="top-main" onscroll='scrollFunc()'>
+		<div class="top-main-wrap">
+			<div class="top-content">
+				<div style="display:none" id="goBottomBtn"><a title="前往底部" class="scrollToBottom"></a></div>
+				<div class="top-content-wrap" id="top-content">
+				</div>
+				<div style="display:none" id="goTopBtn"><a title="返回顶部" class="scrollToTop"></a></div>
+				<script type="text/javascript">goTopEx();</script>
+			</div><!-- top-content -->
+
+
+			<div class="top-footer">
+				<div class="top-footer-wrap">
+					<span id="product-info">
+						<span id="firmware-version-title"></span>
+						<span id="firmware-version-content"></span>
+						<span id="hardware-version-title"></span>
+						<span id="hardware-version-content"></span>
+					</span>
+
+					<span class="help-faq">
+						<a id="btn-faq" class="btn-faq" href="../web-static/http://www.tp-link.com/en/Support/" target="_blank"></a>
+					</span>
+
+					<div class="clear"></div>
+				</div>
+			</div><!-- top-footer -->
+		</div>
+	</div>
+
+</div><!-- top-wrapper -->
+
+<!--遮蔽层-->
+<div id="mask" class="mask"></div>
+<!--loading-->
+
+
+<!-- 在线升级 -->
+<div id="cloud_upgrade_alert_cnt" class="hidden warning" style="width:550px">
+	<div id="cloud_confirm_cnt">
+		<h4 class="title"  style="width:486px;text-align:center;margin:15px 0px">
+	 		<span class="text" id="cloud_confirm_content" style="font-size:28px">软件升级提示</span>
+		</h4>
+    	<div style="width:486px;text-align:center">
+        	<span class="text" style="font-size:12px">发现新的软件版本，建议立即升级</span>
+    	</div>
+    </div>
+	<div id="upgrade_note" style="margin:16px 0px;vertical-align:middle">
+	 	<hr style="margin:15px 0px"/>
+        <div style="width:174px;margin:10px 0px">
+            <label style="font-size:13px">新版软件更新说明:</label>
+        </div>
+        <div style="width:486px;margin:10px 0px;vertical-align:middle">
+            <span id="upgrade_text" style="font-size:12px">
+            </span>
+        </div>
+    </div>
+    <div id="upgrade_warm" style="width:486px">
+        <label style="font-size:12px">注意事项:   软件升级过程中不能关闭设备电源，否则将造成设备损坏，升级成功之后将自动重启。</label>
+    </div>
+</div>
+
+<div id="cloud_upgrade_cnt" class="hidden warning">
+	 <div id="cloud_upgrade_bar_cnt" class="reboot-loading-msg hidden">
+	 	<p id="cloud_note" class="reboot-progressbar-text"></p>
+	    <input id="cloud_pro_bar" type="text"/>
+		<input id="cloud_pro_bar_reboot" type="text"/>
+	</div>
+</div>
+
+<div id="cloud_upgrade_failed_cnt" class="hidden warning">
+	<h4 class="title" id="cloud_upgrade_failed">
+		<span class="icon" ></span>
+		<span class="text" id="cloud_error_str"></span>
+	</h4>
+</div>
+
+
+<div class="loading-container" id="loading-container">
+	<div class="loading-container-wrap">
+		<div class="loading-container-inner">
+			<div class="loading-waiting-icon"></div>
+		</div>
+	</div>
+</div>
+
+<!-- 重启和登出的确认 -->
+<div id="reboot_confirm_msg" class="hidden warning">
+	<div id="reboot_confirm_qa">
+		<h4 class="title">
+			<span class="icon"></span>
+			<span class="text" id="reboot-confirm-msg-text"></span>
+		</h4>
+	</div>
+
+	<div id="loading_msg" class="reboot-loading-msg hidden">
+		<p id="reboot_progressbar_text" class="reboot-progressbar-text"></p>
+		<input id="reboot_loading_progressbar" />
+	</div>
+</div>
+
+<div id="logout_confirm_msg" class="hidden warning">
+	<div class="reboot-confirm-qa">
+		<h4 class="title">
+			<span class="icon"></span>
+			<span class="text" id="logout_confirm_msg_text"></span>
+		</h4>
+	</div>
+</div>
+
+<div id="save_config_confirm_msg" class="hidden warning">
+	<div class="reboot-confirm-qa" id="config_save_confirm_cnt">
+		<h4 class="title">
+			<span class="icon"></span>
+			<span class="text" id="save_config_confirm_msg_text"></span>
+		</h4>
+	</div>
+	<div id="config_save_pro_cnt" class="reboot-loading-msg hidden">
+		<input id="config_save_pro_bar" type="text" />
+	</div>
+</div>
+
+<div id="submit_config_confirm_msg" class="hidden warning">
+	<div class="reboot-confirm-qa" id="config_submit_confirm_cnt">
+		<h4 class="title">
+			<span class="icon"></span>
+			<span class="text" id="submit_config_confirm_msg_text"></span>
+		</h4>
+	</div>
+	<div id="config_submit_pro_cnt" class="reboot-loading-msg hidden">
+		<input id="config_submit_pro_bar" type="text" />
+	</div>
+</div>
+
+<div id="config_submitting_msg" class="hidden warning">
+	<h4 class="title">
+		<span class="icon"></span>
+		<span class="text" id="config_submitting_msg_text"></span>
+	</h4>
+</div>
+
+<div id="config_submitted_msg" class="hidden warning">
+	<h4 class="title">
+		<span class="icon"></span>
+		<span class="text" id="config_submitted_msg_text"></span>
+	</h4>
+</div>
+
+<div id="rrm_pro_cnt" class="rrm-loading-msg hidden">
+	<div class="reboot-loading-msg">
+		<input id="rrm_pro_bar" type="text" />
+	</div>
+</div>
+
+<div id="link-detail-window-apmodel" style="max-height:520px;overflow:auto;display:none">
+	<table id = "link-detail-model-header" class="link-detail-table detail" style='background-color:#fafafa'>
+		<tr><td class='detail-key' style='text-align:center;width:80px;border:1px solid #d9d9d9;'>序号</td><td class='detail-value' style='text-align:center;border:1px solid #d9d9d9;width:350px'>AP型号</td></tr>
+	</table>
+	<table id = "link-detail-model" class="link-detail-table detail">
+	</table>
+</div>
+<!-- 提示用户设置登录名和密码 -->
+<div id="reset-user-msg-container" class="hidden">
+	<div id="reset-user-form">
+		<!--<h4 id="reset-user-title" class="title title"></h4>-->
+		<div class="reset-user-content">
+			<input id="reset-user-new-username" name="new_acc" />
+			<input id="reset-user-new-password" name="new_pwd" />
+			<input id="reset-user-confirm-password" name="cfm_pwd" />
+			<input id="reset-user-confirm-password-status" />
+		</div>
+		<button type="button" id="btn-reset-user"></button>
+	</div>
+</div>
+
+<!-- 智能开局提示框 -->
+<div id="istart-alert-msg" style="padding: 0">
+    <div id="istart-alert-form"></div>
+</div>
+
+<!--全局警告提示框-->
+<div id="global-warning-msg" class="hidden warning">
+	<h4 class="title">
+		<span class="icon"></span>
+		<span class="text" id="global-warning-text"></span>
+	</h4>
+</div>
+
+<!--
+以下是js部分
+-->
+
+<!--<script type="text/javascript" src="http://192.168.1.101:1070/target/target-script-min.js#anonymous"></script>-->
+
+<!--  jquery框架加载  -->
+<script type="text/javascript" src="../web-static/js/libs/jquery.min.js?random=20201217044300"></script>
+<script type="text/javascript" src="../web-static/js/libs/jquery.scrollTo.min.js?random=20201217044300"></script>
+<script type="text/javascript" src="../web-static/js/libs/jquery.fancytree-all-deps.min.js?random=20201217044300"></script>
+<script type="text/javascript" src="../web-static/localResult.js?random=20201217044300"></script>
+
+<!--  语言部分加载  -->
+<script type="text/javascript" src="../web-static/js/su/locale.js?random=20201217044300"></script>
+<script type="text/javascript" src="../web-static/js/su/error.js?random=20201217044300"></script>
+<script id="lan-js" type="text/javascript" src="../web-static/locale/zh_CN/lan.js?random=20201217044300"></script>
+<link id="lan-css" type="text/css" rel="stylesheet" href="../web-static/locale/zh_CN/lan.css?random=20201217044300">
+<script id="lan-help" type="text/javascript" src="../web-static/locale/zh_CN/help.js?random=20201217044300"></script>
+<script id="lan-setting" type="text/javascript" src="../web-static/locale/zh_CN/setting.js?random=20201217044300"></script>
+<script type="text/javascript" src="../web-static/locale/language.js?random=20201217044300"></script>
+<script src="../web-static/js/su/widget/form/datetimepicker.js?random=20201217044300"></script>
+<script src="../web-static/js/su/widget/form/multiSelect.js?random=20201217044300"></script>
+<script src="../web-static/js/su/widget/form/quickSearch.js?random=20201217044300"></script>
+<link rel="stylesheet" type="text/css" href="../web-static/css/multiSelect.css?random=20201217044300">
+<link rel="stylesheet" type="text/css" href="../web-static/css/datetimepicker.css?random=20201217044300">
+<script type="text/javascript">
+//<![CDATA[
+	//try{
+		//$.su.locale.URL_LAN_CHECK = $.su.url("/-?form=lang");//"./data/lan.json";
+		//$.su.locale.get();
+		//$.su.locale.setDefault();
+	//}catch(error){
+	//	location.href = "./error.html";
+	//};
+//]]>
+</script>
+
+<!--  引入框架代码， 最后需要统一到一个文件下面  -->
+<script type="text/javascript" src="../web-static/js/libs/encrypt.js?random=20201217044300"></script>
+<script type="text/javascript" src="../web-static/js/su/su.js?random=20201217044300"></script>
+<!--[if lte IE 8]>
+<script type="text/javascript" src="../web-static/js/libs/excanvas.js?random=20201217044300"></script>
+	<script type="text/javascript" src="../web-static/js/libs/html5.js?random=20201217044300"></script>
+<![endif]-->
+
+<script type="text/javascript" src="../web-static/js/libs/jquery.flot.js?random=20201217044300"></script>
+
+<script type="text/javascript" src="../web-static/js/su/data/proxy.js?random=20201217044300"></script>
+<script type="text/javascript" src="../web-static/js/su/data/store.js?random=20201217044300"></script>
+<script type="text/javascript" src="../web-static/js/su/data/treestore.js?random=20201217044300"></script>
+
+<script type="text/javascript" src="../web-static/js/su/widget/widget.js?random=20201217044300"></script>
+
+<script type="text/javascript" src="../web-static/js/su/widget/window/panel.js?random=20201217044300"></script>
+<script type="text/javascript" src="../web-static/js/su/widget/window/page.js?random=20201217044300"></script>
+<script type="text/javascript" src="../web-static/js/su/widget/window/wizard.js?random=20201217044300"></script>
+<script type="text/javascript" src="../web-static/js/su/widget/window/msg.js?random=20201217044300"></script>
+<script type="text/javascript" src="../web-static/js/su/widget/window/foldertree.js?random=20201217044300"></script>
+<script type="text/javascript" src="../web-static/js/su/widget/window/keyword.js?random=20201217044300"></script>
+
+<script type="text/javascript" src="../web-static/js/su/widget/grid/grid.js?random=20201217044300"></script>
+<script type="text/javascript" src="../web-static/js/su/widget/grid/editor.js?random=20201217044300"></script>
+<script type="text/javascript" src="../web-static/js/su/widget/grid/paging.js?random=20201217044300"></script>
+<script type="text/javascript" src="../web-static/js/su/widget/grid/paging_true.js?random=20201217044300"></script>
+
+<script type="text/javascript" src="../web-static/js/su/widget/form/search.js?random=20201217044300"></script>
+<script type="text/javascript" src="../web-static/js/su/widget/form/form.js?random=20201217044300"></script>
+<script type="text/javascript" src="../web-static/js/su/widget/form/fieldset.js?random=20201217044300"></script>
+<script type="text/javascript" src="../web-static/js/su/widget/form/combobox.js?random=20201217044300"></script>
+<script type="text/javascript" src="../web-static/js/su/widget/form/checkbox.js?random=20201217044300"></script>
+<script type="text/javascript" src="../web-static/js/su/widget/form/radio.js?random=20201217044300"></script>
+<script type="text/javascript" src="../web-static/js/su/widget/form/textbox.js?random=20201217044300"></script>
+<script type="text/javascript" src="../web-static/js/su/widget/form/subnet.js?random=20201217044300"></script>
+<script type="text/javascript" src="../web-static/js/su/widget/form/portrange.js?random=20201217044300"></script>
+<script type="text/javascript" src="../web-static/js/su/widget/form/textarea.js?random=20201217044300"></script>
+<script type="text/javascript" src="../web-static/js/su/widget/form/button.js?random=20201217044300"></script>
+<script type="text/javascript" src="../web-static/js/su/widget/form/time.js?random=20201217044300"></script>
+<script type="text/javascript" src="../web-static/js/su/widget/form/file.js?random=20201217044300"></script>
+<!--<script type="text/javascript" src="../web-static/js/su/widget/form/buttongroup.js?random=20201217044300"></script>-->
+<script type="text/javascript" src="../web-static/js/su/widget/form/timepicker.js?random=20201217044300"></script>
+<script type="text/javascript" src="../web-static/js/su/widget/form/progressbar.js?random=20201217044300"></script>
+<script type="text/javascript" src="../web-static/js/su/widget/form/waitingbar.js?random=20201217044300"></script>
+<!--<script type="text/javascript" src="../web-static/js/su/widget/form/tip.js?random=20201217044300"></script>
+<script type="text/javascript" src="../web-static/js/su/widget/form/region.js?random=20201217044300"></script>-->
+<script type="text/javascript" src="../web-static/js/su/widget/form/password.js?random=20201217044300"></script>
+<script type="text/javascript" src="../web-static/js/su/widget/form/status.js?random=20201217044300"></script>
+<script type="text/javascript" src="../web-static/js/su/widget/form/slider.js?random=20201217044300"></script>
+<script type="text/javascript" src="../web-static/js/su/widget/form/switch.js?random=20201217044300"></script>
+<script type="text/javascript" src="../web-static/js/su/widget/form/inputgroup.js?random=20201217044300"></script>
+<script type="text/javascript" src="../web-static/js/su/widget/grid/catalogueSelector.js?random=20201217044300"></script>
+<script type="text/javascript" src="../web-static/js/su/widget/tree/tree.js?random=20201217044300"></script>
+<script type="text/javascript" src="../web-static/js/su/widget/window/dialog.js?random=20201217044300"></script>
+
+<!--  运行时代码  -->
+<script type="text/javascript">
+//<![CDATA[
+$(document).ready(function(e){
+	/*加载产品信息*/
+	var factory_url = "<%=factory_url%>";
+	var MODEL_DESC = "<%=model%>";
+	document.title = MODEL_DESC;
+	$("#product-type").html(MODEL_DESC);
+	$("#product-name").html($.su.CHAR.PRODUCTINFO[MODEL_DESC]);
+
+//获得token
+try{
+	$.su.url.stok = localStorage.getItem("token");
+	if (!$.su.isLocal && !$.su.url.stok)
+	{
+		location.href = $.su.loginUrl;
+	}
+
+	$.su.url.factory_url = factory_url;
+}catch(e){
+	var h = function(){
+		location.href = $.su.loginUrl;
+	};
+
+	if (logoutProxy){
+		logoutProxy.action({system : { logout : null }}, h, h);
+	};
+};
+
+	$.su.initGlobalValue();
+	var rrm_is_support = false;
+	new $.su.Proxy({async: false}).query({"function":{"name":"new_module_spec"}}, function(data){
+		if (typeof(data) != "undefined" && typeof(data['function']) != "undefined" && typeof(data['function'].new_module_spec.new_module_list) != "undefined")
+		{
+			var tmp_module_list = data['function'].new_module_spec.new_module_list;
+			for ( var i = 0; i < tmp_module_list.length; i++) {
+				if (tmp_module_list[i] == "apmng_rrm") {
+					rrm_is_support = true;
+					break;
+				}
+			}
+		}
+	});
+
+// top-tip块的控制代码
+// 开启云管理按钮
+$('.top-tip #opencloud').unbind('click').bind("click",function() {
+	$.su.menu.advanced.open("cloud_mngr");
+	var li_fstId = "menu-"+$.su.menu.advanced.settings.idTag+"-cloud_mngr-li";
+	var tabId = $("ul.menu-tree li#"+li_fstId).find('a.sec').attr('tab-id');
+	$("#"+tabId).show();
+	$("#"+li_fstId).addClass("selected").find('a.fst').addClass("selected");
+	// 触发云管理的click事件
+	$("#"+li_fstId).find('li.sec a.sec').each(function(i,o){
+		var $o = $(o);
+		if("global" === $o.attr('name'))
+		{
+			$o.trigger("click");
+		}
+	})
+})
+
+// 不再提示的请求
+$('.top-tip .nomore').unbind().bind("click",function(){
+	var cloudProxy = new $.su.Proxy();
+	cloudProxy.modify({
+		cloud_config: {
+			ui_notify_info: {
+				top_bar_notify_again: "0"
+			}
+		}
+	}, function(){
+		$.su.menu.set_top_bar_notify_again(0);
+		$(".top-tip").hide();
+		$.su.menu.fixMarginTop(-32);
+	})
+})
+
+// 关闭按钮
+$('.top-tip .close').unbind().bind("click",function() {
+	$(".top-tip").hide();
+	$.su.menu.fixMarginTop(-32);
+	$.su.menu.set_top_bar_notify_again(0);
+})
+
+var logoutProxy,
+	rebootProxy,
+	saveConfigProxy,
+	submitConfigProxy,
+	updStatusProxy,
+	apNoteProxy,
+	apUnknownProxy;
+logoutProxy = rebootProxy = apUnknownProxy = new $.su.Proxy();
+submitConfigProxy = saveConfigProxy = updStatusProxy = apNoteProxy = new $.su.Proxy({
+	authSessionsDataFlag:true,
+	timeout: 720 * 1000
+});
+
+//index页面初始化
+/**********SRT*多语言选择框*SRT*********/
+//注意：需要判断是否更改，否则不发送信息~
+var lanSelectCombo = $("input#lan-select").combobox({
+	cls: "top-lan-select",
+	items: [
+		{"value": "en_US", "name": $.su.CHAR.LANGUAGE.EN_US}//,
+		//{"value": "zh_CN", "name": $.su.CHAR.LANGUAGE.ZH_CN}
+	],
+	fieldLabel: null
+}).on("ev_click", function(e, vOld, vNew){
+	//console.log(vOld, vNew)
+	if (vOld[0] == vNew[0]){
+		return;
+	};
+	$.su.locale.set(vNew[0], function(){
+		lanSelectCombo.combobox("setValue", [$.su.locale.locale]);
+	}, function(){
+		lanSelectCombo.combobox("setValue", [$.su.locale.locale]);
+	});
+}).combobox("setValue", [$.su.locale.locale]);
+
+//$("title").text($.su.locale.model);
+//document.title = $.su.locale.model;
+//$("h1#product-tag").text($.su.locale.model);
+
+$("span#txt-logout").text($.su.CHAR.CONTROL.LOGOUT);
+$("span#config-save").text($.su.CHAR.CONTROL.SAVE_CONFIG);
+$("span#config-submit").text($.su.CHAR.CONTROL.SUBMIT_CONFIG);
+$("span#txt-reboot").text($.su.CHAR.CONTROL.SUPPORT);
+
+$("span#firmware-version-title").html($.su.CHAR.INDEX.FIRMWARE_VERSION);
+$("span#hardware-version-title").html($.su.CHAR.INDEX.HARDWARE_VERSION);
+$("a#btn-faq").html($.su.CHAR.INDEX.HELP_SUPPORT);
+
+if ($.su.locale.force){
+	lanSelectCombo.combobox("hide");
+};
+/**********END*多语言选择框*END*********/
+
+/**********STR*用户登录信息*STR**********/
+var rebootConfirmMsg = $("div#reboot_confirm_msg").msg({
+	type: "confirm",
+	global: true,
+	cls: 'reboot-confirm-size',
+	closeBtn: false,
+	okHandler: function(e){
+		$('div#reboot_confirm_qa').hide();
+		$('div#loading_msg').show();
+		rebootConfirmMsg.msg('hideButtons');
+
+		rebootProxy.write();
+		reboot_pro_bar.progressbar("reset").progressbar('animate',  0, 1, 60*1000, function(){
+			if (localStorage){
+				localStorage.setItem("token", "");
+			};
+			location.href = "/";
+		});
+
+		return false;
+	},
+	cancelHandler: function(){
+		rebootConfirmMsg.msg('hide');
+	}
+});
+
+
+var $linkDetail = $("#link-detail-window-apmodel").msg({
+	closeBtn: true,
+	cls:"l",
+	title: "不支持的AP机型列表",
+	type: "window",
+	global: true
+});
+
+/*var rebootLoadingMsg = $("div#reboot-loading-msg").msg({
+	type: "window",
+	global: true
+});*/
+
+/* 该功能暂时还没支持，可不管 */
+function showDetail(){
+	apUnknownProxy.query({"apmng_set_status": {"table": "unknown_ap_list"}}, function(data){
+		var html = "";
+		var index = 0;
+		var unknown_list = data.apmng_set_status.unknown_ap_list;
+		var model_name,hwver;
+		if(unknown_list != undefined && unknown_list.length > 0)
+		{
+			for(var i = 0;i < unknown_list.length; i = i + 1)
+			{
+				model_name = unknown_list[i]["unknown_ap_list_"+i].model_name;
+				hwver = unknown_list[i]["unknown_ap_list_"+i].hardware_ver;
+				if(model_name != "unknown")html += "<tr><td class='detail-key' style='text-align:center;width:80px;border:1px solid #d9d9d9;'>" + (i+1) + "</td><td class='detail-value' style='text-align:center;border:1px solid #d9d9d9;width:350px;word-break:break-all;word-wrap:break-word;white-space: pre-wrap;'>"+model_name+" "+hwver+"</td></tr>";
+				else html += "<tr><td class='detail-key' style='text-align:center;width:80px;border:1px solid #d9d9d9;'>" + (i+1) + "</td><td class='detail-value' style='text-align:center;border:1px solid #d9d9d9;width:350px'>未知型号</td></tr>";
+			}
+		}
+		$("#link-detail-model").html(html);
+		$linkDetail.msg('show');
+	});
+
+}
+var logoutConfirmMsg = $("div#logout_confirm_msg").msg({
+	type: "confirm",
+	global: true,
+	closeBtn: false,
+	cls: "reboot-confirm-size",
+	okHandler: function(e){
+		var h = function(){
+			if (localStorage){
+				localStorage.setItem("token", "");
+			};
+			location.href = $.su.loginUrl;
+		};
+		logoutProxy.action({system : { logout : null }}, h, h);
+	}
+});
+
+// msg box 显示进度条 / 隐藏进度条
+var configSaveProBarShow = function(showWaitingBar) {
+	if (showWaitingBar) {
+		// 隐藏按钮和confirm的提示语，开启进度条
+		saveConfigConfirmMsg.msg('hideButtons');
+		$('#config_save_confirm_cnt').hide();
+		$("#config_save_pro_cnt").show();
+		config_save_pro_bar.waitingbar("show");
+		config_save_pro_bar.waitingbar('run');
+		saveConfigConfirmMsg.msg('hideButtons');
+	}
+	else {
+		saveConfigConfirmMsg.hide();
+		saveConfigConfirmMsg.msg("close", function(){
+			saveConfigConfirmMsg.msg('showButtons');
+			$('#config_save_confirm_cnt').show();
+			$("#config_save_pro_cnt").hide();
+		});
+		config_save_pro_bar.waitingbar("stop");
+		config_save_pro_bar.waitingbar("reset");
+	}
+};
+
+// msg box 显示进度条 / 隐藏进度条
+var configSubmitProBarShow = function(showWaitingBar) {
+	if (showWaitingBar) {
+		// 隐藏按钮和confirm的提示语，开启进度条
+		submitConfigConfirmMsg.msg('hideButtons');
+		$('#config_submit_confirm_cnt').hide();
+		$("#config_submit_pro_cnt").show();
+		config_submit_pro_bar.waitingbar("show");
+		config_submit_pro_bar.waitingbar('run');
+		submitConfigConfirmMsg.msg('hideButtons');
+	}
+	else {
+		submitConfigConfirmMsg.hide();
+		submitConfigConfirmMsg.msg("close", function(){
+			submitConfigConfirmMsg.msg('showButtons');
+			$('#config_submit_confirm_cnt').show();
+			$("#config_submit_pro_cnt").hide();
+		});
+		config_submit_pro_bar.waitingbar("stop");
+		config_submit_pro_bar.waitingbar("reset");
+	}
+};
+
+var get_saved_result_interval = 0;
+var get_saved_result = false;
+
+function getResult() {
+	if(get_saved_result == false) {
+		var exportCheckProxy = new $.su.Proxy();
+		exportCheckProxy.query({
+			system: {
+				name: "save_cfg_status"
+			}
+		}, function(data) {
+			data = data.system.save_cfg_status;
+			if (data.status == "1") {
+				refreshConfigStatus();
+				clearInterval(get_saved_result_interval);
+				get_saved_result = true;
+				configSaveProBarShow(false);
+			}
+		})
+	}
+}
+
+// 提示文字和进度条共用一个msg
+var saveConfigConfirmMsg = $("div#save_config_confirm_msg").msg({
+    type: "confirm",
+    global: true,
+    closeBtn: false,
+    cls: "reboot-confirm-size",
+    okHandler: function(e){
+        saveConfigProxy.action({"system":{"save_cfg":null}}, function(data){
+            var status = data.status;
+            if('Saved' == status)
+			{
+				// 保存配置的过程改为异步，这个请求结束后开始查询保存是否完成
+				// 完成后关闭滚动条
+				get_saved_result = false;
+				clearInterval(get_saved_result_interval);
+				get_saved_result_interval = setInterval(getResult, 1000);
+			}
+        }, function() {
+            // 请求错误或者失败也关闭滚动条
+            configSaveProBarShow(false);
+        }, function() {
+            configSaveProBarShow(false);
+        });
+
+        configSaveProBarShow(true);
+        return false;
+    }
+});
+
+// 提示文字和进度条共用一个msg
+var submitConfigConfirmMsg = $("div#submit_config_confirm_msg").msg({
+    type: "confirm",
+    global: true,
+    closeBtn: false,
+    cls: "reboot-confirm-size",
+    okHandler: function(e){
+        submitConfigProxy.query({"fw_policy_manager":{"name":"policy_cfg_status"}}, function(data){
+            switch(data.fw_policy_manager.policy_cfg_status.status){
+                case 'Submitted':
+                    submitConfigConfirmMsg.msg("close");
+                    configSubmittedMsg.msg("show");
+                    break;
+                case 'Submitting':
+                    submitConfigConfirmMsg.msg("close");
+                    configSubmittingMsg.msg("show");
+                    break;
+                default :
+                    configSubmitProBarShow(true);
+                    //更新策略DB
+                    submitConfigProxy.action({"fw_policy_manager":{"submit_pol_db":null}}, function(data){
+                        var status = data.status;
+                        if('Done' == status)
+                        {
+                            // 由于更新策略DB执行目前而要可能比较久，而且不影响用户配置，因此异步直接返回
+                            configSubmitProBarShow(false);
+                        }
+                    }, function() {
+                        // 请求错误或者失败也关闭滚动条
+                        configSubmitProBarShow(false);
+                    }, function() {
+                        configSubmitProBarShow(false);
+                    });
+            }
+        });
+        return false;
+    }
+});
+
+var configSubmittingMsg = $("div#config_submitting_msg").msg({
+	type: "alert",
+	global: true,
+	cls: "m",
+	closeBtn: false
+});
+
+var configSubmittedMsg = $("div#config_submitted_msg").msg({
+	type: "alert",
+	global: true,
+	cls: "m",
+	closeBtn: false
+});
+
+if ( rrm_is_support )
+{
+	var rrm_pro_cnt = $("#rrm_pro_cnt").msg({
+			type: "default",
+			global: true,
+			closeBtn: false,
+			cls: "reboot-confirm-size"
+		});
+	var rrm_pro_bar  = $('input#rrm_pro_bar').waitingbar({
+		fieldLabel:  $.su.CHAR.RRM.RRM_PROCESSING,
+		labelCls:"xxl",
+		separator: ""
+	});
+	var is_rrm = false;
+	function refreshRRMstatus(status)
+	{
+		if(status != "0" && status != "7"){
+			if(!is_rrm){
+				rrm_pro_cnt.msg("show");
+				rrm_pro_bar.waitingbar('run');
+				is_rrm = true;
+			}
+		}
+		else if(is_rrm){
+			is_rrm = false;
+			rrm_pro_cnt.msg("close");
+			rrm_pro_bar.waitingbar('stop');
+			rrm_pro_bar.waitingbar('reset');
+		}
+	}
+}
+
+function refreshConfigStatus(){
+    saveConfigProxy.query({"system":{"name":"cfg_status"},"fw_policy_manager":{"name":"policy_cfg_status"},"apmng_upgrade": {"name": "upgrade_status"},"apmng_set_status": {"name": "status"},"apmng_rrm": {"name": "rrm_status"}}, function(data){
+        var status = data.system.cfg_status.status;
+        var text;
+        switch(status){
+            case 'Saved':
+                text = "";
+                break;
+            case 'Saving':
+                text = "";
+                break;
+            case  'Not Saved':
+                text = $.su.CHAR.CONTROL.CONFIG_SATAYUS_NOT_SAVED;
+                break;
+            default :
+                text = "";
+
+        }
+        $("span#config-status").text(text);
+
+        switch(data.fw_policy_manager.policy_cfg_status.status){
+            case 'Submitted':
+                text = "";
+                break;
+            case 'Submitting':
+                text = $.su.CHAR.CONTROL.CONFIG_SATAYUS_SUBMITTING;
+                break;
+            case  'Not Submitted':
+                text = $.su.CHAR.CONTROL.CONFIG_SATAYUS_NOT_SUBMITTED;
+                break;
+            default :
+                text = "";
+        }
+        $("span#config-status2").text(text);
+
+		switch(data.apmng_upgrade.upgrade_status.status){
+			case '3':
+				text = $.su.CHAR.AP_UPGRADE.UPDING_NOTICE;
+				break;
+			default :
+				text = "";
+		}
+		$("span#upgrade-status").text(text);
+
+		if(data.apmng_set_status.status.unknown_ap_flag != undefined && data.apmng_set_status.status.unknown_ap_flag == "1"){
+			text = $.su.CHAR.APMNGR.UNKOWN_DEV_NOTE;
+		}else{
+			text = "";
+		}
+		$('span#unknown-ap').text(text);
+
+		if(data.apmng_set_status.status.ap_full_flag != undefined && data.apmng_set_status.status.ap_full_flag == "1"){
+			text = $.su.CHAR.APMNGR.AP_EXCEED_NOTE;
+		}else{
+			text = "";
+		}
+		$('span#apexceed-status').text(text);
+		if( rrm_is_support )
+		{
+			status = data.apmng_rrm.rrm_status.status;
+			refreshRRMstatus(status);
+		}
+    });
+	clearTimeout(window.indexPageConfTimeout);
+	window.indexPageConfTimeout = setTimeout(refreshConfigStatus, 5000);
+	return;
+}
+
+window.autoRefreshId = new Array();
+
+var reboot_pro_bar = $('input#reboot_loading_progressbar').progressbar({
+	width: 326,
+	height: 6,
+	isProgressbar: true,
+	cls: 'reboot-loading-probar'
+});
+
+$('span#reboot-confirm-msg-text').html($.su.CHAR.INDEX.CONFIRM_REBOOT);
+$('p#reboot_progressbar_text').html($.su.CHAR.INDEX.REBOOTING);
+$('span#logout_confirm_msg_text').html($.su.CHAR.INDEX.CONFIRM_LOGOUT);
+$('span#save_config_confirm_msg_text').html($.su.CHAR.INDEX.CONFIRM_SAVE_CONFIG);
+$('span#submit_config_confirm_msg_text').html($.su.CHAR.INDEX.CONFIRM_SUBMIT_CONFIG);
+$('span#config_submitting_msg_text').html($.su.CHAR.CONTROL.CONFIG_STILL_SUBMITTING_TIP);
+$('span#config_submitted_msg_text').html($.su.CHAR.CONTROL.CONFIG_SUBMITTED_TIP);
+
+$("a#top-control-logout").click(function(e){
+	logoutConfirmMsg.msg("show");
+});
+
+$("a#top-control-save-config").click(function(e){
+	saveConfigConfirmMsg.msg("show");
+});
+
+$("a#top-control-submit-config").click(function(e){
+    submitConfigConfirmMsg.msg("show");
+});
+/* TODO:support third menu jump
+$("a#top-control-upgrade-status").click(function(e){
+	$.su.menu.advanced.goTo("ap-manage", "apmngr", "ap-upgrade");
+});
+*/
+$("a#top-control-unknown-ap").click(function(e){
+	showDetail();
+	//$.su.menu.advanced.goTo("wireless-manage", "apdb");
+});
+$("a#top-control-apexceed-status").click(function(e){
+	$.su.menu.advanced.goTo("ap-manage", "apmngr");
+});
+$("a#top-control-reboot").click(function(e){
+	//rebootConfirmMsg.msg("show");
+    window.location = "http://service.tp-link.com.cn/";
+});
+
+var istart_alert_msg = $("div#istart-alert-msg").msg({
+		type: "confirm",
+		global: true,
+		closeBtn:true,
+		cls: "l",
+		showHead:true
+	});
+
+$.su.istart_alert = $.su.istart_alert || {
+	"msg": istart_alert_msg,
+	"show": function(){
+		var me = this;
+		var istartForm = $('#istart-alert-form');
+		var url = $.su.url('/userrpm/istart_alert.htm');
+		istartForm.load(url, {}, function(){
+			me.msg.msg("show");
+        });
+	},
+	"hide": function(){
+		this.msg.msg("hide");
+	}
+};
+
+$.su.istart_alert.msg.msg("hideButtons");
+$.su.istart_alert.user_acked = 0; /* 用户是否点击了“继续操作”按钮 */
+
+/**********END*用户登录信息*END**********/
+
+/**********SRT*警告信息*SRT**********/
+var warningMsg = $("div#global-warning-msg").msg({
+	type: "alert",
+	global: true,
+	cls: "m",
+	closeBtn: false
+});
+
+/**********END*警告信息*END**********/
+
+/**********SRT*软硬件版本信息*SRT*********/
+
+var firmwareProxy = new $.su.Proxy({
+	async: false
+});
+
+var firstLog = false;
+
+firmwareProxy.query({"firmware":{"name":"config"}, "localtest":"true"}, function(data){
+	var firmware = $("span#firmware-version-content");
+	var hardware = $("span#hardware-version-content");
+	if (data){
+		if (data.firmware_version){
+			firmware.html(data.firmware.config.firmware_version);
+		}else{
+			firmware.css("display", "none");
+		};
+		if (data.hardware_version){
+			hardware.html(data.firmware.config.hardware_version);
+		}else{
+			hardware.css("display", "none");
+		};
+		/*
+		if (data.is_default == true){
+			firstLog = true;
+		};
+		*/
+	}else{
+		$("span#product-info").css("display", "none");
+	};
+}, function(){
+	$("span#product-info").css("display", "none");
+}, function(){
+	$("span#product-info").css("display", "none");
+});
+
+/**********END*软硬件版本信息*END*********/
+
+
+/**********SRT*在线升级提示信息*SRT**********/
+var query_interval = false;
+var showUpgradeMsg = "1";	/* 1:show the msgbox next time 0:don't show next time*/
+//var CLOUD_FIRMWARE_URL = $.su.url("/admin/cloud_upgrade?form=firmware");
+var downloadTimeout = 0;
+var cloudFirmwareProxy = new $.su.Proxy();
+var upgradeNote = " ";
+var updateFlag = false;
+var DOWNLOADTIMEOUT = 300;	/* the timeout of download (second) */
+
+var cloud_upgrade_alert_cnt = $("div#cloud_upgrade_alert_cnt").msg({
+	type: "upgrade",
+	global: true,
+	closeBtn: false,
+	cls: "warning reboot-confirm-size",
+	okHandler:function(){
+			$("#cloud_upgrade_alert_cnt").msg('hide');
+			$("#cloud_note").html("正在下载...");
+			$("#cloud_upgrade_cnt").msg("show");
+			$("#cloud_upgrade_cnt").msg('hideButtons');
+			$("#cloud_upgrade_bar_cnt").show();
+			handle_ignore_box();
+			cloudFirmwareProxy.modify({"cloud_config":{"upgrade_info":{"global_flag": showUpgradeMsg}}}, function(data){
+			});
+			cloudFirmwareProxy.action({"cloud_config":{"fw_download": "null"}}, function(data){
+				/* tell the luci begin to download */
+			},function(errcode){
+        		hide_cloud_upgrade_promsg();
+        		$("#cloud_error_str").html("下载失败");
+				showOnlineAlertMag();
+			},function(){
+				hide_cloud_upgrade_promsg();
+				$("#cloud_error_str").html("下载失败");
+				showOnlineAlertMag();
+			});
+
+			downloadTimeout = setTimeout(function() {
+				hide_cloud_upgrade_promsg();
+				$("#cloud_error_str").html("下载超时");
+				showOnlineAlertMag();
+			}, DOWNLOADTIMEOUT*1000);
+
+			if(!query_interval)
+			{
+				query_interval = setInterval(download_firmware,2000);
+			}
+			return false;
+		},
+		// cls: "m warning",
+		noHandler:function(){
+			handle_ignore_box();
+			cloudFirmwareProxy.modify({"cloud_config":{"upgrade_info":{"global_flag": showUpgradeMsg}}}, function(data){
+			});
+			return true;
+		}
+});
+
+$("#upgrade_text").html(" ");
+
+$("#ignore_box").checkbox({
+    /*fieldLabel: $.su.CHAR.IMB.TITLE,*/
+    items: [
+        {boxlabel: "下次不再提示", inputValue: "on", uncheckedValue: "off", itemCls: "spec_chk", checked:false}
+    ]
+});
+
+$("#cloud_upgrade_failed_cnt").msg({
+	type: "alert",
+	global: true,
+	cls: "m",
+	closeBtn: false
+});
+
+$("#cloud_upgrade_cnt").msg({
+	type: "confirm",
+	global: true,
+	closeBtn: false,
+	cls: "reboot-confirm-size"
+});
+
+function handle_ignore_box()
+{
+	var ignore_flag = $("#ignore_box").checkbox("getValue1");
+	if (ignore_flag[0] == "on")
+	{
+		showUpgradeMsg = "0";
+		/* the checkbox is checked, means don't show the msg box */
+	}
+	else
+	{
+		showUpgradeMsg = "1";
+		/* the checkbox is not checked, means need show the msg box */
+	}
+
+}
+
+function check_version()
+{
+	cloudFirmwareProxy.query({"cloud_config":{"name" : ["new_firmware","upgrade_info"]}}, function(data){
+
+    		/* if the there is newer firmware, and we have not alert to the user */
+			var new_firmware = data.cloud_config.new_firmware;
+			var upgrade_info = data.cloud_config.upgrade_info;
+        	if (new_firmware.fw_new_notify == "1" && upgrade_info.global_flag == "1" && new_firmware.not_show == "0")
+        	{
+        		upgradeNote = upgrade_info.release_log;
+        		if (upgradeNote != null && upgradeNote.length != 0)
+        		{
+        			upgradeNote = upgradeNote.replace(/\\n/g, "<br/>");
+
+					$("#upgrade_text").html(upgradeNote);
+					$("div#upgrade_note").msg("show");
+        		}
+        		else
+        		{
+        			$("div#upgrade_note").msg("hide");
+        		}
+        		$("div#cloud_upgrade_alert_cnt").msg("show");
+
+        	}
+        	if (new_firmware.fw_new_notify == "1")
+        	{
+        		/* show the red point to remind the user to upgrade */
+        		show_red_point();
+        	}
+	});
+}
+
+function show_red_point()
+{
+	var menu_point = "<span style=\"color:red;font-size:12px;font-weight:bold;position:relative;bottom:6px;left:7px\">●</span>";
+	var text = "";
+	$("ul.menu-tree li a").each(function(i, obj){
+								if ($(obj).attr("data-name") == "sys-tools"){
+										 //添加红点代码
+										 text = $($(obj).find(".text")).text();
+										 if(text.indexOf("●") == -1){
+											$($(obj).find(".text")).html(text+menu_point);
+										 }
+								}
+								if($(obj).attr("data-name") == "firmware"){
+									text = $($(obj).find(".text")).text();
+									if(text.indexOf("●")  == -1){
+										$($(obj).find(".text")).html(text+menu_point);
+									}
+								}
+					   });
+
+	$("ul.tab-menu-ul li a").each(function(i, obj){
+		if ($(obj).attr("data-name") == "upgrade"){
+			/* firmware upgrade show red point */
+			text = $($(obj).find("span").eq(0)).text();
+			if(text.indexOf("●")  == -1){
+				$($(obj).find("span").eq(0)).html(text+menu_point);
+			}
+		}
+	})
+}
+
+function download_firmware()
+{
+
+    cloudFirmwareProxy.query({"cloud_status":{"name": "client_info"}}, function(data){
+
+        var client_info = data.cloud_status.client_info;
+        var progress = 0;
+
+    	if (client_info.fw_download_progress == "100")	/* the download is done */
+    	{
+    		clearTimeout(downloadTimeout);
+    		clearInterval(query_interval);	/* the firmware is download over, so clean the interval*/
+    		query_interval = false;
+    		updateFlag = false;
+    		cloud_pro_bar.progressbar("setValue", 1.00);	/* set the progressbar to 100% */
+
+    		if(!query_interval)	/* the download is finished, begin to upgrade*/
+			{
+				query_interval = setInterval(cloud_upgrade,1000);
+			}
+
+    	}
+    	else if (client_info.fw_download_progress != "-1" && client_info.fw_download_status != "0")	/* the download is doing */
+    	{
+    		progress = parseFloat(client_info.fw_download_progress);
+    		progress = progress / 100;
+    		if ( progress > 0 && progress <= 1.0)
+    		{
+    			cloud_pro_bar.progressbar("setValue", progress.toFixed(2));
+    		}
+    	}
+    	else	/* the download is failed */
+    	{
+    		hide_cloud_upgrade_promsg();
+    		$("#cloud_error_str").html("下载失败");
+			showOnlineAlertMag();
+    	}
+    },function(errcode){
+		hide_cloud_upgrade_promsg();
+	},function(){
+		hide_cloud_upgrade_promsg();
+	});
+}
+
+
+function hide_cloud_upgrade_promsg()
+{
+	clearInterval(query_interval);
+	query_interval = false;
+	clearTimeout(downloadTimeout);
+	cloud_pro_bar.progressbar("stop");
+	cloud_pro_bar.progressbar("reset");
+	cloud_pro_bar_reboot.waitingbar("stop");
+	cloud_pro_bar_reboot.waitingbar("reset");
+	percentOnline = 0;
+
+	$("#cloud_upgrade_alert_cnt").hide();
+	$("#cloud_upgrade_alert_cnt").msg("close",function(){
+		$("#cloud_upgrade_alert_cnt").msg('showButtons');
+		$('#cloud_confirm_cnt').show();
+	});
+	$("#cloud_upgrade_cnt").msg("close",function(){
+		$("#cloud_upgrade_bar_cnt").hide();
+	});
+}
+
+function showOnlineAlertMag(){
+	$("div#cloud_upgrade_failed_cnt").msg("show");
+};
+
+var timeoutOnline = 0;
+var rebootIntervalOnline = 0;
+var isRebootFinishOnline = false;
+var percentOnline = 0;
+var totolTimeOnline = 130;	/* total time of upgrade */
+var rebootTimeOnline = 150*1000;	/* total time of reboot */
+var percentPersecondOnline = 1 / totolTimeOnline;
+
+function cloud_upgrade()	/* cloud upgrade and reboot */
+{
+
+		if (updateFlag == false)
+		{
+			$("#cloud_note").html("正在升级，在此期间请不要进行其它操作");
+			updateFlag = true;
+		}
+
+		percentOnline = percentOnline + percentPersecondOnline;
+		cloud_pro_bar.progressbar("setValue", percentOnline.toFixed(2));
+		if(percentOnline >= 1.0)
+		{
+			clearInterval(query_interval);
+			cloud_pro_bar.progressbar("reset");
+			cloud_pro_bar.progressbar("hide");
+			percentOnline = 0;
+			$("#cloud_note").hide();
+
+			cloud_pro_bar_reboot.waitingbar("show");
+			cloud_pro_bar_reboot.waitingbar("run");
+			timeoutOnline = setTimeout(function() {
+				rebootIntervalOnline = setInterval(function(){
+					$.ajax({
+						url: "./login.html",
+						async: true,
+						dataType: "html",
+
+						success: function(data){
+							isRebootFinishOnline = true;
+						},
+						error: function(){
+						    isRebootFinishOnline = false;
+						}
+						});
+
+					    if(isRebootFinishOnline){
+					    	clearInterval(rebootIntervalOnline);
+					    	location.href= "./login.html";
+					    }
+					}, 1000);
+				}, rebootTimeOnline);
+		}
+}
+
+var cloud_pro_bar = $('input#cloud_pro_bar').progressbar({
+	fieldLabel: null,
+	width: 326,
+	   height: 6,
+	value: 0,
+	expression: "percentage*100",
+	cls: 'reboot-loading-probar'
+});
+
+var config_save_pro_bar  = $('input#config_save_pro_bar').waitingbar({
+	fieldLabel:  $.su.CHAR.CONTROL.CONFIG_SAVING_TIP,
+	labelCls:"xxl",
+	separator: ""
+});
+
+var config_submit_pro_bar  = $('input#config_submit_pro_bar').waitingbar({
+	fieldLabel:  $.su.CHAR.CONTROL.CONFIG_SUBMITTING_TIP,
+	labelCls:"xxl",
+	separator: ""
+});
+
+var cloud_pro_bar_reboot  = $('input#cloud_pro_bar_reboot').waitingbar({
+	fieldLabel: $.su.CHAR.FIMWARE.REBOOT
+});
+
+cloud_pro_bar_reboot.waitingbar("hide");
+/**********END*在线升级提示信息*END**********/
+
+/**********STR*app定义*STR*********/
+$.su.app = {
+	/*runningModule: $({
+		name: ""
+	}),
+	init: function(){
+		$.su.app.runningModule.on("ev_unload", function(e, name){
+			$.su.app.runningModule[0]["name"] = name;
+			//console.log("ev_unload");
+			$.su.app.runningModule.off("ev_beforeunload");
+		});
+	},*/
+	runningModule: {
+		name: "",
+		addUnloadHandler: function(fn){
+			if ($.isFunction(fn)){
+				this.unloadHandlers.push(fn);
+			}
+		},
+		clearUnloadHandler: function(){
+			this.unloadHandlers = [];
+		},
+		unload: function(oldN, newN){
+			this.name = newN;
+			var handlers = this.unloadHandlers;
+			for (var index in handlers){
+				var fn = handlers[index];
+				if ($.isFunction(fn)){
+					fn();
+				}
+			};
+			this.clearUnloadHandler();
+		},
+		unloadHandlers: []
+	},
+	errorOperation: {
+		// 根据error_code和error_msg获取错误信息
+		// e.g.
+		// error_code： -55532
+		// error_data: {
+		//     "AP_NAME": "ap_1",
+		//     "RD_NAME": "2.4G"
+		// }
+		// return： AP(ap_1)的射频条目2.4G导入失败。差值门限非法。
+		get_err_str: function(err_code, err_data) {
+				var err_str = $.su.CHAR.ERROR_CODE[err_code] || "操作失败";
+				err_data = err_data || {};
+				for (var key in err_data) {
+					var value = err_data[key];
+					var reg = new RegExp("%" + key + "%", "g");
+					err_str = err_str.replace(reg, value);
+				}
+				return err_str;
+		},
+		denied: function(error_code, data, sub_err_code, sub_err_data) {
+			var msg = $("div#global-warning-msg");
+			if (error_code == EUNAUTH)
+			{
+				$("span#global-warning-text").html($.su.CHAR.ERROR_CODE[data.data.code]);
+			}
+			else
+			{
+				var err_str = this.get_err_str(error_code, data);
+				sub_err_code = sub_err_code || [];
+				sub_err_data = sub_err_data || [];
+
+				if (sub_err_code.length == sub_err_data.length) {
+					for (var i = 0; i < sub_err_code.length; i++) {
+						err_str += "<br>" + this.get_err_str(sub_err_code[i], sub_err_data[i]);
+					}
+				}
+
+				$("span#global-warning-text").html(err_str);
+			}
+
+
+			if (msg.is(":hidden")){
+				msg.msg("show");
+			}
+			if(error_code == EUNAUTH){
+				setTimeout(function() {
+					location.href = $.su.loginUrl;
+				}, 2000);
+				msg.msg("hideButtons");
+			}
+		},
+        alert: function(err_msg) {
+			var $msg = $("div#global-warning-msg");
+			$("span#global-warning-text").html(err_msg);
+			if ($msg.is(":hidden")) {
+				$msg.msg("show");
+			}
+        },
+		userConflict: function(){
+			//操作中用户冲突的回调
+		}
+	},
+	navGoTo: function(name, url){
+		var contentContainer = $("div#top-content");
+		//旧模块卸载
+		$.su.Manager.removeLocal();
+		$.su.loading.show();
+
+		/*if (name != "quick_setup"){
+			//非quicksetup
+
+
+			contentContainer.load(url, {}, function(response,status,xhr){
+				$.su.layout.doLayout();
+				$.su.loading.hide();
+			});
+		}else{*/
+			//$.su.app.runningModule.trigger("ev_beforeunload", [$.su.app.runningModule[0].name, name]);alert(url);
+
+		var runningModule = $.su.app.runningModule;
+			runningModule.unload(runningModule.name, name);
+
+		if (window.restartSessionsTime && window.sessionsExceedTime != null)
+		{
+			window.restartSessionsTime();
+		}
+
+		contentContainer.load(url, {}, function(response,status,xhr){
+			//$.su.app.runningModule.trigger("ev_unload", [name]);
+			$.su.layout.doLayout();
+			//$.su.loading.hide();
+		});
+
+		//}
+	},
+	menuGoTo: function(name, url, isAdvanced){
+		var contentContainer = isAdvanced ? $("div#func-advanced") : $("div#func-basic");
+		//旧模块卸载
+		$.su.Manager.removeLocal();
+		//var runningModule = $.su.app.runningModule;
+		//$.su.app.runningModule.trigger("ev_beforeunload", [$.su.app.runningModule[0].name, name]);
+		//console.log("menuGoTo", runningModule)
+		var runningModule = $.su.app.runningModule;
+			runningModule.unload(runningModule.name, name);
+
+		$.su.loading.show();
+		for(var refreshId in window.autoRefreshId){
+			clearInterval(refreshId);
+			delete window.autoRefreshId[refreshId];
+		}
+
+		if (window.restartSessionsTime && window.sessionsExceedTime != null)
+		{
+			window.restartSessionsTime();
+		}
+
+		contentContainer.load(url, {}, function(response,status,xhr){
+			//$.su.app.runningModule.trigger("ev_unload", [name]);
+
+			$.su.layout.doLayout();
+			/*$("div.top-main").scrollTo({
+				top: 0,
+				left: 0
+			}, 100);*/
+			$("div.top-main").scrollTo(0);
+			$.su.loading.hide();
+			scrollFunc();
+		});
+	},
+	build_year: parseInt("<%=build_year%>")
+};
+//$.su.app.init();
+/**********END*app定义*END*********/
+
+/**********STR*Web会话超时相关*STR**********/
+window.sessionsTimeProxy = new $.su.Proxy({async:false});
+window.sessionsExceedTime = null;
+window.sessionsExceedHandle = null;
+
+window.restartSessionsTime = function()
+{
+	if (window.sessionsExceedHandle)
+	{
+		clearTimeout(window.sessionsExceedHandle);
+	}
+
+	window.sessionsExceedHandle = setTimeout(window.sessionsExceedCb, window.sessionsExceedTime * 60 * 1000);
+}
+
+window.getSessionsExceedTime = function()
+{
+	sessionsTimeProxy.query({system:{name:"service_port"}},function(data){
+		window.sessionsExceedTime = data["system"]["service_port"]["web_timeout"];
+		restartSessionsTime();
+	});
+}
+
+window.sessionsExceedCb = function()
+{
+	if ($.su.app && $.su.app.errorOperation && $.su.app.errorOperation.denied){
+		$.su.app.errorOperation.denied(-40401,{data:{code:-40401}});
+	};
+}
+
+getSessionsExceedTime();
+
+/**********END*Web会话超时相关*END*********/
+
+/**********STR*菜单部分效果*STR**********/
+$.su.nav = (function(){
+	var nav = {};
+	//字符串初始化
+	var navItems = $("ul#ul-nav li a");
+	navItems.each(function(index, element){
+		var me = $(element),
+			name = me.attr("name");
+		me.html("<span>"+$.su.CHAR.NAV[name.toUpperCase()]+"</span>");
+	});
+
+	navItems.on("click", function(e){
+		e.preventDefault();
+		var me = $(this),
+			name = me.attr("name");
+
+		$.su.nav.goTo(name);
+
+	});
+
+	nav.goTo = function(name){
+		var item = $("ul#ul-nav li a[name='"+name+"']");
+		var url = item.attr("href");
+		if (!$.su.isLocal)
+		{
+			url = url.replace("..", "");
+			url = $.su.url(url);
+		}
+
+		$("ul#ul-nav li").removeClass("selected");
+		item.closest("li").addClass("selected");
+		$.su.app.navGoTo(name, url);
+	};
+
+	return nav;
+})();
+
+if (0&&firstLog){
+	$.su.nav.goTo("advanced");
+
+	var resetUserMsg = $("div#reset-user-msg-container").msg({
+		type: "window",
+		global: true,
+		title: $.su.CHAR.QUICK_SETUP.RESET_USER_TITLE,
+		cls: "l reset-user"
+	});
+
+	//$("h4#reset-user-title").html($.su.CHAR.QUICK_SETUP.RESET_USER_TITLE);
+
+	$("input#reset-user-new-username").textbox({
+		fieldLabel: $.su.CHAR.QUICK_SETUP.NEW_USERNAME,
+		allowBlank: false,
+		vtype:"ascii_visible",
+		minLength:1,
+		maxLength:15
+	});
+	setTimeout(function(){
+		$("input#reset-user-new-username").focus();
+	},10);
+
+	var passwordCheck = function(new_pwd, cfm_val){
+		if(cfm_val == new_pwd){
+			resetUserConfirmPassword.password('setNormal');
+			resetUserConfirmPasswordStatus.status("setSuccess");
+			return true;
+		}else{
+			resetUserConfirmPasswordStatus.status("setFailed");
+			return false;
+		};
+	};
+
+	var resetUserNewPassword = $("input#reset-user-new-password").password({
+		fieldLabel: $.su.CHAR.QUICK_SETUP.NEW_PASSWORD,
+		showLevel: true,
+		allowBlank: false,
+		vtype:"ascii_visible",
+		minLength:1,
+		maxLength:15
+	}).on("ev_change ev_validatechange", function(){
+		var new_pwd = resetUserNewPassword.password("getValue");
+		var cfm_val = resetUserConfirmPassword.password("getValue");
+
+		resetUserConfirmPasswordStatus.status('setNormal');
+		resetUserConfirmPassword.password('setNormal');
+		if(new_pwd == '' || cfm_val == '')  return;
+		passwordCheck(new_pwd, cfm_val);
+	});
+
+	var resetUserConfirmPassword = $("input#reset-user-confirm-password").password({
+		fieldLabel: $.su.CHAR.QUICK_SETUP.CONFIRM_PASSWORD,
+		showLevel: false,
+		allowBlank: false,
+		cls: "inline-block",
+		vtype:"ascii_visible",
+		minLength:1,
+		maxLength:15
+	}).on("ev_validatechange", function(){
+		var new_pwd = resetUserNewPassword.password("getValue");
+		var cfm_val = resetUserConfirmPassword.password("getValue");
+		if(new_pwd == '' || cfm_val == '')  return;
+
+		if (!passwordCheck(new_pwd, cfm_val)){
+			resetUserConfirmPassword.password("setError");
+		};
+	}).on("ev_change", function(e, value, key, keyCode){
+		//var new_pwd = resetUserNewPassword.password("getValue");
+		//var cfm_val = resetUserConfirmPassword.password("getValue");
+		resetUserConfirmPasswordStatus.status('setNormal');
+		//if (passwordCheck(new_pwd, cfm_val)){
+			if (key == "Enter" || keyCode == 13){
+				if(!$("button#btn-reset-user").prop('disabled')){
+					$("button#btn-reset-user").button("disable");
+					resetUserConfirmPassword.password("doEncrypt");
+					resetUserForm.form("submit", {
+						"operation": "set"
+					}, function(){
+						resetUserMsg.msg("close");
+					});
+					setTimeout(function(){
+						$("button#btn-reset-user").button("enable");
+					},500);
+				}
+			}
+		//};
+	});
+
+	var resetUserConfirmPasswordStatus = $("input#reset-user-confirm-password-status").status({
+		cls: "inline-block"
+	});
+
+	$("button#btn-reset-user").button({
+		text: $.su.CHAR.QUICK_SETUP.CONFIRM,
+		cls: "submit",
+		handler: function(){
+			resetUserForm.form("submit", {
+				"operation": "set"
+			}, function(){
+				resetUserMsg.msg("close");
+			});
+		}
+	});
+
+	var resetUserForm = $("div#reset-user-form").form({
+		proxy: {
+			url: $.su.url("/admin/administration?form=account")
+		},
+		fields: [
+			{name: "new_acc", mapping: "new_acc"},
+			{name: "new_pwd", mapping: "new_pwd"},
+			{name: "cfm_pwd", mapping: "cfm_pwd"}
+		],
+		submitBtn: "#btn-reset-user",
+		validator: function(){
+			var p1 = resetUserNewPassword.password("getValue");
+			var p2 = resetUserConfirmPassword.password("getValue");
+			if (p1 === p2){
+				resetUserConfirmPasswordStatus.status("setSuccess");
+				return true;
+			}else{
+				resetUserConfirmPassword.password("setError", $.su.CHAR.ERROR["00000080"]);
+				return false;
+			}
+		}
+	});
+	//console.log("show resetUserMsg")
+	resetUserMsg.msg("show");
+}else{
+	$.su.nav.goTo("advanced");
+	$("div#reset-user-msg-container").remove();
+};
+/**********END*菜单部分效果*END**********/
+
+/**********SRT*布局调整*SRT*********/
+$.su.layout.doLayout = function(){
+	//alert("layout");
+	//console.log($.su.app.runningModule.name);
+
+	var mh = $("div.menu-container").height(),
+		hh = $("div.top-header").height(),
+		fh = $("div.top-footer").height(),
+		uh = $("div.user-info").height(),
+        tabh = $("div.tab-menu-wrapper").height(),
+		wh = $(window).height();
+
+	//$("div.function-container").css("height", "inherit");
+	var tipHeight = $(".top-tip")[0].clientHeight;
+
+	$("div.top-main").css({
+		height: wh - hh -tabh - uh - tipHeight
+	});
+
+	var th = $("div.top-main").height(),
+		ch = wh - hh - tabh - uh,// - fh
+		h = Math.max(mh, ch);
+
+	$("body").css({
+		"height": wh
+	});
+
+	var c = $("div.function-container");
+	var pT = parseInt(c.css("paddingTop"), 10);
+	var pB = parseInt(c.css("paddingBottom"), 10);
+
+	$("div.function-container").css({
+		"min-height": ch - pT -pB
+	});
+
+	//alert(wh, hh, fh, mh, ch, h, pT, pB);
+
+	if ($.su.app.runningModule.name === "quick_setup"){
+		var wh = $(window).height(),
+			fh = $("div.top-footer").height(),
+			hh = $("div.top-header").height();
+
+		var c = $("div#quicksetup-form").css("height", "inherit");
+
+		var ch = $("div#top-content").height(),
+			h = ch;
+
+		if (fh+hh+ch >= wh){
+			c.css("height", h);
+		}else{
+			c.css("height", wh - hh - fh);
+		};
+
+	};
+};
+/**********END*布局调整*END*********/
+
+/**页面初始化**/
+$(window).on("resize load", function(){
+	$.su.layout.doLayout();
+});
+
+function check_smart_alert() {
+	$.su.istart_alert.show();
+}
+
+$(window).on("load", function(){
+	var proxy = new $.su.Proxy();
+	proxy.query({ device_info: { name: "info" } }, function(result){
+		if (result.error_code != ENONE)
+		{
+			localStorage.removeItem("token");
+			location.href = $.su.loginUrl;
+		}
+		document.body.style.display = "block";
+		$.su.layout.doLayout();
+		refreshConfigStatus();
+		window.indexPageConfTimeout = window.indexPageConfTimeout || setTimeout(refreshConfigStatus, 5000);	//每5秒执行一次查询
+		window.refreshConfigStatus = refreshConfigStatus;
+	});
+	setTimeout(check_version, 2000);
+
+	/* 根据路由支持智能开局且没有绑定云管理，开启智能开局*/
+	var istart_state = 0;
+	var istartProxy = new $.su.Proxy({async:false});
+	var istart_support = 0;
+	istartProxy.query({"istart":{"name":"global"}}, function(data) {
+		if (data && data.istart && data.istart.global) {
+			if (data.istart.global.state) {
+				istart_state = parseInt(data.istart.global.state);
+				istart_support = 1;
+			}
+		}
+	});
+	 if (1 == istart_support && 1 == istart_state) {
+		setTimeout(check_smart_alert, 1000);
+	}
+});
+
+$.su.app_list = {
+	data: [],
+	update_flag: 0,
+	updateAppList: function() {
+	    var applist = [];
+	    var appQuery = new $.su.Proxy({async: false});
+	    appQuery.query({"app_library":{table:"app_list"}},function(data){
+	            data = data.app_library.app_list;
+	            for(var i in data){
+	                for(var j in data[i]){
+	                    applist.push({name:data[i][j].name, value:data[i][j].app_id});
+	                }
+	            }
+	            $.su.app_list.data = applist;
+	            $.su.app_list.update_flag = 0;
+	        }
+	    );
+	},
+	getAppList: function() {
+		if($.su.app_list.update_flag == 1){
+			$.su.app_list.updateAppList();
+		}
+	    return $.su.app_list.data;
+	},
+	setUpdateFlag: function() {
+		$.su.app_list.update_flag = 1;
+	}
+};
+$.su.app_list.updateAppList();
+
+Date.prototype.format = function(fmt) {   // eslint-disable-line
+    var o = {
+      'M+': this.getMonth() + 1, // 月份
+      'd+': this.getDate(), // 日
+      'h+': this.getHours(), // 小时
+      'm+': this.getMinutes(), // 分
+      's+': this.getSeconds(), // 秒
+      'q+': Math.floor((this.getMonth() + 3) / 3), // 季度
+      'S': this.getMilliseconds() // 毫秒
+    };
+    if (/(y+)/.test(fmt)) { fmt = fmt.replace(RegExp.$1, (this.getFullYear() + '').substr(4 - RegExp.$1.length)); }
+    for (var k in o) {
+      if (new RegExp('(' + k + ')').test(fmt)) { fmt = fmt.replace(RegExp.$1, (RegExp.$1.length === 1) ? (o[k]) : (('00' + o[k]).substr(('' + o[k]).length))); }
+    }
+    return fmt;
+  };
+
+
+});
+//]]>
+</script>
+</body>
+</html>

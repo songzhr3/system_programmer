@@ -1,0 +1,866 @@
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
+<html xmlns="http://www.w3.org/1999/xhtml">
+<head>
+<meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
+<title>Time Setting</title>
+</head>
+
+<body>
+<div class="func-container">
+	<div id="time_cnt">
+	 	<form id="time_setting">
+	 		<input type="text"  id="time_current_time" name="current_time" value="" />
+	 		<input type="text"  id="time_set_type" name="type" value="" />
+			<div id="auto_cnt">
+				<input type="text"  id="time_set_zone" name="timezone" value="" />
+				<input type="text"  id="time_set_ntp1" name="pri_ntp" value="" />
+				<input type="text"  id="time_set_ntp2" name="snd_ntp" value="" />
+		    	<!-- <div class=" part-seperate">
+		    		 <button type="button" id="getGmt" name="getGmt" value=""></button>
+		    		<input id="dyndns-status" name="status" />
+		    	</div> -->
+			</div>
+
+	    	<div id="manual_cnt">
+	    		<input type="text"  id="time_set_date" name="date" value="" />
+	    		<input type="text"  id="time_set_time" name="time" value="" />
+				<button type="button" id="get_sys_time" name="get_sys_time" value=""></button>
+	    	</div>
+
+	    	<!-- <button id="submit_button" type="button"></button> -->
+
+	    	<!-- <p class="note">
+	    		<span class="title note-title"></span>
+	    		<span class="text" id="time-set-note"></span>
+	    	</p> -->
+		</form>
+	</div>
+
+	<div id="dst_cnt">
+		<form id="time_dst">
+	    	<input type="text"  id="time_set_daylight" name="dst_enable" value="" />
+	    	<div class="widget-container">
+	    		<input type="text"  id="start_year" name="start_year" value="" />
+
+		    	<input type="text"  id="start_month" name="start_month" value="" />
+		    	<span id="start_m"></span>
+		    	<input type="text"  id="start_week" name="start_week" value="" />
+		    	<span  id="start_w"></span>
+		    	<input type="text"  id="start_day" name="start_day" value="" />
+		    	<span  id="start_d"></span>
+		    	<input type="text"  id="start_hour" name="start_hour" value="" />
+		    	<span  id="start_h"></span>
+	    	</div>
+
+			<div class="widget-container">
+		    	<input type="text"  id="end_year" name="end_year" value="" />
+
+		    	<input type="text"  id="end_month" name="end_month" value="" />
+		    	<span  id="end_m"></span>
+		    	<input type="text"  id="end_week" name="end_week" value=""/>
+		    	<span  id="end_w"></span>
+		    	<input type="text"  id="end_day" name="end_day" value="" />
+		    	<span  id="end_d"></span>
+		    	<input type="text"  id="end_hour" name="end_hour" value="" />
+		    	<span  id="end_h"></span>
+		    	<input type="text"  id="time_set_statu" name="dst_status" value="" />
+		    </div>
+	    </form>
+	 </div>
+	<div id="help_time_setting"></div>
+</div>
+
+<script type="text/javascript">
+try{
+    $
+}catch(e){
+    location.href = "/";
+};
+
+$(document).ready(function(e){
+    $(".func-container").hide();
+	var sysTimeHash = "";
+	var startTimeHash = "";
+	var endTimeHash = "";
+	var sysTimeYear = "2013";
+
+	window.timeSystem = 0;
+
+	function parseFormat(value, width)
+	{
+		var value = value.toString();
+		while (value.length < width) value = "0" + value;
+		return value;
+	}
+
+	function get_time_format()
+	{
+		var start_month =  $("input#start_month").combobox("getSelectedIndex")+1;
+		var start_week =  $("input#start_week").combobox("getSelectedIndex")+1;
+		var start_weekday =  $("input#start_day").combobox("getSelectedIndex")+1;
+		var start_hour =  $("input#start_hour").combobox("getSelectedIndex")+1;
+
+		var end_month =  $("input#end_month").combobox("getSelectedIndex")+1;
+		var end_week =  $("input#end_week").combobox("getSelectedIndex")+1;
+		var end_weekday =  $("input#end_day").combobox("getSelectedIndex")+1;
+		var end_hour =  $("input#end_hour").combobox("getSelectedIndex")+1;
+
+		//start month 1st day is week @fWeek
+		var sdObj = new Date(sysTimeYear, start_month, 1);
+		var sfWeek = parseInt(sdObj.getDay());
+
+		//end month 1st day is week @eWeek
+		var edObj = new Date(sysTimeYear, end_month, 1);
+		var efWeek = parseInt(edObj.getDay());
+
+		var start_day = start_week * 7 - sfWeek + start_weekday + 1 + (start_weekday < sfWeek ? 7 : 0);
+		var end_day = end_week * 7 - efWeek + end_weekday + 1 + (end_weekday < efWeek ? 7 : 0);
+
+		startTimeHash = parseFormat(start_month, 2) + parseFormat(start_day, 2) + parseFormat(start_hour, 2);
+		endTimeHash = parseFormat(end_month, 2) + parseFormat(end_day, 2) + parseFormat(end_hour, 2);
+
+		if (startTimeHash < endTimeHash)
+		{
+			if (sysTimeHash < endTimeHash)
+			{
+				$("#start_year").textbox("setValue", sysTimeYear);
+				$("#end_year").textbox("setValue", sysTimeYear);
+			}
+			else
+			{
+				$("#start_year").textbox("setValue", sysTimeYear+1);
+				$("#end_year").textbox("setValue", sysTimeYear+1);
+			}
+		}
+		else
+		{
+			if (sysTimeHash < endTimeHash)
+			{
+				$("#start_year").textbox("setValue", sysTimeYear-1);
+				$("#end_year").textbox("setValue", sysTimeYear);
+			}
+			else
+			{
+				$("#start_year").textbox("setValue", sysTimeYear);
+				$("#end_year").textbox("setValue", sysTimeYear+1);
+			}
+		}
+	}
+
+	$("div.func-container").page({
+		title: $.su.CHAR.TIME_SETTING.TITLE,
+		help: ""	//可能是个调用的id 也可能是个url
+	});
+
+	$("div#time_cnt").panel({
+		title: $.su.CHAR.TIME_SETTING.TITLE,
+		collapsible: false
+	});
+
+	$("div#dst_cnt").panel({
+		title: $.su.CHAR.TIME_SETTING.DAYLIGHT_SAVING,
+		collapsible: false
+	});
+
+	$("div#dst_cnt").hide();
+
+	$("#auto_cnt").fieldset({
+		fields: [
+			{name: "timezone"},
+			{name: "pri_ntp"},
+			{name: "snd_ntp"}
+		]
+	});
+
+	$("#auto_cnt").fieldset("hide");
+
+	$("#manual_cnt").fieldset({
+		fields: [
+			{name: "date"},
+			{name: "time"}
+		]
+	});
+
+	$("#manual_cnt").fieldset("show");
+
+	$("#time_current_time").textbox({
+		fieldLabel: $.su.CHAR.TIME_SETTING.CURRENT_TIME,
+		readOnly:true
+	});
+
+	$("#time_set_type").radio({
+		fieldLabel: $.su.CHAR.TIME_SETTING.SET_TIME,
+		items:[
+			{boxlabel: $.su.CHAR.TIME_SETTING.AUTOMATIC, inputValue: "auto", id:"radio-1"},
+			{boxlabel: $.su.CHAR.TIME_SETTING.MANUAL, inputValue: "manual", id:"radio-2"}
+		],
+		columns:2
+	}).on("ev_change", function(e, oldValue, newValue){
+		if(newValue == "auto")
+		{
+			$("#auto_cnt").fieldset("show");
+			$("#manual_cnt").fieldset("hide");
+			$("p.note").show();
+		}
+		else
+		{
+			$("#auto_cnt").fieldset("hide");
+			$("#manual_cnt").fieldset("show");
+			$("p.note").hide();
+		}
+	})
+
+	$("input#time_set_zone").combobox({
+		fieldLabel: $.su.CHAR.TIME_SETTING.ZONE,
+		inputCls:'xxxxl',
+		items: [
+
+			 {"value": "0", "name": $.su.CHAR.TIME_ZONE.ENIWETOK},
+			 {"value": "60", "name": $.su.CHAR.TIME_ZONE.MIDWAY_ISLAND_SAMOA},
+			 {"value": "120", "name": $.su.CHAR.TIME_ZONE.HAWAII},
+			 {"value": "180", "name": $.su.CHAR.TIME_ZONE.ALASKA},
+			 {"value": "240", "name": $.su.CHAR.TIME_ZONE.PACIFIC_TIME},
+			 {"value": "300", "name": $.su.CHAR.TIME_ZONE.MOUNTAIN_TIME},
+			 {"value": "360", "name": $.su.CHAR.TIME_ZONE.CENTRAL_TIME},
+			 {"value": "420", "name": $.su.CHAR.TIME_ZONE.EASTERN_TIME},
+			 {"value": "450", "name": $.su.CHAR.TIME_ZONE.CARACAS},
+
+			 {"value": "480", "name": $.su.CHAR.TIME_ZONE.ATLANTIC_TIME},
+			 {"value": "510", "name": $.su.CHAR.TIME_ZONE.NEWFOUNDLAND},
+			 {"value": "540", "name": $.su.CHAR.TIME_ZONE.BRASILIA_BUENOS_AIRES},
+			 {"value": "600", "name": $.su.CHAR.TIME_ZONE.MID_ATLANTIC},
+			 {"value": "660", "name": $.su.CHAR.TIME_ZONE.AZORES_CAPE_VERDE_IS},
+			 {"value": "720", "name": $.su.CHAR.TIME_ZONE.GREENWICH_MEAN_TIME},
+			 {"value": "780", "name": $.su.CHAR.TIME_ZONE.BERLIN_STOCKHOLM},
+			 {"value": "840", "name": $.su.CHAR.TIME_ZONE.ATHENS_HELSINKI},
+			 {"value": "900", "name": $.su.CHAR.TIME_ZONE.BAGHDAD_KUWAIT},
+			 {"value": "930", "name": $.su.CHAR.TIME_ZONE.TEHERAN},
+			 {"value": "960", "name": $.su.CHAR.TIME_ZONE.ABU_DHABI},
+			 {"value": "990", "name": $.su.CHAR.TIME_ZONE.KABUL},
+			 {"value": "1020", "name": $.su.CHAR.TIME_ZONE.ISLAMABAD_KARACHI},
+			 {"value": "1050", "name": $.su.CHAR.TIME_ZONE.MADRAS_CALCUTTA},
+			 {"value": "1065", "name": $.su.CHAR.TIME_ZONE.KATMANDU},
+			 {"value": "1080", "name": $.su.CHAR.TIME_ZONE.ALMA_ATA_DHAKA},
+			 {"value": "1110", "name": $.su.CHAR.TIME_ZONE.RANGOON},
+			 {"value": "1140", "name": $.su.CHAR.TIME_ZONE.BANGKOK_JAKARTA_HANOI},
+			 {"value": "1200", "name": $.su.CHAR.TIME_ZONE.BEIJING_HONGKONG},
+			 {"value": "1260", "name": $.su.CHAR.TIME_ZONE.TOKYO_OSAKA_SAPPORO},
+			 {"value": "1290", "name": $.su.CHAR.TIME_ZONE.ADELAIDE},
+			 {"value": "1320", "name": $.su.CHAR.TIME_ZONE.BRISBANE_CANBERRA},
+			 {"value": "1380", "name": $.su.CHAR.TIME_ZONE.MAGADAN_SOLOMAN_IS},
+
+			 {"value": "1440", "name": $.su.CHAR.TIME_ZONE.FIJI_KAMCHATKA},
+			 {"value": "1500", "name": $.su.CHAR.TIME_ZONE.NUKU}
+		]
+	}).on("ev_change", function(e, oldValue, newValue){
+		if(oldValue.length != 0)
+		{
+			var old_hour = $("input#time_set_time").time("getHour");
+			var old_min = $("input#time_set_time").time("getMin");
+			var old_total_min = parseInt(old_hour*60,10)+parseInt(old_min,10);			
+			var new_total_min = old_total_min + parseInt(newValue,10) - parseInt(oldValue,10);
+
+			if (new_total_min < 0)
+			{
+				new_total_min = 24 * 60 + new_total_min;
+			}
+
+			var min_new = new_total_min%60;
+			var hour_temp = parseInt(new_total_min/60, 10);
+			var hour_new = hour_temp > 24 ? hour_temp - 24 : hour_temp;
+			if((hour_new == 24) && (min_new > 0))
+			{
+				hour_new = 0;
+			}
+
+			if(hour_new < 0)
+			{
+				if(hour_new == 0)
+				{
+					hour_new = 23;
+				}
+				else
+				{
+					hour_new += 24;
+				}
+			}
+
+			if(min_new < 0)
+			{
+				min_new += 60;
+			}
+
+			if(min_new < 10)
+			{
+				min_new = "0" + min_new;
+			}
+
+			if(hour_new < 10)
+			{
+				hour_new = "0" + hour_new;
+			}
+
+			var new_time_str  = hour_new.toString() +":"+ min_new.toString() +":"+ $("input#time_set_time").time("getSec");
+			$("input#time_set_time").time("setValue", new_time_str);
+		}
+	});
+
+	$("input#time_set_date").textbox({
+		fieldLabel: $.su.CHAR.TIME_SETTING.DATE,
+		vtype:"date",
+		allowBlank:false,
+		inputCls:"xl",
+		tips: $.su.CHAR.TIME_SETTING.DATEFORMAT
+	});
+
+	$("input#time_set_time").time({
+		fieldLabel: $.su.CHAR.TIME_SETTING.TIME,
+		inputCls:"xl",
+		tips: $.su.CHAR.TIME_SETTING.TIMEFORMAT,
+		setValueCb: function(data){
+			if (!isNaN(data)){
+				var timezone = $("#time_set_zone").val();
+				var offset_GMT = new Date().getTimezoneOffset();
+				var datNum = new Date(data * 1000 + offset_GMT * 60 * 1000 + (timezone - 720) * 60 * 1000);
+				var hour = datNum.getHours();
+				var minute = datNum.getMinutes();
+				var second = datNum.getSeconds();
+				if (hour < 10){hour = "0"+hour;}
+				if (minute < 10){minute = "0"+minute;}
+				if (second < 10){second = "0"+second;}
+				var time = hour + ":" + minute + ":" + second;
+
+				return time;
+			}
+			else
+			{
+				return data;
+			}
+		},
+		getValueCb: function(data){
+			var date = $("input#time_set_date").val();
+			var time = data;
+
+			var dataArray = date.split("/");
+			var Year = dataArray[0];
+			var Month = dataArray[1];
+			var Day = dataArray[2];
+
+
+			dataArray = time.split(":");
+			var Hour = dataArray[0];
+			var Minute = dataArray[1];
+			var Second = dataArray[2];
+			var diff_hour = parseInt((localData.timezone / 60), 10) - 12;
+			var diff_minute = localData.timezone % 60;
+			if ((diff_hour < 0) && (diff_minute > 0)) {
+                diff_hour = diff_hour + 1;
+				diff_minute = diff_minute - 60;
+			}
+			var datNum = new Date(Date.UTC(Year, Month-1, Day, Hour-diff_hour, Minute-diff_minute, Second));
+			var slong = parseInt(datNum.getTime()/1000, 10);
+
+			return slong;
+		}
+	});
+
+	$("input#time_set_ntp1").textbox({
+		fieldLabel: $.su.CHAR.TIME_SETTING.NTP1,
+		vtype:"ip_domain_all",
+		allowBlank:false,
+		inputCls:"xl"
+	});
+
+	$("input#time_set_ntp2").textbox({
+		fieldLabel: $.su.CHAR.TIME_SETTING.NTP2,
+		vtype:"ip_domain_all",
+		inputCls:"xl",
+		allowBlank:true,
+		tips: $.su.CHAR.TIME_SETTING.OPTIONAL
+	});
+
+	function refershState()
+	{
+		clearInterval(window.timeSystem);
+		window.timeSystem = 0;
+
+		window.timeSystem = setInterval(function(){
+			dyndnsStatus.status("refresh", {}, function(data, status, xhr){
+				var data = data || {};				
+				if (typeof data.status != "undefined"){
+					if(data.status == 747301)
+					{
+						dyndnsStatus.status("setSuccess", $.su.CHAR.TIME_SETTING.GETGMT_SUCCESS);						
+						$("form#time_setting").form("loadData", data);						
+						clearInterval(window.timeSystem);
+						window.timeSystem = 0;
+					}
+					if(data.status == 747302)
+					{
+						dyndnsStatus.status("setFailed", $.su.CHAR.TIME_SETTING.GETGMT_TIMEOUT);
+						clearInterval(window.timeSystem);
+						window.timeSystem = 0;
+					}
+					if(data.status == 747303)
+					{
+						dyndnsStatus.status("setLoading", $.su.CHAR.TIME_SETTING.GETGMT_WAIT);
+					}
+					$("button#get_sys_time").button("enable");
+				}else{					
+				}
+			}, function(){				
+				$("button#sys_get_gmt").button("enable");
+			});
+		}, 2*1000);
+
+	}
+
+	$("button#getGmt").button({
+		text:$.su.CHAR.TIME_SETTING.AUTOMATIC_BTN,
+		cls: "inline-block",
+		handler:function(){
+			$("button#getGmt").button("disable");
+			$("form#time_setting").form("submit", {operation:"gmt"},function(data){
+				localData = data;
+				isTimeChange = true;
+			},function(errorcode){
+			},null, false);
+		},
+		fieldLabel:null
+	});
+
+	$("button#get_sys_time").button({
+		text:$.su.CHAR.TIME_SETTING.GET_SYS_TIME,
+		cls: "inline-block",
+		handler:function(){
+			var now = new Date();
+			var year = now.getFullYear();
+			var month = now.getMonth() + 1;
+			var day = now.getDate();
+			var hour = now.getHours();
+			var minute = now.getMinutes();
+			var second = now.getSeconds();
+			if (month < 10){month = "0"+month;}
+			if (day < 10){day = "0"+day;}
+			if (hour < 10){hour = "0"+hour;}
+			if (minute < 10){minute = "0"+minute;}
+			if (second < 10){second = "0"+second;}
+
+			$("#time_set_time").time("setValue", hour+":"+minute+":"+second)
+			$("#time_set_date").textbox("setValue", year+"/"+month+"/"+day)
+
+			$("form#time_setting").form("submit", {operation:"get_sys_time"},function(data){
+				if (data.time && data.date) //get
+				{
+					localData = data;
+				}
+				else //set
+				{
+					localData.date = year + "/" + month + "/" + day;
+                    localData.time = $("input#time_set_time").time("getValue");
+				}
+				isTimeChange = true;
+			},function(errorcode){
+			},null, false);
+		},
+		fieldLabel:null
+	});
+
+	$("input#time_set_daylight").checkbox({
+		fieldLabel: $.su.CHAR.TIME_SETTING.DAYLIGHT_SAVE,
+		items: [
+			{boxlabel: $.su.CHAR.TIME_SETTING.ENABLE_DAYLIGHT, uncheckedValue:"off", inputValue: "on" }
+		]
+	}).on("ev_change", function(e, oldValue, newValue){
+		var val = (newValue[0]=="dst_enable"||newValue[0]=="on") ? "on" : "off";
+		switch(val)
+		{
+			case "on":
+				$("#start_year").textbox("enable");
+				$("input#start_month").combobox("enable");
+				$("input#start_week").combobox("enable");
+				$("input#start_day").combobox("enable");
+				$("input#start_hour").combobox("enable");
+
+				$("#end_year").textbox("enable");
+				$("input#end_month").combobox("enable");
+				$("input#end_week").combobox("enable");
+				$("input#end_day").combobox("enable");
+				$("input#end_hour").combobox("enable");
+				break;
+			case "off":
+				$("#start_year").textbox("disable");
+				$("input#start_month").combobox("disable");
+				$("input#start_week").combobox("disable");
+				$("input#start_day").combobox("disable");
+				$("input#start_hour").combobox("disable");
+
+				$("#end_year").textbox("disable");
+				$("input#end_month").combobox("disable");
+				$("input#end_week").combobox("disable");
+				$("input#end_day").combobox("disable");
+				$("input#end_hour").combobox("disable");
+				break;
+		}
+	});
+
+	$("#start_year").textbox({
+		fieldLabel: $.su.CHAR.TIME_SETTING.START,
+		inputCls:'xs',
+		readOnly:true,
+		cls:"inline"
+	});
+
+	$("input#start_month").combobox({
+		// fieldLabel: $.su.CHAR.TIME_SETTING.START,
+		fieldLabel:null,
+		//tips: "The tips of combo multi.",
+		inputCls:'xs',
+		cls:"inline",
+		items: [
+			{"value": "Jan", "name": $.su.CHAR.DATE.JAN, "selected": "selected"},
+			{"value": "Feb", "name": $.su.CHAR.DATE.FEB},
+			{"value": "Mar", "name": $.su.CHAR.DATE.MAR},
+			{"value": "Apr", "name": $.su.CHAR.DATE.APR},
+			{"value": "May", "name": $.su.CHAR.DATE.MAY},
+			{"value": "Jun", "name": $.su.CHAR.DATE.JUN},
+			{"value": "Jul", "name": $.su.CHAR.DATE.JUL},
+			{"value": "Aug", "name": $.su.CHAR.DATE.AUG},
+			{"value": "Sep", "name": $.su.CHAR.DATE.SEP},
+			{"value": "Oct", "name": $.su.CHAR.DATE.OCT},
+			{"value": "Nov", "name": $.su.CHAR.DATE.NOV},
+			{"value": "Dec", "name": $.su.CHAR.DATE.DEC}
+		]
+	}).on("ev_change",function(){
+		get_time_format();
+	});
+
+	$("input#start_week").combobox({
+		fieldLabel:null,
+		//tips: "The tips of combo multi.",
+		inputCls:'xs',
+		cls:"inline",
+		items: [
+			{"value": "1st", "name": $.su.CHAR.ORDER["1ST"], "selected": "selected"},
+			{"value": "2nd", "name": $.su.CHAR.ORDER["2ND"]},
+			{"value": "3rd", "name": $.su.CHAR.ORDER["3RD"]},
+			{"value": "4th", "name": $.su.CHAR.ORDER["4TH"]},
+			{"value": "5th", "name": $.su.CHAR.ORDER["5TH"]}
+		]
+	}).on("ev_change",function(){
+		get_time_format();
+	});
+
+	$("input#start_day").combobox({
+		fieldLabel:null,
+		inputCls:'xs',
+		cls:"inline",
+		items: [
+			{"value": "Mon", "name": $.su.CHAR.DATE.MON, "selected": "selected"},
+			{"value": "Tues", "name": $.su.CHAR.DATE.TUES},
+			{"value": "Wed", "name": $.su.CHAR.DATE.WED},
+			{"value": "Thur", "name": $.su.CHAR.DATE.THUR},
+			{"value": "Fri", "name": $.su.CHAR.DATE.FRI},
+			{"value": "Sat", "name": $.su.CHAR.DATE.SAT},
+			{"value": "Sun", "name": $.su.CHAR.DATE.SUN}
+		]
+	}).on("ev_change",function(){
+		get_time_format();
+	});
+
+	$("input#start_hour").combobox({
+		fieldLabel:null,
+		inputCls:'xs',
+		cls:"inline",
+		items: [
+			{"value": "1am", "name": $.su.CHAR.HOUR["AM_1"], "selected": "selected"},
+			{"value": "2am", "name": $.su.CHAR.HOUR["AM_2"]},
+			{"value": "3am", "name": $.su.CHAR.HOUR["AM_3"]},
+			{"value": "4am", "name": $.su.CHAR.HOUR["AM_4"]},
+			{"value": "5am", "name": $.su.CHAR.HOUR["AM_5"]},
+			{"value": "6am", "name": $.su.CHAR.HOUR["AM_6"]},
+			{"value": "7am", "name": $.su.CHAR.HOUR["AM_7"]},
+			{"value": "8am", "name": $.su.CHAR.HOUR["AM_8"]},
+			{"value": "9am", "name": $.su.CHAR.HOUR["AM_9"]},
+			{"value": "10am", "name": $.su.CHAR.HOUR["AM_10"]},
+			{"value": "11am", "name": $.su.CHAR.HOUR["AM_11"]},
+			{"value": "12am", "name": $.su.CHAR.HOUR["AM_12"]},
+			{"value": "1pm", "name": $.su.CHAR.HOUR["PM_1"]},
+			{"value": "2pm", "name": $.su.CHAR.HOUR["PM_2"]},
+			{"value": "3pm", "name": $.su.CHAR.HOUR["PM_3"]},
+			{"value": "4pm", "name": $.su.CHAR.HOUR["PM_4"]},
+			{"value": "5pm", "name": $.su.CHAR.HOUR["PM_5"]},
+			{"value": "6pm", "name": $.su.CHAR.HOUR["PM_6"]},
+			{"value": "7pm", "name": $.su.CHAR.HOUR["PM_7"]},
+			{"value": "8pm", "name": $.su.CHAR.HOUR["PM_8"]},
+			{"value": "9pm", "name": $.su.CHAR.HOUR["PM_9"]},
+			{"value": "10pm", "name": $.su.CHAR.HOUR["PM_10"]},
+			{"value": "11pm", "name": $.su.CHAR.HOUR["PM_11"]},
+			{"value": "12pm", "name": $.su.CHAR.HOUR["PM_12"]}
+		]
+	}).on("ev_change",function(){
+		get_time_format();
+	});
+
+	$("#end_year").textbox({
+		fieldLabel: $.su.CHAR.TIME_SETTING.END,
+		inputCls:'xs',
+		readOnly:true,
+		cls:"inline"
+	});
+
+	$("input#end_month").combobox({
+		// fieldLabel: $.su.CHAR.TIME_SETTING.END,
+		fieldLabel: null,
+		//tips: "The tips of combo multi.",
+		inputCls:'xs',
+		cls:"inline",
+		items: [
+			{"value": "Jan", "name": $.su.CHAR.DATE.JAN, "selected": "selected"},
+			{"value": "Feb", "name": $.su.CHAR.DATE.FEB},
+			{"value": "Mar", "name": $.su.CHAR.DATE.MAR},
+			{"value": "Apr", "name": $.su.CHAR.DATE.APR},
+			{"value": "May", "name": $.su.CHAR.DATE.MAY},
+			{"value": "Jun", "name": $.su.CHAR.DATE.JUN},
+			{"value": "Jul", "name": $.su.CHAR.DATE.JUL},
+			{"value": "Aug", "name": $.su.CHAR.DATE.AUG},
+			{"value": "Sep", "name": $.su.CHAR.DATE.SEP},
+			{"value": "Oct", "name": $.su.CHAR.DATE.OCT},
+			{"value": "Nov", "name": $.su.CHAR.DATE.NOV},
+			{"value": "Dec", "name": $.su.CHAR.DATE.DEC}
+		]
+	}).on("ev_change",function(){
+		get_time_format();
+	});
+
+	$("input#end_week").combobox({
+		fieldLabel:null,
+		//tips: "The tips of combo multi.",
+		inputCls:'xs',
+		cls:"inline",
+		items: [
+			{"value": "1st", "name": $.su.CHAR.ORDER["1ST"], "selected": "selected"},
+			{"value": "2nd", "name": $.su.CHAR.ORDER["2ND"]},
+			{"value": "3rd", "name": $.su.CHAR.ORDER["3RD"]},
+			{"value": "4th", "name": $.su.CHAR.ORDER["4TH"]},
+			{"value": "5th", "name": $.su.CHAR.ORDER["5TH"]}
+		]
+	}).on("ev_change",function(){
+		get_time_format();
+	});
+
+	$("input#end_day").combobox({
+		fieldLabel:null,
+		inputCls:'xs',
+		cls:"inline",
+		items: [
+			{"value": "Mon", "name": $.su.CHAR.DATE.MON, "selected": "selected"},
+			{"value": "Tues", "name": $.su.CHAR.DATE.TUES},
+			{"value": "Wed", "name": $.su.CHAR.DATE.WED},
+			{"value": "Thur", "name": $.su.CHAR.DATE.THUR},
+			{"value": "Fri", "name": $.su.CHAR.DATE.FRI},
+			{"value": "Sat", "name": $.su.CHAR.DATE.SAT},
+			{"value": "Sun", "name": $.su.CHAR.DATE.SUN}
+		]
+	}).on("ev_change",function(){
+		get_time_format();
+	});
+
+	$("input#end_hour").combobox({
+		fieldLabel:null,
+		inputCls:'xs',
+		cls:"inline",
+		items: [
+			{"value": "1am", "name": $.su.CHAR.HOUR["AM_1"], "selected": "selected"},
+			{"value": "2am", "name": $.su.CHAR.HOUR["AM_2"]},
+			{"value": "3am", "name": $.su.CHAR.HOUR["AM_3"]},
+			{"value": "4am", "name": $.su.CHAR.HOUR["AM_4"]},
+			{"value": "5am", "name": $.su.CHAR.HOUR["AM_5"]},
+			{"value": "6am", "name": $.su.CHAR.HOUR["AM_6"]},
+			{"value": "7am", "name": $.su.CHAR.HOUR["AM_7"]},
+			{"value": "8am", "name": $.su.CHAR.HOUR["AM_8"]},
+			{"value": "9am", "name": $.su.CHAR.HOUR["AM_9"]},
+			{"value": "10am", "name": $.su.CHAR.HOUR["AM_10"]},
+			{"value": "11am", "name": $.su.CHAR.HOUR["AM_11"]},
+			{"value": "12am", "name": $.su.CHAR.HOUR["AM_12"]},
+			{"value": "1pm", "name": $.su.CHAR.HOUR["PM_1"]},
+			{"value": "2pm", "name": $.su.CHAR.HOUR["PM_2"]},
+			{"value": "3pm", "name": $.su.CHAR.HOUR["PM_3"]},
+			{"value": "4pm", "name": $.su.CHAR.HOUR["PM_4"]},
+			{"value": "5pm", "name": $.su.CHAR.HOUR["PM_5"]},
+			{"value": "6pm", "name": $.su.CHAR.HOUR["PM_6"]},
+			{"value": "7pm", "name": $.su.CHAR.HOUR["PM_7"]},
+			{"value": "8pm", "name": $.su.CHAR.HOUR["PM_8"]},
+			{"value": "9pm", "name": $.su.CHAR.HOUR["PM_9"]},
+			{"value": "10pm", "name": $.su.CHAR.HOUR["PM_10"]},
+			{"value": "11pm", "name": $.su.CHAR.HOUR["PM_11"]},
+			{"value": "12pm", "name": $.su.CHAR.HOUR["PM_12"]}
+		]
+	}).on("ev_change",function(){
+		get_time_format();
+	});
+
+	$("input#time_set_statu").textbox({
+		fieldLabel: $.su.CHAR.TIME_SETTING.RUNNING_STATUS,
+		readOnly:true
+	});
+
+	var dyndnsStatus = $("input#dyndns-status").status({
+		cls: "inline-block",
+		proxy: {}
+	});
+	var isInit = true;
+	var localData = null;
+	var isTimeChange = false;
+	var timeSettingTimeout = null;
+	var refresh = function (){
+		// 每5秒同步一下当前时间
+		if (localData.time % 5 == 0)
+			get_current_time();
+
+		//var localData = data;
+		var d = localData.date;
+		var t = localData.time;
+		var timezone = $("#time_set_zone").val();
+		var offset_GMT = new Date().getTimezoneOffset();
+		var datNum = new Date(t * 1000 + offset_GMT * 60 * 1000 + (timezone - 720) * 60 * 1000);
+        var year = datNum.getFullYear();
+        var month = datNum.getMonth() + 1;
+        var day = datNum.getDate();
+		var hour = datNum.getHours();
+		var min = datNum.getMinutes();
+		var second = datNum.getSeconds();
+		//秒数补0
+		if (hour < 10){hour = "0"+hour;}
+		if (min < 10){min = "0"+min;}
+		if (second < 10){second = "0"+second;}
+        localData.date = year + "/" + month + "/" + day;
+		var str = localData.date + " " + hour + ":" + min + ":" + second;
+		$("#time_current_time").textbox("setValue", str);
+		clearTimeout(timeSettingTimeout);
+		if(!$.contains(document, time_form[0])){
+			return;
+		}
+		timeSettingTimeout = setTimeout(function() {
+			localData.time++;
+			if(!isTimeChange){
+
+			}else{
+				isTimeChange = false;
+			}
+			refresh(localData);
+		}, 1000);
+	}
+
+	//这里多个表格调用一个proxy，proxy需要单独定义！
+	var time_form = $("form#time_setting").form({
+		proxy: {},
+		fields: [
+			{name: "type", mapping: "type", sectionName: "time_type"},
+			{name: "timezone", mapping: "timezone", sectionName: "ntp"},
+			{name: "date", mapping: "date", sectionName: "system_time"},
+			{name: "time", mapping: "time", sectionName: "system_time"},
+			{name: "pri_ntp", mapping: "pri_ntp", sectionName: "ntp"},
+			{name: "snd_ntp", mapping: "snd_ntp", sectionName: "ntp"}
+			//{name: "gmt_status", mapping: "gmt_status", sectionName: "ntp"}
+		],
+		parseKey: {
+			moduleName:"system",
+			sectionName:["ntp", "time_type", "system_time"]
+		},
+		submitBtn: "default",
+		transParams: function(params){
+			for (var name in params)
+			{
+				if (name == "time")
+				{
+					params[name] = $("input#time_set_time").time("getValue");
+				}else if (name == "date")
+				{
+					params[name] = $("input#time_set_date").textbox("getValue");
+				}
+			}
+
+			return params;
+		}
+	}).on("ev_loadData", function(e, data){
+		if (data.time && data.date)
+		{
+			localData = data;
+		}
+		else
+		{
+			var sysTimeProxy = new $.su.Proxy({
+				async: false
+			});
+			sysTimeProxy.query({"system":{"name":"system_time"}},function(data){
+				var time_content = data.system.system_time;
+				$("input#time_set_date").textbox("setValue", time_content.date);
+			});
+            var date = $("#time_set_date").val();
+			var time = $("#time_set_time").val();
+			var timezone = $("#time_set_zone").val();
+			var dataArray = date.split("/");
+			var Year = dataArray[0];
+			var Month = dataArray[1];
+			var Day = dataArray[2];
+
+			dataArray = time.split(":");
+			var Hour = dataArray[0];
+			var Minute = dataArray[1];
+			var Second = dataArray[2];
+			var diff_hour = parseInt((timezone / 60), 10) - 12;
+			var diff_minute = timezone % 60;
+			if ((diff_hour < 0) && (diff_minute > 0)) {
+                diff_hour = diff_hour + 1;
+				diff_minute = diff_minute - 60;
+			}
+			var datNum = new Date(Date.UTC(Year, Month-1, Day, Hour-diff_hour, Minute-diff_minute, Second));
+			var slong = parseInt(datNum.getTime()/1000, 10);
+			localData.date = Year + "/" + Month + "/" + Day;
+			localData.time = slong;
+			localData.timezone = timezone;
+		}
+		if(isInit){
+			refresh();
+			isInit = false;
+		}
+		isTimeChange = true;
+	});
+	var timeout_afterset = 0;
+	function get_current_time()
+	{
+		var sysTimeProxy = new $.su.Proxy({authSessionsDataFlag:true} /*Fix #318258*/);
+		sysTimeProxy.query({"system":{"name":"system_time"}},function(data){
+			var time_content = data.system.system_time;
+			localData.date = time_content.date;
+			localData.time = time_content.time;
+			localData.timezone = $("#time_set_zone").val();
+		});
+	}
+
+	$("#submit_button").button({
+		cls:"submit",
+		text:"设置",
+		handler:function(e){
+			$.su.loading.show();
+			time_form.form("submit",{},function(data){
+				$.su.loading.hide();
+			},function(errorcode){
+				$.su.loading.hide();
+			},function(fail){
+				$.su.loading.hide();
+			});
+		}
+	});
+
+	var helptimesetting = new $.su.Help({
+			container: "div#help_time_setting",
+			content: ["TIME_SETTING"]
+	});
+    $(".func-container").show();
+});
+</script>
+</body>
+
+</html>

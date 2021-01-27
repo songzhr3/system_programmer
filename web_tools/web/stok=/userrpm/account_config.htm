@@ -1,0 +1,399 @@
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
+<html xmlns="http://www.w3.org/1999/xhtml">
+<head>
+<meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
+<title>account_config</title>
+</head>
+
+<body>
+<div class="func-container">
+	<div id="account">
+	 	<form id="account-setting">
+	    	<input id="http_port_switch" name="http_port_switch"/>
+	    	<input type="text"  id="http_port" name="http_port" value="" />
+	    	<input type="text"  id="https_port" name="https_port" value="" />
+			<input type="text"  id="web_timeout" name="web_timeout" value="" />
+			<input type="text"  id="max_trytimes" name="max_trytimes" value="" />
+			<input type="text"  id="lock_time" name="lock_time" value="" />
+	    </form>
+	</div>
+	<div id="help_admin_config"></div>
+
+	<div id="setting_waitingbar_msg" class="hidden">
+		<div class="reboot-loading-msg">
+			<input id="setting_waitingbar" type="text" />
+		</div>
+	</div>
+</div>
+
+<script type="text/javascript">
+try{
+    $
+}catch(e){
+    location.href = "/";
+};
+
+$(document).ready(function(e){
+	var origin_http_port = "80";
+	var origin_https_port = "443";
+	//var origin_ssh_port = "33400";
+	var origin_web_timeout = "6";
+	var origin_max_trytimes = "5";
+	//var origin_ssh_enable = "on";
+	var origin_lock_time = "1";
+	var auth_port = "8080";
+	var SYS_PORTS = [];
+
+	var pwdProxy = new $.su.Proxy({
+		autoLoad:false
+	});
+
+	var portalProxy = new $.su.Proxy({});
+	portalProxy.query({"authentication":{"name":"portal"}}, function(data){
+		if (undefined != data.authentication.portal.portal_port)
+		{
+			auth_port = data.authentication.portal.portal_port
+		}
+	});
+
+
+	$("div.func-container").page({
+		title: $.su.CHAR.ACCOUNT.TITLE,
+		help: ""	//可能是个调用的id 也可能是个url
+	});
+
+	$("div#account").panel({
+		title: $.su.CHAR.ACCOUNT_CONFIG.TITLE,
+		collapsible: false
+	});
+
+	$("input#http_port").textbox({
+		fieldLabel: $.su.CHAR.ACCOUNT_CONFIG.HTTP_PORT,
+		allowBlank: false,
+		tips: "(80、1024-65534)",
+		validator: function(v){
+		    var val_http = $("input#http_port").textbox("getValue");
+			var val_https = $("input#https_port").textbox("getValue");
+			//var val_ssh = $("input#ssh_port").textbox("getValue");
+
+			for(var i = 0; i < SYS_PORTS.length; i++){
+				if(val_http == SYS_PORTS[i]){
+					return "与系统默认端口号冲突";
+				}
+			}
+			if (val_http == val_https && val_http != origin_http_port)
+			{
+			    return "与https端口号冲突";
+			}
+			else if (val_http == auth_port && val_http != origin_http_port)
+			{
+			    return "与认证端口号冲突";
+			}
+			/*else if (val_ssh == val_http  && val_http != origin_http_port)
+			{
+			    return "与系统默认端口号冲突";
+			}*/
+			else if (val_http == 80)
+			{
+				return true;
+			}
+			else
+			{
+			    return (new $.su.vtype({
+			    	vtype: "number",
+			    	min: 1024,
+			    	max: 65534,
+			    	validator:function(value){
+			    		if(value < this.min || value > this.max){
+			    			return "请输入80或者1024-65534之间的数字";
+			    		}else{
+			    			return true;
+			    		}
+			    	}
+			    }).validate(v));
+			}
+        }
+	});
+
+	$("input#https_port").textbox({
+		fieldLabel: $.su.CHAR.ACCOUNT_CONFIG.HTTPS_PORT,
+		allowBlank: false,
+		tips: "(443、1024-65534)",
+		validator: function(v){
+		    var val_http = $("input#http_port").textbox("getValue");
+			var val_https = $("input#https_port").textbox("getValue");
+			
+			for(var i = 0; i < SYS_PORTS.length; i++){
+				if(val_https == SYS_PORTS[i]){
+					return "与系统默认端口号冲突";
+				}
+			}
+
+			if (val_https == val_http && val_https != origin_https_port)
+			{
+			    return "与http端口号冲突";
+			}
+			else if (val_https == auth_port && val_https != origin_https_port)
+			{
+			    return "与认证端口号冲突";
+			}
+			/*else if (val_ssh == val_https  && val_https != origin_https_port)
+			{
+			    return "与系统默认端口号冲突";
+			}*/
+			else if (val_https == 443)
+			{
+				return true;
+			}
+			else
+			{
+			    return (new $.su.vtype({
+			    	vtype: "number",
+			    	min: 1024,
+			    	max: 65534,
+			    	validator:function(value){
+			    		if(value < this.min || value > this.max){
+			    			return "请输入443或者1024-65534之间的数字";
+			    		}else{
+			    			return true;
+			    		}
+			    	}
+			    }).validate(v));
+			}
+        }
+	});
+
+	$("input#web_timeout").textbox({
+	    fieldLabel: $.su.CHAR.ACCOUNT_CONFIG.WEB_TIMEOUT,
+		allowBlank: false,
+		tips: $.su.CHAR.ACCOUNT_CONFIG.WEB_TIMEOUT_TIPS,
+		validator: function(v){
+			return (new $.su.vtype({vtype: "number", min: 5, max: 60}).validate(v));
+        }
+    });
+    
+	$("input#lock_time").textbox({
+	    fieldLabel: $.su.CHAR.ACCOUNT_CONFIG.LOCK_TIME,
+		allowBlank: false,
+		tips: $.su.CHAR.ACCOUNT_CONFIG.LOCK_TIME_TIPS,
+		validator: function(v){
+			return (new $.su.vtype({vtype: "number", min: 1, max: 60}).validate(v));
+        }
+	});
+
+	$("input#max_trytimes").textbox({
+	    fieldLabel:  $.su.CHAR.ACCOUNT_CONFIG.MAX_TRYTIMES,
+		allowBlank: false,
+		tips: $.su.CHAR.ACCOUNT_CONFIG.MAX_TRYTIMES_TIPS,
+		validator: function(v){
+			return (new $.su.vtype({vtype: "number", min: 0, max: 5}).validate(v));
+        }
+	});
+
+
+    $("input#http_port_switch").checkbox({
+		fieldLabel:$.su.CHAR.ACCOUNT_CONFIG.HTTP_ENABLE,
+		items:[
+			{boxlabel: "开启", inputValue: "on", uncheckedValue: "off"}
+		]
+	}).on("ev_change", function(e, oldValue, newValue){
+		if(newValue == "on" || newValue == "http_port_switch"){
+			$("input#http_port").textbox("enableStyle");
+		}else{
+			$("input#http_port").textbox("disableStyle");
+		}
+
+	});
+
+
+	$("form#account-setting").form({
+		proxy: pwdProxy,
+		fields: [
+			{name: "http_port", mapping: "http_port"},
+			{name: "https_port", mapping: "https_port"},
+			{name: "web_timeout", mapping: "web_timeout"},
+			{name: "http_port_switch", mapping: "http_port_switch"},
+			{name: "max_trytimes", mapping: "max_trytimes"},
+			{name: "lock_time", mapping: "lock_time"}
+		],
+		parseKey: {
+			moduleName:"system",
+			sectionName:"service_port"
+		},
+		//autoLoad:true,/
+		validator:function(){
+			if($("input#http_port").textbox("validate") !== true){
+				return false;
+			}
+			if($("input#https_port").textbox("validate") !== true){
+				return false;
+			}
+			if($("input#web_timeout").textbox("validate") !== true){
+				return false;
+			}
+			if($("input#http_port_switch").checkbox("validate") !== true){
+				return false;
+			}
+			if($("input#max_trytimes").textbox("validate") !== true){
+				return false;
+			}
+			if($("input#lock_time").textbox("validate") !== true){
+				return false;
+			}
+			else{
+				return true;
+			}
+		},
+		submitBtn: "default"
+	});
+
+	tarButton = $("form#account-setting").find("button.button-button");
+	$(tarButton).button({
+		handler: function(){
+			if($("form#account-setting").form("validate") !== true){
+				return false;
+			}
+
+			var portProxy = new $.su.Proxy({
+				async: false
+			});
+
+			portProxy.query({"system": {"name": "service_port"}}, function(data){
+				origin_http_port = data.system.service_port.http_port
+				origin_https_port = data.system.service_port.https_port
+				origin_http_port_switch = data.system.service_port.http_port_switch
+				orgin_web_timeout = data.system.service_port.web_timeout
+				orgin_max_trytimes = data.system.service_port.max_trytimes
+				orgin_web_timeout = data.system.service_port.lock_time
+			});
+
+			/*获取当前协议类型*/
+			var protocol = window.location.protocol;
+			/*获取当前host，去掉端口部分*/
+			var host = window.location.hostname;
+			var is_ipv6 = (host.indexOf(":") >= 0);
+			if (is_ipv6 && host.startsWith("[") == false) {
+				host = "[" + host + "]";
+			}
+			/*获取当前端口号*/
+			var port = window.location.port;
+			/*获取改动后的端口号*/
+			var  val_http = $("input#http_port").textbox("getValue");
+			var  val_https = $("input#https_port").textbox("getValue");
+			var  val_timeout = $("input#web_timeout").textbox("getValue");
+
+			switch(protocol){
+				case "http:":
+					/*如无改变*/
+					if(origin_http_port == val_http){
+						break;
+					}else{
+
+						if(!$("input#http_port").textbox("validate")){
+							return;
+						}
+						if(!$("input#https_port").textbox("validate")){
+							return;
+						}
+						$("form#account-setting").form("setPrompt", false);
+						$("form#account-setting").form("submit");
+						if ($.su.app && $.su.app.errorOperation && $.su.app.errorOperation.denied){
+                            $.su.app.errorOperation.denied(-50936);
+                            $("div#global-warning-msg").msg("hideButtons");
+                        }
+						setTimeout(function(){
+							location.href = "http://" + host + ":" + val_http;
+						},8000);
+						return;
+					}
+					break;
+
+				case "https:":
+					if(origin_https_port == val_https){
+						break;
+					}else{
+						if(!$("input#http_port").textbox("validate")){
+							return;
+						}
+						if(!$("input#https_port").textbox("validate")){
+							return;
+						}
+						$("form#account-setting").form("setPrompt", false);
+						$("form#account-setting").form("submit");
+						if ($.su.app && $.su.app.errorOperation && $.su.app.errorOperation.denied){
+                            $.su.app.errorOperation.denied(-50936);
+                            $("div#global-warning-msg").msg("hideButtons");
+                        }
+						setTimeout(function(){
+							location.href = "https://" + host + ":" + val_https;
+						},8000);
+						return;
+					}
+					break;
+
+				default:
+					break;
+			}
+
+			$.su.loading.show();
+			// submit的时候禁用默认设置成功/设置失败的提示框
+            $("form#account-setting").form("submit",{},function(data){
+				$.su.loading.hide();
+
+				// 设置成功的情况下，改变了端口号，uhttpd会重启
+				// 快速点击到其他页面，可能会导致其他页面加载不出来或者没有数据
+				// 这种情况下出现滚动条，一段时间后消失
+				if (origin_http_port != val_http || origin_https_port != val_https) {
+					waitingbar_start();
+					setTimeout(function() {
+						waitingbar_stop();
+						$("form#account-setting").form("prompt", true);
+					}, 8000);
+				}
+				else {
+					$("form#account-setting").form("prompt", true);
+				}
+
+				window.sessionsExceedTime = val_timeout;
+				window.restartSessionsTime();
+            },function(error){
+            	$.su.loading.hide();
+				$("form#account-setting").form("prompt", false);
+            },function(fail){
+            	$.su.loading.hide();
+				$("form#account-setting").form("prompt", false);
+			}, false);
+		}
+	});
+
+	var $setting_waitingbar_msg = $("#setting_waitingbar_msg").msg({
+		type: "default",
+		closeBtn: false,
+		cls: "reboot-confirm-size"
+	});
+	var $setting_waitingbar = $("#setting_waitingbar").waitingbar({
+		fieldLabel: "服务端口改变中，请稍候......",
+		labelCls: "xxl",
+		separator: ""
+	});
+
+	var waitingbar_start = function() {
+		$setting_waitingbar_msg.msg("show");
+		$setting_waitingbar.waitingbar("run");
+	}
+
+	var waitingbar_stop = function() {
+		$setting_waitingbar_msg.msg("close");
+		$setting_waitingbar.waitingbar("stop");
+		$setting_waitingbar.waitingbar("reset");
+	}
+
+	var helpAdmin = new $.su.Help({
+		container: "div#help_admin_config",
+		content: ["ADMIN_CONFIG"]
+	});
+});
+</script>
+</body>
+
+</html>

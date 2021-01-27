@@ -1,0 +1,125 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <title>流量报表</title>
+    <script type="text/javascript" src="../web-static/js/report_new/initPage.js?random=20201217044300"></script>
+    <script type="text/javascript" src="../web-static/js/report_new/constant.js?random=20201217044300"></script>
+</head>
+
+<body>
+    <div class="func_container">
+        <div id="flow_report"></div>
+    </div>
+    <script type="text/javascript">
+        try {
+            $
+        } catch (e) {
+            location.href = "/";
+        }
+
+        $(document).ready(function(e) {
+            var flow_report_options = {
+                pageId: 'flow_report',
+                panel: '流量报表',
+                condition: REPORT_INFO.FLOW_REPORT.CONDITION,
+                radioOption: REPORT_INFO.FLOW_REPORT.RADIO_OPTION,
+                triggerOption: REPORT_INFO.TRIGGER_OPTION,
+                currentCondition: 'flow_src_ip',
+                graphType: REPORT_INFO.GRAPHTYPE.FLOW_REPORT,
+                grid: {
+                    store: {
+                        proxy: new $.su.Proxy(),
+                        fields: [{
+                            name: "index"
+                        }, {
+                            name: "up_flow"
+                        }, {
+                            name: "down_flow"
+                        }, {
+                            name: "total_flow"
+                        }, {
+                            name: "up_flow_sum"
+                        }, {
+                            name: "down_flow_sum"
+                        }, {
+                            name: "total_flow_sum"
+                        }],
+                        parseKey: {
+                            moduleName: "report_new",
+                            tableName: "flow_report_list",
+                            pageSizeName: "flow_report_list_entry"
+                        },
+                        autoLoad: true
+                    },
+                    columns: [{
+                        text: '序号',
+                        xtype: "rownumberer"
+                    }, {
+                        text: '源地址',
+                        dataIndex: "index",
+                        width: 100
+                    }, {
+                        text: '上行流量',
+                        dataIndex: "up_flow",
+                        width: 200,
+                        renderer: function(val, index, data) {
+                            var percent = toPercent(val, data.up_flow_sum);
+                            var flow = transfromFlow(val, 2);
+
+                            var div = '<div style="position:absolute;">' +
+                                        '<div class="report-new-Progress">' +
+                                            '<div class="report-new-bar" style="width: NUM"></div>' +
+                                            '<span class="percent-value">STR</span>' +
+                                        '</div>' +
+                                        '<span class="report-new-Str">FLOW</span>' +
+                                    '</div>';
+                            var progressDom = div.replace(/NUM/g, percent).replace(/STR/g, percent).replace(/FLOW/g, flow);
+                            return progressDom;
+                        }
+                    }, {
+                        text: '下行流量',
+                        dataIndex: "down_flow",
+                        width: 200,
+                        renderer: function(val, index, data) {
+                            var percent = toPercent(val, data.down_flow_sum);
+                            var flow = transfromFlow(val, 2);
+
+                            var div = '<div style="position:absolute;">' +
+                                        '<div class="report-new-Progress">' +
+                                            '<div class="report-new-bar" style="width: NUM"></div>' +
+                                            '<span class="percent-value">STR</span>' +
+                                        '</div>' +
+                                        '<span class="report-new-Str">FLOW</span>' +
+                                    '</div>';
+                            var progressDom = div.replace(/NUM/g, percent).replace(/STR/g, percent).replace(/FLOW/g, flow);
+                            return progressDom;
+                        }
+                    }, {
+                        text: '总流量',
+                        dataIndex: "total_flow",
+                        width: 200,
+                        renderer: function(val, index, data) {
+                            var percent = toPercent(val, data.total_flow_sum);
+                            var flow = transfromFlow(val, 2);
+
+                            var div = '<div style="position:absolute;">' +
+                                        '<div class="report-new-Progress">' +
+                                            '<div class="report-new-bar" style="width: NUM"></div>' +
+                                            '<span class="percent-value">STR</span>' +
+                                        '</div>' +
+                                        '<span class="report-new-Str">FLOW</span>' +
+                                    '</div>';
+                            var progressDom = div.replace(/NUM/g, percent).replace(/STR/g, percent).replace(/FLOW/g, flow);
+                            return progressDom;
+                        }
+                    }]
+                }
+            };
+            initPage(flow_report_options);
+        });
+    </script>
+</body>
+
+</html>

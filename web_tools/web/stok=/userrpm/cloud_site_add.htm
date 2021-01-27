@@ -1,0 +1,108 @@
+<html xmlns="http://www.w3.org/1999/xhtml">
+<head>
+<meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
+<title>cloud-site-add</title>
+</head>
+<body>
+<div class="cloud-site-add-box"></div>
+<style>
+#cloud-site-add {
+	width: 400px;
+	margin: 32px auto;
+}
+
+#cloud-site-add-title {
+	margin-bottom: 24px;
+	text-align: center;
+	font-size: 16px;
+}
+
+#button-bt_add {
+	margin: 24px 0px -23px 300px;
+}
+
+#button-bt_del {
+	margin: 25px -50px -60px 210px;
+}
+
+</style>
+<script type="text/javascript">
+
+//<![CDATA[
+try{
+	$
+}catch(e){
+	location.href = "/";
+};
+
+$(document).ready(function(e){
+	var gHtm = "";
+	gHtm += "<div id=\"cloud-site-add\">";
+	gHtm +=	   "<h1 id='cloud-site-add-title'>添加项目</h1>";
+	gHtm +=	   "<form id=\"site_add_form\">";
+	gHtm +=		   "<input id=\"projectName\" name=\"projectName\" value=\"\"/>";
+	gHtm +=	   "</form>";
+	gHtm +=    "<input id=\"bt_del\" name=\"bt_del\"/>";
+	gHtm +=    "<input id=\"bt_add\" name=\"bt_add\"/>";
+	gHtm += "</div>";
+	$(".cloud-site-add-box").html(gHtm);
+
+	$("#projectName").textbox({
+		fieldLabel:"项目名称",
+		maxLength: 30,
+		allowBlank: false
+	});
+
+	var cloudSiteAddForm = $("form#site_add_form").form({
+		proxy: new $.su.Proxy({}),
+		showPrompt: false,
+		fields: [
+			{name: "projectName"}
+		],
+		autoLoad: false
+	});
+
+	$("#bt_add").button({
+		text:"确定",
+		cls:"inline",
+		handler: function() {
+			if ($("#projectName").textbox("validate") != true){
+				return;
+			}
+			$("#bt_add").button("disable");
+			var projectName = $("#projectName").val();
+			var data = {"istart":{"cloud_site_add":{"projectName":projectName}}};
+			var proxy = new $.su.Proxy({isWizard:true});
+			proxy.action(data, function(result) {
+				cloudSiteAddForm.form("prompt", false, "新建项目成功");
+				$.su.cloud_site_add.hide();
+				$.su.cloud_site_show.show();
+			}, function(xhr) {
+				cloudSiteAddForm.form("prompt", false, "新建项目失败");
+			}, function(xhr) {
+				cloudSiteAddForm.form("prompt", false, "新建项目失败");
+			});
+			setTimeout(function() {
+				$("#bt_add").button("enable");
+			}, 500);
+		}
+	});
+
+	$("#bt_del").button({
+		text:"取消",
+		cls:"inline",
+		handler: function() {
+			$("#bt_del").button("disable");
+			$.su.cloud_site_add.hide();
+			setTimeout(function() {
+				$("#bt_del").button("enable");
+			}, 500);
+		}
+	});
+});
+
+//]]>
+</script>
+</body>
+
+</html>

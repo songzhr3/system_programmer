@@ -1,0 +1,338 @@
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN"
+        "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
+<html xmlns="http://www.w3.org/1999/xhtml">
+<head>
+    <meta http-equiv="Content-Type" content="text/html; charset=utf-8"/>
+    <style type="text/css">
+
+    </style>
+    <title>system_log_v2</title>
+</head>
+
+<body>
+<div class="func-container">
+    <div id="systemlog_list">
+        <div id="systemlog_list_grid">
+
+        </div>
+        <div id="sort_remind"></div>
+
+    </div>
+
+    <div id="clean_alarm_cnt">
+        <h4 class="title">
+            <span class="icon" ></span>
+            <span class="text" id="error_str"></span>
+        </h4>
+    </div>
+
+    <div id="systemlog_help"></div>
+</div>
+
+<script type="text/javascript">
+    try{
+        $
+    }catch(e){
+        location.href = "/";
+    };
+
+    $(document).ready(function(e){
+        var clean_proxy = new $.su.Proxy({});
+
+        var module_proxy = new $.su.Proxy({
+            async: false
+        });
+        var proj_item=[];
+        var disk_status = "";
+
+        module_proxy.query({
+            "system":
+            {
+                "table": "sys_log_modules",
+                "name": "check_disk_status"
+            }
+        }, function(data) {
+            var module_list = data.system.sys_log_modules || [];
+            for (var i = 0; i < module_list.length; i++) {
+                var module_name = module_list[i];
+                proj_item.push(
+                    {
+                        name: $.su.CHAR.SYSLOG[module_name.toUpperCase()],
+                        value: module_name
+                    }
+                )
+            }
+            disk_status = data.system.check_disk_status.status;
+        });
+
+        var prio_item=[
+            {name:$.su.CHAR.SYSLOG.ALL_LEVEL,value:"ALL"},
+            {name:$.su.CHAR.SYSLOG.DEBUG,value:"DEBUG"},
+            {name:$.su.CHAR.SYSLOG.INFO,value:"INFO"},
+            {name:$.su.CHAR.SYSLOG.NOTICE,value:"NOTICE"},
+            {name:$.su.CHAR.SYSLOG.WARNING,value:"WARNING"},
+            {name:$.su.CHAR.SYSLOG.ERROR,value:"ERROR"},
+            {name:$.su.CHAR.SYSLOG.EMERGENCY,value:"EMERGENCY"},
+            {name:$.su.CHAR.SYSLOG.ALERT,value:"ALERT"},
+            {name:$.su.CHAR.SYSLOG.CRITICAL,value:"CRITICAL"}
+        ];
+
+        $("#systemlog_list").panel({
+            title: $.su.CHAR.SYSLOG.TITLE,
+            collapsible: false
+        });
+
+        $("#clean_alarm_cnt").msg({
+            cls: 'warning reboot-confirm-size',
+            msg: $.su.CHAR.SYSLOG.LOG_CLEAN_ALARM,
+            type: "alert"
+        });
+
+        var order = "down";
+
+        var sysLogLevel = ["ALL", "DEBUG", "INFO", "NOTICE", "WARNING", "ERROR", "CRITICAL", "ALERT", "EMERGENCY"];
+
+        var systemlogProxy = new $.su.Proxy({});
+
+        var systemlog_grid = $("div#systemlog_list_grid").grid({
+            store:{
+                proxy: systemlogProxy,
+                parseKey: {					/* 此处在store中增加parseKey，便于store对象在底层对数据进行预处理，以实现SLP数据结构和SU数据结构的转变 */
+                    moduleName: "system",
+                    pageSizeName: "systemlog_entry",
+                    tableName: "system_log_v2"
+                },
+                fields: [
+                    {name: "time"},
+                    {name: "type"},
+                    {name: "level"},
+                    {name: "content"}
+                ],
+                autoLoad: true
+            },
+            selectionDisplay: true,
+            maxLines: 11,
+            minLines: 0,
+            paging_true:{},
+            columns: [
+                {
+                    text: $.su.CHAR.SYSLOG.ID,
+                    xtype: "rownumberer",
+                    width:40
+                },
+                {
+                    text: $.su.CHAR.SYSLOG.TIME,
+                    width:140,
+                    dataIndex: "time",
+                    scan: {
+                        cmp: $.search.compare.string
+                    }
+                },
+                {
+                    text: $.su.CHAR.SYSLOG.MODULE,
+                    width:120,
+                    renderer:function(val, index){
+                        var res = $.su.CHAR.SYSLOG[val];
+                        if(!res)
+                        {
+                            res = val;
+                        }
+                        if (res == "LTOTP")
+                            res = "L2TP"
+
+                        return res;
+                    },
+                    dataIndex: "type",
+                    scan: {
+                        cmp: $.search.compare.string
+                    }
+                },
+                {
+                    text:  $.su.CHAR.SYSLOG.LEVEL,
+                    width:100,
+                    renderer:function(val, index){
+                        val = sysLogLevel[parseInt(val)];
+                        var res = $.su.CHAR.SYSLOG[val];
+                        var colorRed = "<span style=\"color:#ff0000;\">";
+                        var colorOrange = "<span style=\"color:#ff9900;\">";
+                        var spanEnd = "</span>";
+                        if(!res)
+                        {
+                            res = val;
+                        }else{
+                            switch(val){
+                                case "EMERGENCY":
+                                    res = colorRed + res + spanEnd;
+                                    break;
+                                case "ALERT":
+                                    res = colorRed + res + spanEnd;
+                                    break;
+                                case "CRITICAL":
+                                    res = colorRed + res + spanEnd;
+                                    break;
+                                case "ERROR":
+                                    res = colorRed + res + spanEnd;
+                                    break;
+                                case "WARNING":
+                                    res = colorOrange + res + spanEnd;
+                                    break;
+                                default:
+                                    break;
+                            }
+                        }
+                        return res;
+                    },
+                    dataIndex: "level",
+                    scan: {
+                        cmp: $.search.compare.string
+                    }
+                },
+                {
+                    text: $.su.CHAR.SYSLOG.CONTENT,
+                    width:600,
+                    dataIndex: "content",
+                    renderer:function(val, index, data){
+                        val = $.su.func.escapeHtml(val);
+                        var colorNormal = "<span>";
+                        var colorRed = "<span style=\"color:#ff0000;\">";
+                        var colorOrange = "<span style=\"color:#ff9900;\">";
+                        var spanEnd = "</span>";
+                        switch(sysLogLevel[data.level]){
+                            case "EMERGENCY":
+                                val = colorRed + val + spanEnd;
+                                break;
+                            case "ALERT":
+                                val = colorRed + val + spanEnd;
+                                break;
+                            case "CRITICAL":
+                                val = colorRed + val + spanEnd;
+                                break;
+                            case "ERROR":
+                                val = colorRed + val + spanEnd;
+                                break;
+                            case "WARNING":
+                                val = colorOrange + val + spanEnd;
+                                break;
+                            default:
+                                val = colorNormal + val + spanEnd;
+                                break;
+                        }
+                        return val;
+                    }
+                },
+                //todo 全局搜索时间端的字段待确定
+                {
+                    xtype: "globalSearch",
+                    hidden: true,
+                    columns: [
+                        {
+                            text: $.su.CHAR.SYSLOG.MODULE,
+                            width: 100,
+                            dataIndex: 'type',
+                            scan: {
+                                type: "combobox",
+                                vtype: "string",
+                                items: proj_item
+                            }
+                        },
+                        {
+                            text: $.su.CHAR.SYSLOG.LEVEL,
+                            width: 100,
+                            dataIndex: "level",
+                            scan: {
+                                type: "combobox",
+                                vtype: "string",
+                                items: prio_item
+                            }
+                        }
+                    ],
+                    render_search: function(){
+                    },
+                    render_show: function(){
+                    },
+                    render_return: function(){
+                    }
+                }
+            ],
+            exportCfg:{
+                text:$.su.CHAR.SYSLOG.SAVE_LOG,
+                url: $.su.url.subs + $.su.url.stok + "/admin/system/download_systemlog",
+                checkCallback: function(callback){
+                    var exportCheckProxy = new $.su.Proxy();
+
+                    exportCheckProxy.query({system:{name:"systemlog_download"}}, function(data){
+                        data = data.system.systemlog_download;
+
+                        if (data.status == "1")
+                        {
+                            callback(true);
+                        }
+                        else
+                        {
+                            callback(false);
+                        }
+                    });
+                }
+            },
+            operation: ["clear","search","searchLog","refreshLog","autoRefresh","export"],
+            autoRefresh: false
+        }).on("ev_clear", function(e, obj, action){
+            if ("online" == disk_status){
+                $(clean_alarm_cnt).msg("show");
+            }else{
+                clean_proxy.action({"system":{"systemlog_clean":{}}}, function(data){
+                    $(systemlog_grid.get(0).store).trigger("ev_refresh", []);
+                });
+            }
+        });
+
+
+        var g_dataIndex = "time";
+        function dataSort(x, y) {
+            if(order == "down"){
+                if (x[g_dataIndex] > y[g_dataIndex]) {
+                    return -1;
+                }else if (x[g_dataIndex] < y[g_dataIndex]) {
+                    return 1;
+                }
+            }else{
+                if (x[g_dataIndex] > y[g_dataIndex]) {
+                    return 1;
+                }else if (x[g_dataIndex] < y[g_dataIndex]) {
+                    return -1;
+                }
+            }
+        }
+        function sort_click_cb(dataIndex) {
+            var store = systemlog_grid.grid("getStore");
+            var data = store.data;
+            g_dataIndex = dataIndex;
+            store.loadData(data.sort(dataSort));
+            if(order == "down"){
+                order = "up";
+            }else{
+                order = "down";
+            }
+        }
+        systemlog_grid.delegate("th.grid-header-1", "click", function(e){sort_click_cb("time")});
+        systemlog_grid.delegate("th.grid-header-2", "click", function(e){sort_click_cb("type")});
+        systemlog_grid.delegate("th.grid-header-3", "click", function(e){sort_click_cb("level")});
+        systemlog_grid.delegate("th.grid-header-4", "click", function(e){sort_click_cb("content")});
+
+        $("th").css({
+            "color": "#00E",
+            "cursor": "pointer"
+        });
+
+        $("#sort_remind").html("<hr/>如需要按指定内容排序，请点击表头切换排序方式。");
+        $(".grid-panel").css("marginBottom","40px");
+
+        var SYSTEMLOG_help = new $.su.Help({
+            container: "div#systemlog_help",
+            content: ["SYSTEM_LOG", "SYSTEM_LOG_V2"]
+        });
+    });
+</script>
+</body>
+
+</html>

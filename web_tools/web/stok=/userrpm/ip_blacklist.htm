@@ -1,0 +1,240 @@
+<!DOCTYPE html
+    PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
+<html xmlns="http://www.w3.org/1999/xhtml">
+
+<head>
+    <meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
+    <title>IP Blacklist</title>
+</head>
+
+<body>
+    <div class="func-container">
+        <div id="ip_blacklist_rule_list">
+            <div id="ip_blacklist_rule_grid"></div>
+        </div>
+
+        <div id="ip_blacklist_help"></div>
+    </div>
+    <div class="notice" style="top:-20px;position:relative;">
+        <hr/>
+        <div id="ip_blacklist_notice" name="ip_blacklist_notice"></div>
+    </div>
+    <script src="../web-static/js/ips/ips-common.js?random=20201217044300" type="text/javascript"></script>
+    <script type="text/javascript">
+try {
+    $
+} catch (e) {
+    location.href = "/";
+};
+
+$(document).ready(function (e) {
+    var g_reason_trans = {
+        login: $.su.CHAR.IP_BWLIST.REASON_LOGIN,
+        manual: $.su.CHAR.IP_BWLIST.REASON_MANUAL,
+        ips: $.su.CHAR.IP_BWLIST.REASON_IPS
+    };
+    var g_direction_trans = {
+        src: $.su.CHAR.IP_BWLIST.TYPE_SRC,
+        dst: $.su.CHAR.IP_BWLIST.TYPE_DST
+    };
+
+    $("#ip_blacklist_rule_list").panel({
+        title: $.su.CHAR.IP_BWLIST.BLACKLIST_LIST,
+        collapsible: false
+    });
+
+    $("#ip_blacklist_notice").html("注意：黑名单中如果包含管理IP，可能导致设备的管理页面不能访问。");
+
+    var ruleGrid = $("#ip_blacklist_rule_grid").grid({
+        editor: {
+            content: "default",
+            fields: [
+                { name: "ip" },
+                { name: "type" },
+                { name: "reason" },
+                { name: "expire_time" },
+                { name: "enable" },
+                { name: "comment" }
+            ],
+            validator: function () {
+                var cidr_input = $("input[name=ip]");
+                var cidr = cidr_input.subnet("getValue");
+                var normalized_cidr = normalizeCIDR(cidr);
+                cidr_input.subnet("setValue", normalized_cidr);
+                return true;
+            }
+        },
+        store: {
+            proxy: new $.su.Proxy(),
+            fields: [
+                { name: "ip" },
+                { name: "type" },
+                { name: "reason" },
+                { name: "expire_time" },
+                { name: "enable" },
+                { name: "comment" }
+            ],
+            parseKey: {
+                moduleName: "ip_bwlist",
+                tableName: "blacklist",
+                pageSizeName: "ip_blacklist_entry",
+                setFilter: function (index, itemName, data) {
+                    if (data["opt"] != undefined) {
+                        /* Click to disable/enable */
+                        /* HACK make grid sumbit all fields as we may need to create a new entry in uci */
+                        for (var k in data["updateData"]) {
+                            if (!(k in data["opt"])) {
+                                data["opt"][k] = data["updateData"][k];
+                            }
+                        }
+                        data["opt"]["reason"] = "manual";
+                        return { ip: data.updateData.ip, type: data.updateData.type };
+                    } else {
+                        /* Form submit, use original IP as filter */
+                        var d = ruleGrid.grid("getStore").getDataByIndex(index);
+                        return { ip: d.ip, type: d.type };
+                    }
+                },
+                delFilter: function (index, itemName, data) {
+                    /* Form submit, use original IP as filter */
+                    var res = [];
+                    for (var i = 0; i < data.length; i++) {
+                        res.push({ip: data[i].ip, type: data[i].type});
+                    }
+                    return res;
+                }
+            },
+            autoLoad: true
+        },
+        paging_true: {},
+        columns: [
+            {
+                xtype: "checkcolumn",
+                width: 15
+            },
+            {
+                xtype: "rownumberer",
+                width: 15
+            },
+            {
+                text: $.su.CHAR.IP_BWLIST.IP,
+                dataIndex: "ip",
+                width: 50,
+                editor: {
+                    xtype: "subnet"
+                }
+            },
+            {
+                text: $.su.CHAR.IP_BWLIST.TYPE,
+                dataIndex: "type",
+                width: 50,
+                editor: {
+                    xtype: "radio",
+                    items: [
+                        { boxlabel: $.su.CHAR.IP_BWLIST.TYPE_SRC, name: 'type', inputValue: 'src', checked: true },
+                        { boxlabel: $.su.CHAR.IP_BWLIST.TYPE_DST, name: 'type', inputValue: 'dst' }
+                    ],
+                    columns: 2
+                },
+                renderer: function (dd) {
+                    return g_direction_trans[dd] || dd;
+                }
+            },
+            {
+                text: $.su.CHAR.IP_BWLIST.REASON,
+                dataIndex: "reason",
+                width: 50,
+                editor: {
+                    xtype: "textbox",
+                    readOnly: true
+                },
+                renderer: function (dd) {
+                    return g_reason_trans[dd] || dd;
+                }
+            },
+            {
+                text: $.su.CHAR.IP_BWLIST.EXPIRY_TIME,
+                dataIndex: "expire_time",
+                width: 30,
+                editor: {
+                    xtype: "textbox",
+                    tips: $.su.CHAR.IP_BWLIST.EXPIRY_TIME_TIPS,
+                    vtype: {
+                        vtype: "number",
+                        min: 0,
+                        max: 35280
+                    }
+                },
+                renderer: function(dd) {
+                    var map = {
+                        "-1": $.su.CHAR.IP_BWLIST.EXPIRED,
+                        "0": $.su.CHAR.IP_BWLIST.INDEFINITE
+                    };
+                    return map[dd] || dd + " " + $.su.CHAR.IP_BWLIST.MINUTES;
+                }
+            },
+            {
+                text: $.su.CHAR.IP_BWLIST.COMMENT,
+                dataIndex: "comment",
+                xtype: "comment",
+                width: 75,
+                editor: {
+                    xtype: "textbox",
+                    allowBlank: true,
+                    vtype: "string_visible_allow_blank",
+                    tips: $.su.CHAR.IP_BWLIST.OPTIONAL,
+                    maxLength: 50
+                }
+            },
+            {
+                text: $.su.CHAR.GRID.STATUS,
+                xtype: "statuscolumn",
+                dataIndex: "enable",
+                width: 35,
+                editor: {
+                    xtype: "checkbox",
+                    fieldLabel: '',
+                    items: [
+                        { boxlabel: $.su.CHAR.GRID.ENABLED, inputValue: 'on', uncheckedValue: 'off', checked: true }
+                    ]
+                }
+            },
+            {
+                xtype: "settings",
+                width: 25
+            }
+        ],
+        operation: 'refresh|autoRefresh|add|delete'
+    }).on("ev_startEdit", function (e, editingIndex, editingId) {
+        $("input[name=reason]").textbox("setReadonly");
+        if (editingIndex == "add") {
+            $("input[name=reason]").textbox("setValue", $.su.CHAR.IP_BWLIST.REASON_MANUAL);
+        } else {
+            var data = ruleGrid.grid("getStore").getDataByIndex(editingIndex);
+            $("input[name=reason]").textbox("setValue", g_reason_trans[data.reason] || data.reason);
+            if (data.expire_time < 0) {
+                $("input[name=expire_time]").textbox("setValue", "0");
+            }
+        }
+    }).on("ev_formatEditData", function (e, editorData) {
+        editorData.reason = "manual"; /* Always "manual" after edit */
+        if (editorData.expire_time == "") {
+            editorData.expire_time = "0";
+        }
+    }).on("ev_formatAddData", function (e, editorData) {
+        editorData.reason = "manual"; /* Always "manual" after edit */
+        if (editorData.expire_time == "") {
+            editorData.expire_time = "0";
+        }
+    });
+
+    var helpConnlimit = new $.su.Help({
+        container: "div#ip_blacklist_help",
+        content: ["IP_BLACKLIST_LIST"]
+    });
+
+});
+    </script>
+</body>
+
+</html>

@@ -1,0 +1,582 @@
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
+<html xmlns="http://www.w3.org/1999/xhtml">
+<head>
+<meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
+<title>Diagnostic</title>
+
+</head>
+
+<body>
+<div class="func-container">
+	 <div id="diag">
+	 	<form id="diag_setting">
+			<input type="text"  id="diag_type" name="diag_type" value="" />
+			<input type="text"  id="addr" name="addr" value="" />
+
+			<input id="interface" name="interface" value=""/>
+
+	    	<div class="part-seperate ">
+	    		<button type="button" id="start" name="start"></button>
+	    	</div>
+
+	    	<div id="adv_btn" class="advanced-block part-seperate" type="button">
+				<span class="advanced-icon"></span>
+				<span class="advanced-text"></span>
+			</div>
+
+			<div id="basic_btn" class="basic-block part-seperate" type="button">
+				<span class="basic-icon"></span>
+				<span class="basic-text"></span>
+			</div>
+	    	<div id="pingCnt" class="hidden">
+				<input type="text"  id="num" name="num" value="" />
+		    	<input type="text"  id="size" name="size" value="" />
+				<input type="text"  style="display:none" id="timeout" name="timeout" value="" />
+	    	</div>
+
+	    	<div id="traceCnt" class="hidden ">
+		    	<input type="text"  id="hops" name="hops" value="" />
+	    	</div>
+	    	<div class="">
+	    		<textarea type="text"  id="my_result" name="my_result" value="" readonly></textarea>
+	    	</div>
+
+	    </form>
+
+	    <input type="hidden"  id="adv_diag_just_for_timmmer" />
+	 </div>
+
+	<div id="help_diagnostic"></div>
+</div>
+
+<script type="text/javascript">
+try{
+    $
+}catch(e){
+    location.href = "/";
+};
+
+$(document).ready(function(e){
+	var if_hide = "<%=if_hide%>";
+	if_hide = (if_hide == "0");
+	var req_interval = false;
+	var count = 0;
+
+	var stage = "none";
+
+	var running_type = "none"
+
+	$("div.func-container").page({
+		title: $.su.CHAR.DIAG.TITLE,
+		help: ""
+	});
+
+	$("div#diag").panel({
+		title: $.su.CHAR.DIAG.TITLE,
+		collapsible: false
+	});
+
+	$('#pingCnt').fieldset({
+		fields: [
+			{name: "num"},
+			{name: "size"},
+			{name: "timeout"}
+		]
+	}).hide();
+
+	$('#traceCnt').fieldset({
+		fields: [
+			{name: "hops"}
+		]
+	}).hide();
+
+	$("input#diag_type").radio({
+		fieldLabel: $.su.CHAR.DIAG.DIAGNOSTIC_TOOL,
+		columns:2,
+		labelCls:'l',
+		items:[
+			{boxlabel: $.su.CHAR.DIAG.PING, inputValue: 'ping', checked: true},
+			{boxlabel: $.su.CHAR.DIAG.TRACE, inputValue: 'tracert'}
+		]
+	}).on("ev_change", function(e, oldValue, newValue){
+		$('#basic_btn').hide();
+		$('#adv_btn').show();
+		$("input#addr").textbox('reset');
+		$("input#addr").textbox('setNormal');
+
+		if(stage == "start")
+		{
+			getRealIpaddr();
+			getRealIface();
+
+			$("input#diag_type").radio("enableItem",['ping','tracert']);
+			stop_diag(running_type);
+
+			if (req_interval)
+			{
+				clearTimeout(req_interval);
+				req_interval =  false;
+			}
+
+			count = 0;
+		}
+
+		switch(newValue)
+		{
+			case 'ping':
+				$("#diag_type").val('ping');
+				$("button#start").find("span").html($.su.CHAR.DIAG.START);
+
+				$("div#pingCnt").fieldset("hide");
+				$("div#traceCnt").fieldset("hide");
+				
+				$("input#addr").textbox("enable");
+				$("input#interface").combobox("enable");
+
+				break;
+			case 'tracert':
+
+				$("#diag_type").val('tracert');
+				$("button#start").find("span").html($.su.CHAR.DIAG.START);
+				$("div#pingCnt").fieldset("hide");
+				$("div#traceCnt").fieldset("hide");
+
+				$("input#addr").textbox("enable");
+				$("input#interface").combobox("enable");
+
+				break;
+		}
+	});
+
+	$("input#addr").textbox({
+		fieldLabel: $.su.CHAR.DIAG.IPADDR,
+		labelCls:'l',
+		allowBlank:false,
+		vtype:{
+			vtype:"ip_domain_all",
+			includeLocalIpv6:true
+		},
+		tipsCls:"s",
+		maxLength:253,
+		cls:"inline"
+	});
+
+	$("input#interface").combobox({
+		fieldLabel:$.su.CHAR.DIAG.IFACE,
+		labelCls:'l',
+		allowBlank:false,
+		items:[
+			{value: "---", name: "---", selected: true}
+		]
+	}).on("ev_change",function(e,oldValue,newValue){
+	});
+	if(if_hide){
+		$("input#interface").combobox("hide");
+	}
+	$("input#num").textbox({
+		fieldLabel: $.su.CHAR.DIAG.COUNT,
+		labelCls:'l',
+		vtype:{
+			vtype:"number",
+			min:1,
+			max:50
+		},
+		maxLength:2,
+		textFormat:$.su.format.number,
+		allowBlank:false,
+		min:1,
+		max:50,
+		tips:$.su.CHAR.DIAG.COUNTUNIT
+	});
+
+
+	$("input#size").textbox({
+		fieldLabel: $.su.CHAR.DIAG.PKT,
+		labelCls:'l',
+		vtype:{
+			vtype:"number",
+			min:4,
+			max:1472
+		},
+		maxLength:4,
+		textFormat:$.su.format.number,
+		allowBlank:false,
+		min:4,
+		max:1472,
+		tips:$.su.CHAR.DIAG.PKTUNIT
+	});
+
+
+	$("input#hops").textbox({
+		fieldLabel: $.su.CHAR.DIAG.TTL,
+		labelCls:'l',
+		vtype:{
+			vtype:"number",
+			min:1,
+			max:30
+		},
+		maxLength:2,
+		textFormat:$.su.format.number,
+		allowBlank:false,
+		tips:"(1-30)"
+	});
+
+	function getRealIpaddr()
+	{
+		$("#ipaddr_hidden").val($("#addr").textbox("getValue"));
+	}
+
+	function getRealIface()
+	{
+		$("#iface_hidden").val($("#interface").combobox("getValue"));
+	}
+
+
+	(function getDefaultValue() {
+		var proxy = new $.su.Proxy();
+			var data = {};
+
+			data.diagnose = {
+				"get_default": null
+			};
+
+			proxy.action(data, function(data){
+				var count = data.count;
+				var pktsize = data.pktsize;
+				var timeout = data.timeout;
+				var ttl = data.ttl;
+				var ipaddr = data.ttl;
+				var iface = data.iface;
+				var result = data.result;
+
+				$("input#num").textbox("setValue", count);
+				$("input#size").textbox("setValue", pktsize);
+				$("input#timeout").textbox("setValue", timeout);
+				$("input#hops").textbox("setValue", ttl);
+				$("input#ipaddr").textbox("setValue", ipaddr);
+				$("textarea#my_result").textarea("setValue", result);
+			});
+	})();
+
+	function getResult(opt)
+	{
+		if($("#adv_diag_just_for_timmmer")[0])
+		{
+			if(count != 0)
+			{
+				opt = "continue";
+			}
+			getRealIpaddr();
+			getRealIface();
+			$("input#diag_type").radio("enableItem",['ping','tracert']);
+
+			var proxy = new $.su.Proxy();
+			var data = {};
+
+			var diag_type = $("#diag_type").val();
+
+			data.diagnose = {
+				"get":
+				{
+					"diag_type": diag_type,
+					"index": "0"
+				}
+			};
+
+			proxy.action(data, function(data){
+
+				$("textarea#my_result").textarea("setValue", data.diag_result.replace(/\\n/g, "\n"));
+
+				var diag_status = data.status;
+
+				if(diag_status == '1')
+				{
+					stage = "stop";
+					stop_diag(running_type);
+					count = 0;
+					$("button#start").button("setText", $.su.CHAR.DIAG.START);
+				}
+				else
+				{
+					req_interval = setTimeout(function(){getResult(opt);}, 1000);
+				}
+			});
+
+			var diag_type = $("input#diag_type").radio("getValue");
+			if(diag_type == 'ping')
+			{
+				$("input#addr").textbox('disable');
+				$("input#interface").combobox('disable');
+				$("input#num").textbox('disable');
+				$("input#size").textbox('disable');
+				$("input#timeout").textbox('disable');
+			}
+			else
+			{
+				$("input#addr").textbox('disable');
+				$("input#interface").combobox('disable');
+				$("input#hops").textbox('disable');
+			}
+
+			count++;
+		}
+	}
+
+	function stop_diag(diag_type)
+	{
+		var proxy = new $.su.Proxy();
+		var data = {};
+
+		data.diagnose = {
+			"stop":
+			{
+				"diag_type": diag_type
+			}
+		};
+
+		proxy.action(data, function(data){
+			if(diag_type == 'ping')
+			{
+				$("input#addr").textbox('enable');
+				$("input#interface").combobox('enable');
+				if(!$("#adv_btn").is(":visible"))
+				{
+					$("input#num").textbox('enable');
+					$("input#size").textbox('enable');
+					$("input#timeout").textbox('enable');
+				}
+			}
+			else
+			{
+				$("input#addr").textbox('enable');
+				$("input#interface").combobox('enable');
+				if(!$("#adv_btn").is(":visible"))
+				{
+					$("input#hops").textbox('enable');
+				}
+			}
+		});
+	}
+
+	$("button#start").button({
+	 	text: $.su.CHAR.DIAG.START,
+	 	handler:function(){
+
+	 		if(!$("form#diag_setting").form("validate"))
+	 		{
+	 			return false;
+	 		}
+	 		var val = $(this).find("span").html();
+	 		var opt = "start";
+			var diag_type = $("input#diag_type").radio("getValue");
+			if(val == $.su.CHAR.DIAG.START)
+			{
+				$("button#start").button("setText", $.su.CHAR.DIAG.STOP);
+				opt = "start";
+			}
+			else
+			{
+				$("input#diag_type").radio("enableItem",['ping','tracert']);
+				$("button#start").button("setText", $.su.CHAR.DIAG.START);
+				opt = "stop";
+			}
+
+			if(opt == "stop")
+			{
+				stage = "stop";
+				getRealIpaddr();
+				getRealIface();
+
+				$("input#diag_type").radio("enableItem",['ping','tracert']);
+
+				var diag_type = $("#diag_type").val();
+				stop_diag(diag_type);
+
+				if (req_interval)
+				{
+					clearTimeout(req_interval);
+					req_interval = false;
+				}
+
+				count = 0;
+				$("button#start").button("setText", $.su.CHAR.DIAG.START);
+
+			}
+			else
+			{
+				stage = "start";
+				$("input#diag_type").radio("disableItem",['ping','tracert']);
+
+				var proxy = new $.su.Proxy();
+				var data = {};
+
+				var diag_type = $("#diag_type").val();
+				var addr = $("#addr").val();
+				var iface = $("#interface").combobox("getValue")[0];
+				var num = $("#num").val();
+				var size = $("#size").val();
+				var timeout = $("#timeout").val();
+				var hops = $("#hops").val();
+
+				running_type = diag_type;
+
+				if(diag_type == 'ping')
+				{
+					data.diagnose = {
+						"start":
+						{
+							"diag_type": diag_type,
+							"interface": iface,
+							"addr": addr,
+							"num": num,
+							"size": size,
+							"timeout": timeout
+						}
+					};
+				}
+				else
+				{
+					data.diagnose = {
+						"start":
+						{
+							"diag_type": diag_type,
+							"interface": iface,
+							"addr": addr,
+							"hops": hops
+						}
+					};
+				}
+
+				proxy.action(data, function(data){
+					if(diag_type == 'ping')
+					{
+						$("input#addr").textbox('enable');
+						$("input#interface").combobox('enable');
+						if(!$("#adv_btn").is(":visible"))
+						{
+							$("input#num").textbox('enable');
+							$("input#size").textbox('enable');
+							$("input#timeout").textbox('enable');
+						}
+					}
+					else
+					{
+						$("input#addr").textbox('enable');
+						$("input#interface").combobox('enable');
+						if(!$("#adv_btn").is(":visible"))
+						{
+							$("input#hops").textbox('enable');
+						}
+					}
+				});
+
+				req_interval = setTimeout(function(){getResult(opt);}, 1000);
+			}
+
+	 	}
+	 });
+
+
+	$("textarea#my_result").textarea({
+		fieldLabel: null,
+		inputCls:'dig xxxl fixed-height'
+	});
+
+
+	$("form#diag_setting").form({
+		fields: [
+			{name: "diag_type", mapping: "diag_type"},
+			{name: "addr", mapping: "addr"},
+			{name: "interface", mapping: "interface"},
+			{name: "num", mapping: "num"},
+			{name: "size", mapping: "size"},
+			{name: "timeout", mapping: "timeout"},
+			{name: "hops", mapping: "hops"}
+		],
+		submitBtn: null
+	}).on("ev_validatechange", function(){
+	});
+
+	var interfaceItem=[];
+	if(if_hide){
+		var default_interface = "default";
+		interfaceItem.push({name:default_interface,value:default_interface});
+		var iface = $("input#interface");
+		iface.combobox('loadData',interfaceItem);
+		iface.combobox('setValue', default_interface);
+	}else{
+		var interfaceProxy = new $.su.Proxy({
+			async: false
+		});
+
+		interfaceProxy.query({"network":{table: "if"}}, function(data){
+			var interfaceItem=[];
+			var data = data.network["if"];
+			for (j=0; j<data.length; j++)
+			{
+				for (var key in data[j])
+				{
+					interfaceItem.push({name:data[j][key].if_name,value:data[j][key].if_name});
+				}
+			}
+
+			var iface = $("input#interface");
+			iface.combobox('loadData',interfaceItem);
+		});
+	}
+	$("span.advanced-text").html($.su.CHAR.DIAG.ADVANCED);
+	$("span.basic-text").html($.su.CHAR.DIAG.ADVANCED);
+	$("div#basic_btn").hide();
+
+	$("div#adv_btn").on('click',function(){
+		if(stage == "start")
+		{
+			return false;
+		}
+		var diag_type = $("input#diag_type").radio("getValue");
+		if(diag_type == 'ping')
+		{
+			$("div#pingCnt").fieldset("show");
+			$("div#traceCnt").fieldset("hide");
+		}
+		else
+		{
+			$("div#pingCnt").fieldset("hide");
+			$("div#traceCnt").fieldset("show");
+		}
+		$(this).hide();
+		$('#basic_btn').show();
+	});
+	$("div#basic_btn").on('click',function(){
+		if(stage == "start")
+		{
+			return false;
+		}
+		$("div#pingCnt").fieldset("hide");
+		$("div#traceCnt").fieldset("hide");
+		$(this).hide();
+		$('#adv_btn').show();
+	});
+
+	var helpDiagnostic = new $.su.Help({
+		container: "div#help_diagnostic",
+		content: ["DIGNOSTIC"],
+		afterLoad: function(){
+			if (if_hide) $('#help_interface').hide();
+		}
+	});
+
+
+	 $.su.app.runningModule.addUnloadHandler(function(){
+		if (req_interval)
+		{
+			clearTimeout(req_interval);
+			req_interval =  false;
+		}
+	 });
+
+});
+</script>
+</body>
+
+</html>

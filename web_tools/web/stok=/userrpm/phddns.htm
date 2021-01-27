@@ -1,0 +1,398 @@
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
+<html xmlns="http://www.w3.org/1999/xhtml">
+<head>
+<meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
+<title>phddns</title>
+<style type="text/css">
+</style>
+</head>
+
+<body>
+	<div class="func-container" >
+		<div id="div_phddns">
+				<div id="phddnsGrid" class="ddnsSeries">
+				</div>
+		</div>
+
+		<div id="own_editor">
+			<input id="interface" name="interface">
+			<input id="name" name="username">
+			<input id="passwd" name="password">
+			<input id="enable" name="enable">
+		</div>
+
+	 	<div id="phddns_alert_cnt">
+			<h4 class="title">
+		    	<span class="icon"></span>
+		 		<span class="text" id="phddns_confirm_content"></span>
+		 	</h4>
+		</div>
+
+		<div id="link-detail-window">
+	        <table class="link-detail-table detail">
+	            <tr>
+	                <td class="detail-value"></td>
+	            </tr>
+	        </table>
+	    </div>
+
+		<span id="ddns_notice" class="hidden"></span>
+
+	 	<div id="phddns_help"></div>
+
+	</div>
+
+<script type="text/javascript">
+//<![CDATA[
+	try{
+	    $
+	}catch(e){
+	    location.href = "/";
+	};
+
+	$(document).ready(function(e){
+	//$("span#ddns_notice").html($.su.CHAR.VIRTUAL_SERVERS.ddns_ENABLE_NOTICE);
+
+	$("div.func-container").page({
+		title: "花生壳动态域名",
+		help: ""
+	});
+
+	$("div#div_phddns").panel({
+		title: "花生壳动态域名",
+		collapsible: false
+	});
+
+	$("input#interface").combobox({
+		fieldLabel: "服务接口",
+		allowBlank: false,
+		vtype:"string_visible_allow_blank",
+		items:[
+			{name:"---",value:'---'}
+		]
+	});
+
+	$("input#name").textbox({
+		fieldLabel: "用户名",
+		maxLength:32,
+		vtype:"ascii_visible",
+		tips:"<a target=\"_blank\" href=\"http://www.oray.com\">注册用户名</a>"
+	});
+
+	$("input#passwd").password({
+		fieldLabel: "密码",
+		maxLength:32,
+		showLevel: false,
+        		vtype: "password",
+		allowBlank:"false"
+	});
+
+
+	$("input#enable").checkbox({
+		fieldLabel:"状态",
+		defaultValue:["on"],
+		items: [
+			{boxlabel: "启用", uncheckedValue:"off", inputValue: "on", id: "chk_enable",  checked:true}
+		]
+	});
+
+	var $linkDetail = $("#link-detail-window").msg({
+        closeBtn: true,
+        cls:"m",
+        title: "域名",
+        type: "window"
+    }).msg("hide");
+
+	function showDetail(domain){
+ 		var domainString = "";
+		var domainArray = domain.split(';');
+
+		for(var i = 0; i < domainArray.length; i++){
+			domainString += domainArray[i] + "</br></br>";
+		}
+		$linkDetail.find(".detail-value").html(domainString).css({
+			"lineHeight":"20px",
+			"textAlign":"center",
+			"wordBreak":"break-all"
+		});
+        $linkDetail.msg('show');
+    }
+
+	var virtualProxy = new $.su.Proxy({
+	});
+
+	var phddnsGrid = $("div#phddnsGrid").grid({
+		store:{
+			proxy: virtualProxy,
+			fields: [
+			{name: "interface"},
+			{name: "username"},
+	 		{name: "password"},
+	 		{name: "enable"},
+	 		{name: "connstate"},
+	 		{name: "usertype"},
+	 		{name: "domain"}
+			],
+			parseKey: {					/* 此处在store中增加parseKey，便于store对象在底层对数据进行预处理，以实现SLP数据结构和SU数据结构的转变 */
+				moduleName:"phddns",		/* 此处的moduleName和tableName分别指数据块名和对应请求的table名 */
+				tableName:"phddns"
+			},
+			autoLoad: true
+		},
+		editor: {
+			validator:function(){
+				var editor  = $(phddnsGrid.grid("getEditor"));
+				var interfaceName    = editor.find("#interface").combobox("getValue");
+				//console.log(interfaceName);
+				var store 	= phddnsGrid.grid("getStore");
+				var keyProperty = store.keyProperty;
+				var grid_array  = store.data;
+
+				var editingId = editor.editor("getEditingId");
+				if($.isArray(grid_array) && grid_array.length > 0)
+				{
+					for(var k = 0; k < grid_array.length;k++)
+					{
+						var data = grid_array[k];
+
+						if(data[keyProperty] == editingId)
+						{
+							continue;
+						}
+						//interface conflict
+						else if(data["interface"] == interfaceName)
+						{
+							//console.log('conflict interface');
+							return false;
+						}
+					}
+				}
+				return true;
+			},
+			content: "#own_editor",
+			fields: [
+			{name: "interface"},
+			{name: "username"},
+			{name: "password"},
+			{name: "enable"}
+			]
+
+		},
+		paging: {
+		},
+		columns: [
+			{
+				xtype: "checkcolumn",
+				width: 50
+			},
+			{
+				text: "序号",
+				xtype: "rownumberer",
+				width:50
+			},
+			{
+				text: "服务接口",
+				width:100,
+				dataIndex: "interface"
+			},
+			{
+				text: "用户名",
+				width:150,
+				dataIndex: "username"
+
+			},
+			// {
+			// 	text: "密码",
+			// 	width:120,
+			// 	dataIndex: "passwd"
+
+			// },
+			{
+				text: "启用/禁用",
+				width:120,
+				dataIndex: "enable",
+				xtype: "statuscolumn"
+			},
+			{
+				text: "状态",
+				width:120,
+				dataIndex: "connstate",
+				renderer: function(v)
+				{
+					switch(v)
+					{
+						case '0' :
+							return '服务没有运行';
+						case '1' :
+							return '服务正在连接，请稍候';
+						case '2' :
+							return '服务已运行';
+						case '3' :
+							return '用户名或密码错误';
+						default :
+							return '服务正在连接，请稍候';
+					}
+				}
+			},
+			{
+				text: "域名",
+				width:150,
+				dataIndex: "domain",
+				renderer: function(dd, index, data){
+					var domainArray= new Array();
+					var domainString = "";
+					if("" == data.domain || typeof data.domain == "undefined"){
+						return "---";
+					}
+					domainArray = data.domain.split(';');
+					switch(domainArray.length){
+						case 0:
+							return "---";
+							break;
+						case 1:
+							return domainArray[0];
+							break;
+						case 2:
+							return domainArray[0] + "</br>" + domainArray[1];
+							break;
+						default:
+							return domainArray[0] + "&nbsp&nbsp" + "<a href='javascript:void(0);' class='btn-detail' data-index='"+ index +"'>更多</a>";
+							break;
+					}
+                }
+				/*
+				renderer:function(v)
+				{
+					var domainArray= new Array();
+					domainArray = v.split(';');
+
+					if(domainArray.length > 0)
+					{
+						return domainArray[0];
+					}
+					else
+					{
+						return v;
+					}
+				}
+				*/
+			},
+			{
+				text: "服务类型",
+				width:100,
+				dataIndex: "usertype",
+				renderer: function(dd, index, data){
+					// 服务已运行
+					//console.log(data.connState)
+					if(data.connstate == '2')
+					{
+						return  data.usertype == '1' ? "专业服务"  : "标准服务";
+					}
+					else
+					{
+
+						return '---';
+					}
+				}
+			},
+			{
+				xtype: "settings"
+			}
+		],
+		operation: "prompt|add|delete"
+	}).on("ev_load", function(e,data, others){
+			if(others)
+			{
+				maxrules = others.max_rules;
+			}
+			var interfaceItem=[];
+			var interfaceProxy = new $.su.Proxy({
+					async: false
+			});
+			interfaceProxy.query({"network":{table:"if"}}, function(data){
+				var data = data.network["if"];
+				for (j=0; j<data.length; j++){
+					for (var key in data[j]){
+						if(data[j][key].isbridged != 1) {
+							interfaceItem.push({name:data[j][key].if_name,value:data[j][key].if_name});
+						}
+					}
+				}
+			});
+			var editor = $("div#phddnsGrid").grid("getEditor");
+			var combobox = $(editor).find('.combobox-value[name=interface]');
+				combobox.combobox('loadData',interfaceItem);
+		}).delegate('a.btn-detail', 'click', function(e){
+	        var index = $(this).data('index');
+	        showDetail(phddnsGrid.grid("getStore").data[index].domain);
+	        //console.log(o.grid("getStore").data[index].domain);
+	    });
+
+
+	var editor = $("div#phddnsGrid").grid("getEditor");
+	$(editor).on("ev_startEdit", function(e, index, key){
+		var ifSelected = {};
+		var interfaceItem=[];
+		var interfaceProxy = new $.su.Proxy({
+				async: false
+		});
+		var data = $("div#phddnsGrid").grid("getStore").data;
+		for (i = 0; i < data.length; i++) {
+			ifSelected[data[i]["interface"]] = data[i]["interface"];
+		}
+		// delete the selected interfaces from all interfaces
+		interfaceProxy.query({"network":{table:"if"}}, function(data){
+			data = data.network["if"];
+			for (j=0; j<data.length; j++){
+				for (var key in data[j]){
+					if(ifSelected[data[i].if_name]){
+						continue;
+					}
+					if(data[j][key].isbridged != 1){
+						interfaceItem.push({name:data[j][key].if_name,value:""+data[j][key].if_name});
+					}
+				}
+			}
+		});
+		if (index != 'add'){
+			var phddnsData = phddnsGrid.grid("getStore").getData(key)
+			var ifnameItem = phddnsData['interface'];
+			var ifname = [];
+			ifname.push({name:""+ifnameItem, value:""+ifnameItem, selected:true});
+			$(editor).find("#interface").combobox("reset");
+			$(editor).find("#interface").combobox("loadData", ifname);
+			//$(editor).find("#interface").combobox("disable");
+			var ifbox = $(editor).find('.combobox-container');
+			//console.log(ifbox[0]);
+			$(ifbox[0]).addClass('disabled');
+		}
+		else {
+			$(editor).find("#interface").combobox("enable");
+			$(editor).find("#interface").combobox("loadData", interfaceItem);
+			$(editor).find("#passwd").password("setValue", "");
+		}
+	});
+
+
+	$("#phddns_alert_cnt").msg({
+		okHandler:function(){
+			$($("div#phddnsGrid").grid("getEditor")).editor("completeEdit");
+		},
+		cls:"m warning",
+		cancelHandler:function(){
+			return true;
+		},
+		type: "prompt"
+	});
+
+	$("#phddns_confirm_content").html();
+
+	var helpPhddns = new $.su.Help({
+		container: "div#phddns_help",
+		content: "PHDDNS"
+	});
+
+});
+</script>
+</body>
+</html>

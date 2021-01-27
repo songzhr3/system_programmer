@@ -1,0 +1,1026 @@
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
+<html xmlns="http://www.w3.org/1999/xhtml">
+<head>
+<meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
+<title>DHCP_SERVER</title>
+</head>
+
+<body>
+<div class="func_container">
+<div id="func_setting">
+	<div id = "global_settings_panel">
+		 <form id = "global_settings">
+				<input id="alloc_target" name="alloc_target" value=""/>
+		 </form>
+	</div>
+	 <div id="dhcp_server_list">
+	 	<div id="dhcp_server_grid">
+		</div>
+		<input id="uci_index" name="uci_index"/>
+	 </div>
+
+	<div id="dhcp_server_config">
+		<form id="dhcp_server_change">
+			<input id="dhcp_server_action" name="action"/>
+		</form>
+	</div>
+
+	 <div id="server_content">
+	 	<input id="interface" name="interface" />
+			<div id="ippool_div" class="hidden">
+	 		     <input id="ippool" name="ippool" />
+	 		</div>
+	 		<div id="ip_range">
+	 			<input id="pool_start" name="pool_start" />
+	 			<input id="pool_end" name="pool_end" />
+	 		</div>
+	 		<input id="lease_time" name="lease_time" />
+	 		<input id="pri_dns" name="pri_dns" />
+	 		<input id="snd_dns" name="snd_dns" />
+			<input id="option16" name="option16" />
+			<input id="option52" name="option52" />
+	 		<input id="enable" name="enable" />
+
+	 </div>
+</div>
+    <div id="dhcp_server_help"></div>
+</div>
+
+<script type="text/javascript">
+try{
+    $
+}catch(e){
+    location.href = "/";
+};
+
+$(document).ready(function(e){
+	$(".func_container").hide();
+	var max_leases = parseInt("<%=lease%>");
+	var global_settings_is_enable = true;
+	var option16_is_hide = true;
+	var option52_is_hide = true;
+	var option16_cls = "hidden";
+	var option52_cls = "hidden";
+	var ap_on = false;
+	function clearData(value){return ""}
+	/* show UI with capability at the first. */
+	var capabilityproxy = new $.su.Proxy({async: false});
+	capabilityproxy.query({"dhcpd6":{"name": ["settings_capability", "dhcpd_list_capability"]}}, function(data){
+			if (typeof(data.dhcpd6) != "undefined"
+				&& typeof(data.dhcpd6.settings_capability) != "undefined"
+				&& data.dhcpd6.settings_capability.table_support == "0")
+			{
+				global_settings_is_enable = false
+			}
+
+			if (typeof(data.dhcpd6) != "undefined"
+				&& typeof(data.dhcpd6.dhcpd_list_capability) != "undefined")
+			{
+				var capability = data.dhcpd6.dhcpd_list_capability;
+				if (capability.option16_set_request_attr == "1")
+				{
+					option16_cls = "";
+					option16_is_hide = false;
+				}
+				if (capability.option52_set_request_attr == "1")
+				{
+					option52_cls = "";
+					option52_is_hide = false;
+				}
+			}
+	});
+
+	$("#global_settings_panel").panel({
+        title: $.su.CHAR.DHCP_SERVER.GLOBAL_SETTINGS,
+        collapsible: false
+    });
+	$('#global_settings_panel').hide();
+
+	$("#alloc_target").radio({
+		fieldLabel: $.su.CHAR.DHCP_SERVER.ALLOC_TARGET,
+		columns: 2,
+		items:[
+			{boxlabel: $.su.CHAR.DHCP_SERVER.ALLOC_FOR_AP_ONLY, name:'alloc_target', inputValue:'for_ap', checked:true},
+			{boxlabel: $.su.CHAR.DHCP_SERVER.ALLOC_FOR_ALL, name:'alloc_target', inputValue:'for_all'}
+		]
+	});
+
+	var global_settings_proxy = new $.su.Proxy({
+
+	});
+
+	$("#global_settings").form({
+        proxy: global_settings_proxy,
+        fields: [
+			{name: "alloc_target", mapping: "alloc_target"}
+        ],
+		parseKey: {
+			moduleName: "dhcpd6",
+			sectionName: "settings"
+		},
+        submitBtn: "default"
+    });
+
+	$("#server_content").hide();
+	$("#dhcp_server_config").hide();
+
+    $("#dhcp_server_list").panel({
+		title: $.su.CHAR.DHCP_SERVER.DHCP_SERVER_LIST_V6,
+		collapsible: false
+	});
+
+
+	var serverListsProxy = new $.su.Proxy({
+
+	});
+
+
+	/*self-define content begins*/
+	var ippoolItem=[];
+	var ippool_addr_start=[];
+	var ippool_addr_end = [];
+
+    $("input#uci_index").textbox({
+        labelCls: 's',
+        allowBlank: true
+    }).textbox("hide");
+
+	var ifstatus = [];
+	 /*interface*/
+	 $("#interface").combobox({
+	 	fieldLabel:$.su.CHAR.DHCP_SERVER.INTERFACE,
+	 	items:[
+	 		{name:"---",value:"---"}
+	 	],
+		allowBlank: false
+	 }).on("ev_change", function (e, oldValue, newValue) {
+		if(isloading == false && newValue.length > 0)
+		{
+			for (var i = 0; i < ifstatus.length; i++)
+			{
+				if(newValue[0] == ifstatus[i]['if_name']
+					|| (newValue[0] == "LAN" && ifstatus[i]['if_name'] == "lan"))
+				{
+					var ip6addr
+					var prefixlen
+					if (ifstatus[i]['ip6ifaceid'] == "manual")
+					{
+						if (ifstatus[i]['ip6addr'] != undefined && ifstatus[i]['ip6addr'] != "")
+						{
+							ip6addr = ifstatus[i]['ip6addr'];
+							prefixlen = ifstatus[i]['prefixlen']
+						}
+					}
+					else if (ifstatus[i]['ip6ifaceid'] == "eui64")
+					{
+						if (ifstatus[i]['prefix'] != undefined && ifstatus[i]['prefix'] != "")
+						{
+							ip6addr = ifstatus[i]['prefix'];
+							prefixlen = 64
+						}
+					}
+
+					if (ip6addr == undefined || prefixlen == undefined)
+					{
+						return
+					}
+
+					var str_ip = ip6ToInt(ip6addr);
+					var str_ip_mask = parseInt(prefixlen);
+					var ip_net = netIp6Get(str_ip, str_ip_mask);
+					var ip_broadcast = broadcastIp6Get(str_ip, str_ip_mask);
+					var diff = twoInt6Del(ip_broadcast, ip_net);
+					var ip_end;
+					if(diff[0] > 0 || diff[1] > 0 || diff[2] > 0 || diff[3] >= max_leases){
+						ip_end = int6Add(ip_net, max_leases - 1);
+					}else{
+						ip_end = ip_broadcast;
+					}
+					$('#pool_start').textbox('setValue', intToIp6(ip_net));
+					$('#pool_end').textbox('setValue', intToIp6(ip_end));
+				}
+			}
+		}
+    });
+
+	/*pool_start*/
+	$('#pool_start').textbox({
+		fieldLabel:$.su.CHAR.DHCP_SERVER.IP_ADDR_START,
+		allowBlank: false,
+        textFormat: $.su.format.ipv6,
+		vtype:"ipv6",
+	    maxLength:39
+	});
+
+	/*pool_end*/
+	$('#pool_end').textbox({
+		fieldLabel:$.su.CHAR.DHCP_SERVER.IP_ADDR_END,
+		allowBlank: false,
+        textFormat: $.su.format.ipv6,
+		vtype:"ipv6",
+	    maxLength:39
+	});
+
+	/*ippool*/
+	$('#ippool').combobox({
+		fieldLabel:$.su.CHAR.DHCP_SERVER.IP_ADDR_POOL,
+		alwaysTrigger: true,
+		items:[
+ 			{name:"---",value:"---"}
+ 	    ]
+	}).on('ev_change', function(e, oldValue, newValue){
+		var i=0;
+		for(i=0;i<ippoolItem.length;i++){
+			if(newValue == ippoolItem[i].value){
+				$('#pool_start').val(ippool_addr_start[i]);
+				$('#pool_end').val(ippool_addr_end[i]);
+			}
+		}
+	});
+
+	/*lease_time*/
+	$('#lease_time').textbox({
+		fieldLabel:$.su.CHAR.DHCP_SERVER.LEASETIME,
+		tips: $.su.CHAR.DHCP_SERVER.LEASENOTE,
+		textFormat: $.su.format.number,
+	    allowBlank: false,
+	    value:"120",
+	    maxLength: 4,
+	    vtype: {
+		     vtype: "number",
+		     max: 2880,
+		     min: 2
+	    },
+		setValueCb: function(data) {
+			var toMin = Number(data) / 60;
+			return toMin.toString();
+		},
+		getValueCb: function(data) {
+			var toSec = Number(data) * 60;
+			return toSec.toString();
+		}
+	});
+
+	/*pri_dns*/
+	$('#pri_dns').textbox({
+		fieldLabel:$.su.CHAR.DHCP_SERVER.PRIMARYDNS,
+		tips: $.su.CHAR.DHCP_SERVER.OPTIONAL,
+		allowBlank: true,
+        textFormat: $.su.format.ipv6,
+	    vtype: 'ipv6',
+	    maxLength:39
+	});
+
+	/*sec_dns*/
+	$('#snd_dns').textbox({
+		fieldLabel:$.su.CHAR.DHCP_SERVER.SECONDARYDNS,
+		tips: $.su.CHAR.DHCP_SERVER.OPTIONAL,
+		allowBlank: true,
+        textFormat: $.su.format.ipv6,
+	    vtype: 'ipv6',
+	    maxLength:39
+	});
+
+	var opt16 = $("#option16").inputgroup({
+		cls: option16_cls,
+		fieldLabel: $.su.CHAR.DHCP_SERVER.OPT16,
+		widthRadio: 0.25,
+		splitChar: "/",
+		tips: $.su.CHAR.DHCP_SERVER.OPTIONAL,
+		allowBlank: true,
+		inputPriConfig: {
+			vtype: "number",
+			max: 4294967295,
+			min: 0
+		},
+		inputCls: "xl",
+		inputSecConfig: {
+			maxLength: 60,
+			validator: function(val) {
+				return true
+			}
+		}
+	});
+
+	var opt52 = $("#option52").textbox({
+		cls: option52_cls,
+		fieldLabel: $.su.CHAR.DHCP_SERVER.OPT52,
+		tips: $.su.CHAR.DHCP_SERVER.OPTIONAL,
+		vtype: 'string_visible'
+	});
+
+	/*enable*/
+	$('#enable').checkbox({
+		fieldLabel:$.su.CHAR.GRID.STATUS,
+		items: [
+          {boxlabel: $.su.CHAR.DHCP_SERVER.ENABLE, inputValue:'on', uncheckedValue:'off',checked:true}
+        ]
+	});
+
+	$('#ippool_div').hide();
+	$('#ip_range').show();
+
+	var proxy = new $.su.Proxy({async: false});
+	var phyifItems = [];
+	var interfaceItemAll = [];
+	proxy.query({"network": {table: "if", "filter":[{"zone":"LAN"}]}}, function(data){
+		if (data.error_code != ENONE)
+		{
+			return;
+		}
+
+		var ifs = data.network["if"];
+		var i = 0;
+		var j = 0;
+		$.each(ifs, function(_, item){
+			for (var key in item)
+			{
+				switch(item[key].if_type)
+				{
+				case "physical":
+					phyifItems[j++] = item[key].if_name.toString();
+					break;
+				case "bridge":
+					phyifItems[j++] = item[key].if_name.toString();
+					break;
+				default:
+					break;
+				}
+				interfaceItemAll.push({name:item[key].if_name,value:""+key});
+			}
+		});
+	});
+	var interfaceIpProxy = new $.su.Proxy({
+		async: false
+	});
+
+	var post_data = {
+		network: {
+			table: "if_info"
+		}
+	}
+	if (phyifItems && $.isArray(phyifItems) && phyifItems.length != 0)
+		post_data.network.filter = [{base_name:$.isArray(phyifItems) ? phyifItems : [phyifItems]}];
+	else
+		post_data.network.filter = [];
+
+	proxy.query(post_data, function(data){  // #### Attention: What is the target here?
+		var data = data.network.if_info;
+		var i = 0;
+		$.each(data, function(_, item){
+			for (var key in item)
+			{
+				if ((item[key].ip6ifaceid == "manual" && item[key].ip6addr != undefined && item[key].ip6addr != "") ||
+					(item[key].ip6ifaceid == "eui64" && item[key].prefix != undefined && item[key].prefix != ""))
+					ifstatus[i++] = item[key];
+			}
+		});
+	});
+	/*self-define content ends*/
+	var dhcpServerGrid = $("div#dhcp_server_grid").grid({
+		store:{
+			proxy: serverListsProxy,
+			extraProperty: "interface",
+			fields: [
+				{name: "uci_index"},
+				{name: "interface"},
+				{name: "ippool"},
+				{name: "pool_start",
+				dataFormat: function(data) {
+					return $.su.func.ipv6Simplyfy(data);
+				}},
+				{name: "pool_end",
+				dataFormat: function(data) {
+					return $.su.func.ipv6Simplyfy(data);
+				}},
+				{name: "lease_time"},
+				{name: "pri_dns"},
+				{name: "snd_dns"},
+				{name: "enable"},
+				{name:"option52"},
+				{name:"option16"}
+			],
+			parseKey: {
+				moduleName: "dhcpd6",
+				tableName: "dhcpd_list",
+				pageSizeName: "dhcpd6_list_pages",
+				maxSizeTableName: "dhcps6",
+				maxSizeOptionName: "server_max"
+			},
+			formField: ["uci_index"],
+			rmField: ["uci_index"],
+			autoLoad: true,
+			loadDelay: 12
+		},
+		minLines: 0,
+		paging_true:{},
+		editor: {
+			//content: "default",
+			content:"#server_content",
+			fields: [
+				{name: "uci_index"},
+				{name: "interface"},
+				{name: "ippool"},
+				{name: "pool_start"},
+				{name: "pool_end"},
+				{name: "lease_time"},
+				{name: "pri_dns"},
+				{name: "snd_dns"},
+				{name: "enable"},
+				{name:"option52"},
+				{name:"option16"}
+			],
+			validator:function(){
+				var interfaceName = $('#interface').combobox('getValue');
+				var interfaceList = $("div#dhcp_server_grid").grid('getStore').data;
+				var editingId = $($("div#dhcp_server_grid").grid("getEditor")).editor("getEditingId");
+				var start_ip = $('#pool_start').textbox('getValue');
+				var end_ip = $('#pool_end').textbox('getValue');
+				for(var i=0;i<interfaceList.length;i++)
+				{
+					if(editingId == interfaceList[i].key)
+						continue;
+					if(interfaceName == interfaceList[i].interface)
+					{
+						$($("div#dhcp_server_grid").grid("getEditor")).form('setError',  "此接口已经关联了地址池" );
+						return false;
+					}
+				}
+
+				if(twoInt6Cmp(ip6ToInt(start_ip), ip6ToInt(end_ip)) > 0)
+				{
+					$($("div#dhcp_server_grid").grid("getEditor")).form('setError',  "起始地址不能大于结束地址" );
+					return false;
+				}
+
+				var ipInt_st = ip6ToInt(start_ip);
+				var ipInt_end = ip6ToInt(end_ip);
+				if (ifstatus.length > 0)
+				{
+					for (var i = 0; i < ifstatus.length; i++)
+					{
+						if (ifstatus[i]['if_type'] != 'ethernet' && ifstatus[i]['if_type'] != 'bridge' && ifstatus[i]['if_type'] != 'physical')
+							continue;
+						if (ifstatus[i]['if_name'] == interfaceName &&
+							((ifstatus[i]['ip6ifaceid'] == "manual" && ifstatus[i]['ip6addr'] && ifstatus[i]['ip6addr'] != "") ||
+							 (ifstatus[i]['ip6ifaceid'] == "eui64" && ifstatus[i]['prefix'] && ifstatus[i]['prefix'] != "") ))
+						{
+							var ip6addr
+							var prefixlen
+							if (ifstatus[i]['ip6addr'] != undefined && ifstatus[i]['ip6addr'] != "")
+							{
+								ip6addr = ifstatus[i]['ip6addr'];
+								prefixlen = ifstatus[i]['prefixlen']
+							}
+							else
+							{
+								ip6addr = ifstatus[i]['prefix'];
+								prefixlen = 64
+							}
+
+							ipIntSvr = ip6ToInt(ip6addr);
+							netMaskInt = parseInt(prefixlen);
+
+							if (twoInt6Cmp(netIp6Get(ipInt_st,netMaskInt),netIp6Get(ipIntSvr,netMaskInt)) != 0)
+							{
+								$($("div#dhcp_server_grid").grid("getEditor")).form('setError', "开始地址与接口不在同一网段");
+								return false;;
+							}
+							if (twoInt6Cmp(netIp6Get(ipInt_end,netMaskInt),netIp6Get(ipIntSvr,netMaskInt)) != 0)
+							{
+								$($("div#dhcp_server_grid").grid("getEditor")).form('setError', "结束地址与接口不在同一网段");
+								return false;
+							}
+						}
+					}
+				}
+				var diff = twoInt6Del(ipInt_end, ipInt_st);
+				if(diff[0] > 0 || diff[1] > 0 || diff[2] > 0 || diff[3] >= max_leases)
+				{
+					$($("div#dhcp_server_grid").grid("getEditor")).form('setError',  "起始地址到结束地址的范围不能超过"+max_leases+"，已自动修正结束地址，请确认提交");
+					$('#pool_end').textbox('setValue',intToIp6(int6Add(ipInt_st, max_leases-1)));
+					return false;
+				}
+				return true;
+			},
+			transParams: function(params){
+				for (var name in params)
+				{
+					if (name == "lease_time")
+					{
+						params[name] = $("#lease_time").textbox("getValue");
+					}
+				}
+				return params;
+			}
+		},
+		paging:[],
+		columns: [
+			{
+				xtype: "checkcolumn"
+			},
+			{
+				text: $.su.CHAR.DHCP_SERVER.ID,
+				xtype: "rownumberer"
+			},
+			{
+                text: $.su.CHAR.DHCP_SERVER.INTERFACE,
+				width: $.su.CHAR.SETTING.DHCP_SERVER.INTERFACE_WIDTH,
+                dataIndex: "interface",
+				renderer: function (data)
+				{
+					if(data == "lan")
+					{
+						var LAN = "LAN"
+						return LAN;
+					}
+					else
+					{
+						return data;
+					}
+
+				},
+				scan: {
+					type: "combobox",
+					cmp: $.search.compare.stringStrict,
+					items: function(){
+						return interfaceItemAll;
+					}
+				}
+            },
+			{
+                text: $.su.CHAR.DHCP_SERVER.IP_ADDR_START,
+                dataIndex: "pool_start",
+				width: $.su.CHAR.SETTING.DHCP_SERVER.IP_ADDR_WIDTH,
+				scan: {
+					cmp: $.search.compare.string
+				}
+            },
+	        {
+                text: $.su.CHAR.DHCP_SERVER.IP_ADDR_END,
+                dataIndex: "pool_end",
+				width: $.su.CHAR.SETTING.DHCP_SERVER.IP_ADDR_WIDTH,
+				scan: {
+					cmp: $.search.compare.string
+				}
+            },
+			{
+                text: $.su.CHAR.DHCP_SERVER.LEASETIME,
+				width: $.su.CHAR.SETTING.DHCP_SERVER.LEASETIME_WIDTH,
+                dataIndex: "lease_time",
+				scan: {
+					cmp: function(src, tar){
+						return tar === (src/60) + "";
+					}
+				},
+				renderer: function (data)
+				{
+					var min = data / 60;
+					return min;
+				}
+            },
+			{
+                text: $.su.CHAR.DHCP_SERVER.PRIMARYDNS,
+				width: $.su.CHAR.SETTING.DHCP_SERVER.IP_ADDR_WIDTH,
+                dataIndex: "pri_dns",
+				scan: {
+					cmp: $.search.compare.string
+				}
+            },
+			{
+                text: $.su.CHAR.DHCP_SERVER.SECONDARYDNS,
+				width: $.su.CHAR.SETTING.DHCP_SERVER.IP_ADDR_WIDTH,
+                dataIndex: "snd_dns",
+				hidden:true,
+				scan: {
+					cmp: $.search.compare.string
+				}
+            },
+			{
+                text: $.su.CHAR.GRID.STATUS,
+                xtype: "statuscolumn",
+                dataIndex: "enable",
+				scan: {
+					cmp: $.search.compare.string
+				},
+				trueValue: "on",
+				falseValue: "off"
+            },
+			{
+				xtype: "settings"
+			}
+		],
+		operation: "prompt|enable|disable|add|delete|search"
+	}).on("ev_load", function(e,data, others){
+	    if(others)/* 通过json里的others参数传递动态阀值 */
+        {
+            maxrules = others.max_rules;
+        }
+
+	}).on("ev_operation", function(e, obj, action){
+		var selectedKeys = dhcpServerGrid.grid("getSelected");
+		var editor  = $(dhcpServerGrid.grid("getEditor"));
+		if(dhcpServerGrid.grid("isEditing"))
+		{
+		}
+		else
+		{
+			var store = dhcpServerGrid.grid('getStore');
+			var data_len = store.data.length;
+			if(selectedKeys.length === 0){
+				dhcpServerGrid.get(0).noneSelectMsg_g.msg('show');
+				return;
+			}else{
+				$dhcp_server_action.textbox('setValue', action);
+				var action_value = "enable" == action ? "on" : "off";
+				dhcpServerGrid.grid("runProgress");
+				$.su.loading.show();
+				var postData = {};
+				var paraValue = {};
+				if (store.parseKey)
+				{
+					var moduleName = store.parseKey.moduleName;
+					postData[moduleName] = {};
+
+					for(var j = 0; j < selectedKeys.length; j++)
+					{
+						for(var i = 0; i < store.data.length; i++)
+						{
+							if(store.data[i].key == selectedKeys[j])
+							{
+								var ele = {};
+								var dOld = $.extend({}, store.getData(store.data[i].key));
+								var keyProperty = store.keyProperty;
+
+								delete dOld[keyProperty];
+
+								var opt = {};
+								opt["enable"] = action_value;
+
+								var	dNew = $.extend({}, dOld, opt);
+
+								postData[moduleName][store.data[i].itemName] = store.sendDataFormat(dNew);
+
+								break;
+							}
+						}
+					}
+				}
+				else
+				{
+					return;
+				}
+				serverListsProxy.modify(postData,  function(data){
+						reloadDhcpGrid(function(){
+							dhcpServerGrid.grid("prompt", true);
+						});
+						setTimeout(function(){//延时时间根据各模块情况自行调整
+							$.su.loading.hide();
+						}, data_len*12);
+				}, function(){
+					$.su.loading.hide();
+					dhcpServerGrid.grid("disGridChkbox");
+					dhcpServerGrid.grid("prompt", false, "");
+				});
+			}
+		}
+	});
+	var intMax = (0xFFFFFFFF >>> 0);
+	/*将点分十进制的IP地址转换成整数形式*/
+	function ip6ToInt(str_ip)
+	{
+		var val = str_ip;
+		var res = [];
+		var resEle = [];
+		var ip6Ele = val.split(":");
+		var startPos = 0;
+		var endPos = ip6Ele.length;
+		var zeroNum = 9 - ip6Ele.length
+		if(ip6Ele[startPos] == ""){
+			startPos++;
+			zeroNum++
+		}
+		if(ip6Ele[endPos] == ""){
+			endPos--;
+			zeroNum++;
+		}
+		for(var i = startPos;i < endPos;i++){
+			if(ip6Ele[i] != ""){
+				ip6Ele[i] = ip6Ele[i].replace(/\b(0+)/gi,"");
+				if(ip6Ele[i] == "")ip6Ele[i] = "0";
+				resEle.push(ip6Ele[i]);
+			}else{
+				for(var j = 0;j < zeroNum;j++)resEle.push("0");
+			}
+		}
+
+		for(var i = 0;i < 8;i+=2){
+			var intVal = parseInt(resEle[i], 16);
+			intVal = (intVal << 16) + parseInt(resEle[i + 1], 16);
+			res.push(intVal>>>0);
+		}
+		return res;
+	}
+	function intToIp6(intArray)
+	{
+		var res = "";
+		var resEle = [];
+		for(var i=0;i<4;i++){
+			var intVal = ((intArray[i]>>16)&0xFFFF);
+			resEle.push(intVal.toString(16));
+			intVal = (intArray[i]&0xFFFF);
+			resEle.push(intVal.toString(16));
+		}
+		var zerePos = -1;
+		var dupZero = 0;
+		var maxZeroNum = 0;
+		for(var i = 0;i < resEle.length;i++){
+			if(resEle[i] != "0")dupZero = 0;
+			else{
+				dupZero++;
+				if(dupZero > 1 && dupZero > maxZeroNum){
+					maxZeroNum = dupZero;
+					zerePos = i - maxZeroNum + 1;
+				}
+			}
+		}
+		if(zerePos == -1){
+			for(var i = 0;i < resEle.length;i++){
+				if(i == 0)res += resEle[i];
+				else res += ":"+resEle[i];
+			}
+		}else{
+			for(var i = 0;i < zerePos;i++){
+				if(i == 0)res += resEle[i];
+				else res += ":"+resEle[i];
+			}
+			res += "::";
+			for(var i = zerePos + maxZeroNum;i < resEle.length;i++){
+				if(i == zerePos + maxZeroNum)res += resEle[i];
+				else res += ":"+resEle[i];
+			}
+		}
+		return res;
+	}
+	function int6Add(intArray, addVal){
+		var res = [];
+		for(var i=0;i<4;i++){
+			res.push(intArray[i]);
+		}
+		if(addVal == 0)return res;
+		if(addVal>0){
+			if(intMax - res[3] >= addVal)res[3] += addVal;
+			else{
+				res[3] = addVal - (intMax - res[3] + 1);
+				if(intMax > res[2])res[2] += 1;
+				else{
+					res[2] = 0;
+					if(intMax > res[1])res[1] += 1;
+					else{
+						res[1] = 0;
+						if(intMax > res[0])res[0] += 1;
+						else res[0] = 0;
+					}
+				}
+			}
+		}
+		return res;
+	}
+	function twoInt6Cmp(intArray1, intArray2){
+		for(var i=0;i<4;i++){
+			if(intArray1[i] > intArray2[i])return 1;
+			if(intArray1[i] < intArray2[i])return -1;
+		}
+		return 0;
+	}
+	function twoInt6Del(intArray1, intArray2){
+		var res = new Array(4);
+		var delFlag = 0;
+		for(var i=3;i>=0;i--){
+			if(intArray1[i]-delFlag<intArray2[i]){
+				res[i] = intMax - (intArray2[i] - intArray1[i] + delFlag - 1);
+				delFlag = 1;
+			}
+			else{
+				res[i] = (intArray1[i] - delFlag - intArray2[i]);
+				delFlag = 0;
+			}
+		}
+		return res;
+	}
+	function netIp6Get(intArray, prefix){
+		var netRes = [];
+		for(var i=0;i<4;i++){
+			netRes.push(intArray[i]);
+		}
+		var st_idx = Math.floor((prefix-1)/32);
+		var offset_idx = prefix%32;
+		if(0!=offset_idx)netRes[st_idx] = netRes[st_idx] & ((0xFFFFFFFF>>>(32-offset_idx))<<(32-offset_idx));
+		for(var i=st_idx+1;i<4;i++){
+			netRes[i] = 0;
+		}
+		return netRes;
+	}
+	function broadcastIp6Get(intArray, prefix){
+		var brdRes = [];
+		for(var i=0;i<4;i++){
+			brdRes.push(intArray[i]);
+		}
+		var st_idx = Math.floor(prefix/32);
+		var offset_idx = prefix%32;
+		brdRes[st_idx] = brdRes[st_idx] | (0xFFFFFFFF>>>offset_idx);
+		for(var i=st_idx+1;i<4;i++){
+			brdRes[i] = intMax;
+		}
+		return brdRes;
+	}
+	function getInterface()
+	{
+		var interfaceItem=[];
+		var interfaceProxy = new $.su.Proxy({async: false});
+
+		interfaceProxy.query({"network":{"table": "if"},"dhcpd6":{"table": "dhcpd_list"},"slaac":{"table":"slaac_list"}}, function(data){
+			var if_data = data.network["if"];
+			var dhcp_data = data.dhcpd6.dhcpd_list;
+			var slaac_data = data.slaac.slaac_list;
+			var dhcp_slaac_interface_used = {};
+
+			$.each(dhcp_data, function(_, item){
+				for (var key in item)
+				{
+					dhcp_slaac_interface_used[item[key].interface] = true;
+					if (item[key].interface == "lan")
+						dhcp_slaac_interface_used["LAN"] = true;
+				}
+			});
+
+			$.each(slaac_data, function(_, item){
+				for (var key in item)
+				{
+					dhcp_slaac_interface_used[item[key].interface] = true;
+					if (item[key].interface == "lan")
+						dhcp_slaac_interface_used["LAN"] = true;
+				}
+			});
+
+			$.each(if_data, function(_, item){
+				for (var key in item)
+				{
+					var if_canuse = 0;
+
+					if (ifstatus.length > 0)
+					{
+						for (var i = 0; i < ifstatus.length; i++)
+						{
+							if (ifstatus[i]['if_type'] != 'ethernet' && ifstatus[i]['if_type'] != 'bridge' && ifstatus[i]['if_type'] != 'physical')
+								continue;
+							if (ifstatus[i]['proto'] == 'dhcp')
+								continue;
+							if (ifstatus[i]['if_name'] == "lan" && item[key].if_name == "LAN" &&
+								((ifstatus[i]["ip6ifaceid"] == "manual" && ifstatus[i]['ip6addr'] != undefined && ifstatus[i]['ip6addr'] != "") ||
+								 (ifstatus[i]["ip6ifaceid"] == "eui64" && ifstatus[i]["prefix"] != undefined && ifstatus[i]["prefix"] != "")))
+							{
+								if_canuse = 1;
+								break;
+							}
+							if (ifstatus[i]['if_name'] == item[key].if_name &&
+								((ifstatus[i]["ip6ifaceid"] == "manual" && ifstatus[i]['ip6addr'] != undefined && ifstatus[i]['ip6addr'] != "") ||
+								 (ifstatus[i]["ip6ifaceid"] == "eui64" && ifstatus[i]["prefix"] != undefined && ifstatus[i]["prefix"] != "")))
+							{
+								if_canuse = 1;
+								break;
+							}
+						}
+					}
+
+					if (item[key].if_type != "pppoe" && !dhcp_slaac_interface_used[item[key].if_name] && 1 == if_canuse) {
+						interfaceItem.push({name:item[key].if_name,value:key});
+					}
+				}
+			});
+		});
+		return interfaceItem;
+	}
+
+	$("#server_content").show();
+	var isloading = false;
+	var editor = $("div#dhcp_server_grid").grid("getEditor");
+	$(editor).on("ev_startEdit", function(e, index, key){
+		$("#server_content").show();
+
+		if (index != 'add'){
+			isloading = true;
+			var dhcpServerData = dhcpServerGrid.grid("getStore").getData(key)
+			var ifnameItem = dhcpServerData['interface'];
+			if (ifnameItem == "lan")
+				ifnameItem = "LAN";
+			var ifname = [];
+			ifname.push({name:""+ifnameItem, value:""+ifnameItem, selected:true});
+			$(editor).find("#interface").combobox("reset");
+			$(editor).find("#interface").combobox("loadData", ifname);
+			var ifbox = $(editor).find('.combobox-container');
+			$(ifbox[0]).addClass('disabled');
+			var i=0;
+			for(i=0;i<ippoolItem.length;i++){
+				if(dhcpServerData['ippool'] == ippoolItem[i].value){
+					$('#pool_start').val(ippool_addr_start[i]);
+					$('#pool_end').val(ippool_addr_end[i]);
+				}
+			}
+			isloading = false;
+		}
+		else {
+			var interfaceItem=[];
+			interfaceItem = getInterface();
+
+			$(editor).find("#interface").combobox("enable");
+			$(editor).find("#interface").combobox("loadData", interfaceItem);
+		}
+	});
+
+	var $dhcp_server_change_form = $("#dhcp_server_change").form({
+		proxy: new $.su.Proxy(),
+		fields: [
+            {name: "action"}
+        ],
+		submitBtn: "default",
+		autoLoad: false,
+		callback: function(){
+            reloadDhcpGrid();
+        }
+	});
+	var $dhcp_server_action = $('#dhcp_server_action').textbox({
+        fieldLabel: ''
+    }).textbox('hide');
+
+	function reloadDhcpGrid(callback){
+		var dhcp_store = dhcpServerGrid.grid('getStore'),
+            selectedKeys = dhcpServerGrid.grid('getSelected');
+		dhcpServerGrid.grid("disGridChkbox");
+		if (callback){
+			callback.call();
+		}
+        dhcp_store.keyLength = 0;
+        dhcp_store.load({});
+    }
+	if(option16_is_hide){
+		opt16.textbox("disable");
+	}
+	if(option52_is_hide){
+		opt52.textbox("disable");
+	}
+	if(!option16_is_hide||!option52_is_hide){
+		serverListsProxy.query({"apmng_set":{"name":"settings"}},function(data){
+			if(data.apmng_set.settings.apmngr_status=="on"){
+				ap_on = true;
+			}
+			else{
+				ap_on = false;
+			}
+
+			if(ap_on){
+				if (option16_is_hide == false)
+				{
+					opt16.textbox("disableStyle");
+				}
+				if(option52_is_hide == false)
+				{
+					opt52.textbox("disableStyle");
+				}
+			}else{
+				if (option16_is_hide == false)
+				{
+					opt16.textbox("enableStyle");
+				}
+				if(option52_is_hide == false)
+				{
+					opt52.textbox("enableStyle");
+				}
+			}
+		});
+	}
+	function helpHideByCapability(){
+		if (option52_is_hide) $('#help_option52').hide();
+		if (option16_is_hide) $('#help_option16').hide();
+	}
+	var helpContent = [];
+
+	/* show UI with capability at the end. */
+	if (global_settings_is_enable)
+	{
+		$('#global_settings_panel').show();
+		helpContent.push("DHCP_SERVER_ABILITY_SETTINGS");
+	}
+	helpContent.push("DHCP_SERVER_SETTINGS_V6");
+	var helpDhcpServer = new $.su.Help({
+		container: "div#dhcp_server_help",
+		content: helpContent,
+		afterLoad: helpHideByCapability
+	});
+	$(".func_container").show();
+
+});
+</script>
+</body>
+
+</html>

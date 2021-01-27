@@ -1,0 +1,828 @@
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN"
+        "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
+<html xmlns="http://www.w3.org/1999/xhtml">
+<head>
+    <meta http-equiv="Content-Type" content="text/html; charset=utf-8"/>
+    <style type="text/css">
+        .group>:first-child{
+            background-color:#d9d9d9;
+        }
+    </style>
+    <title>SystemState</title>
+</head>
+
+<body>
+<div class="func-container">
+    <div id="account-mngt-list">
+        <div id="account-mngt-grid">
+        </div>
+    </div>
+
+    <div id = "own_editor">
+        <input id="role_name" name="role_name"/>
+        <input id="description" name="description"/>
+
+        <div id = "panel-group" class="group">
+            <input id = "panel" name = "panel" />
+            <input id = "status" name="status">
+        </div>
+        <div id = "monitor-group" class="group">
+            <input id = "monitor" name = "monitor" />
+            <input id = "system_log" name = "system_log" />
+            <input id = "audit_log" name = "audit_log" />
+            <input id = "report" name = "report" />
+            <input id = "system_stat" name = "system_stat" />
+            <input id = "diagnostic_center" name = "diagnostic_center" />
+        </div>
+        <div id = "policy-group" class="group">
+            <input id = "policy" name = "policy" />
+            <input id = "security_policy" name = "security_policy" />
+            <input id = "audit_policy" name = "audit_policy" />
+            <input id = "bandwidth_policy" name = "bandwidth_policy" />
+            <input id = "nat_policy" name = "nat_policy" />
+            <input id = "alg_policy" name = "alg_policy" />
+            <input id = "security_guard" name = "security_guard" />
+        </div>
+        <div id="object-group" class="group">
+            <input id = "object" name = "object"/>
+            <input id = "addresses" name = "addresses"/>
+            <input id = "time_segs" name = "time_segs"/>
+            <input id = "ippool" name = "ippool"/>
+            <input id = "user" name = "user"/>
+            <input id = "service" name = "service"/>
+            <input id = "web_urls" name = "web_urls"/>
+            <input id = "apps" name = "apps"/>
+            <input id = "security_profile" name = "security_profile"/>
+            <input id = "audit_profile" name = "audit_profile"/>
+            <input id = "intrusion_prevention" name = "intrusion_prevention"/>
+            <input id = "certificate" name = "certificate"/>
+        </div>
+        <div id=" network-group" class="group">
+            <input id = "network" name = "interface"/>
+            <input id = "interface" name = "interface"/>
+            <input id = "zone" name = "zone"/>
+            <input id = "dhcp-server" name = "dhcp-server"/>
+            <input id = "routing" name = "routing"/>
+            <input id = "ipsec" name = "ipsec"/>
+            <input id = "l2tp" name = "l2tp"/>
+            <input id = "pptp" name = "pptp"/>
+            <input id = "vpn-user" name = "vpn-user"/>
+            <input id = "dns" name = "dns"/>
+        </div>
+        <div id="system-group" class="group">
+            <input id = "system" name = "system"/>
+            <input id = "administration" name = "administration"/>
+            <input id = "cloud_mngt" name = "cloud_mngt" />
+            <input id = "firmware" name = "firmware"/>
+            <input id = "time_setting" name = "time_setting"/>
+            <input id = "audit_config" name = "audit_config"/>
+            <input id = "log_config" name = "log_config"/>
+            <input id = "alarm_config" name = "alarm_config" />
+            <input id = "disk_mngt" name = "disk_mngt"/>
+            <input id = "signature_db" name = "signature_db"/>
+            <input id = "license" name = "license"/>
+            <input id = "high_available" name = "high_available"/>
+            <input id = "system_params" name = "system_params"/>
+            <input id = "wizard" name = "wizard"/>
+        </div>
+    </div>
+
+    <div id="account-mngt-help"></div>
+</div>
+
+<script type="text/javascript">
+    try{
+        $
+    }catch(e){
+        location.href = "/";
+    };
+
+    $(document).ready(function(e){
+        $(".func-container").hide();
+
+        $("#account-mngt-list").panel({
+            title: $.su.CHAR.ROLE_MNGT.LIST
+        });
+
+        var accountMngtListProxy = new $.su.Proxy();
+
+        function parentChange(e,newValue){
+            if(newValue==='rw'||newValue==='ro'||newValue==='none'){
+                $(e.currentTarget.closest('.group')).find('input.hidden').each(function (index,item) {
+                    if(index !== 0){
+                        $(item).radio('setValue',newValue);
+                    }
+                });
+            }
+        }
+
+        function childChange(e,newValue){
+            var allTheSame = true;
+            $(e.currentTarget.closest('.group')).find('input.hidden').each(function (index,item) {
+                if(index !== 0){
+                    //console.log(newValue,$(item).radio('getValue'));
+                    if(newValue !== $(item).radio('getValue')){
+                        allTheSame = false;
+                    }
+                }
+            });
+            if(allTheSame){
+                $($(e.currentTarget.closest('.group')).find('input.hidden')[0]).radio('setValue',newValue);
+            }else{
+                $($(e.currentTarget.closest('.group')).find('input.hidden')[0]).radio('setValue','');
+            }
+        }
+
+        $("input#role_name").textbox({
+            fieldLabel: $.su.CHAR.ROLE_MNGT.ROLE_NAME,
+            allowBlank:false
+        }).textbox('disableStyle');
+        $("input#description").textbox({
+            fieldLabel: $.su.CHAR.ROLE_MNGT.DESCRIPTION,
+            allowBlank:true
+        }).textbox('disableStyle');
+
+        $("input#panel").radio({
+            fieldLabel: $.su.CHAR.ROLE_MNGT.PANEL,
+            columns:3,
+            items:[
+                {boxlabel: $.su.CHAR.ROLE_MNGT.RW, cls: '', inputValue: 'rw'},
+                {boxlabel: $.su.CHAR.ROLE_MNGT.RO, cls: '', inputValue: 'ro'},
+                {boxlabel: $.su.CHAR.ROLE_MNGT.NONE, cls: '', inputValue: 'none',checked:true}
+            ]
+        }).on('ev_change', function(e, oldValue, newValue){
+            parentChange(e,newValue);
+        }).radio('disableStyle');
+        $("input#status").radio({
+            fieldLabel: $.su.CHAR.ROLE_MNGT.STATUS,
+            columns:3,
+            items:[
+                {boxlabel: $.su.CHAR.ROLE_MNGT.RW, cls: '', inputValue: 'rw'},
+                {boxlabel: $.su.CHAR.ROLE_MNGT.RO, cls: '', inputValue: 'ro'},
+                {boxlabel: $.su.CHAR.ROLE_MNGT.NONE, cls: '', inputValue: 'none',checked:true}
+            ]
+        }).on('ev_change', function(e, oldValue, newValue){
+            childChange(e,newValue);
+        }).radio('disableStyle');
+        //todo
+        $("input#monitor").radio({
+            fieldLabel: $.su.CHAR.ROLE_MNGT.MONITOR,
+            columns:3,
+            items:[
+                {boxlabel: $.su.CHAR.ROLE_MNGT.RW, cls: '', inputValue: 'rw'},
+                {boxlabel: $.su.CHAR.ROLE_MNGT.RO, cls: '', inputValue: 'ro'},
+                {boxlabel: $.su.CHAR.ROLE_MNGT.NONE, cls: '', inputValue: 'none',checked:true}
+            ]
+        }).on('ev_change', function(e, oldValue, newValue){
+            parentChange(e,newValue);
+        }).radio('disableStyle');
+        $("input#system_log").radio({
+            fieldLabel: $.su.CHAR.ROLE_MNGT.SYSTEM_LOG,
+            columns:3,
+            items:[
+                {boxlabel: $.su.CHAR.ROLE_MNGT.RW, cls: '', inputValue: 'rw'},
+                {boxlabel: $.su.CHAR.ROLE_MNGT.RO, cls: '', inputValue: 'ro'},
+                {boxlabel: $.su.CHAR.ROLE_MNGT.NONE, cls: '', inputValue: 'none',checked:true}
+            ]
+        }).on('ev_change', function(e, oldValue, newValue){
+            childChange(e,newValue);
+        }).radio('disableStyle');
+        $("input#audit_log").radio({
+            fieldLabel: $.su.CHAR.ROLE_MNGT.AUDIT_LOG,
+            columns:3,
+            items:[
+                {boxlabel: $.su.CHAR.ROLE_MNGT.RW, cls: '', inputValue: 'rw'},
+                {boxlabel: $.su.CHAR.ROLE_MNGT.RO, cls: '', inputValue: 'ro'},
+                {boxlabel: $.su.CHAR.ROLE_MNGT.NONE, cls: '', inputValue: 'none',checked:true}
+            ]
+        }).on('ev_change', function(e, oldValue, newValue){childChange(e,newValue);}).radio('disableStyle');
+        $("input#report").radio({
+            fieldLabel: $.su.CHAR.ROLE_MNGT.REPORT,
+            columns:3,
+            items:[
+                {boxlabel: $.su.CHAR.ROLE_MNGT.RW, cls: '', inputValue: 'rw'},
+                {boxlabel: $.su.CHAR.ROLE_MNGT.RO, cls: '', inputValue: 'ro'},
+                {boxlabel: $.su.CHAR.ROLE_MNGT.NONE, cls: '', inputValue: 'none',checked:true}
+            ]
+        }).on('ev_change', function(e, oldValue, newValue){childChange(e,newValue);}).radio('disableStyle');
+        $("input#system_stat").radio({
+            fieldLabel: $.su.CHAR.ROLE_MNGT.SYSTEM_STAT,
+            columns:3,
+            items:[
+                {boxlabel: $.su.CHAR.ROLE_MNGT.RW, cls: '', inputValue: 'rw'},
+                {boxlabel: $.su.CHAR.ROLE_MNGT.RO, cls: '', inputValue: 'ro'},
+                {boxlabel: $.su.CHAR.ROLE_MNGT.NONE, cls: '', inputValue: 'none',checked:true}
+            ]
+        }).on('ev_change', function(e, oldValue, newValue){
+            childChange(e,newValue);
+        }).radio('disableStyle');
+        $("input#diagnostic_center").radio({
+            fieldLabel: $.su.CHAR.ROLE_MNGT.DIAGNOSTIC_CENTER,
+            columns:3,
+            items:[
+                {boxlabel: $.su.CHAR.ROLE_MNGT.RW, cls: '', inputValue: 'rw'},
+                {boxlabel: $.su.CHAR.ROLE_MNGT.RO, cls: '', inputValue: 'ro'},
+                {boxlabel: $.su.CHAR.ROLE_MNGT.NONE, cls: '', inputValue: 'none',checked:true}
+            ]
+        }).on('ev_change', function(e, oldValue, newValue){childChange(e,newValue);}).radio('disableStyle');
+        //todo
+        $("input#policy").radio({
+            fieldLabel: $.su.CHAR.ROLE_MNGT.POLICY,
+            columns:3,
+            items:[
+                {boxlabel: $.su.CHAR.ROLE_MNGT.RW, cls: '', inputValue: 'rw'},
+                {boxlabel: $.su.CHAR.ROLE_MNGT.RO, cls: '', inputValue: 'ro'},
+                {boxlabel: $.su.CHAR.ROLE_MNGT.NONE, cls: '', inputValue: 'none',checked:true}
+            ]
+        }).on('ev_change', function(e, oldValue, newValue){
+            parentChange(e,newValue);
+        }).radio('disableStyle');
+        $("input#security_policy").radio({
+            fieldLabel: $.su.CHAR.ROLE_MNGT.SECURITY_POLICY,
+            columns:3,
+            items:[
+                {boxlabel: $.su.CHAR.ROLE_MNGT.RW, cls: '', inputValue: 'rw'},
+                {boxlabel: $.su.CHAR.ROLE_MNGT.RO, cls: '', inputValue: 'ro'},
+                {boxlabel: $.su.CHAR.ROLE_MNGT.NONE, cls: '', inputValue: 'none',checked:true}
+            ]
+        }).on('ev_change', function(e, oldValue, newValue){childChange(e,newValue);}).radio('disableStyle');
+        $("input#audit_policy").radio({
+            fieldLabel: $.su.CHAR.ROLE_MNGT.ADUIT_POLICY,
+            columns:3,
+            items:[
+                {boxlabel: $.su.CHAR.ROLE_MNGT.RW, cls: '', inputValue: 'rw'},
+                {boxlabel: $.su.CHAR.ROLE_MNGT.RO, cls: '', inputValue: 'ro'},
+                {boxlabel: $.su.CHAR.ROLE_MNGT.NONE, cls: '', inputValue: 'none',checked:true}
+            ]
+        }).on('ev_change', function(e, oldValue, newValue){childChange(e,newValue);}).radio('disableStyle');
+        $("input#bandwidth_policy").radio({
+            fieldLabel: $.su.CHAR.ROLE_MNGT.BANDWIDTH_POLICY,
+            columns:3,
+            items:[
+                {boxlabel: $.su.CHAR.ROLE_MNGT.RW, cls: '', inputValue: 'rw'},
+                {boxlabel: $.su.CHAR.ROLE_MNGT.RO, cls: '', inputValue: 'ro'},
+                {boxlabel: $.su.CHAR.ROLE_MNGT.NONE, cls: '', inputValue: 'none',checked:true}
+            ]
+        }).on('ev_change', function(e, oldValue, newValue){childChange(e,newValue);}).radio('disableStyle');
+        $("input#nat_policy").radio({
+            fieldLabel: $.su.CHAR.ROLE_MNGT.NAT_POLICY,
+            columns:3,
+            items:[
+                {boxlabel: $.su.CHAR.ROLE_MNGT.RW, cls: '', inputValue: 'rw'},
+                {boxlabel: $.su.CHAR.ROLE_MNGT.RO, cls: '', inputValue: 'ro'},
+                {boxlabel: $.su.CHAR.ROLE_MNGT.NONE, cls: '', inputValue: 'none',checked:true}
+            ]
+        }).on('ev_change', function(e, oldValue, newValue){childChange(e,newValue);}).radio('disableStyle');
+        $("input#alg_policy").radio({
+            fieldLabel: $.su.CHAR.ROLE_MNGT.ALG_POLICY,
+            columns:3,
+            items:[
+                {boxlabel: $.su.CHAR.ROLE_MNGT.RW, cls: '', inputValue: 'rw'},
+                {boxlabel: $.su.CHAR.ROLE_MNGT.RO, cls: '', inputValue: 'ro'},
+                {boxlabel: $.su.CHAR.ROLE_MNGT.NONE, cls: '', inputValue: 'none',checked:true}
+            ]
+        }).on('ev_change', function(e, oldValue, newValue){childChange(e,newValue);}).radio('disableStyle');
+        $("input#security_guard").radio({
+            fieldLabel: $.su.CHAR.ROLE_MNGT.SECURITY_GUARD,
+            columns:3,
+            items:[
+                {boxlabel: $.su.CHAR.ROLE_MNGT.RW, cls: '', inputValue: 'rw'},
+                {boxlabel: $.su.CHAR.ROLE_MNGT.RO, cls: '', inputValue: 'ro'},
+                {boxlabel: $.su.CHAR.ROLE_MNGT.NONE, cls: '', inputValue: 'none',checked:true}
+            ]
+        }).on('ev_change', function(e, oldValue, newValue){childChange(e,newValue);}).radio('disableStyle');
+        //todo
+        $("input#object").radio({
+            fieldLabel: $.su.CHAR.ROLE_MNGT.OBJECT,
+            columns:3,
+            items:[
+                {boxlabel: $.su.CHAR.ROLE_MNGT.RW, cls: '', inputValue: 'rw'},
+                {boxlabel: $.su.CHAR.ROLE_MNGT.RO, cls: '', inputValue: 'ro'},
+                {boxlabel: $.su.CHAR.ROLE_MNGT.NONE, cls: '', inputValue: 'none',checked:true}
+            ]
+        }).on('ev_change', function(e, oldValue, newValue){
+            parentChange(e,newValue);
+        }).radio('disableStyle');
+        $("input#addresses").radio({
+            fieldLabel: $.su.CHAR.ROLE_MNGT.ADDRESSES,
+            columns:3,
+            items:[
+                {boxlabel: $.su.CHAR.ROLE_MNGT.RW, cls: '', inputValue: 'rw'},
+                {boxlabel: $.su.CHAR.ROLE_MNGT.RO, cls: '', inputValue: 'ro'},
+                {boxlabel: $.su.CHAR.ROLE_MNGT.NONE, cls: '', inputValue: 'none',checked:true}
+            ]
+        }).on('ev_change', function(e, oldValue, newValue){childChange(e,newValue);}).radio('disableStyle');
+        $("input#time_segs").radio({
+            fieldLabel: $.su.CHAR.ROLE_MNGT.TIMES_SEGS,
+            columns:3,
+            items:[
+                {boxlabel: $.su.CHAR.ROLE_MNGT.RW, cls: '', inputValue: 'rw'},
+                {boxlabel: $.su.CHAR.ROLE_MNGT.RO, cls: '', inputValue: 'ro'},
+                {boxlabel: $.su.CHAR.ROLE_MNGT.NONE, cls: '', inputValue: 'none',checked:true}
+            ]
+        }).on('ev_change', function(e, oldValue, newValue){childChange(e,newValue);}).radio('disableStyle');
+        $("input#ippool").radio({
+            fieldLabel: $.su.CHAR.ROLE_MNGT.IPPOOL,
+            columns:3,
+            items:[
+                {boxlabel: $.su.CHAR.ROLE_MNGT.RW, cls: '', inputValue: 'rw'},
+                {boxlabel: $.su.CHAR.ROLE_MNGT.RO, cls: '', inputValue: 'ro'},
+                {boxlabel: $.su.CHAR.ROLE_MNGT.NONE, cls: '', inputValue: 'none',checked:true}
+            ]
+        }).on('ev_change', function(e, oldValue, newValue){childChange(e,newValue);}).radio('disableStyle');
+        $("input#user").radio({
+            fieldLabel: $.su.CHAR.ROLE_MNGT.USER,
+            columns:3,
+            items:[
+                {boxlabel: $.su.CHAR.ROLE_MNGT.RW, cls: '', inputValue: 'rw'},
+                {boxlabel: $.su.CHAR.ROLE_MNGT.RO, cls: '', inputValue: 'ro'},
+                {boxlabel: $.su.CHAR.ROLE_MNGT.NONE, cls: '', inputValue: 'none',checked:true}
+            ]
+        }).on('ev_change', function(e, oldValue, newValue){childChange(e,newValue);}).radio('disableStyle');
+        $("input#service").radio({
+            fieldLabel: $.su.CHAR.ROLE_MNGT.SERVICE,
+            columns:3,
+            items:[
+                {boxlabel: $.su.CHAR.ROLE_MNGT.RW, cls: '', inputValue: 'rw'},
+                {boxlabel: $.su.CHAR.ROLE_MNGT.RO, cls: '', inputValue: 'ro'},
+                {boxlabel: $.su.CHAR.ROLE_MNGT.NONE, cls: '', inputValue: 'none',checked:true}
+            ]
+        }).on('ev_change', function(e, oldValue, newValue){childChange(e,newValue);}).radio('disableStyle');
+        $("input#web_urls").radio({
+            fieldLabel: $.su.CHAR.ROLE_MNGT.WEB_URLS,
+            columns:3,
+            items:[
+                {boxlabel: $.su.CHAR.ROLE_MNGT.RW, cls: '', inputValue: 'rw'},
+                {boxlabel: $.su.CHAR.ROLE_MNGT.RO, cls: '', inputValue: 'ro'},
+                {boxlabel: $.su.CHAR.ROLE_MNGT.NONE, cls: '', inputValue: 'none',checked:true}
+            ]
+        }).on('ev_change', function(e, oldValue, newValue){childChange(e,newValue);}).radio('disableStyle');
+        $("input#apps").radio({
+            fieldLabel: $.su.CHAR.ROLE_MNGT.APPS,
+            columns:3,
+            items:[
+                {boxlabel: $.su.CHAR.ROLE_MNGT.RW, cls: '', inputValue: 'rw'},
+                {boxlabel: $.su.CHAR.ROLE_MNGT.RO, cls: '', inputValue: 'ro'},
+                {boxlabel: $.su.CHAR.ROLE_MNGT.NONE, cls: '', inputValue: 'none',checked:true}
+            ]
+        }).on('ev_change', function(e, oldValue, newValue){childChange(e,newValue);}).radio('disableStyle');
+        $("input#security_profile").radio({
+            fieldLabel: $.su.CHAR.ROLE_MNGT.SECURITY_PROFILE,
+            columns:3,
+            items:[
+                {boxlabel: $.su.CHAR.ROLE_MNGT.RW, cls: '', inputValue: 'rw'},
+                {boxlabel: $.su.CHAR.ROLE_MNGT.RO, cls: '', inputValue: 'ro'},
+                {boxlabel: $.su.CHAR.ROLE_MNGT.NONE, cls: '', inputValue: 'none',checked:true}
+            ]
+        }).on('ev_change', function(e, oldValue, newValue){childChange(e,newValue);}).radio('disableStyle');
+        $("input#audit_profile").radio({
+            fieldLabel: $.su.CHAR.ROLE_MNGT.AUDIT_PROFILE,
+            columns:3,
+            items:[
+                {boxlabel: $.su.CHAR.ROLE_MNGT.RW, cls: '', inputValue: 'rw'},
+                {boxlabel: $.su.CHAR.ROLE_MNGT.RO, cls: '', inputValue: 'ro'},
+                {boxlabel: $.su.CHAR.ROLE_MNGT.NONE, cls: '', inputValue: 'none',checked:true}
+            ]
+        }).on('ev_change', function(e, oldValue, newValue){childChange(e,newValue);}).radio('disableStyle');
+        $("input#intrusion_prevention").radio({
+            fieldLabel: $.su.CHAR.ROLE_MNGT.IPS,
+            columns:3,
+            items:[
+                {boxlabel: $.su.CHAR.ROLE_MNGT.RW, cls: '', inputValue: 'rw'},
+                {boxlabel: $.su.CHAR.ROLE_MNGT.RO, cls: '', inputValue: 'ro'},
+                {boxlabel: $.su.CHAR.ROLE_MNGT.NONE, cls: '', inputValue: 'none',checked:true}
+            ]
+        }).on('ev_change', function(e, oldValue, newValue){childChange(e,newValue);}).radio('disableStyle');
+        $("input#certificate").radio({
+            fieldLabel: $.su.CHAR.ROLE_MNGT.CERTIFICATE,
+            columns:3,
+            items:[
+                {boxlabel: $.su.CHAR.ROLE_MNGT.RW, cls: '', inputValue: 'rw'},
+                {boxlabel: $.su.CHAR.ROLE_MNGT.RO, cls: '', inputValue: 'ro'},
+                {boxlabel: $.su.CHAR.ROLE_MNGT.NONE, cls: '', inputValue: 'none',checked:true}
+            ]
+        }).on('ev_change', function(e, oldValue, newValue){childChange(e,newValue);}).radio('disableStyle');
+        //todo
+        $("input#network").radio({
+            fieldLabel: $.su.CHAR.ROLE_MNGT.NETWORK,
+            columns:3,
+            items:[
+                {boxlabel: $.su.CHAR.ROLE_MNGT.RW, cls: '', inputValue: 'rw'},
+                {boxlabel: $.su.CHAR.ROLE_MNGT.RO, cls: '', inputValue: 'ro'},
+                {boxlabel: $.su.CHAR.ROLE_MNGT.NONE, cls: '', inputValue: 'none',checked:true}
+            ]
+        }).on('ev_change', function(e, oldValue, newValue){
+            parentChange(e,newValue);
+        }).radio('disableStyle');
+        $("input#interface").radio({
+            fieldLabel: $.su.CHAR.ROLE_MNGT.INTERFACE,
+            columns:3,
+            items:[
+                {boxlabel: $.su.CHAR.ROLE_MNGT.RW, cls: '', inputValue: 'rw'},
+                {boxlabel: $.su.CHAR.ROLE_MNGT.RO, cls: '', inputValue: 'ro'},
+                {boxlabel: $.su.CHAR.ROLE_MNGT.NONE, cls: '', inputValue: 'none',checked:true}
+            ]
+        }).on('ev_change', function(e, oldValue, newValue){childChange(e,newValue);}).radio('disableStyle');
+        $("input#zone").radio({
+            fieldLabel: $.su.CHAR.ROLE_MNGT.ZONE,
+            columns:3,
+            items:[
+                {boxlabel: $.su.CHAR.ROLE_MNGT.RW, cls: '', inputValue: 'rw'},
+                {boxlabel: $.su.CHAR.ROLE_MNGT.RO, cls: '', inputValue: 'ro'},
+                {boxlabel: $.su.CHAR.ROLE_MNGT.NONE, cls: '', inputValue: 'none',checked:true}
+            ]
+        }).on('ev_change', function(e, oldValue, newValue){childChange(e,newValue);}).radio('disableStyle');
+        $("input#dhcp-server").radio({
+            fieldLabel: $.su.CHAR.ROLE_MNGT.DHCP_SERVER,
+            columns:3,
+            items:[
+                {boxlabel: $.su.CHAR.ROLE_MNGT.RW, cls: '', inputValue: 'rw'},
+                {boxlabel: $.su.CHAR.ROLE_MNGT.RO, cls: '', inputValue: 'ro'},
+                {boxlabel: $.su.CHAR.ROLE_MNGT.NONE, cls: '', inputValue: 'none',checked:true}
+            ]
+        }).on('ev_change', function(e, oldValue, newValue){childChange(e,newValue);}).radio('disableStyle');
+        $("input#routing").radio({
+            fieldLabel: $.su.CHAR.ROLE_MNGT.ROUTING,
+            columns:3,
+            items:[
+                {boxlabel: $.su.CHAR.ROLE_MNGT.RW, cls: '', inputValue: 'rw'},
+                {boxlabel: $.su.CHAR.ROLE_MNGT.RO, cls: '', inputValue: 'ro'},
+                {boxlabel: $.su.CHAR.ROLE_MNGT.NONE, cls: '', inputValue: 'none',checked:true}
+            ]
+        }).on('ev_change', function(e, oldValue, newValue){childChange(e,newValue);}).radio('disableStyle');
+        $("input#ipsec").radio({
+            fieldLabel: $.su.CHAR.ROLE_MNGT.IPSEC,
+            columns:3,
+            items:[
+                {boxlabel: $.su.CHAR.ROLE_MNGT.RW, cls: '', inputValue: 'rw'},
+                {boxlabel: $.su.CHAR.ROLE_MNGT.RO, cls: '', inputValue: 'ro'},
+                {boxlabel: $.su.CHAR.ROLE_MNGT.NONE, cls: '', inputValue: 'none',checked:true}
+            ]
+        }).on('ev_change', function(e, oldValue, newValue){childChange(e,newValue);}).radio('disableStyle');
+        $("input#l2tp").radio({
+            fieldLabel: $.su.CHAR.ROLE_MNGT.L2TP,
+            columns:3,
+            items:[
+                {boxlabel: $.su.CHAR.ROLE_MNGT.RW, cls: '', inputValue: 'rw'},
+                {boxlabel: $.su.CHAR.ROLE_MNGT.RO, cls: '', inputValue: 'ro'},
+                {boxlabel: $.su.CHAR.ROLE_MNGT.NONE, cls: '', inputValue: 'none',checked:true}
+            ]
+        }).on('ev_change', function(e, oldValue, newValue){childChange(e,newValue);}).radio('disableStyle');
+        $("input#pptp").radio({
+            fieldLabel: $.su.CHAR.ROLE_MNGT.PPTP,
+            columns:3,
+            items:[
+                {boxlabel: $.su.CHAR.ROLE_MNGT.RW, cls: '', inputValue: 'rw'},
+                {boxlabel: $.su.CHAR.ROLE_MNGT.RO, cls: '', inputValue: 'ro'},
+                {boxlabel: $.su.CHAR.ROLE_MNGT.NONE, cls: '', inputValue: 'none',checked:true}
+            ]
+        }).on('ev_change', function(e, oldValue, newValue){childChange(e,newValue);}).radio('disableStyle');
+        $("input#vpn-user").radio({
+            fieldLabel: $.su.CHAR.ROLE_MNGT.VPN_USER,
+            columns:3,
+            items:[
+                {boxlabel: $.su.CHAR.ROLE_MNGT.RW, cls: '', inputValue: 'rw'},
+                {boxlabel: $.su.CHAR.ROLE_MNGT.RO, cls: '', inputValue: 'ro'},
+                {boxlabel: $.su.CHAR.ROLE_MNGT.NONE, cls: '', inputValue: 'none',checked:true}
+            ]
+        }).on('ev_change', function(e, oldValue, newValue){childChange(e,newValue);}).radio('disableStyle');
+        $("input#dns").radio({
+            fieldLabel: $.su.CHAR.ROLE_MNGT.DNS,
+            columns:3,
+            items:[
+                {boxlabel: $.su.CHAR.ROLE_MNGT.RW, cls: '', inputValue: 'rw'},
+                {boxlabel: $.su.CHAR.ROLE_MNGT.RO, cls: '', inputValue: 'ro'},
+                {boxlabel: $.su.CHAR.ROLE_MNGT.NONE, cls: '', inputValue: 'none',checked:true}
+            ]
+        }).on('ev_change', function(e, oldValue, newValue){childChange(e,newValue);}).radio('disableStyle');
+
+        //todo
+        $("input#system").radio({
+            fieldLabel: $.su.CHAR.ROLE_MNGT.SYSTEM,
+            columns:3,
+            items:[
+                {boxlabel: $.su.CHAR.ROLE_MNGT.RW, cls: '', inputValue: 'rw'},
+                {boxlabel: $.su.CHAR.ROLE_MNGT.RO, cls: '', inputValue: 'ro'},
+                {boxlabel: $.su.CHAR.ROLE_MNGT.NONE, cls: '', inputValue: 'none',checked:true}
+            ]
+        }).on('ev_change', function(e, oldValue, newValue){
+            parentChange(e,newValue);
+        }).radio('disableStyle');
+        $("input#administration").radio({
+            fieldLabel: $.su.CHAR.ROLE_MNGT.ADMINISTRATION,
+            columns:3,
+            items:[
+                {boxlabel: $.su.CHAR.ROLE_MNGT.RW, cls: '', inputValue: 'rw'},
+                {boxlabel: $.su.CHAR.ROLE_MNGT.RO, cls: '', inputValue: 'ro'},
+                {boxlabel: $.su.CHAR.ROLE_MNGT.NONE, cls: '', inputValue: 'none',checked:true}
+            ]
+        }).on('ev_change', function(e, oldValue, newValue){childChange(e,newValue);}).radio('disableStyle');
+        $("input#cloud_mngt").radio({
+            fieldLabel: $.su.CHAR.ROLE_MNGT.CLOUD_MNGT,
+            columns:3,
+            items:[
+                {boxlabel: $.su.CHAR.ROLE_MNGT.RW, cls: '', inputValue: 'rw'},
+                {boxlabel: $.su.CHAR.ROLE_MNGT.RO, cls: '', inputValue: 'ro'},
+                {boxlabel: $.su.CHAR.ROLE_MNGT.NONE, cls: '', inputValue: 'none',checked:true}
+            ]
+        }).on('ev_change', function(e, oldValue, newValue){
+            childChange(e,newValue);
+        }).radio('disableStyle');
+        $("input#firmware").radio({
+            fieldLabel: $.su.CHAR.ROLE_MNGT.FIRMWARE,
+            columns:3,
+            items:[
+                {boxlabel: $.su.CHAR.ROLE_MNGT.RW, cls: '', inputValue: 'rw'},
+                {boxlabel: $.su.CHAR.ROLE_MNGT.RO, cls: '', inputValue: 'ro'},
+                {boxlabel: $.su.CHAR.ROLE_MNGT.NONE, cls: '', inputValue: 'none',checked:true}
+            ]
+        }).on('ev_change', function(e, oldValue, newValue){childChange(e,newValue);}).radio('disableStyle');
+        $("input#disk_mngt").radio({
+            fieldLabel: $.su.CHAR.ROLE_MNGT.DISK_MNGT,
+            columns:3,
+            items:[
+                {boxlabel: $.su.CHAR.ROLE_MNGT.RW, cls: '', inputValue: 'rw'},
+                {boxlabel: $.su.CHAR.ROLE_MNGT.RO, cls: '', inputValue: 'ro'},
+                {boxlabel: $.su.CHAR.ROLE_MNGT.NONE, cls: '', inputValue: 'none',checked:true}
+            ]
+        }).on('ev_change', function(e, oldValue, newValue){childChange(e,newValue);}).radio('disableStyle');
+        $("input#time_setting").radio({
+            fieldLabel: $.su.CHAR.ROLE_MNGT.TIME_SETTING,
+            columns:3,
+            items:[
+                {boxlabel: $.su.CHAR.ROLE_MNGT.RW, cls: '', inputValue: 'rw'},
+                {boxlabel: $.su.CHAR.ROLE_MNGT.RO, cls: '', inputValue: 'ro'},
+                {boxlabel: $.su.CHAR.ROLE_MNGT.NONE, cls: '', inputValue: 'none',checked:true}
+            ]
+        }).on('ev_change', function(e, oldValue, newValue){childChange(e,newValue);}).radio('disableStyle');
+        $("input#audit_config").radio({
+            fieldLabel: $.su.CHAR.ROLE_MNGT.AUDIT_CONFIG,
+            columns:3,
+            items:[
+                {boxlabel: $.su.CHAR.ROLE_MNGT.RW, cls: '', inputValue: 'rw'},
+                {boxlabel: $.su.CHAR.ROLE_MNGT.RO, cls: '', inputValue: 'ro'},
+                {boxlabel: $.su.CHAR.ROLE_MNGT.NONE, cls: '', inputValue: 'none',checked:true}
+            ]
+        }).on('ev_change', function(e, oldValue, newValue){childChange(e,newValue);}).radio('disableStyle');
+        $("input#log_config").radio({
+            fieldLabel: $.su.CHAR.ROLE_MNGT.LOG_CONFIG,
+            columns:3,
+            items:[
+                {boxlabel: $.su.CHAR.ROLE_MNGT.RW, cls: '', inputValue: 'rw'},
+                {boxlabel: $.su.CHAR.ROLE_MNGT.RO, cls: '', inputValue: 'ro'},
+                {boxlabel: $.su.CHAR.ROLE_MNGT.NONE, cls: '', inputValue: 'none',checked:true}
+            ]
+        }).on('ev_change', function(e, oldValue, newValue){childChange(e,newValue);}).radio('disableStyle');
+        $("input#alarm_config").radio({
+            fieldLabel: $.su.CHAR.ROLE_MNGT.ALARM_CONFIG,
+            columns:3,
+            items:[
+                {boxlabel: $.su.CHAR.ROLE_MNGT.RW, cls: '', inputValue: 'rw'},
+                {boxlabel: $.su.CHAR.ROLE_MNGT.RO, cls: '', inputValue: 'ro'},
+                {boxlabel: $.su.CHAR.ROLE_MNGT.NONE, cls: '', inputValue: 'none',checked:true}
+            ]
+        }).on('ev_change', function(e, oldValue, newValue){
+            childChange(e,newValue);
+        }).radio('disableStyle');
+        $("input#signature_db").radio({
+            fieldLabel: $.su.CHAR.ROLE_MNGT.SIGNATURE_DB,
+            columns:3,
+            items:[
+                {boxlabel: $.su.CHAR.ROLE_MNGT.RW, cls: '', inputValue: 'rw'},
+                {boxlabel: $.su.CHAR.ROLE_MNGT.RO, cls: '', inputValue: 'ro'},
+                {boxlabel: $.su.CHAR.ROLE_MNGT.NONE, cls: '', inputValue: 'none',checked:true}
+            ]
+        }).on('ev_change', function(e, oldValue, newValue){childChange(e,newValue);}).radio('disableStyle');
+        $("input#license").radio({
+            fieldLabel: $.su.CHAR.ROLE_MNGT.LICENSE,
+            columns:3,
+            items:[
+                {boxlabel: $.su.CHAR.ROLE_MNGT.RW, cls: '', inputValue: 'rw'},
+                {boxlabel: $.su.CHAR.ROLE_MNGT.RO, cls: '', inputValue: 'ro'},
+                {boxlabel: $.su.CHAR.ROLE_MNGT.NONE, cls: '', inputValue: 'none',checked:true}
+            ]
+        }).on('ev_change', function(e, oldValue, newValue){childChange(e,newValue);}).radio('disableStyle');
+        $("input#high_available").radio({
+            fieldLabel: $.su.CHAR.ROLE_MNGT.HIGH_AVAILABLE,
+            columns:3,
+            items:[
+                {boxlabel: $.su.CHAR.ROLE_MNGT.RW, cls: '', inputValue: 'rw'},
+                {boxlabel: $.su.CHAR.ROLE_MNGT.RO, cls: '', inputValue: 'ro'},
+                {boxlabel: $.su.CHAR.ROLE_MNGT.NONE, cls: '', inputValue: 'none',checked:true}
+            ]
+        }).on('ev_change', function(e, oldValue, newValue){childChange(e,newValue);}).radio('disableStyle');
+        $("input#system_params").radio({
+            fieldLabel: $.su.CHAR.ROLE_MNGT.SYSTEM_PARAMS,
+            columns:3,
+            items:[
+                {boxlabel: $.su.CHAR.ROLE_MNGT.RW, cls: '', inputValue: 'rw'},
+                {boxlabel: $.su.CHAR.ROLE_MNGT.RO, cls: '', inputValue: 'ro'},
+                {boxlabel: $.su.CHAR.ROLE_MNGT.NONE, cls: '', inputValue: 'none',checked:true}
+            ]
+        }).on('ev_change', function(e, oldValue, newValue){childChange(e,newValue);}).radio('disableStyle');
+        $("input#wizard").radio({
+            fieldLabel: $.su.CHAR.ROLE_MNGT.WIZARD,
+            columns:3,
+            items:[
+                {boxlabel: $.su.CHAR.ROLE_MNGT.RW, cls: '', inputValue: 'rw'},
+                {boxlabel: $.su.CHAR.ROLE_MNGT.RO, cls: '', inputValue: 'ro'},
+                {boxlabel: $.su.CHAR.ROLE_MNGT.NONE, cls: '', inputValue: 'none',checked:true}
+            ]
+        }).on('ev_change', function(e, oldValue, newValue){childChange(e,newValue);}).radio('disableStyle');
+        var accountMngtGrid = $("#account-mngt-grid").grid({
+            editor: {
+                validator:function()
+                {
+                    return true;
+                },
+                content:"#own_editor",
+                fields: [
+                    {name: "role_name"},
+                    {name: "description"},
+                    // {name: "panel"},
+                    {name: "status"},
+
+                    // {name: "monitor"},
+                    {name: "system_log"},
+                    {name: "audit_log"},
+                    {name: "report"},
+                    {name: "system_stat"},
+                    {name: "diagnostic_center"},
+
+                    // {name: "policy"},
+                    {name: "security_policy"},
+                    {name: "audit_policy"},
+                    {name: "bandwidth_policy"},
+                    {name: "nat_policy"},
+                    {name: "alg_policy"},
+                    {name: "security_guard"},
+
+                    // {name:"object"},
+                    {name:"addresses"},
+                    {name:"time_segs"},
+                    {name:"ippool"},
+                    {name:"user"},
+                    {name:"service"},
+                    {name:"web_urls"},
+                    {name:"apps"},
+                    {name:"security_profile"},
+                    {name:"audit_profile"},
+                    {name:"intrusion_prevention"},
+                    {name:"certificate"},
+
+                    // {name:"network"},
+                    {name:"interface"},
+                    {name:"zone"},
+                    {name:"dhcp-server"},
+                    {name:"routing"},
+                    {name:"ipsec"},
+                    {name:"l2tp"},
+                    {name:"pptp"},
+                    {name:"vpn-user"},
+                    {name:"dns"},
+
+                    // {name:"system"},
+                    {name:"administration"},
+                    {name:"cloud_mngt"},
+                    {name:"firmware"},
+                    {name:"disk_mngt"},
+                    {name:"time_setting"},
+                    {name:"audit_config"},
+                    {name:"log_config"},
+                    {name:"alarm_config"},
+                    {name:"signature_db"},
+                    {name:"license"},
+                    {name:"high_available"},
+                    {name:"system_params"},
+                    {name:"wizard"}
+                ]
+            },
+            store:{
+                proxy: accountMngtListProxy,
+                fields: [
+                    {name: "role_name"},
+                    {name: "description"},
+                    // {name: "panel"},
+                    {name: "status"},
+
+                    // {name: "monitor"},
+                    {name: "system_log"},
+                    {name: "audit_log"},
+                    {name: "report"},
+                    {name: "system_stat"},
+                    {name: "diagnostic_center"},
+
+                    // {name: "policy"},
+                    {name: "security_policy"},
+                    {name: "audit_policy"},
+                    {name: "bandwidth_policy"},
+                    {name: "nat_policy"},
+                    {name: "alg_policy"},
+                    {name: "security_guard"},
+
+                    // {name:"object"},
+                    {name:"addresses"},
+                    {name:"time_segs"},
+                    {name:"ippool"},
+                    {name:"user"},
+                    {name:"service"},
+                    {name:"web_urls"},
+                    {name:"apps"},
+                    {name:"security_profile"},
+                    {name:"audit_profile"},
+                    {name:"intrusion_prevention"},
+                    {name:"certificate"},
+
+                    // {name:"network"},
+                    {name:"interface"},
+                    {name:"zone"},
+                    {name:"dhcp-server"},
+                    {name:"routing"},
+                    {name:"ipsec"},
+                    {name:"l2tp"},
+                    {name:"pptp"},
+                    {name:"vpn-user"},
+                    {name:"dns"},
+
+                    // {name:"system"},
+                    {name:"administration"},
+                    {name:"cloud_mngt"},
+                    {name:"firmware"},
+                    {name:"disk_mngt"},
+                    {name:"time_setting"},
+                    {name:"audit_config"},
+                    {name:"log_config"},
+                    {name:"alarm_config"},
+                    {name:"signature_db"},
+                    {name:"license"},
+                    {name:"high_available"},
+                    {name:"system_params"},
+                    {name:"wizard"}
+                ],
+                parseKey: {
+                    moduleName: "administrator",
+                    pageSizeName: "account_mngt_entry",
+                    tableName: "role"
+                },
+                autoLoad: true
+            },
+            paging_true:{},
+            columns: [
+                {
+                    xtype: "checkcolumn"
+                },
+                {
+                    xtype: "rownumberer"
+                },
+                // {
+                //     text:"",
+                //     dataIndex: "type",
+                //     hidden: true
+                // },
+                {
+                    text: $.su.CHAR.ROLE_MNGT.ROLE_NAME,
+                    width: 200,
+                    dataIndex: "role_name"
+                },
+                {
+                    text: $.su.CHAR.ROLE_MNGT.DESCRIPTION,
+                    width: 400,
+                    dataIndex: "description"
+                },
+                {
+                    width: 50,
+                    text: $.su.CHAR.ROLE_MNGT.EDIT,
+                    dataIndex: "none",
+                    renderer: function(dd, index, data){
+                        var inHTML="<div class=\"button-container zone-operation\" style=\"text-align:center\">";
+                        inHTML +=	"<a href=\"javascript:void(0);\" data-index=\""+index+"\" data-key=\""+data.key+"\" title=\""+ $.su.CHAR.OPERATION.EDIT +"\" class=\"grid-content-btn grid-content-btn-edit btn-edit\">";
+                        inHTML +=		"<span class=\"icon\"></span>";
+                        inHTML +=		"<span class=\"text\">"+$.su.CHAR.OPERATION.EDIT+"</span>";
+                        inHTML +=	"</a>";
+                        inHTML +="</div>";
+                        return inHTML;
+                    }
+                }
+            ],
+            operation: 'refresh'
+        }).on("ev_load", function(e, data, others){
+            //todo 决定是否可以删除
+            for (var i=0; i<data.length; i++){
+                if ( data[i].type=== "provision" )
+                {
+                    $("div#account-mngt-grid").grid('disableRow',i);
+                }
+            }
+        }).on("ev_formatAddData", function(e, data){}).on("ev_formatEditData", function(e, data){});
+
+        var helpaccountMngtGrid = new $.su.Help({
+            container: "div#account-mngt-help",
+            content: ["ROLE_MNGT"]
+        });/* TODO */
+
+        $(".func-container").show();
+    });
+</script>
+</body>
+
+</html>

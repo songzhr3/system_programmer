@@ -1,0 +1,434 @@
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
+<html xmlns="http://www.w3.org/1999/xhtml">
+<head>
+<meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
+<title>CREDENTIALS</title>
+<style type="text/css">
+#activation-status {
+    margin-bottom: 16px;
+}
+
+#activation-table {
+    width: 100%;
+    border-collapse: collapse;
+}
+
+table tr {
+    height: 40px;
+    line-height: 40px;
+    border: 1px solid #999;
+}
+
+table th, table td {
+    border: 1px solid #999;
+}
+
+table thead tr {
+    background: #f5f5f5;
+}
+
+table, tr, td, th
+{
+    padding: 0;
+    margin: 0;
+}
+
+</style>
+</head>
+
+<body>
+<div class="func-container">
+    <div id="export-setting-panel">
+        <form id="get-license" enctype="multipart/form-data">
+            <p id="get-license-tip" class="note first-line"></p>
+            <button type="button" id="export" name="export"></button>
+        </form>
+    </div>
+
+    <div id="activation-panel">
+        <form id="activation-setting">
+            <input id="file" name="license" type="file" />
+            <button type="button" id="activation" name="activation"></button>
+        </form>
+    </div>
+
+    <div id="activation-status">
+        <span class="status-title"></span>
+        <span class="status-info"></span>
+    </div>
+
+    <table id="activation-table" border="0" cellspacing="0">
+        <thead>
+        <tr>
+            <th style="width: 40%">License资源</th>
+            <th>状态</th>
+        </tr>
+        </thead>
+        <tbody>
+        <tr>
+            <td>入侵防御</td>
+            <td class="ips-value">---</td>
+        </tr>
+        <tr>
+            <td>反病毒</td>
+            <td class="av-value">---</td>
+        </tr>
+        <tr>
+            <td>恶意域名远程查询</td>
+            <td class="url-value">---</td>
+        </tr>
+        <tr>
+            <td>应用特征库升级</td>
+            <td class="app-value">---</td>
+        </tr>
+        </tbody>
+    </table>
+
+    <div id="activation_alert_cnt">
+        <h4 class="title" id="activation_confirm_cnt">
+            <span class="icon"></span>
+            <span class="text" id="activation_confirm_content"></span>
+        </h4>
+
+        <div id="activation_pro_cnt" class="reboot-loading-msg hidden">
+            <input id="activation_pro_bar" type="text" />
+        </div>
+    </div>
+
+    <div id="activation_failed_cnt">
+        <h4 class="title">
+            <span class="icon" ></span>
+            <span class="text" id="error_str"></span>
+        </h4>
+    </div>
+
+    <div id="license_help"></div>
+
+    <div class="notice" style="top:20px;position:relative;">
+        <hr/>
+        <h6>如需获取License，请联系当地经销商，或拨打TP-LINK服务热线:400-8863-400。</h6>
+    </div>
+</div>
+
+
+<script type="text/javascript">
+try{
+    $
+}catch(e){
+    location.href = "/";
+};
+
+Date.prototype.Format = function (fmt) {
+    var o = {
+        "M+": this.getMonth() + 1, //月份
+        "d+": this.getDate(), //日
+        "H+": this.getHours(), //小时
+        "m+": this.getMinutes(), //分
+        "s+": this.getSeconds(), //秒
+        "q+": Math.floor((this.getMonth() + 3) / 3), //季度
+        "S": this.getMilliseconds() //毫秒
+    };
+    if (/(y+)/.test(fmt)) fmt = fmt.replace(RegExp.$1, (this.getFullYear() + "").substr(4 - RegExp.$1.length));
+    for (var k in o)
+        if (new RegExp("(" + k + ")").test(fmt)) fmt = fmt.replace(RegExp.$1, (RegExp.$1.length == 1) ? (o[k]) : (("00" + o[k]).substr(("" + o[k]).length)));
+    return fmt;
+};
+
+
+$(document).ready(function(e){
+
+    get_license_info();
+    var get_ret = false;
+    var query_interval = 0;
+
+    var EXPORT_URL = '';
+    var IMPORT_URL = '';
+
+    $("#export-setting-panel").panel({
+        title: $.su.CHAR.LICENSE.CREDENTIAL_EXPORT,
+        collapsible: false
+    });
+
+    $('#get-license-tip').html($.su.CHAR.LICENSE.EXPORT_TIP);
+    $('#activation-status .status-title').html($.su.CHAR.LICENSE.ACTIVATION_STATUS);
+    $('#activation_confirm_content').html($.su.CHAR.LICENSE.ACTIVATION_TIP);
+
+    $("#activation-panel").panel({
+        title: $.su.CHAR.LICENSE.ACTIVATION_LICENSE,
+        collapsible: false
+    });
+
+    $("#get-license").form({
+        proxy:{},
+        formEnctype: "multipart/form-data",
+        traditional: true,
+        hiddenFrame: true,
+        autoLoad: false,
+        fileUrlCb: function(){
+            return $.su.url.subs + $.su.url.stok + EXPORT_URL;
+        }
+    });
+
+    var msgInHTML =	"<input id=\"export_pro_bar\" type=\"text\" />";
+    var export_pro_cnt_msg = $("<div id=\"export_pro_cnt\" class=\"reboot-loading-msg hidden\">").msg({
+        cls: 'warning reboot-confirm-size',
+        type: "alert",
+        closeBtn: false,
+        innerHTML: msgInHTML
+    });
+
+    var export_pro_bar  = export_pro_cnt_msg.find('input#export_pro_bar').waitingbar({
+        barWidth: 320,
+        fieldLabel:  $.su.CHAR.LICENSE.EXPORTING,
+        labelCls:"xxl"
+    }).waitingbar("stop");
+
+    function hideWaitingBar() {
+        export_pro_bar.waitingbar("stop");
+        export_pro_bar.waitingbar("reset");
+        export_pro_cnt_msg.msg('close');
+    }
+
+    function hideImportWaitingBar() {
+        activation_pro_bar.waitingbar("stop");
+        activation_pro_bar.waitingbar("reset");
+        $("#activation_alert_cnt").msg('close');
+    }
+
+    function showWaitingBar() {
+        export_pro_cnt_msg.msg('show');
+        export_pro_cnt_msg.msg('hideButtons');
+        export_pro_bar.waitingbar("show");
+        export_pro_bar.waitingbar("run");
+    }
+
+    function getResult() {
+        if(get_ret == false) {
+            var exportCheckProxy = new $.su.Proxy();
+            exportCheckProxy.query({
+                "license":
+                    {
+                        "name": "export_status"
+                    }
+            }, function(data) {
+                data = data.license.export_status;
+                if (data.status == "1") {
+                    clearInterval(query_interval);
+                    hideWaitingBar();
+                    get_ret = true;
+                }
+            })
+        }
+    }
+
+    $("#export").button({
+        text: $.su.CHAR.LICENSE.EXPORT_BUTTON,
+        cls: "submit",
+        handler: function(){
+            var proxy = new $.su.Proxy();
+
+            proxy.action({"license": {"credential_export": null}}, function(data) {
+                EXPORT_URL = data.url;
+                showWaitingBar();
+                $("#get-license").form('submit', {});
+
+                clearInterval(query_interval);
+                get_ret = false;
+                query_interval = setInterval(getResult, 1000);
+            });
+        }
+    });
+
+    function get_license_info() {
+        var proxy = new $.su.Proxy();
+        proxy.query(
+            {
+                license:
+                    {
+                        table: "license_info"
+                    }
+            }, function(data) {
+                $('#activation-table').find('.ips-value').html($.su.CHAR.LICENSE.UNAUTHORIZED);
+                $('#activation-table').find('.av-value').html($.su.CHAR.LICENSE.UNAUTHORIZED);
+                $('#activation-table').find('.url-value').html($.su.CHAR.LICENSE.UNAUTHORIZED);
+                $('#activation-table').find('.app-value').html($.su.CHAR.LICENSE.UNAUTHORIZED);
+                var license_info = data.license.license_info;
+                $.each(license_info, function(_, item){
+                    for (var key in item) {
+                        if (key == "global")
+                        {
+                            var status = item[key].status == '1' ? $.su.CHAR.LICENSE.ACTIVATED: $.su.CHAR.LICENSE.NOT_ACTIVATED;
+                            if (parseInt(item[key].active_time) > 0) {
+                                var activeTime = new Date(parseInt(item[key].active_time)).Format("yyyy-MM-dd");
+                            }else {
+                                var activeTime = new Date().Format("yyyy-MM-dd");
+                            }
+                            var expiredTime = new Date(parseInt(item[key].expired_time)).Format("yyyy-MM-dd");
+                            var status_html = status;
+                            if (item[key].status == '1') {
+                                status_html = status_html + '（激活时间：' + activeTime;
+                                if (parseInt(item[key].expired_time) != 0) {
+                                    status_html = status_html + ' 过期时间：' + expiredTime;
+                                }
+                                status_html = status_html + ')';
+                            }
+                            $('#activation-status .status-info').html(status_html);
+                        }
+                        else
+                        {
+                            var status = item[key].status == '1' ? $.su.CHAR.LICENSE.AUTHORIZED: $.su.CHAR.LICENSE.UNAUTHORIZED;
+                            var expiredTime = new Date(parseInt(item[key].expired_time)).Format("yyyy-MM-dd");
+                            var td_html = status;
+                            if (item[key].status == '1' && parseInt(item[key].expired_time) != 0)
+                            {
+                                td_html = td_html + '（服务过期时间：' + expiredTime + ')';
+                            }
+                            $('#activation-table').find('.' + key + '-value').html(td_html);
+                        }
+                    }
+                });
+            }
+        )
+    }
+
+    function activation_getResult()
+    {
+        if(get_ret == false) {
+            var proxy = new $.su.Proxy();
+            proxy.query({
+                "license":
+                    {
+                        "name": "import_status"
+                    }
+            }, function(data) {
+                data = data.license.import_status;
+                if (data.status == "1") {
+                    clearInterval(query_interval);
+                    get_ret = true;
+                    get_license_info();
+                    $('#activation_confirm_content').html($.su.CHAR.LICENSE.ACTIVATION_SUCCESS);
+                    $("#activation_pro_cnt").hide();
+                    $('#activation_confirm_cnt').show();
+                    $("#activation_alert_cnt").msg('hideButtons');
+                    setTimeout(function() {
+                        $("#activation_alert_cnt").msg('close');
+                    }, 1000)
+                }
+            }, function() {
+                $("#activation_alert_cnt").msg('close');
+            }, function() {
+                $("#activation_alert_cnt").msg('close');
+            })
+        }
+    }
+
+    // 导入凭证表单
+    $("#activation-setting").form({
+        proxy:{},
+        formEnctype: "multipart/form-data",
+        traditional: true,
+        hiddenFrame: true,
+        fields: [
+            {"name": "license"}
+        ],
+        fileUrlCb: function(){
+            return $.su.url.subs + $.su.url.stok + IMPORT_URL;
+        }
+    });
+
+    $("#file").file({
+        fieldLabel: $.su.CHAR.LICENSE.LOCAL_FILE,
+        allowBlank:false,
+        extension: "lic"
+    });
+
+    $("#activation_alert_cnt").msg({
+        okHandler:function(){
+            $("#activation_alert_cnt").msg('hideButtons');
+            $('#activation_confirm_cnt').hide();
+            $("#activation_pro_cnt").show();
+            activation_handle();
+            return false;
+        },
+        cancelHandler:function(){
+            return true;
+        },
+        cls: 'warning reboot-confirm-size',
+        closeBtn: false,
+        type: "confirm"
+    });
+
+    $("#activation").button({
+        text: $.su.CHAR.LICENSE.ACTIVATION_BUTTON,
+        handler: function(){
+            if($("#activation-setting").form('validate'))
+            {
+                $("#activation_pro_cnt").hide();
+                $('#activation_confirm_cnt').show();
+                $('#activation_confirm_content').html($.su.CHAR.LICENSE.ACTIVATION_TIP);
+                $("#activation_alert_cnt").msg('showButtons');
+                $("#activation_alert_cnt").msg("show");
+            }
+            else
+            {
+                return false;
+            }
+
+        },
+        cls: "submit"
+    });
+
+    function activation_handle()
+    {
+        var proxy =  new $.su.Proxy();
+        proxy.action({"license": {"license_import": null}}, function(data) {
+            IMPORT_URL = data.url;
+            $("#activation-setting").form('submit', {}, function (data) {
+                clearInterval(query_interval);
+                get_ret = false;
+                query_interval = setInterval(activation_getResult, 1000);
+            }, function (errcode) {
+                $("#activation_alert_cnt").hide();
+                $("#activation_alert_cnt").msg("close");
+                $("#activation_alert_cnt").msg('showButtons');
+                $('#activation_confirm_cnt').show();
+                $("#activation_pro_cnt").hide();
+                activation_pro_bar.waitingbar("stop");
+            }, function () {
+                $("#activation_alert_cnt").hide();
+                $("#activation_alert_cnt").msg("close");
+                $("#activation_alert_cnt").msg('showButtons');
+                $('#activation_confirm_cnt').show();
+                $("#activation_pro_cnt").hide();
+                activation_pro_bar.waitingbar("stop");
+            });
+        });
+
+            $("#activation_alert_cnt").msg('hideButtons');
+            $('#activation_confirm_cnt').hide();
+            $("#activation_pro_cnt").show();
+            activation_pro_bar.waitingbar("run");
+            $("#activation_alert_cnt").msg("show");
+
+    }
+
+    var activation_pro_bar  = $('input#activation_pro_bar').waitingbar({
+        fieldLabel: $.su.CHAR.LICENSE.ACTIVATING,
+        labelCls:"xxl",
+        waitTime: 600
+    });
+
+    $("#activation_failed_cnt").msg({
+        cls: 'warning reboot-confirm-size',
+        type: "alert"
+    });
+
+    var licensehelp = new $.su.Help({
+        container: "div#license_help",
+        content: ["DOWNLOAD_LICENSE", "ACTIVATE_LICENSE"]
+    });
+});
+</script>
+</body>
+
+</html>

@@ -1,0 +1,378 @@
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
+<html xmlns="http://www.w3.org/1999/xhtml">
+<head>
+<meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
+<style type="text/css">
+    #preview_frame{
+        border: none;
+        width: 400px;
+        height: 600px;
+    }
+    
+    #note_cnt{
+        margin-top:20px;
+        margin-bottom:20px;
+    }
+    
+    #note_title{
+        font-weight: bold;
+    }
+</style>
+<title>Template</title>
+</head>
+
+<div class="func_container">
+    <div id="func_setting">
+        <div id="template_editor"> 
+            <input id="jump_page_name" name="jump_page_name" value=""/>
+            <input id="jump_page_mode" name="jump_page_mode" value=""/>
+            <input id="note" name="note" value="">
+            <div id="local_template" name="local_template"></div>
+            <div id="cloud_template" name="cloud_template"></div>
+        </div>
+        <div id="template_list"></div>
+        <div id="template_alert"></div>
+    </div>
+    <div id="template_help"></div>
+</div>
+
+<script type="text/javascript">
+
+//<![CDATA[
+try{
+    $
+}catch(e){
+    location.href = "/";
+};
+$(document).ready(function(e){
+    $(".func_container").hide();
+    var URL_GLOBAL = $.su.url("/admin/jump_page?form=templatelist");
+    var temp_template_name = "";
+    var global_data= "";
+    var globalProxy = new $.su.Proxy({
+        //url: URL_GLOBAL
+    });
+    var is_commit_ok = false;
+
+    $("#func_setting").panel({
+        title: $.su.CHAR.WPORTAL.TEMPLATE_PAGE,
+        help: $("#template_help")
+    });
+
+    $('#local_template').html('<iframe name="local_iframe" style="width:100%;height:600px" src="./stok=' + $.su.url.stok + '/userrpm/local_template.htm"></iframe>');
+
+    $('#jump_page_mode').radio({
+        fieldLabel: "模板类型",
+        columns: 2,
+        inputCls: 'xl',
+        items: [
+            {boxlabel: "本地模板", inputValue: "local", checked: true},
+            {boxlabel: "云模板", inputValue: "cloud"}
+        ]
+    }).on("ev_change", function(e, oldValue, newValue){
+        var value = newValue;
+        temp_template_name=""
+        if (value == "local")
+        {
+            $('#cloud_template').hide();
+            $('#local_template').show();
+            if ("" != temp_template_name)
+            {
+                $('#local_template').html('<iframe name="local_iframe" style="width:100%;height:600px" src="./pages/userrpm/local_template.html?stok=' + $.su.url.stok + '&portalPageId=' + temp_template_name +'"></iframe>');
+            }
+            else
+            {
+                $('#local_template').html('<iframe name="local_iframe" style="width:100%;height:600px" src="./stok=' + $.su.url.stok + '/userrpm/local_template.htm"></iframe>');
+            }
+        } 
+        else if ("cloud" == value)
+        {
+            $('#local_template').hide();
+            $('#cloud_template').show();
+
+            if ("" != temp_template_name)
+            {
+                $('#cloud_template').html('<iframe name="cloud_iframe" style="width:100%;height:600px" src="./pages/userrpm/cloud_template.html?stok=' + $.su.url.stok + '&portalPageId=' + temp_template_name +'"></iframe>');
+            }
+            else
+            {
+                $('#cloud_template').html('<iframe name="cloud_iframe" style="width:100%;height:600px" src="./stok=' + $.su.url.stok + '/userrpm/cloud_template.htm"></iframe>');
+            }
+        }
+    });
+
+    $('#jump_page_name').textbox({
+        fieldLabel: $.su.CHAR.WPORTAL.TEMPLATE_NAME,
+        //tipsCls: 's',
+        inputCls: 'xl',
+        allowBlank: false,
+        maxLength: 50,
+        tips: $.su.CHAR.WPORTAL.TEMPLATE_NAME_TIP,
+        validator: function(value)
+        {
+            var codeStr = /^([A-Za-z0-9\_\-]){1,50}$/;
+            if (!codeStr.test(value))
+            {
+                return $.su.CHAR.WPORTAL.TEMPLATE_NAME_ERR;
+            }
+            else
+            {
+                return true;
+            }
+        }
+    });
+
+    $('#note').textbox({
+        fieldLabel: $.su.CHAR.WPORTAL.TEMPLATE_NOTE,
+        maxLength: 50,
+        allowBlank: true,
+        inputCls: 'xl',
+        vtype: "string_visible_allow_blank",
+        tips: $.su.CHAR.WPORTAL.TEMPLATE_NOTE_TIP
+    });
+
+    function repalceSpecialString(src_content) {
+        //src_content = src_content.replace("\"", "&quot;")
+        src_content = src_content.replace(/'/g, "&#39;")
+        return src_content;
+    }
+
+    var templateGrid = $('#template_list').grid({
+        store: {
+            proxy: globalProxy,
+            autoLoad: true,
+            fields: [
+                {name: "jump_page_mode"},
+                {name: "jump_page_name"},
+                {name: "portalPageId"},
+                {name: "note"}
+            ],
+            parseKey:{
+                moduleName: "authentication",
+                tableName: "jump_page_list",
+                pageSizeName: "jump_page_entry",
+				maxSizeTableName: "wportal",
+				maxSizeOptionName: "jump_page_max",
+                setFilter:function(itemNames, data, indexes){
+                    var _string = "";
+                    var dataSet = templateGrid.grid("getStore").data;
+                    var index = itemNames;
+                    if (!$.isArray(index))
+                    {
+                        index = [index];
+                    }
+                    for (var i = 0; i < index.length; i++)
+                    {
+                        if( i != 0)
+                        {
+                            _string += ","
+                        }
+                        _string += dataSet[index]["jump_page_name"];
+                    }
+                    return {"jump_page_name":_string};
+                },
+
+                delFilter: function(itemNames, data, indexes){
+                    var _string = "";
+                    var result = [];
+                    for (var i = 0; i < indexes.length; i++)
+                    {
+                        _string = indexes[i].jump_page_name;
+                        oneFilter = {};
+                        oneFilter["jump_page_name"] = _string;
+                        result.push(oneFilter);
+                    }
+                    return result;
+                    
+
+                    return [{"jump_page_name": result}];
+                }
+            },
+            rmField: ["jump_page_name"]
+        },
+        editor: {
+            content: '#template_editor',
+            notSubmit: true,
+            beforeSubmit: function() {
+                var jump_page_mode = $("#jump_page_mode").radio('getValue');
+                $.su.loading.show()
+
+                if (jump_page_mode == "local") {
+                    window.submit_callback = function() {
+                        var editor = templateGrid.grid("getEditor");
+                        $(editor).editor("completeEdit", editor.param, editor.suc, editor.fail)
+                        $.su.loading.hide()
+                    };
+
+                    if (templateGrid.grid("validate")) {
+                        if (window.frames['local_iframe'].commit('submit_callback') === false) {
+                            var text = "请选择模板并正确配置参数";
+                            template_alert.find("div.msg-content-container").html(text);
+                            template_alert.msg("show");
+                            $.su.loading.hide()
+                            return false;
+                        }             
+                    };
+                } else if(jump_page_mode == "cloud") {
+                    window.submit_callback = function() {
+                        var editor = templateGrid.grid("getEditor");
+                        $(editor).editor("completeEdit", editor.param, editor.suc, editor.fail)
+                        $.su.loading.hide()
+                    };
+
+                    if (templateGrid.grid("validate")) {
+                        if (window.frames['cloud_iframe'].commit('submit_callback') === false) {
+                            var text = "请选择模板并正确配置参数";
+                            template_alert.find("div.msg-content-container").html(text);
+                            template_alert.msg("show");
+                            $.su.loading.hide()
+                            return false;
+                        }             
+                    };
+                }
+            },
+            fields: [
+                {name: "jump_page_mode"},
+                {name: "jump_page_name"},
+                {name: "note"}
+            ]
+        },
+        paging_true:{},
+        columns: [
+        {
+            xtype: 'checkcolumn',
+            width: 30
+        },
+        {
+            xtype: 'rownumberer',
+            width: 30
+        },
+        {
+            text: "模板类型",
+            width: 50,
+            dataIndex: 'jump_page_mode',
+            renderer: function(data){
+                var result="---";
+                switch (data){
+                    case "local":
+                        result = "本地模板";
+                        break;
+                    case "cloud":
+                        result = "云模板";
+                        break;
+                    default :
+                        break;
+                }
+                return result;
+            },
+            scan: {
+                type: "combobox",
+                vtype: "string",
+                items: [
+                    {value:"local", name: "本地模板"},
+                    {value:"cloud", name: "云模板"}
+                ]
+            }
+        },
+        {
+            text: $.su.CHAR.WPORTAL.TEMPLATE_NAME,
+            width: 70,
+            dataIndex: 'jump_page_name',
+            scan: {
+                cmp: $.search.compare.string
+            }
+        },
+        {
+            text: $.su.CHAR.WPORTAL.TEMPLATE_NOTE,
+            width: 80,
+            dataIndex: 'note',
+            scan: {
+                cmp: $.search.compare.string
+            }
+        },
+        {
+            xtype: "settings",
+            width: 50
+        }
+        ],
+
+        operation: 'prompt|add|delete|search'
+    }).on('ev_load',  function(e, data, others){
+        global_data = data;
+        if (others)
+        {
+            //console.log(others.max_rules);
+            maxrules = others.max_rules;
+        }
+    }).delegate('a.btn-preview', 'click', function(e){
+        
+    });
+
+    var editor = templateGrid.grid("getEditor");
+    $(editor).on("ev_startEdit", function(e, index, key){
+
+        if(global_data[index]){
+            var getData = new $.su.Proxy();
+            if(global_data[index].jump_page_mode == "local"){
+                $('#cloud_template').hide();
+                $('#local_template').show();
+                if ("" != global_data[index].portalPageId)
+                {
+                    $('#local_template').html('<iframe name="local_iframe" style="width:100%;height:600px" src="./stok=' + $.su.url.stok + '/userrpm/local_template.htm/portalPageId=' + global_data[index].portalPageId +'"></iframe>');
+                }
+                else
+                {
+                    $('#local_template').html('<iframe name="local_iframe" style="width:100%;height:600px" src="./stok=' + $.su.url.stok + '/userrpm/local_template.htm"></iframe>');
+                }
+            }else{
+                $('#local_template').hide();
+                $('#cloud_template').show();
+                if ("" != global_data[index].portalPageId)
+                {
+                    $('#cloud_template').html('<iframe name="cloud_iframe" style="width:100%;height:600px" src="./stok=' + $.su.url.stok + '/userrpm/cloud_template.htm/portalPageId=' + global_data[index].portalPageId +'"></iframe>');
+                }
+                else
+                {
+                    $('#cloud_template').html('<iframe name="cloud_iframe" style="width:100%;height:600px" src="./stok=' + $.su.url.stok + '/userrpm/cloud_template.htm"></iframe>');
+                }
+
+            }
+        }else if(index == "add"){
+            $('#local_template').show();
+            $('#cloud_template').hide();
+            $('#local_template').html('<iframe name="local_iframe" style="width:100%;height:600px" src="./stok=' + $.su.url.stok + '/userrpm/local_template.htm"></iframe>');
+        }
+
+        if ("add" == index) {
+            $('#jump_page_name').textbox("enable")
+            $('#jump_page_mode').radio("enable")
+        } else {
+            $('#jump_page_name').textbox("disable")
+            $('#jump_page_mode').radio("disable")
+        }
+    });
+
+    var template_alert = $("#template_alert").msg({
+        type:"alert",
+        okText:"确认",
+        cls: '',
+        cancelText:"",
+        closeBtn: false,
+        okHandler: function(){
+            template_alert.msg("close");
+            return false;
+        }
+    });
+
+    var templateHelp = new $.su.Help({
+        container: "div#template_help",
+        content: "JUMP_PAGE"
+    });
+    
+    $(".func_container").show();
+});
+
+</script>
+</body>
+
+</html>

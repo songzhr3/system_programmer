@@ -1,0 +1,591 @@
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
+<html xmlns="http://www.w3.org/1999/xhtml">
+<head>
+<meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
+<title>system log</title>
+<style type="text/css">
+	div.widget-container div.widget-fieldlabel-wrap.m{
+		width: 128px;
+	}
+</style>
+</head>
+
+<body>
+<div class="func-container">
+	<div id="function_setting">
+	    <form id="log_settings">
+			<input id="level_switch" name="level_switch" />
+			<input id="level" name="level" />
+			<input id="module_switch" name="module_switch" />
+			<input id="module" name="module" />
+			<input id="log_send" name="log_send" />
+			<input id="send_server" name="send_server" />
+			<button id="log_submit" type="button"></button>
+		</form>
+	</div>
+
+
+	<div id="function_list">
+		<div id="log_list"></div>
+	</div>
+
+	<div id="help_system_log"></div>
+</div>
+
+<script type="text/javascript">
+try{
+	$
+}catch(e){
+	location.href = "/";
+};
+
+$(document).ready(function(e){
+	$(".func-container").hide();
+	var capability_proxy = new $.su.Proxy({
+		async: false
+	});
+
+	// 当前设备系统日志页面是否支持配置ipv6服务器地址
+	var g_send_server_xtype = ("<%=send_server_support_ipv6%>" == "True") ? "ip_all" : "ip";
+
+	// 依据路径渲染主体页面
+	if($.su.app.runningModule.name !=='log_config'){
+		var logProxy = new $.su.Proxy();
+		var isFirstLoad = true;
+		var currentPageNum = 1, currentNumPerPage = 10;
+		function processData(data)
+		{
+			var sysLogLevel = ["ALL", "DEBUG", "INFO", "NOTICE", "WARNING", "ERROR", "CRITICAL", "ALERT", "EMERGENCY"];
+			var result;
+			var onelogregs = /<(\d+)>(.+)/;
+			var msgregs = /(.+?)\[(.+?)\](.+)/;
+
+			data = data.syslog || [];
+
+			/* 开始处理数据 */
+			for (var i=0;i<data.length;i++)
+			{
+				var logObj = data[i];
+				var logStr = "", msgs;
+
+				for(var tempData in logObj)
+				{
+					logStr = logObj[tempData];
+
+					result = onelogregs.exec(logStr);
+					if(result)
+					{
+						var onelogsj={};
+						onelogsj.level = sysLogLevel[parseInt(result[1])];
+						msgs = msgregs.exec(result[2]);
+						onelogsj.time = msgs[1] || "";
+						onelogsj.type = msgs[2] || "";
+						onelogsj.content = msgs[3] || "";
+						onelogsj.itemName = tempData;
+
+						data[i] = onelogsj;
+					}
+					else
+					{
+						data[i] = {time:"",type:"",level:"",content:"",itemName:tempData};
+					}
+				}
+			}
+
+			return data;
+		}
+
+		$("#function_list").panel({
+			title: $.su.CHAR.SYSLOG.TITLE,
+			collapsible: false
+		});
+
+		var storeTest = new $.su.Store({
+			proxy: {},
+			fields: [
+				{name: "time"},
+				{name: "type"},
+				{name: "level"},
+				{name: "content"}
+			],
+			parseKey: {
+				pageSizeName: "sys_log"
+			}
+		});
+
+		var logListGrid = $("div#log_list").grid({
+			store:storeTest,
+			maxLines:11,
+			minLines:0,
+			columns: [
+				{
+					text: $.su.CHAR.SYSLOG.ID,
+					xtype: "rownumberer",
+					width: 38
+				},
+				{
+					text: $.su.CHAR.SYSLOG.TIME,
+					width: 140,
+					dataIndex: "time"
+				},
+				{
+					text: $.su.CHAR.SYSLOG.MODULE,
+					width: 120,
+					renderer:function(val, index){
+						var res = $.su.CHAR.SYSLOG[val];
+						if(!res)
+						{
+							res = val;
+						}
+						if (res == "LTOTP")
+							res = "L2TP"
+
+						return res;
+					},
+					dataIndex: "type"
+				},
+				{
+					text: $.su.CHAR.SYSLOG.LEVEL,
+					width:100,
+					renderer:function(val, index){
+						var res = $.su.CHAR.SYSLOG[val];
+						var colorRed = "<span style=\"color:#ff0000;\">";
+						var colorOrange = "<span style=\"color:#ff9900;\">";
+						var spanEnd = "</span>";
+						if(!res)
+						{
+							res = val;
+						}else{
+							switch(val){
+								case "EMERGENCY":
+									res = colorRed + res + spanEnd;
+									break;
+								case "ALERT":
+									res = colorRed + res + spanEnd;
+									break;
+								case "CRITICAL":
+									res = colorRed + res + spanEnd;
+									break;
+								case "ERROR":
+									res = colorRed + res + spanEnd;
+									break;
+								case "WARNING":
+									res = colorOrange + res + spanEnd;
+									break;
+								default:
+									break;
+							}
+						}
+
+						return res;
+					},
+					dataIndex: "level"
+				},
+				{
+					text: $.su.CHAR.SYSLOG.CONTENT,
+					dataIndex: "content",
+					width: 600,
+					renderer:function(val, index, data){
+						val = $.su.func.escapeHtml(val);
+						var colorNormal = "<span>";
+						var colorRed = "<span style=\"color:#ff0000;\">";
+						var colorOrange = "<span style=\"color:#ff9900;\">";
+						var spanEnd = "</span>";
+						switch(data.level){
+							case "EMERGENCY":
+								val = colorRed + val + spanEnd;
+								break;
+							case "ALERT":
+								val = colorRed + val + spanEnd;
+								break;
+							case "CRITICAL":
+								val = colorRed + val + spanEnd;
+								break;
+							case "ERROR":
+								val = colorRed + val + spanEnd;
+								break;
+							case "WARNING":
+								val = colorOrange + val + spanEnd;
+								break;
+							default:
+								val = colorNormal + val + spanEnd;
+								break;
+						}
+						return val;
+					}
+				}
+			],
+			exportCfg:{
+				text:$.su.CHAR.SYSLOG.SAVE_LOG,
+				url: $.su.url.subs + $.su.url.stok + "/admin/system/download_syslog",
+				checkCallback: function(callback){
+					var exportCheckProxy = new $.su.Proxy();
+
+					exportCheckProxy.query({"system":{"name":"download_syslog_status"}}, function(data){
+						data = data.system.download_syslog_status;
+
+						if (data.status == "1")
+						{
+							callback(true);
+						}
+						else
+						{
+							callback(false);
+						}
+					});
+				}
+			},
+			autoRefresh: true,
+			operation: [
+				"refresh","autoRefresh",
+				{
+					xtype: "button",
+					iconCls: "delete",
+					text: "全部删除",
+					handler: function(){
+						var postData = {system:{delete_logs:null}};
+
+						logProxy.action(postData, function(data){
+							//此处添加删除成功后回调函数
+
+							refreshLog();
+
+						}, function(data){
+							//此处添加删除失败后回调函数
+						});
+					}
+				},"export"
+			],
+			paging_true: {
+				goToPageHandle : function(data, callback){
+					var doProxy = new $.su.Proxy();
+					var store = $("div#log_list").grid('getStore');
+					var currentPage = data.currentPage;
+					var numPerPage = data.numPerPage;
+					var count;
+
+					var postData = {
+						system : {
+							read_logs: {
+								"page":	"" + (currentPage + 1),
+								"num_per_page": "" + numPerPage
+							}
+						}
+					};
+
+					doProxy.action(postData, function(data){
+						count = data.total;
+						data = processData(data);
+
+						currentPageNum = currentPage + 1;
+						currentNumPerPage = numPerPage;
+
+						data = store.dataFormat(data);
+						store.loadData(data);
+						$(store).trigger("ev_load", [store, data]);
+						callback(data, {count:count});
+					});
+				},
+				chgItemHandle : function(data, callback){
+					var setProxy = new $.su.Proxy();
+					var item = data.item;
+					var postData = {
+						global_config: {
+							page_size: {
+								sys_log: "" + item
+							}
+						}
+					}
+
+					setProxy.modify(postData, function(data){
+						currentNumPerPage = item;
+						callback();
+					});
+				}
+			},
+			pagingHandle: function(callback){
+				var queryProxy = new $.su.Proxy({async:false,authSessionsDataFlag:true});
+				var numPerPage, totalNum, maxSize;
+
+				var postData = {
+					global_config: {
+						name: "page_size"
+					},
+					system: {
+						name: "syslog"
+					}
+				};
+
+				queryProxy.query(postData, function(data){
+					numPerPage = data.global_config.page_size.sys_log || 10;
+					maxSize = data.system.syslog.log_size;
+				});
+
+				queryProxy.action({
+					system: {
+						read_logs: {
+							page: "1",
+							num_per_page: "1"
+						}
+					}
+				}, function(data){
+					totalNum = data.total;
+				});
+
+				callback({resultNumPerPage:numPerPage, resultTotalNum: totalNum, resultMaxSize: maxSize});
+			}
+		}).on("ev_load",function(e, data){
+			$("td.grid-content-td-content").css({
+				"textAlign": "left",
+			});
+			$("td.grid-content-td-content span.content").css({
+                "padding": "0 20px"
+            });
+			$("td.grid-content-td-content span span").css({
+				"margin": "0"
+			});
+
+			$("td.grid-content-td-content").css({
+				"textAlign": "left"
+			});
+		});
+
+		function refreshLog(){
+			var store = $("div#log_list").grid('getStore');
+
+			/* 进入页面首次加载表格，须先请求每页显示条目数 */
+			if (isFirstLoad)
+			{
+				var loadCountProxy = new $.su.Proxy({async:false});
+
+				loadCountProxy.query({
+					global_config: {
+						name: "page_size"
+					}
+				}, function(data) {
+					currentNumPerPage = data.global_config.page_size.sys_log || 10;
+				})
+
+				isFirstLoad = false;
+			}
+
+			if(!$.contains(document, logListGrid[0])){
+				return;
+			}
+
+			var reqData = {
+				system : {
+					read_logs: {
+						"page":	"" + currentPageNum,
+						"num_per_page": "" + currentNumPerPage
+					}
+				}
+			};
+
+			//向网页后台发送请求
+			logProxy.action(reqData, function(data){
+				var total = data.total;
+				data = processData(data);
+
+				data = store.dataFormat(data);
+				store.loadData(data, {count: total});
+			});
+		}
+		refreshLog();
+	}
+	if ($.su.app.runningModule.name !=='log_view'){
+		$("#function_setting").panel({
+			title: $.su.CHAR.SYSLOG.SETTINGS,
+			collapsible: false
+		});
+
+		var settingProxy = new $.su.Proxy();
+
+
+		$("#level_switch").checkbox({
+			items:[{
+				boxlabel:$.su.CHAR.SYSLOG.LOG_FILTER,inputValue:"on",uncheckedValue: "off"
+			}],
+			tips:""
+		}).on("ev_change", function(e, oldValue, newValue){
+			var val = (newValue[0]=="level_switch"||newValue[0]=="on") ? "on" : "off";
+			switch(val)
+			{
+				case "on":
+					$("#level").combobox("enable");
+					break;
+				case "off":
+					$("#level").combobox("disable");
+					$("#level").combobox("setValue","ALL");
+					break;
+			}
+		});
+
+		$("#level").combobox({
+			fieldLabel:"",
+			allowBlank:false,
+			multiSelect: false,
+			items:[
+				{name:$.su.CHAR.SYSLOG.ALL_LEVEL,value:"ALL"},
+				{name:$.su.CHAR.SYSLOG.DEBUG,value:"DEBUG"},
+				{name:$.su.CHAR.SYSLOG.INFO,value:"INFO"},
+				{name:$.su.CHAR.SYSLOG.NOTICE,value:"NOTICE"},
+				{name:$.su.CHAR.SYSLOG.WARNING,value:"WARNING"},
+				{name:$.su.CHAR.SYSLOG.ERROR,value:"ERROR"},
+				{name:$.su.CHAR.SYSLOG.EMERGENCY,value:"EMERGENCY"},
+				{name:$.su.CHAR.SYSLOG.ALERT,value:"ALERT"},
+				{name:$.su.CHAR.SYSLOG.CRITICAL,value:"CRITICAL"}
+			]
+		});
+
+		$("#module_switch").checkbox({
+			tips:"",
+			tipsCls:"xxxxl",
+			cls:"xxl",
+			items:[{
+				boxlabel:$.su.CHAR.SYSLOG.MODULE_FILTER,inputValue:"on",uncheckedValue: "off"
+			}]
+		}).on("ev_change", function(e, oldValue, newValue){
+			var val = (newValue[0]=="module_switch"||newValue[0]=="on") ? "on" : "off";
+			switch(val)
+			{
+				case "on":
+					$("#module").combobox("enable");
+					break;
+				case "off":
+					$("#module").combobox("disable");
+					$("#module").combobox("setValue", "ALL");
+					break;
+			}
+		});
+
+		var moduleProxy = new $.su.Proxy({
+			async: false
+		});
+
+		var syslog_modules = [
+			{name:$.su.CHAR.SYSLOG.ALL_MODULE,value:"ALL"}
+		];
+
+		moduleProxy.query({
+			system: {
+				table: "sys_log_modules"
+			}
+		}, function(data) {
+			var module_list = data.system.sys_log_modules || [];
+			for (var i = 0; i < module_list.length; i++) {
+				var module_name = module_list[i];
+				syslog_modules.push(
+					{
+						name: $.su.CHAR.SYSLOG[module_name.toUpperCase()],
+						value: module_name
+					}
+				)
+			}
+		});
+
+		$("#module").combobox({
+			allowBlank:false,
+			fieldLabel:"",
+			multiSelect: false ,
+			items:syslog_modules
+		});
+
+		$("#log_send").checkbox({
+			items:[{
+				boxlabel:$.su.CHAR.SYSLOG.SEND_LOG,inputValue:"on",uncheckedValue: "off"
+			}]
+		}).on("ev_change", function(e, oldValue, newValue){
+			var val = (newValue[0]=="log_send"||newValue[0]=="on") ? "on" : "off";
+			switch(val)
+			{
+				case "on":
+					$("#send_server").textbox("enable");
+					break;
+				case "off":
+					$("#send_server").textbox("disable");
+					break;
+			}
+		});
+
+		$("#send_server").textbox({
+			fieldLabel: "&nbsp&nbsp&nbsp&nbsp&nbsp&nbsp&nbsp&nbsp" + $.su.CHAR.SYSLOG.SERVER,
+			allowBlank:false,
+			labelCls:"m",
+			vtype: g_send_server_xtype,
+			maxLength: 39
+		});
+
+		var sysLogForm = $("#log_settings").form({
+			proxy: settingProxy,
+			autoLoad:true,
+			fields: [
+				{name:"level_switch",mapping:"level_switch"},
+				{name:"level",mapping:"level"},
+				{name:"module_switch",mapping:"module_switch"},
+				{name:"module",mapping:"module"},
+				{name:"log_send",mapping:"log_send"},
+				{name:"send_server",mapping:"send_server"}
+			],
+			parseKey: {
+				moduleName:"system",
+				sectionName:"syslog"
+			},
+			submitBtn: "#log_submit"
+		}).on("ev_loadData", function(data){
+			if ($("#module_switch").checkbox("getValue1")!="on"){
+				$("#module").combobox("setValue", "ALL")
+			};
+			if ($("#level_switch").checkbox("getValue1")!="on"){
+				$("#level").combobox("setValue", "ALL")
+			}
+		});
+
+		$("#log_submit").button({
+			text:"设置",
+			cls:"submit",
+			handler:function(e){
+				sysLogForm.form("submit", {}, function(data){
+					$.su.loading.hide();
+					refreshLog();
+				},function(error){
+					$.su.loading.hide();
+				},function(fail){
+					$.su.loading.hide();
+				});
+			}
+		});
+	}
+
+	// 依据路径渲染help
+	var helpSystemLog;
+	if($.su.app.runningModule.name ==='log_config'){
+		helpSystemLog = new $.su.Help({
+			container: "div#help_system_log",
+			content: ["SYSTEM_LOG", "SYSTEM_LOG_SETTING"]
+		});
+	} else if ($.su.app.runningModule.name ==='log_view'){
+		helpSystemLog = new $.su.Help({
+			container: "div#help_system_log",
+			content: ["SYSTEM_LOG", "SYSTEM_LOG_LIST"]
+		});
+	}else {
+		helpSystemLog = new $.su.Help({
+			container: "div#help_system_log",
+			content: ["SYSTEM_LOG", "SYSTEM_LOG_SETTING", "SYSTEM_LOG_LIST"]
+		});
+	}
+
+	// 依据路径隐藏不需要的页面
+	if($.su.app.runningModule.name ==='log_config') {
+		$('#function_list').css('display','none');
+	} else if ($.su.app.runningModule.name ==='log_view') {
+		$('#function_setting').css('display','none');
+	}
+
+	$(".func-container").show();
+});
+</script>
+</body>
+
+</html>

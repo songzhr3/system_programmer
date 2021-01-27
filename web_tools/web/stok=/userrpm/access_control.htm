@@ -1,0 +1,688 @@
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
+<html xmlns="http://www.w3.org/1999/xhtml">
+<head>
+<meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
+<title>Access Control Inner</title>
+<style type="text/css">
+</style>
+</head>
+
+<body>
+<div class="func-container">
+    <div id="actl_inner_list">
+        <div id="actl_grid">
+        </div>
+    </div>
+
+    <div id="own_editor">
+        <input id="rule_name" name="name" />
+        <input id="policy" name="policy" />
+        <input id="service" name="service" />
+        <input id="zone" name="zone" />
+        <input id="src" name="src" />
+        <!--<div id="srcIP" class="hidden">
+            <div class="widget-container">
+
+            <input id="ipaddr" name="ipaddr" />
+            <span>/</span>
+            <input id="mask" name="mask" />
+            </div>
+        </div>
+        <div id="group" class="hidden">
+
+            <input id="group_content" name="group_content" />
+        </div>-->
+        <input id="dest" name="dest" />
+        <!--<div id="dstIP" class="hidden">
+            <div class="widget-container">
+
+            <input id="dstaddr" name="dstaddr" />
+            <span>/</span>
+            <input id="dstmask" name="dstmask" />
+            </div>
+        </div>-->
+        <input id="time" name="time" />
+        <input id="position" name="position" />
+        <input type="text" name="flag" class="hidden" value="1" />
+        <input type="text" name="user" class="hidden" value="1" />
+    </div>
+	
+	<hr/><div class="notice"><p id="caution"/></div>
+    <div id="actl_help">
+    </div>
+</div>
+
+<script type="text/javascript">
+try{
+    $
+}catch(e){
+    location.href = "/";
+};
+
+$(document).ready(function(e){
+	$(".func-container").hide();
+
+    var ipgroupNameTrans = {};
+    var ucl_is_enable = false;
+    new $.su.Proxy({async: false}).query({"ucl":{"name": "global"}}, function(data){
+        if (typeof(data) != "undefined" && typeof(data.ucl) != "undefined" && typeof(data.ucl.global) != "undefined" && data.ucl.global.enable == "on") ucl_is_enable = true;
+    });	
+	
+    var actl_proxy = new $.su.Proxy();
+    var maxrules;
+    var defaultRulesCnt = 0;
+
+    $("#actl_inner_list").panel({
+        title: $.su.CHAR.ACCESS_CONTROL.RULE_LIST,
+        collapsible: false
+    });
+
+
+    $("#rule_name").textbox({
+        fieldLabel:$.su.CHAR.ACCESS_CONTROL.NAME,
+        tips:"(1-50个字符)",
+        allowBlank:false,
+        maxLength:50,
+        vtype:"name"
+    });
+
+    $("#policy").combobox({
+        fieldLabel:$.su.CHAR.ACCESS_CONTROL.POLICY,
+        items:[
+            {name:$.su.CHAR.ACCESS_CONTROL.BLOCK,value:"DROP",selected:true},
+            {name:$.su.CHAR.ACCESS_CONTROL.ACCEPT,value:"ACCEPT"}
+        ],
+        allowBlank:false
+    });
+    /*should dymically add here*/
+    $("#service").combobox({
+        fieldLabel:$.su.CHAR.ACCESS_CONTROL.SERVICE,
+        items:[
+            {name:$.su.CHAR.ACCESS_CONTROL.ALL_SERVICE,value:"ALL",selected:true}
+        ],
+        allowBlank:false
+    });
+
+    var serviceItem = [];
+    var serviceProxy = new $.su.Proxy();
+    serviceProxy.query({"service":{table:"service"}},function(data){
+        var data_src=data.service.service;
+        for (var i=0; i < data_src.length; i++){
+            for(var j in data_src[i])
+            {
+                serviceItem.push({name:data_src[i][j].name,value:data_src[i][j].name});
+            }
+        }
+        var editor = $("#actl_grid").grid("getEditor");
+        var combobox = $(editor).find('.combobox-value[name=service]');
+        combobox.combobox('loadData',serviceItem);
+    });
+
+    var interfaceItem = [];
+    var interfaceValue = [];
+
+    $("#zone").combobox({
+        fieldLabel:$.su.CHAR.ACCESS_CONTROL.ZONE,
+        multiSelect:true,
+        items:[
+            {name:"---",value:"---"}
+        ],
+        allowBlank:false
+    });
+
+    var interfaceProxy = new $.su.Proxy();
+    interfaceProxy.query({"network":{"table": "if"}}, function(data){
+        data = data.network["if"];
+        interfaceItem.push({name:"ALL",value:"ALL"});
+        for (var i = 0; i < data.length; i++)
+        {
+            for (var key in data[i])
+            {
+                interfaceItem.push({name:data[i][key].if_name,value:data[i][key].if_name});
+                interfaceValue.push(data[i][key].if_name);
+           }
+        }
+        var editor = $("#actl_grid").grid("getEditor");
+        var combobox = $(editor).find('.combobox-value[name=zone]');
+        combobox.combobox('loadData',interfaceItem);
+    });
+
+    $("#src").combobox({
+        fieldLabel:$.su.CHAR.ACCESS_CONTROL.SRC,
+        allowBlank:false,
+        items:[
+            /*{name:"IP/MASK",value:"IP_MASK"},
+            {name:"ANY",value:"ANY"},
+            {name:$.su.CHAR.ACCESS_CONTROL.GROUP,value:"group"}*/
+            {name:"---",value:"---"}
+        ]
+    });
+
+    $("#dest").combobox({
+        fieldLabel:$.su.CHAR.ACCESS_CONTROL.DST,
+        items:[
+            /*{name:"IP/MASK",value:"IP_MASK"},
+            {name:"ANY",value:"ANY"}*/
+            {name:"---",value:"---"}
+        ],
+        allowBlank:false
+    });
+
+    var groupItem = [];
+    var rev_groupItem = [];
+    var groupProxy = new $.su.Proxy();
+    groupProxy.query({"ipgroup":{table:"rule_ipgroup"}}, function(data){
+        var i,j=0;
+        var data_src=data.ipgroup.rule_ipgroup;
+
+        groupItem.push({name:"IPGROUP_ANY",value:"IPGROUP_ANY"});
+        groupItem.push({isLine:true});
+        for (i = 0; i < data_src.length; i++){
+            for (j in data_src[i])
+            {
+                var item = slpIpgroupToItem(data_src[i][j]);
+                if(data_src[i][j].name != "IPGROUP_ANY")
+                {
+                    groupItem.push(item);
+                }
+                ipgroupNameTrans[item.value] = item.name;
+            }
+        }
+        if(data_src.length > 1){
+            groupItem.push({isLine:true});
+        }
+        for (i = 0; i < data_src.length; i++){
+            for (j in data_src[i])
+            {
+                if(data_src[i][j].name != "IPGROUP_ANY")
+                {
+                    var posItem = slpIpgroupToItem(data_src[i][j]);
+                    rev_groupItem.push({name:"!"+posItem.name,value:posItem.value+"_REV"});
+                }
+            }
+        }
+        for(i=0;i<rev_groupItem.length;i++){
+            groupItem.push(rev_groupItem[i]);
+        }
+        if(data_src.length > 1){
+            groupItem.push({isLine:true});
+        }
+
+        groupItem.push({name:"Me", value:"Me"});
+        groupItem.push({name:"!Me", value:"Me_REV"});
+
+        var editor = $("#actl_grid").grid("getEditor");
+        var combobox = $(editor).find('.combobox-value[name=src]');
+        combobox.combobox('loadData',groupItem);
+        var combobox = $(editor).find('.combobox-value[name=dest]');
+        combobox.combobox('loadData',groupItem);
+    });
+
+
+    $("#time").combobox({
+        fieldLabel:$.su.CHAR.ACCESS_CONTROL.TIME,
+        items:[
+            {name:"Any",value:"Any"}
+        ],
+        allowBlank:false
+    });
+
+    var timeItem = [];
+    var timeProxy = new $.su.Proxy();
+    timeProxy.query({"time_mngt":{table:"time_obj"}},function(data){
+        var data_src=data.time_mngt.time_obj;
+        for (i=0; i<data_src.length; i++){
+            for ( var j in data_src[i] )
+            {
+                timeItem.push({name:data_src[i][j].name,value:data_src[i][j].name});
+            }
+        }
+        var editor = $("#actl_grid").grid("getEditor");
+        var combobox = $(editor).find('.combobox-value[name=time]');
+        combobox.combobox('loadData',timeItem);
+    });
+
+
+    $("#position").textbox({
+        fieldLabel:$.su.CHAR.ACCESS_CONTROL.POSITION,
+        tips:$.su.CHAR.ACCESS_CONTROL.OPTIONAL,
+        vtype:"number"
+    });
+
+	var ruleGrid;
+	if (ucl_is_enable == false) {
+		ruleGrid = $("#actl_grid").grid({
+			maxRulesProperty: "max_rules",
+			editor:{
+				content:"#own_editor",
+				fields:[
+					{name:"name"},
+					{name:"policy"},
+					{name:"service"},
+					{name:"zone"},
+					{name:"src"},
+					{name:"dest"},
+					{name:"time"},
+					{name:"user"},
+					{name:"position"}
+				],
+				validator:function(){
+					var name=$("#rule_name").textbox('getValue');
+					var nameList = $("#actl_grid").grid('getStore').data;
+					var editingId = $($("#actl_grid").grid('getEditor')).editor("getEditingId");
+					var modify_flag = 0;
+					for(var i=0;i<nameList.length;i++){
+						if(editingId == nameList[i].key){
+							modify_flag = 1;
+							continue;
+						}
+						if(name == nameList[i].name){
+							$($("#actl_grid").grid("getEditor")).form('setError',"您输入的名称已经存在，请重新输入");
+							return false;
+						}
+					}
+					var position = $("#position").textbox('getValue');
+					var reg=new RegExp("^[0-9]*$");
+					if(position !="" && !reg.test(position)){
+						$($("#actl_grid").grid("getEditor")).form('setError',"请保持为空或者输入数字");
+						return false;
+					}
+					if(position!="")
+					{
+						position = parseInt(position);
+						/*
+						if (position <= defaultRulesCnt){
+							$($("#actl_grid").grid("getEditor")).form('setError',"只能添加到默认规则后面");
+							return false;
+						}
+						*/
+						if(position<1 || position>nameList.length+1 || position > maxrules)
+						{
+							$($("#actl_grid").grid("getEditor")).form('setError',"输入数字超过范围");
+							return false;
+						}
+						if(modify_flag)
+						{
+							if(position > nameList.length || position < 1)
+							{
+								$($("#actl_grid").grid("getEditor")).form('setError',"输入数字超过范围");
+								return false;
+							}
+						}
+						if(position == nameList.length+1){
+							$("#position").textbox('setValue',"");
+						}
+					}
+					return true;
+				}
+			},
+			store:{
+				proxy:actl_proxy,
+				fields:[
+					{name:"name"},
+					{name:"policy"},
+					{name:"service"},
+					{name:"zone"},
+					{name:"src"},
+					{name:"dest"},
+					{name:"time"},
+					{name:"user"},
+					{name:"position"}
+				],
+				parseKey:{
+					moduleName: "access_ctl",
+					tableName: "rule_acl_inner",
+					pageSizeName: "acl_entry"
+				},
+				autoLoad:true
+			},
+			paging_true:[],
+			columns:[
+				 {
+					xtype: "checkcolumn",
+					width: 32
+				},
+				{
+					xtype: "rownumberer",
+					width: 30
+				},
+				{
+					text:$.su.CHAR.ACCESS_CONTROL.NAME,
+					width:60,
+					dataIndex:"name"
+				},
+				{
+					text:$.su.CHAR.ACCESS_CONTROL.SRC,
+					width:80,
+					dataIndex:"src",
+					renderer:function(data){
+						if (data.substr(data.length - 4, data.length) == "_REV"){
+							var name = data.substr(0, data.length-4);
+							return '!' + (ipgroupNameTrans[name] || name);
+						}
+						else{
+							return ipgroupNameTrans[data] || data;
+						}
+					}
+				},
+				{
+					text:$.su.CHAR.ACCESS_CONTROL.DST,
+					width:80,
+					dataIndex:"dest",
+					renderer:function(data){
+						if (data.substr(data.length - 4, data.length) == "_REV"){
+							var name = data.substr(0, data.length-4);
+							return '!' + (ipgroupNameTrans[name] || name);
+						}
+						else{
+							return ipgroupNameTrans[data] || data;
+						}
+					}
+				},
+				{
+					text:$.su.CHAR.ACCESS_CONTROL.POLICY,
+					width:50,
+					dataIndex:"policy",
+					renderer:function(data){
+						if(data == "ACCEPT"){
+							return $.su.CHAR.ACCESS_CONTROL.ACCEPT;
+						}
+						else if(data == "DROP")
+						{
+							return $.su.CHAR.ACCESS_CONTROL.BLOCK;
+						}
+					}
+				},
+				{
+					text:$.su.CHAR.ACCESS_CONTROL.SERVICE,
+					width:50,
+					dataIndex:"service"
+				},
+				{
+					text:$.su.CHAR.ACCESS_CONTROL.ZONE,
+					width:90,
+					dataIndex:"zone"
+				},
+				{
+					text:$.su.CHAR.ACCESS_CONTROL.TIME,
+					width:80,
+					dataIndex:"time"
+				},
+				{
+					xtype: "settings",
+					width: $.su.CHAR.SETTING.IMB.SETTING_WIDTH
+				}
+			],
+			operation: 'prompt|add|delete'
+		}).on("ev_load", function(e,data, others){
+			defaultRulesCnt = 0;
+			for (var i = 0; i < data.length; i++){
+				if (data[i].user == "0"){
+					$(actl_grid).grid('disableRow',i);
+					defaultRulesCnt = defaultRulesCnt + 1;
+				}
+			}
+			if(others)/* 閫氳繃json閲岀殑others鍙傛暟浼犻€掑姩鎬侀榾鍊?*/
+			{
+				/*淇濈暀涓嶇敤*/
+				maxrules = others.max_rules;
+			}
+		}).on("ev_insert",function(){
+			ruleGrid.grid("getStore").load();
+		}).on("ev_remove", function(){
+			ruleGrid.grid("getStore").load();
+		}).on("ev_update", function(){
+			 ruleGrid.grid("getStore").load();
+		});
+	}else{
+		ruleGrid = $("#actl_grid").grid({
+			maxRulesProperty: "max_rules",
+			editor:{
+				content:"#own_editor",
+				fields:[
+					{name:"name"},
+					{name:"policy"},
+					{name:"service"},
+					{name:"zone"},
+					{name:"src"},
+					{name:"dest"},
+					{name:"time"},
+					{name:"user"},
+					{name:"position"}
+				],
+				validator:function(){
+					var name=$("#rule_name").textbox('getValue');
+					var nameList = $("#actl_grid").grid('getStore').data;
+					var editingId = $($("#actl_grid").grid('getEditor')).editor("getEditingId");
+					var modify_flag = 0;
+					for(var i=0;i<nameList.length;i++){
+						if(editingId == nameList[i].key){
+							modify_flag = 1;
+							continue;
+						}
+						if(name == nameList[i].name){
+							$($("#actl_grid").grid("getEditor")).form('setError',"您输入的名称已经存在，请重新输入");
+							return false;
+						}
+					}
+					var position = $("#position").textbox('getValue');
+					var reg=new RegExp("^[0-9]*$");
+					if(position !="" && !reg.test(position)){
+						$($("#actl_grid").grid("getEditor")).form('setError',"请保持为空或者输入数字");
+						return false;
+					}
+					if(position!="")
+					{
+						position = parseInt(position);
+						/*
+						if (position <= defaultRulesCnt){
+							$($("#actl_grid").grid("getEditor")).form('setError',"只能添加到默认规则后面");
+							return false;
+						}
+						*/
+						if(position<1 || position>nameList.length+1 || position > maxrules)
+						{
+							$($("#actl_grid").grid("getEditor")).form('setError',"输入数字超过范围");
+							return false;
+						}
+						if(modify_flag)
+						{
+							if(position > nameList.length || position < 1)
+							{
+								$($("#actl_grid").grid("getEditor")).form('setError',"输入数字超过范围");
+								return false;
+							}
+						}
+						if(position == nameList.length+1){
+							$("#position").textbox('setValue',"");
+						}
+					}
+					return true;
+				}
+			},
+			store:{
+				proxy:actl_proxy,
+				fields:[
+					{name:"name"},
+					{name:"policy"},
+					{name:"service"},
+					{name:"zone"},
+					{name:"src"},
+					{name:"dest"},
+					{name:"time"},
+					{name:"user"},
+					{name:"position"}
+				],
+				parseKey:{
+					moduleName: "access_ctl_backup",
+					tableName: "rule_acl_inner",
+					pageSizeName: "acl_entry"
+				},
+				autoLoad:true
+			},
+			paging_true:[],
+			columns:[
+				 {
+					xtype: "checkcolumn",
+					width: 32
+				},
+				{
+					xtype: "rownumberer",
+					width: 30
+				},
+				{
+					text:$.su.CHAR.ACCESS_CONTROL.NAME,
+					width:60,
+					dataIndex:"name"
+				},
+				{
+					text:$.su.CHAR.ACCESS_CONTROL.SRC,
+					width:80,
+					dataIndex:"src",
+					renderer:function(data){
+						if (data.substr(data.length - 4, data.length) == "_REV"){
+							return '!' + data.substr(0, data.length-4);
+						}
+						else{
+							return data;
+						}
+					}
+				},
+				{
+					text:$.su.CHAR.ACCESS_CONTROL.DST,
+					width:80,
+					dataIndex:"dest",
+					renderer:function(data){
+						if (data.substr(data.length - 4, data.length) == "_REV"){
+							return '!' + data.substr(0, data.length-4);
+						}
+						else{
+							return data;
+						}
+					}
+				},
+				{
+					text:$.su.CHAR.ACCESS_CONTROL.POLICY,
+					width:50,
+					dataIndex:"policy",
+					renderer:function(data){
+						if(data == "ACCEPT"){
+							return $.su.CHAR.ACCESS_CONTROL.ACCEPT;
+						}
+						else if(data == "DROP")
+						{
+							return $.su.CHAR.ACCESS_CONTROL.BLOCK;
+						}
+					}
+				},
+				{
+					text:$.su.CHAR.ACCESS_CONTROL.SERVICE,
+					width:50,
+					dataIndex:"service"
+				},
+				{
+					text:$.su.CHAR.ACCESS_CONTROL.ZONE,
+					width:90,
+					dataIndex:"zone"
+				},
+				{
+					text:$.su.CHAR.ACCESS_CONTROL.TIME,
+					width:80,
+					dataIndex:"time"
+				},{
+					text:$.su.CHAR.QOS.STATUS,
+					width:65,
+					dataIndex:"enable",
+					hidden: false,
+					renderer: function(v){
+                        return "<font>"+$.su.CHAR.QOS.ENABLED+"</font>";
+					}
+				},
+				{
+					text: $.su.CHAR.QOS.UCL_STATUS,
+					width: 45,
+					dataIndex: "ucl_enable",
+					hidden: false,
+					renderer: function(v){
+						return "<font>"+$.su.CHAR.QOS.UCL_ENABLED+"</font>";
+					}
+				}
+			],
+			operation: 'prompt'
+		}).on("ev_load", function(e,data, others){
+			defaultRulesCnt = 0;
+			for (var i = 0; i < data.length; i++){
+				if (data[i].user == "0"){
+					$(actl_grid).grid('disableRow',i);
+					defaultRulesCnt = defaultRulesCnt + 1;
+				}
+			}
+			if(others)/* 閫氳繃json閲岀殑others鍙傛暟浼犻€掑姩鎬侀榾鍊?*/
+			{
+				/*淇濈暀涓嶇敤*/
+				maxrules = others.max_rules;
+			}
+		}).on("ev_insert",function(){
+			ruleGrid.grid("getStore").load();
+		}).on("ev_remove", function(){
+			ruleGrid.grid("getStore").load();
+		}).on("ev_update", function(){
+			 ruleGrid.grid("getStore").load();
+		});	
+	}
+
+    var aclEditor = $($(actl_grid).grid("getEditor"));
+
+    aclEditor.on("ev_startEdit", function(e, index, key){
+        if (index != "add")
+        {
+            $("#rule_name").textbox("disableStyle");
+            //$("#position").textbox("setValue", "");
+        }
+        else
+        {
+            $("#rule_name").textbox("enableStyle");
+            $("#position").textbox("setValue", "");
+        }
+
+        //console.log($("#zone").combobox("getValue"));
+        if("ALL" == $("#zone").combobox("getValue")){
+            $("#zone").combobox("disableItem", interfaceValue);
+        }else{
+            $("#zone").combobox("enableItem", interfaceValue);
+        }
+    });
+
+    var zone = aclEditor.find('.combobox-value[name=zone]');
+    $(zone).on("ev_change", function(e, oldValue, newValue){
+        if(aclEditor.editor("isEditing")){
+            if("ALL" == newValue[0]){
+                $(zone).combobox("disableItem", interfaceValue);
+                $(zone).combobox("setValue", "ALL");
+            }else{
+                $(zone).combobox("enableItem", interfaceValue);
+            }
+        }
+    });
+
+    function slpIpgroupToItem(ipgroup_obj) {
+        if (ipgroup_obj.flag == "system" && typeof(ipgroup_obj.comment) == "string" && ipgroup_obj.comment.length > 1) {
+            return {name: ipgroup_obj.comment, value: ipgroup_obj.name};
+        } else {
+            return {name: ipgroup_obj.name, value: ipgroup_obj.name};
+        }
+    }
+
+	var cautionString = "<font>" + $.su.CHAR.QOS.CAUTION1 + "</font><br>" +
+						"<font>" + $.su.CHAR.QOS.CAUTION2 + "</font><br>";
+	$("#caution").html($.su.CHAR.QOS.CAUTION+"<br>" + cautionString);	
+	
+     var acl_help = new $.su.Help({
+        container: "div#actl_help",
+        content: ["ACL_LIST"] });
+
+    $(".func-container").show();
+});
+</script>
+</body>
+</html>

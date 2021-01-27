@@ -1,0 +1,90 @@
+/* 左侧菜单导航栏图片样式 */
+div.menu-container ul.menu-tree li#menu-advanced-sys-status-li.fst a.fst span.icon{
+	background: url(../img/systemState.png?random=20201217044300) no-repeat 100% 100%;
+}
+div.menu-container ul.menu-tree li#menu-advanced-sys-status-li.fst a.fst:hover span.icon,
+div.menu-container ul.menu-tree li#menu-advanced-sys-status-li.fst a.fst.selected span.icon,
+div.menu-container ul.menu-tree li#menu-advanced-sys-status-li.fst a.fst.deployed span.icon{
+	background: url(../img/systemStateActive.png?random=20201217044300) no-repeat 100% 100%;
+}
+
+div.menu-container ul.menu-tree li#menu-advanced-network-setting-li.fst a.fst span.icon{
+	background: url(../img/Internet.png?random=20201217044300) no-repeat 100% 100%;
+}
+div.menu-container ul.menu-tree li#menu-advanced-network-setting-li.fst a.fst:hover span.icon,
+div.menu-container ul.menu-tree li#menu-advanced-network-setting-li.fst a.fst.selected span.icon,
+div.menu-container ul.menu-tree li#menu-advanced-network-setting-li.fst a.fst.deployed span.icon{
+	background: url(../img/InternetActive.png?random=20201217044300) no-repeat 100% 100%;
+}
+
+div.menu-container ul.menu-tree li#menu-advanced-ap-manage-li.fst a.fst span.icon{
+	background: url(../img/ap.png?random=20201217044300) no-repeat 100% 100%;
+}
+div.menu-container ul.menu-tree li#menu-advanced-ap-manage-li.fst a.fst:hover span.icon,
+div.menu-container ul.menu-tree li#menu-advanced-ap-manage-li.fst a.fst.selected span.icon,
+div.menu-container ul.menu-tree li#menu-advanced-ap-manage-li.fst a.fst.deployed span.icon{
+	background: url(../img/apActive.png?random=20201217044300) no-repeat 100% 100%;
+}
+
+div.menu-container ul.menu-tree li#menu-advanced-ac_rdmngr-li.fst a.fst span.icon{
+	background: url(../img/rf.png?random=20201217044300) no-repeat 100% 100%;
+}
+div.menu-container ul.menu-tree li#menu-advanced-ac_rdmngr-li.fst a.fst:hover span.icon,
+div.menu-container ul.menu-tree li#menu-advanced-ac_rdmngr-li.fst a.fst.selected span.icon,
+div.menu-container ul.menu-tree li#menu-advanced-ac_rdmngr-li.fst a.fst.deployed span.icon{
+	background: url(../img/rfActive.png?random=20201217044300) no-repeat 100% 100%;
+}
+
+div.menu-container ul.menu-tree li#menu-advanced-apmng_wserv-li.fst a.fst span.icon{
+	background: url(../img/wifi.png?random=20201217044300) no-repeat 100% 100%;
+}
+div.menu-container ul.menu-tree li#menu-advanced-apmng_wserv-li.fst a.fst:hover span.icon,
+div.menu-container ul.menu-tree li#menu-advanced-apmng_wserv-li.fst a.fst.selected span.icon,
+div.menu-container ul.menu-tree li#menu-advanced-apmng_wserv-li.fst a.fst.deployed span.icon{
+	background: url(../img/wifiActive.png?random=20201217044300) no-repeat 100% 100%;
+}
+
+div.menu-container ul.menu-tree li#menu-advanced-portal-li.fst a.fst span.icon{
+	background: url(../img/portal.png?random=20201217044300) no-repeat 100% 100%;
+}
+div.menu-container ul.menu-tree li#menu-advanced-portal-li.fst a.fst:hover span.icon,
+div.menu-container ul.menu-tree li#menu-advanced-portal-li.fst a.fst.selected span.icon,
+div.menu-container ul.menu-tree li#menu-advanced-portal-li.fst a.fst.deployed span.icon{
+	background: url(../img/portalActive.png?random=20201217044300) no-repeat 100% 100%;
+}
+
+div.menu-container ul.menu-tree li#menu-advanced-ac-security-li.fst a.fst span.icon{
+	background: url(../img/safe.png?random=20201217044300) no-repeat 100% 100%;
+}
+div.menu-container ul.menu-tree li#menu-advanced-ac-security-li.fst a.fst:hover span.icon,
+div.menu-container ul.menu-tree li#menu-advanced-ac-security-li.fst a.fst.selected span.icon,
+div.menu-container ul.menu-tree li#menu-advanced-ac-security-li.fst a.fst.deployed span.icon{
+	background: url(../img/safeActive.png?random=20201217044300) no-repeat 100% 100%;
+}
+
+div.menu-container ul.menu-tree li#menu-advanced-ac_backup-li.fst a.fst span.icon{
+	background: url(../img/link.png?random=20201217044300) no-repeat 100% 100%;
+}
+div.menu-container ul.menu-tree li#menu-advanced-ac_backup-li.fst a.fst:hover span.icon,
+div.menu-container ul.menu-tree li#menu-advanced-ac_backup-li.fst a.fst.selected span.icon,
+div.menu-container ul.menu-tree li#menu-advanced-ac_backup-li.fst a.fst.deployed span.icon{
+	background: url(../img/linkActive.png?random=20201217044300) no-repeat 100% 100%;
+}
+
+div.menu-container ul.menu-tree li#menu-advanced-cloud_mngr-li.fst a.fst span.icon{
+	background: url(../img/cloud_mngr.png?random=20201217044300) no-repeat 100% 100%;
+}
+div.menu-container ul.menu-tree li#menu-advanced-cloud_mngr-li.fst a.fst:hover span.icon,
+div.menu-container ul.menu-tree li#menu-advanced-cloud_mngr-li.fst a.fst.selected span.icon,
+div.menu-container ul.menu-tree li#menu-advanced-cloud_mngr-li.fst a.fst.deployed span.icon{
+	background: url(../img/cloud_mngrActive.png?random=20201217044300) no-repeat 100% 100%;
+}
+
+div.menu-container ul.menu-tree li#menu-advanced-sys-tools-li.fst a.fst span.icon{
+	background: url(../img/systemTool.png?random=20201217044300) no-repeat 100% 100%;
+}
+div.menu-container ul.menu-tree li#menu-advanced-sys-tools-li.fst a.fst:hover span.icon,
+div.menu-container ul.menu-tree li#menu-advanced-sys-tools-li.fst a.fst.selected span.icon,
+div.menu-container ul.menu-tree li#menu-advanced-sys-tools-li.fst a.fst.deployed span.icon{
+	background: url(../img/systemToolActive.png?random=20201217044300) no-repeat 100% 100%;
+}

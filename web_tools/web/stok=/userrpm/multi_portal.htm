@@ -1,0 +1,2062 @@
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
+<html xmlns="http://www.w3.org/1999/xhtml">
+<head>
+<meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
+<title>Multi Portal</title>
+</head>
+<style type="text/css">
+.ssid-form-item {
+    height: 32px;
+}
+
+.ssid-form-item label {
+    line-height: 32px;
+    width: 174px;
+    float: left;
+}
+
+.m-toggle {
+    margin-left: 174px;
+    overflow: hidden;
+}
+
+.m-toggle li:first-child {
+    border-radius: 2px 0 0 2px;
+}
+
+.m-toggle li:last-child {
+     border-right-width: 1px;
+}
+
+.m-toggle li.selected {
+    background-color: #5680B0;
+    border-color: #5680B0;
+    color: #fff;
+}
+.m-toggle li {
+    float: left;
+    border: 1px solid #B4B5B8;
+    border-right-width: 0;
+    padding: 8px 15.5px;
+	cursor:pointer;
+}
+
+#qr_code_display{
+    width: 120px;
+    height: 120px;
+    margin: 30px 172px;
+    display: block;
+    border: 1px solid #D0DFED;
+    background: #EDF3F8;
+    line-height: 120px;
+    text-align: center;
+}
+
+#qr_code_display img{
+    width: 100%;
+    height: 100%;
+}
+
+#note_cnt{
+    margin-top:20px;
+    margin-bottom:20px;
+}
+
+#onekey_notice_title{
+    font-weight: bold;
+}
+
+#web_notice_title{
+    font-weight: bold;
+}
+
+#wechat_notice_title{
+    font-weight: bold;
+}
+
+#sms_notice_title{
+    font-weight: bold;
+}
+
+#sec_policy_notice_title{
+    font-weight: bold;
+}
+
+</style>
+<body>
+<div class="func_container">
+    <div id="func_setting">
+        <div id="portal_editor">
+            <input id="jump_page_name" name="jump_page_name" value=""/>
+            <input id="serv_id" name="serv_id" value=""/>
+            <input id="vlan_id" name="vlan_id" value=""/>
+            <input id="interface" name="interface" value=""/>
+            <textarea id="success_url" name="success_url" value=""/>
+            <textarea id="fail_url" name="fail_url" value=""/>
+            <!-- <input id="ageing-time" name="ageing-time" value=""/> -->
+            <input id="note" name="note"/>
+			<input id="enable" name="enable" value=""/>
+            <div class="ssid-form-item ssid-portal-type" id="portal_type">
+                <label>认证方式</label>
+                <ul class="m-toggle f-ib">
+                    <li name="web_portal">Web认证</li>
+                </ul>
+            </div>
+            <div id="onekey_portal" style="display:none;margin-left:170px">
+                <input id="onekey_enable" name="onekey_enable" value=""/>
+                <input id="onekey_free_time" name="onekey_free_time" value="30"/>
+                <div id="note_cnt" class="">
+                    <h5 class="title" id="onekey_notice_title"></h5>
+                    <p><span class="" id="onekey_notice_content"></span></p>
+                </div>
+            </div>
+            <div id="web_portal" style="display:none;margin-left:170px">
+                <input id="web_enable" name="web_enable" value=""/>
+                <input id="web_auth_server_type" name="web_auth_server_type" value=""/>
+                <div id="web_portal_auth_server_remote">
+                    <input id="web_auth_server_group" name="web_auth_server_group" value=""/>
+                    <input id="web_free_time" name="web_free_time" value="30"/>
+                </div>
+                <input id="web_nosense_auth" name="web_nosense_auth" value=""/>
+                <div id="web_portal_remind_func">
+                    <input id="web_remind_enable" name="web_remind_enable" value=""/>
+                    <input id="web_remind_time" name="web_remind_time" value=""/>
+                    <input id="web_remind_type" name="web_remind_type" value=""/>
+                    <input id="web_remind_interval" name="web_remind_interval" value=""/>
+                    <input id="web_remind_page_title" name="web_remind_page_title" value=""/>
+                    <input id="web_remind_page_content" name="web_remind_page_content" value=""/>
+                </div>
+                <div id="note_cnt" class="">
+                    <h5 class="title" id="web_notice_title"></h5>
+                    <p><span class="" id="web_notice_content"></span></p>
+                </div>
+            </div>
+            <div id="wechat_portal" style="display:none;margin-left:170px">
+                <input id="wechat_enable" name="wechat_enable" value=""/>
+                <input id="wechat_free_time" name="wechat_free_time" value="30"/>
+                <input id="wechat_ssid" name="wechat_ssid" value=""/>
+                <input id="wechat_shop_id" name="wechat_shop_id" vlaue=""/>
+                <input id="wechat_app_id" name="wechat_app_id" value=""/>
+                <input id="wechat_secret_key" name="wechat_secret_key" value=""/>
+                <input id="wechat_force_concern" name="wechat_force_concern" value=""/>
+                <div id="wechat_concern_panel">
+                    <input id="wechat_concern_qrcode_image_select"/>
+                    <input id="wechat_concern_qrcode_upload_tip" name="wechat_concern_qrcode_upload_tip" value=""/>
+                    <input id="wechat_qrcode" name="wechat_qrcode" />
+                    <div id="qr_code_display"></div>
+                    <input id="wechat_complete_url" name="wechat_complete_url" style="width:600px" value=""/>
+                    <input id="wechat_auth_url" name="wechat_auth_url" style="width:600px" value=""/>
+                </div>
+                <div id="adv_btn" class="advanced-block part-seperate" type="button">
+                    <span class="advanced-icon"></span>
+                    <span class="advanced-text"></span>
+                </div>
+                <div id="basic_btn" class="basic-block part-seperate" type="button" style="display:none">
+                    <span class="basic-icon"></span>
+                    <span class="basic-text"></span>
+                </div>
+                <div id="cwf" class="hidden">
+                    <input id="wechat_app_secret" name="wechat_app_secret" value="" class="wechat_wifi_panel">
+                    <input id="wechat_token_server" name="wechat_token_server" value="" clsaa="wechat_wifi_panel">
+                </div>
+                <div id="note_cnt" class="">
+                    <h5 class="title" id="wechat_notice_title"></h5>
+                    <p><span class="" id="wechat_notice_public_refer"></span> <a href="http://service.tp-link.com.cn/detail_article_2864.html" target="view_wechat_window"><span id="wechat_notice_public_info_set"></span></a> 、<a href="http://service.tp-link.com.cn/detail_article_3356.html" target="view_wechat_window"><span id="wechat_notice_public_force_concern"></span></a></p>
+                    <p><span class="" id="wechat_notice_conent"></span></p>
+                </div>
+            </div>
+            <div id="sms_portal" style="display:none;margin-left:170px">
+                <input id="sms_enable" name="sms_enable" value=""/>
+                <input id="sms_free_time" name="sms_free_time" value="30"/>
+                <input id="sms_auth_expiry" name="sms_auth_expiry" value="1"/>
+                <input id="sms_channel_type" name="sms_channel_type" value=""/>
+                <div id="sms_http_type">
+                    <textarea id="sms_http_url" name="sms_http_url" value=""/>
+                    <input id="sms_http_mode" name="sms_http_mode" value=""/>
+                    <input id="sms_http_code_type" name="sms_http_code_type" value=""/>
+                    <textarea id="sms_http_template" name="sms_http_template" value=""/>
+                </div>
+                <div id="sms_cloud_type">
+                    <input id="sms_username" name="sms_username" value=""/>
+                    <input id="sms_password" name="sms_password" value=""/>
+                    <input id="sms_template_id" name="sms_template_id" value=""/>
+                    <input id="sms_signname" name="sms_signname" value=""/>
+                    <input id="sms_app_id" name="sms_app_id" value=""/>
+                </div>
+                <div id="note_cnt" class="">
+                    <h5 class="title" id="sms_notice_title"></h5>
+                    <p><span class="" id="sms_notice_content"></span></p>
+                </div>
+            </div>
+        </div>
+
+        <div id="wechat_concern_qrcode_image_msg" style="display:none">
+            <form id="wechat_concern_qrcode_image_uploader">
+                <input id="wechat_concern_qrcode_image_file" name="wechat_concern_qrcode_image_file" type="file"/>
+                <input id="wechat_concern_qrcode_image_button"/>
+            </form>
+        </div>
+
+        <div id="portal_list"></div>
+    </div>
+    <div id="portal_help"></div>
+
+    <div class="notice" style="top:-20px;position:relative;">
+        <hr/>
+        <h5 class="title" id="sec_policy_notice_title"></h5>
+        <p><span class="" id="sec_policy_notice_content"></span></p>
+    </div>
+
+
+</div>
+
+<script type="text/javascript">
+try{
+    $
+}catch(e){
+    location.href = "/";
+};
+
+$(document).ready(function(e){
+    $(".func_container").hide();
+    var AUTH_MODE_VLAN = "vlan"
+    var AUTH_MODE_SSID = "ssid"
+    var AUTH_MODE_INTERFACE = "interface"
+    var auth_type
+    var portal_port
+    var cwf_function_support = false
+    var fail_url_auto_distribute = false
+    var wechat_url = "http://ac.tpauth.cn";
+    var complete_url = "/weixin/wechat_complete/";
+    var auth_url = "/weixin/wechat_auth/";
+    var router_complete_url = "/weixin/wechat_complete/";
+    var router_auth_url = "/weixin/wechat_auth/"
+    var ssid_mode = "?ssid_mode=true";
+	var interface_mode = "?interface=";
+
+    var globalProxy = new $.su.Proxy({
+        //url: URL_GLOBAL
+    });
+	function urlValidator(value)
+	{
+        var codeStr = /^([A-Za-z0-9\_\+\/\?\%\#\&\=\\\.\:\-\[\]]){1,250}$/;
+		if (!codeStr.test(value))
+		{
+			return $.su.CHAR.WPORTAL.URL_CHAR_ERR;
+		}
+		else
+		{
+			return true;
+		}
+	}
+    $("#func_setting").panel({
+        title: "认证规则列表"
+    });
+
+    $('#jump_page_name').combobox({
+        fieldLabel: $.su.CHAR.WPORTAL.TEMPLATE_NAME,
+        tipsCls: 's',
+        inputCls: 'xl',
+        allowBlank: false,
+        maxLength: 50,
+        vtype: "name",
+        items: [
+            {value:"---", name: "---", selected: true}
+        ]
+    });
+
+    $('#jump_page_name').combobox("autoWidth");
+
+    var ssid = $("#serv_id").combobox({
+        fieldLabel : "生效SSID",
+        allowBlank:false,
+        multiSelect: false,
+		inputCls: 'xl',
+        items:[
+                {name:"---",value:"---", selected:true}
+            ]
+    });
+
+    var vlan_id = $('#vlan_id').textbox({
+        fieldLabel: "生效VLAN",
+        inputCls: 'xl',
+        tipsCls: 's',
+        maxLength: 4,
+        vtype: {
+            vtype: "number",
+            max: 4094,
+            min: 1
+        },
+        tips: $.su.CHAR.WPORTAL.VLANID_TIP
+    });
+
+    var bind_interface = $('#interface').combobox({
+        fieldLabel: '生效接口',
+        //multiSelect:true,
+        allowBlank: false,
+		inputCls: 'xl',
+        items:[
+            {value:"---", name: "---", selected: true}
+        ]
+    }).on("ev_change", function(e, oldValue, newValue){
+    });
+
+    $('#success_url').textarea({
+        fieldLabel: $.su.CHAR.WPORTAL.AUTH_SUCCESS_URL,
+        inputCls: 'xl',
+        tipsCls: 'a',
+        labelCls: 'widget-fieldlabel-wrap m top_align',
+        maxLength: 120,
+        vtype: "ascii_visible",
+        tips: $.su.CHAR.WPORTAL.AUTH_SUCCESS_URL_TIP,
+        validator: function(value)
+        {
+            return urlValidator(value);
+        }
+    });
+
+    $('#fail_url').textarea({
+        fieldLabel: $.su.CHAR.WPORTAL.AUTH_FAIL_URL,
+        inputCls: 'xl',
+        tipsCls: 'a',
+        labelCls: 'widget-fieldlabel-wrap m top_align',
+        maxLength: 120,
+        vtype: "ascii_visible",
+        tips: $.su.CHAR.WPORTAL.AUTH_FAIL_URL_TIP,
+        validator: function(value)
+        {
+            return urlValidator(value);
+        }
+    });
+
+    $('#note').textbox({
+        fieldLabel: $.su.CHAR.WPORTAL.TEMPLATE_NOTE,
+        maxLength: 50,
+        allowBlank: true,
+        inputCls: 'xl',
+        vtype: "string_visible_allow_blank",
+        tips: $.su.CHAR.WPORTAL.TEMPLATE_NOTE_TIP
+    });
+
+    $("#enable").radio({
+        fieldLabel: "状态",
+        columns: 2,
+        inputCls: 'xl',
+        items: [
+            {boxlabel: $.su.CHAR.WPORTAL.ON, inputValue: "on", checked: true},
+            {boxlabel: $.su.CHAR.WPORTAL.OFF, inputValue: "off"}
+        ]
+    }).radio("hide");
+
+    $("#web_portal").hide();
+    $("#wechat_portal").hide();
+    $("#sms_portal").hide();
+    $("#web_portal_auth_server_remote").hide();
+    $("#web_portal_remind_func").hide();
+    $("#sms_http_type").hide();
+    $("#wechat_concern_panel").hide();
+    $('#web_portal').show(); 
+    
+    $('#portal_type').find('li').click(function () {
+        var el = $(this).addClass('selected');
+        el.siblings().removeClass('selected');
+        var typeArr = ["onekey_portal", "web_portal", "wechat_portal", "sms_portal"]
+        var current = el.attr('name');
+        for (var type=0;type<typeArr.length;type++) {
+            if (type !== current) {
+                $('#' + typeArr[type]).hide();
+            }
+            $('#' + current).show();
+        }
+    });
+
+    $("#onekey_enable").radio({
+        fieldLabel: "状态",
+        columns: 2,
+        inputCls: 'xl',
+        items: [
+            {boxlabel: $.su.CHAR.WPORTAL.ON, inputValue: "on"},
+            {boxlabel: $.su.CHAR.WPORTAL.OFF, inputValue: "off", checked: true}
+        ]
+    });
+
+    $('#onekey_free_time').textbox({
+        fieldLabel: $.su.CHAR.WPORTAL.FREETIME,
+        inputCls: 'xl',
+        tipsCls: 's',
+        maxLength: 5,
+        allowBlank: false,
+        vtype: {
+            vtype: "number",
+            max: 43200,
+            min: 1
+        },
+        tips: $.su.CHAR.WPORTAL.FREETIME_TIP
+    });
+
+    $("#web_enable").radio({
+        fieldLabel: "状态",
+        columns: 2,
+        inputCls: 'xl',
+        items: [
+            {boxlabel: $.su.CHAR.WPORTAL.ON, inputValue: "on", checked: true}
+        ]
+    });
+
+    $('#web_auth_server_type').combobox({
+        fieldLabel: $.su.CHAR.WPORTAL.AUTHSERVER_TYPE,
+        tipsCls: 's',
+        inputCls: 'xl',
+        allowBlank: true,
+        maxLength: 50,
+        vtype: "name",
+        items: [
+            {value:"local", name: $.su.CHAR.WPORTAL.AUTHSERVER_TYPE_LOCAL, selected: true}
+        ]
+    }).on("ev_change", function(e, oldValue, newValue){
+        var value = newValue[0];
+        if (value == "local")
+        {
+            $("div#web_portal_auth_server_remote").hide();
+			web_auth_server_group.combobox("disable");
+        }
+        else if ("remote" == value)
+        {
+            $("div#web_portal_auth_server_remote").show();
+			web_auth_server_group.combobox("enable");
+        }
+    });
+
+    var web_auth_server_group = $('#web_auth_server_group').combobox({
+        fieldLabel: $.su.CHAR.WPORTAL.AUTHSERVER_GROUP,
+        tipsCls: 's',
+        inputCls: 'xl',
+        maxLength: 50,
+        //allowBlank: false,
+        vtype: "name"
+        //bigdata: true
+    });
+    $('#web_auth_server_group').combobox("autoWidth");
+
+    $('#web_free_time').textbox({
+        fieldLabel: $.su.CHAR.WPORTAL.FREETIME,
+        inputCls: 'xl',
+        tipsCls: 's',
+        maxLength: 5,
+        allowBlank: false,
+        vtype: {
+            vtype: "number",
+            max: 43200,
+            min: 1
+        },
+        tips: $.su.CHAR.WPORTAL.FREETIME_TIP
+    });
+
+    $("#web_nosense_auth").radio({
+        fieldLabel: $.su.CHAR.WPORTAL.NONSENSE_AUTH,
+        columns: 2,
+        inputCls: 'xl',
+        items: [
+            {boxlabel: $.su.CHAR.WPORTAL.START, inputValue: "on"},
+            {boxlabel: $.su.CHAR.WPORTAL.STOP, inputValue: "off", checked: true}
+        ]
+    });
+
+    $("#web_remind_enable").checkbox({
+        fieldLabel:"到期提醒",
+        alwaysTrigger: true,
+        items: [
+            {boxlabel: "启用", inputValue: "on", uncheckedValue: "off"}
+        ]
+    }).on('ev_change', function(e, oldValue, newValue){
+    });
+
+    $('#web_remind_time').textbox({
+        fieldLabel: '开始提醒时间',
+        vtype: {
+                vtype: "number",
+                max: 10,
+                min: 1
+                },
+        allowBlank:true,
+        tips: '（1-10天）'
+    });
+
+    $('#web_remind_type').combobox({
+        fieldLabel: '提醒方式',
+        alwaysTrigger: true,
+        items:[
+            {value:"0", name: "仅认证时提醒", selected: true},
+            {value:"1", name: "周期提醒"}
+        ]
+    }).on("ev_change", function(e, oldValue, newValue){
+    });
+
+    $('#web_remind_interval').textbox({
+        fieldLabel: '周期提醒间隔',
+                vtype: {
+                vtype: "number",
+                max: 120,
+                min: 1
+                },
+        allowBlank:true,
+        tips: '（1-120分钟）'
+    });
+
+    $('#web_remind_page_title').textbox({
+        fieldLabel: '',
+        maxLength:50,
+        allowBlank:true,
+        tips: ''
+    }).textbox("hide");
+
+    $('#web_remind_page_content').textbox({
+        fieldLabel: '提醒页面内容',
+        maxLength:50,
+        allowBlank:true,
+        tips: '（1-50个字符）'
+    });
+
+    $("#wechat_enable").radio({
+        fieldLabel: $.su.CHAR.WPORTAL.STATUS,
+        columns: 2,
+        inputCls: 'xl',
+        items: [
+            {boxlabel: $.su.CHAR.WPORTAL.ON, inputValue: "on"},
+            {boxlabel: $.su.CHAR.WPORTAL.OFF, inputValue: "off",  checked: true}
+        ]
+    });
+
+    $('#wechat_free_time').textbox({
+        fieldLabel: $.su.CHAR.WPORTAL.FREETIME,
+        inputCls: 'xl',
+        tipsCls: 's',
+        maxLength: 5,
+        allowBlank: false,
+        vtype: {
+            vtype: "number",
+            max: 43200,
+            min: 1
+        },
+        tips: $.su.CHAR.WPORTAL.FREETIME_TIP
+    });
+
+    $('#wechat_ssid').textbox({
+        fieldLabel: $.su.CHAR.WPORTAL.TEMPLATE_WECHAT_SSID,
+        maxLength: 32,
+        //allowBlank: true,
+        inputCls: 'xl',
+        vtype: "string_visible_allow_blank",//"string_visible_allow_blank_no_angular_bracket",//
+    });
+
+    $('#wechat_shop_id').textbox({
+        fieldLabel: $.su.CHAR.WPORTAL.TEMPLATE_WECHAT_SHOPID,
+        inputCls: 'xl',
+        tipsCls: 's',
+        maxLength: 32,
+        //allowBlank: true,
+        validator: function(value)
+        {
+            var codeStr = /^([A-Za-z0-9]){1,32}$/;
+            value = value.replace(/(^\s*)|(\s*$)/g,'');
+            if (!codeStr.test(value))
+            {
+                return $.su.CHAR.WPORTAL.WECHAT_WIFI_ID_ERR;
+            }
+            else
+            {
+                return true;
+            }
+        },
+        tips: $.su.CHAR.WPORTAL.TEMPLATE_WECHAT_SHOPID_TIP
+    });
+
+    $('#wechat_app_id').textbox({
+        fieldLabel: $.su.CHAR.WPORTAL.TEMPLATE_WECHAT_APPID,
+        inputCls: 'xl',
+        tipsCls: 's',
+        maxLength: 32,
+        //allowBlank: true,
+        validator: function(value)
+        {
+            var codeStr = /^([A-Za-z0-9]){1,32}$/;
+            value = value.replace(/(^\s*)|(\s*$)/g,'');
+            if (!codeStr.test(value))
+            {
+                return $.su.CHAR.WPORTAL.WECHAT_WIFI_ID_ERR;
+            }
+            else
+            {
+                return true;
+            }
+        },
+        tips: $.su.CHAR.WPORTAL.TEMPLATE_WECHAT_APPID_TIP
+    });
+
+    $('#wechat_secret_key').textbox({
+        fieldLabel: $.su.CHAR.WPORTAL.TEMPLATE_WECHAT_SECRETKEY,
+        inputCls: 'xl',
+        tipsCls: 's',
+        maxLength: 32,
+        // allowBlank: true,
+        validator: function(value)
+        {
+            var codeStr = /^([A-Za-z0-9]){1,32}$/;
+            value = value.replace(/(^\s*)|(\s*$)/g,'');
+            if (!codeStr.test(value))
+            {
+                return $.su.CHAR.WPORTAL.WECHAT_WIFI_ID_ERR;
+            }
+            else
+            {
+                return true;
+            }
+        },
+        tips: $.su.CHAR.WPORTAL.TEMPLATE_WECHAT_SECRETKEY_TIP
+    });
+
+    $("#wechat_force_concern").radio({
+        fieldLabel: "强制关注",
+        columns: 2,
+        inputCls: 'xl',
+        items: [
+            {boxlabel: $.su.CHAR.WPORTAL.ON, inputValue: "on"},
+            {boxlabel: $.su.CHAR.WPORTAL.OFF, inputValue: "off",  checked: true}
+        ]
+    }).on("ev_change", function(e, oldValue, newValue){
+        if (newValue == "on")
+        {
+            $("div#wechat_concern_panel").show();
+        }
+        else
+        {
+            $("div#wechat_concern_panel").hide();
+        }
+    });
+
+    var $qrcodeImageMsg = $("#wechat_concern_qrcode_image_msg").msg({
+        closeBtn: true,
+        cls: "",
+        type: 'window'
+    }).msg("hide");
+
+    var $qrcodeImageForm = $('#wechat_concern_qrcode_image_uploader').form({
+        proxy: new $.su.Proxy({url: $.su.url("/admin/authentication/upload_qrcode")}),
+        formEnctype: "multipart/form-data",
+        autoLoad: false,
+        traditional: true,
+        hiddenFrame: true,
+        fields: [
+            {name: "uploadQr"}
+        ],
+        submitBtn: null
+    });
+
+    $('#wechat_concern_qrcode_image_file').file({
+        fieldLabel: $.su.CHAR.WPORTAL.TEMPLATE_QRCODE_PIC,
+        labelCls: 'xs',
+        extension: 'jpg, png, bmp, tiff,gif,jpeg,JPG,PNG,BMP,TIFF,GIF,JPEG',
+        max_len: 256
+    });
+
+    $('#wechat_concern_qrcode_image_button').button({
+        text: $.su.CHAR.WPORTAL.UPLOAD,
+        cls: 'submit',
+        tips: $.su.CHAR.WPORTAL.TEMPLATE_QRCODE_PIC_TIP,
+        handler: function(){
+            if(!$qrcodeImageForm.length){
+                return;
+            }else{
+                if ($('#wechat_concern_qrcode_image_file').file('validate'))
+                {
+                    $qrcodeImageForm.form('submit', {operation: 'uploadQr'}, function(data){
+                        uploadQrcode = 1;
+                        $gridEditor.find('#wechat_concern_qrcode_upload_tip').textbox('setValue', $.su.CHAR.WPORTAL.UPLOAD_SUCCESS);
+                        $qrcodeImageMsg.msg('close');
+
+                        var QR_URL = "../web-static/resources/authserver/images/"
+                        var filename = data.upload_result.wechat_qrcode;
+                        var qr_url = QR_URL + filename;
+                        var imgHTML = '<img src="' + qr_url + '?t=' + Math.random() + '">';
+                        $("#qr_code_display").css("border-color","#D0DFED");
+                        $("#qr_code_display").html("");
+                        $("#qr_code_display").html(imgHTML);
+
+                        $("#wechat_qrcode").textbox("setValue", filename);
+                    },function(error_code){
+                        uploadQrcode = 0;
+                        $gridEditor.find('#wechat_concern_qrcode_upload_tip').textbox('setValue', $.su.CHAR.WPORTAL.UPLOAD_FAIL);
+                        $qrcodeImageMsg.msg('close');
+
+                    },function(fail){
+                        uploadQrcode = 0;
+                        $gridEditor.find('#wechat_concern_qrcode_upload_tip').textbox('setValue', $.su.CHAR.WPORTAL.UPLOAD_FAIL);
+                        $qrcodeImageMsg.msg('close');
+                    });
+                }
+                else
+                {
+                    $('#wechat_concern_qrcode_image_file').file('reset');
+                    return false;
+                }
+            }
+        }
+    });
+
+    $('#wechat_concern_qrcode_image_select').button({
+        fieldLabel: $.su.CHAR.WPORTAL.TEMPLATE_QRCODE_PIC,
+        text: $.su.CHAR.WPORTAL.UPLOAD,
+        cls: 'inline-block',
+        handler: function(){
+            $('#wechat_concern_qrcode_image_file').file('reset');
+            $qrcodeImageMsg.msg("show");
+        }
+    });
+
+    $('#wechat_concern_qrcode_upload_tip').textbox({
+        fieldLabel: null,
+        readOnly: true,
+        value: '---',
+        cls: 'inline-block'
+    });
+
+    $("#wechat_qrcode").textbox({
+        readOnly: true
+    }).textbox("hide");
+
+    $('#wechat_complete_url').textbox({
+        fieldLabel: $.su.CHAR.WPORTAL.WECHAT_COMPLETE_URL,
+        readOnly: true,
+        //cls: 'inline',
+        //inputCls: 'xl',
+        value: ''
+    });
+
+    $('#wechat_auth_url').textbox({
+        fieldLabel: $.su.CHAR.WPORTAL.WECHAT_AUTH_URL,
+        readOnly: true,
+        //cls: 'inline',
+        //inputCls: 'xl',
+        value: ''
+    });
+
+    $("#cwf").fieldset({
+        fields: [
+            {name: "wechat_app_secret"},
+            {name: "wechat_token_server"}
+        ]
+    }).hide();
+
+    $('#wechat_app_secret').textbox({
+        fieldLabel: $.su.CHAR.WPORTAL.WECHAT_APPSECRET,
+        inputCls: 'xl',
+        tipsCls: 'a',
+        maxLength: 32,
+        allowBlank: true,
+        validator: function(value)
+        {
+            var codeStr = /^([A-Za-z0-9]){1,32}$/;
+            value = value.replace(/(^\s*)|(\s*$)/g,'');
+            if (!codeStr.test(value))
+            {
+                return $.su.CHAR.WPORTAL.WECHAT_APPSECRET_ERR;
+            }
+            else
+            {
+                return true;
+            }
+        },
+        tips: $.su.CHAR.WPORTAL.WECHAT_SECRETKEY_TIP
+    });
+
+    $('#wechat_token_server').textbox({
+        fieldLabel: $.su.CHAR.WPORTAL.WECHAT_TOKENSERVER,
+        inputCls: 'xl',
+        tipsCls: 'a',
+        maxLength: 128,
+        vtype: "ascii_visible",
+        tips: $.su.CHAR.WPORTAL.WECHAT_TOKENSERVER_TIP,
+        validator: function(value)
+        {
+            return urlValidator(value);
+        }
+    });
+
+    $("#sms_enable").radio({
+        fieldLabel: $.su.CHAR.WPORTAL.STATUS,
+        columns: 2,
+        inputCls: 'xl',
+        items: [
+            {boxlabel: $.su.CHAR.WPORTAL.ON, inputValue: "on"},
+            {boxlabel: $.su.CHAR.WPORTAL.OFF, inputValue: "off", checked: true}
+        ]
+    });
+
+    $('#sms_free_time').textbox({
+        fieldLabel: $.su.CHAR.WPORTAL.FREETIME,
+        inputCls: 'xl',
+        tipsCls: 's',
+        maxLength: 5,
+        allowBlank: false,
+        vtype: {
+            vtype: "number",
+            max: 43200,
+            min: 1
+        },
+        tips: $.su.CHAR.WPORTAL.FREETIME_TIP
+    });
+
+    $('#sms_auth_expiry').textbox({
+        fieldLabel: $.su.CHAR.WPORTAL.SMS_AUTH_EXPIRY,
+		inputCls: 'xl',
+        tipsCls: 's',
+        maxLength: 1,
+        allowBlank: false,
+        vtype: {
+            vtype: "number",
+            max: 3,
+            min: 1
+        },
+        tips: $.su.CHAR.WPORTAL.SMS_AUTH_EXPIRY_TIP
+    });
+
+    $('#sms_channel_type').combobox({
+        fieldLabel: $.su.CHAR.WPORTAL.SMS_CHANNEL_TYPE,
+        allowBlank: true,
+        inputCls: 'xl',
+        items:[
+            {value:"alibaba_cloud", name: $.su.CHAR.WPORTAL.SMS_CHANNEL_TYPE_ALIYUN,selected: true},
+            {value:"netease_cloud", name: $.su.CHAR.WPORTAL.SMS_CHANNEL_TYPE_NETEASE},
+            {value:"tencent_cloud", name: $.su.CHAR.WPORTAL.SMS_CHANNEL_TYPE_TENCENT},
+            {value:"baidu_cloud", name: $.su.CHAR.WPORTAL.SMS_CHANNEL_TYPE_BAIDU},
+            {value:"http", name: $.su.CHAR.WPORTAL.SMS_CHANNEL_TYPE_HTTP}
+        ]
+    }).on("ev_change", function(e, oldValue, newValue){
+       var value = newValue[0];
+       if (value == "http")
+       {
+            $("div#sms_http_type").show();
+            $("div#sms_cloud_type").hide();
+       }
+       else if(value=="alibaba_cloud")
+       {
+            $("div#sms_http_type").hide();
+            $("div#sms_cloud_type").show();
+            $("#sms_username").textbox("setFieldLabel", $.su.CHAR.WPORTAL.SMS_CHANNEL_TYPE_ALIYUN_USERNAME)
+            $("#sms_password").textbox("setFieldLabel", $.su.CHAR.WPORTAL.SMS_CHANNEL_TYPE_ALIYUN_PASSWORD)
+            $("#sms_template_id").textbox("setFieldLabel", $.su.CHAR.WPORTAL.SMS_CHANNEL_TYPE_ALIYUN_TEMPLATEID)
+            $("#sms_signname").textbox("setFieldLabel", $.su.CHAR.WPORTAL.SMS_CHANNEL_TYPE_ALIYUN_SIGNNAME)
+            $("#sms_app_id").textbox("setFieldLabel", $.su.CHAR.WPORTAL.SMS_CHANNEL_TYPE_ALIYUN_APPID)
+            $("#sms_app_id").textbox("hide");
+       }
+       else if(value=="tencent_cloud")
+       {
+            $("div#sms_http_type").hide();
+            $("div#sms_cloud_type").show();
+            $("#sms_username").textbox("setFieldLabel", $.su.CHAR.WPORTAL.SMS_CHANNEL_TYPE_TENCENT_USERNAME)
+            $("#sms_password").textbox("setFieldLabel", $.su.CHAR.WPORTAL.SMS_CHANNEL_TYPE_TENCENT_PASSWORD)
+            $("#sms_template_id").textbox("setFieldLabel", $.su.CHAR.WPORTAL.SMS_CHANNEL_TYPE_TENCENT_TEMPLATEID)
+            $("#sms_signname").textbox("setFieldLabel", $.su.CHAR.WPORTAL.SMS_CHANNEL_TYPE_TENCENT_SIGNNAME)
+            $("#sms_app_id").textbox("hide");
+       }
+       else if(value=="baidu_cloud")
+       {
+            $("div#sms_http_type").hide();
+            $("div#sms_cloud_type").show();
+            $("#sms_username").textbox("setFieldLabel", $.su.CHAR.WPORTAL.SMS_CHANNEL_TYPE_BAIDU_USERNAME)
+            $("#sms_password").textbox("setFieldLabel", $.su.CHAR.WPORTAL.SMS_CHANNEL_TYPE_BAIDU_PASSWORD)
+            $("#sms_template_id").textbox("setFieldLabel", $.su.CHAR.WPORTAL.SMS_CHANNEL_TYPE_BAIDU_TEMPLATEID)
+            $("#sms_signname").textbox("setFieldLabel", $.su.CHAR.WPORTAL.SMS_CHANNEL_TYPE_BAIDU_SIGNNAME)
+            $("#sms_app_id").textbox("setFieldLabel", $.su.CHAR.WPORTAL.SMS_CHANNEL_TYPE_BAIDU_APPID)
+            $("#sms_app_id").textbox("show");
+       }
+       else if(value=="netease_cloud")
+       {
+            $("div#sms_http_type").hide();
+            $("div#sms_cloud_type").show();
+            $("#sms_username").textbox("setFieldLabel", $.su.CHAR.WPORTAL.SMS_CHANNEL_TYPE_NETEASE_USERNAME)
+            $("#sms_password").textbox("setFieldLabel", $.su.CHAR.WPORTAL.SMS_CHANNEL_TYPE_NETEASE_PASSWORD)
+            $("#sms_template_id").textbox("setFieldLabel", $.su.CHAR.WPORTAL.SMS_CHANNEL_TYPE_NETEASE_TEMPLATEID)
+            $("#sms_signname").textbox("setFieldLabel", $.su.CHAR.WPORTAL.SMS_CHANNEL_TYPE_NETEASE_SIGNNAME)
+            $("#sms_app_id").textbox("hide");
+       }
+    });
+
+    $('#sms_http_url').textarea({
+        fieldLabel: $.su.CHAR.WPORTAL.SMS_SEND_URL,
+        inputCls: 'xl',
+        tipsCls: 'a',
+        labelCls: 'widget-fieldlabel-wrap m top_align',
+        maxLength: 120,
+        vtype: "ascii_visible",
+        tips: $.su.CHAR.WPORTAL.AUTH_SMS_URL_TIP,
+        allowBlank: true,
+        validator: function(value)
+        {
+           return urlValidator(value);
+        }
+    });
+
+    $("#sms_http_mode").radio({
+        fieldLabel: $.su.CHAR.WPORTAL.SMS_REQUEST_MODE,
+        columns: 2,
+        inputCls: 'xl',
+        items: [
+            {boxlabel: $.su.CHAR.WPORTAL.SMS_REQUEST_MODE_GET, inputValue: "get"},
+            {boxlabel: $.su.CHAR.WPORTAL.SMS_REQUEST_MODE_POST, inputValue: "post", checked: true}
+        ]
+    });
+
+    $('#sms_http_code_type').combobox({
+        fieldLabel: $.su.CHAR.WPORTAL.SMS_ENCODING_TYPE,
+        allowBlank: true,
+        inputCls: 'xl',
+        items:[
+            {value:1, name: $.su.CHAR.WPORTAL.SMS_ENCODING_TYPE_UTF8, selected: true},
+            {value:2, name: $.su.CHAR.WPORTAL.SMS_ENCODING_TYPE_GBK},
+            {value:3, name: $.su.CHAR.WPORTAL.SMS_ENCODING_TYPE_GB2312}
+        ]
+    });
+
+    $('#sms_http_template').textarea({
+        fieldLabel: $.su.CHAR.WPORTAL.SMS_CONTENT_TEMPLATE,
+        inputCls: 'xl',
+        tipsCls: 'a',
+        labelCls: 'widget-fieldlabel-wrap m top_align',
+        maxLength: 250,
+        allowBlank: true,
+        tips: $.su.CHAR.WPORTAL.SMS_TEMPLATEID_HTTP_TIP
+    });
+
+    $('#sms_username').textbox({
+        fieldLabel: $.su.CHAR.WPORTAL.SMS_USERNAME,
+        inputCls: 'xl',
+        tipsCls: 's',
+        maxLength: 50,
+        allowBlank: true,
+        tips: $.su.CHAR.WPORTAL.SMS_USERNAME_TIP
+    });
+
+    $('#sms_password').textbox({
+        fieldLabel: $.su.CHAR.WPORTAL.SMS_PASSWORD,
+        inputCls: 'xl',
+        tipsCls: 's',
+        maxLength: 50,
+        allowBlank: true,
+        tips: $.su.CHAR.WPORTAL.SMS_PASSWORD_TIP
+    });
+
+    $('#sms_template_id').textbox({
+        fieldLabel: $.su.CHAR.WPORTAL.SMS_TEMPLATEID,
+        inputCls: 'xl',
+        tipsCls: 's',
+        maxLength: 50,
+        allowBlank: true,
+        tips: $.su.CHAR.WPORTAL.SMS_TEMPLATEID_TIP
+    });
+
+    $('#sms_signname').textbox({
+        fieldLabel: $.su.CHAR.WPORTAL.SMS_SIGNNAME,
+        inputCls: 'xl',
+        tipsCls: 's',
+        maxLength: 50,
+        allowBlank: true,
+        tips: $.su.CHAR.WPORTAL.SMS_SIGNNAME_TIP
+    });
+
+    $('#sms_app_id').textbox({
+        fieldLabel: $.su.CHAR.WPORTAL.SMS_APPID,
+        inputCls: 'xl',
+        tipsCls: 's',
+        maxLength: 100,
+        tips: $.su.CHAR.WPORTAL.SMS_APPID_TIP
+    });
+
+    var getData = new $.su.Proxy({async: false});
+	var column_type;
+	var ssidMap = {};
+	var ssidList = [];
+	var firstLoad = true;
+	var ssidListProxy = new $.su.Proxy({async: false});
+    getData.query({"profile":{"name":"portal_config"}, "authentication":{"name":"portal"}},function(data){
+        var nonsense_support = data.profile.portal_config.web_nonsense_auth_attr;
+        var cwf_function_support_attr = data.profile.portal_config.cwf_function_support_attr;
+        var fail_url_auto_distribute_attr = data.profile.portal_config.fail_url_auto_distribute_attr;
+        if(nonsense_support == "0")
+        {
+            $("#web_nosense_auth").radio("hide");
+        }
+        if(cwf_function_support_attr == "1")
+        {
+            cwf_function_support = true
+        }
+        if (fail_url_auto_distribute_attr == "1")
+        {
+            fail_url_auto_distribute = true
+        }
+        web_auth_server_group.combobox("disable");
+
+        portal_port = data.authentication.portal.portal_port;
+        if ("80" == portal_port)
+        {
+            portal_port = ""
+        }
+        else
+        {
+            portal_port = ":" + portal_port
+        }
+
+        auth_type = data.authentication.portal.auth_mode;
+        if (auth_type==AUTH_MODE_VLAN)
+        {
+            ssid.combobox("hide");
+			ssid.combobox("disable");
+            bind_interface.combobox("hide");
+			bind_interface.combobox("disable");
+			column_type =   {
+                text: '生效VLAN',
+                width: 40,
+                dataIndex: 'vlan_id',
+				renderer: function(data){
+					if(data == "0")return "---";
+					return data;
+                },
+				scan: {
+					cmp: $.search.compare.num
+				}
+            };
+        }
+        else if(auth_type==AUTH_MODE_INTERFACE)
+        {
+            ssid.combobox("hide");
+			ssid.combobox("disable");
+            vlan_id.textbox("hide");
+			vlan_id.textbox("disable");
+			column_type =   {
+                text: '生效接口',
+                width: 40,
+                dataIndex: 'interface',
+				scan: {
+					type: "textbox",
+					cmp: $.search.compare.string
+				}
+            }
+        }
+        else
+        {
+            vlan_id.textbox("hide");
+			vlan_id.textbox("disable");
+            bind_interface.combobox("hide");
+			bind_interface.combobox("disable");
+			column_type =   {
+                text: '生效SSID',
+                width: 40,
+                dataIndex: 'serv_id',
+				renderer: function(data){
+					return ssidMap[data];
+                },
+				scan: {
+					type: "textbox",
+					cmp: function(src, tar, index){
+						if(typeof src == "string" && src.length > 0)
+						{
+							if(ssidMap[src] && ssidMap[src].indexOf(tar) >= 0)return true;
+						}
+						return false;
+					}
+				}
+            };
+        }
+    });
+	if(auth_type==AUTH_MODE_SSID){
+		ssidListProxy.query({"apmng_wserv":{"table":"wlan_serv"}},function(data){
+			var wrs = data.apmng_wserv.wlan_serv;
+			$.each(wrs, function(_, item){
+				for (var key in item)
+				{
+					ssidList.push({name:$.su.func.escapeHtml(item[key].ssid), value:item[key].serv_id});
+					ssidMap[item[key].serv_id] = $.su.func.escapeHtml(item[key].ssid);
+				}
+			});
+		});
+	}
+    // 设置"注意"
+    $("h5#onekey_notice_title").html($.su.CHAR.WPORTAL.WPORTAL_NOTE_TITLE);
+    $("h5#web_notice_title").html($.su.CHAR.WPORTAL.WPORTAL_NOTE_TITLE);
+    $("h5#wechat_notice_title").html($.su.CHAR.WPORTAL.WPORTAL_NOTE_TITLE);
+    $("h5#sms_notice_title").html($.su.CHAR.WPORTAL.WPORTAL_NOTE_TITLE);
+
+    //设置安全策略提示
+    $("h5#sec_policy_notice_title").html("注意：");
+    $("#sec_policy_notice_content").html("1、 当默认安全策略为禁止时，需要添加放行认证端口（默认为8080，在认证参数页面可查看）和DNS端口的安全策略规则，重定向页面才能正常弹出。");
+
+    // 设置onekey、web、sms
+    var fail_url_tip 
+    if (true == fail_url_auto_distribute) {
+        fail_url_tip = $.su.CHAR.WPORTAL.FAIL_URL_AUTO_DISTRIBUTE_TIP   
+    } else {
+        fail_url_tip = $.su.CHAR.WPORTAL.FAIL_URL_MANUAL_SET_TIP
+    }
+    $("#onekey_notice_content").html("1、" + fail_url_tip);
+    $("#web_notice_content").html("1、" + fail_url_tip + "<br>");
+    $("#sms_notice_content").html("1、" + fail_url_tip + "<br>" + 
+                                    "2、" + $.su.CHAR.WPORTAL.SMS_SET_SYSTEM_ONLINE_TIP + "<br>" + 
+                                    "3、" + $.su.CHAR.WPORTAL.SMS_SET_SYSTEM_TIME_TIP);
+
+    
+    // 设置微信带链接的内容
+    $("#wechat_notice_public_refer").html("1、" + $.su.CHAR.WPORTAL.WECHAT_PUBLIC_REFER_TIP);
+    $("#wechat_notice_public_info_set").html($.su.CHAR.WPORTAL.WECHAT_PUBLIC_SETTING_TIP);
+    $("#wechat_notice_public_force_concern").html($.su.CHAR.WPORTAL.WECHAT_PUBLIC_FORCE_CONCERN_TIP + "。");
+    
+    // 设置微信其他的内容提示
+    var wechat_notice_tip = "2、" + $.su.CHAR.WPORTAL.WECHAT_SET_SYSTEM_ONLINE_TIP + "<br>" + 
+                            "3、" + $.su.CHAR.WPORTAL.WECHAT_SET_SYSTEM_TIME_TIP;
+    if (AUTH_MODE_SSID == auth_type) {
+        if (true == cwf_function_support) {
+            wechat_notice_tip = wechat_notice_tip + "<br>" + "4、" + $.su.CHAR.WPORTAL.WECHAT_WIRELESS_MARKET_TIP;
+        }
+    } else {
+        wechat_notice_tip = wechat_notice_tip + "<br>" + "4、" + $.su.CHAR.WPORTAL.WECHAT_SET_SSID_TIP;
+        if (true == cwf_function_support) {
+            wechat_notice_tip = wechat_notice_tip + "<br>" + "5、" + $.su.CHAR.WPORTAL.WECHAT_WIRELESS_MARKET_TIP;
+        }
+    }
+    $("#wechat_notice_conent").html(wechat_notice_tip);
+
+
+    var portalGrid = $('#portal_list').grid({
+        store:{
+            proxy: globalProxy,
+            autoLoad: true,
+            fields: [
+				{name: "portal_id"},
+                {name: "enable"},
+                {name: "jump_page_name"},
+                {name: "ssid_id"},
+                {name: "serv_id"},
+                {name: "default_page_type"},
+                {name: "vlan_id"},
+                {name: "interface"},
+                {name: "success_url"},
+                {name: "fail_url"},
+                // {name: "ageing-time"},
+                {name: "note"},
+
+                {name: "onekey_enable"},
+                {name: "onekey_free_time"},
+
+                {name: "web_enable"},
+                {name: "web_auth_server_type"},
+                {name: "web_auth_server_group"},
+                {name: "web_auth_server_group_info"},
+                {name: "web_free_time"},
+                {name: "web_nosense_auth"},
+                {name: "web_remind_enable"},
+                {name: "web_remind_time"},
+                {name: "web_remind_type"},
+                {name: "web_remind_interval"},
+                {name: "web_remind_page_title"},
+                {name: "web_remind_page_content"},
+
+                {name: "wechat_enable"},
+                {name: "wechat_free_time"},
+                {name: "wechat_ssid"},
+                {name: "wechat_shop_id"},
+                {name: "wechat_app_id"},
+                {name: "wechat_secret_key"},
+                {name: "wechat_force_concern"},
+                {name: "wechat_qrcode"},
+                {name: "wechat_qrcode_pic_url"},
+                {name: "wechat_app_secret"},
+                {name: "wechat_token_server"},
+
+                {name: "sms_enable"},
+                {name: "sms_free_time"},
+                {name: "sms_auth_expiry"},
+                {name: "sms_channel_type"},
+                {name: "sms_http_url"},
+                {name: "sms_http_mode"},
+                {name: "sms_http_code_type"},
+                {name: "sms_http_template"},
+                {name: "sms_username"},
+                {name: "sms_password"},
+                {name: "sms_template_id"},
+                {name: "sms_signname"},
+                {name: "sms_app_id"}
+            ],
+            parseKey:{
+                moduleName: "authentication",
+                tableName: "portal_auth_list",
+                pageSizeName: "portal_auth_entry",
+				maxSizeTableName: "wportal",
+				maxSizeOptionName: "portal_max",
+                getFilter: function(index, itemNames, data){
+                    var filter = [];
+                    var oneFilter;
+                    oneFilter = {web_enable: "on"};
+                    filter.push(oneFilter);
+                    oneFilter = {web_enable: "off"};
+                    filter.push(oneFilter);
+                    oneFilter = {onekey_enable: "on"};
+                    filter.push(oneFilter);
+                    oneFilter = {onekey_enable: "off"};
+                    filter.push(oneFilter);
+                    oneFilter = {wechat_enable: "on"};
+                    filter.push(oneFilter);
+                    oneFilter = {wechat_enable: "off"};
+                    filter.push(oneFilter);
+                    oneFilter = {sms_enable: "on"};
+                    filter.push(oneFilter);
+                    oneFilter = {sms_enable: "off"};
+                    filter.push(oneFilter);
+
+                    return filter;
+                },
+                setFilter:function(index, itemNames, data){
+                    var filter = [];
+                    var oneFilter = {};
+
+
+					var itemNameStr = "";
+					var pos = -1;
+					if (!$.isArray(itemNames))
+					{
+						itemNames = [itemNames];
+					}
+					for (var i = 0; i < itemNames.length; i++)
+					{
+						itemNameStr = itemNames[i].toString();
+						pos = itemNameStr.lastIndexOf('_');
+						if(0 >= pos )
+							continue;
+						oneFilter = {};
+						oneFilter["portal_id"] =  itemNameStr.slice(pos+1).toString();
+						filter.push(oneFilter);
+					}
+                    return filter;
+                },
+                delFilter: function(itemNames, data, indexes){
+                    var _string = "";
+                    var filter = [];
+                    var oneFilter = {};
+                    var j;
+					var itemNameStr = "";
+					var pos = -1;
+                    if (!$.isArray(itemNames))
+                    {
+                        itemNames = [itemNames];
+                    }
+
+                    if (!$.isArray(indexes))
+                    {
+                        indexes = [indexes];
+                    }
+                    for (var i = 0; i < itemNames.length; i++)
+                    {
+                        oneFilter = {};
+						itemNameStr = itemNames[i].toString();
+						pos = itemNameStr.lastIndexOf('_');
+						if(0 >= pos )
+							continue;
+                        oneFilter["portal_id"] = itemNameStr.slice(pos+1).toString();
+                        filter.push(oneFilter);
+                    }
+                    return filter;
+                },
+                rmField: ["name"],
+                formField: ["name"],
+                keyProperty: ["name"],
+                pagingField: ["name"],
+                autoLoad: true,
+                loadDelay: 1
+            }
+        },
+        editor:{
+            validator:function(){
+                return auth_para_check();
+            },
+            hasValidChange: function() {
+                return auth_para_check();
+            },
+            content: '#portal_editor',
+            fields: [
+				{name: "portal_id"},
+                {name: "jump_page_name"},
+                {name: "serv_id"},
+                {name: "vlan_id"},
+                {name: "interface"},
+                {name: "success_url"},
+                {name: "fail_url"},
+                // {name: "ageing-time"},
+                {name: "note"},
+				{name: "enable"},
+                {name: "onekey_enable"},
+                {name: "onekey_free_time"},
+
+                {name: "web_enable"},
+                {name: "web_auth_server_type"},
+                {name: "web_auth_server_group"},
+                {name: "web_auth_server_group_info"},
+                {name: "web_free_time"},
+                {name: "web_nosense_auth"},
+                {name: "web_remind_enable"},
+                {name: "web_remind_time"},
+                {name: "web_remind_type"},
+                {name: "web_remind_interval"},
+                {name: "web_remind_page_title"},
+                {name: "web_remind_page_content"},
+
+                {name: "wechat_enable"},
+                {name: "wechat_free_time"},
+                {name: "wechat_ssid"},
+                {name: "wechat_shop_id"},
+                {name: "wechat_app_id"},
+                {name: "wechat_secret_key"},
+                {name: "wechat_force_concern"},
+                {name: "wechat_qrcode"},
+                {name: "wechat_qrcode_pic_url"},
+                {name: "wechat_app_secret"},
+                {name: "wechat_token_server"},
+
+                {name: "sms_enable"},
+                {name: "sms_free_time"},
+                {name: "sms_auth_expiry"},
+                {name: "sms_channel_type"},
+                {name: "sms_http_url"},
+                {name: "sms_http_mode"},
+                {name: "sms_http_code_type"},
+                {name: "sms_http_template"},
+                {name: "sms_username"},
+                {name: "sms_password"},
+                {name: "sms_template_id"},
+                {name: "sms_signname"},
+                {name: "sms_app_id"}
+            ]
+        },
+        paging_true:[],
+        columns: [
+            {
+                xtype: 'checkcolumn',
+                width: 20
+            },
+            {
+                xtype: 'rownumberer',
+                width: 20
+            },
+            {
+                text: '跳转页面名称',
+                width: 40,
+                dataIndex: 'jump_page_name',
+				scan: {
+					type: "textbox",
+					cmp: $.search.compare.string
+				}
+            },column_type,
+            {
+                text: '备注',
+                width: 40,
+                dataIndex: 'note',
+				scan: {
+					cmp: $.search.compare.string
+				}
+            },
+			{
+                text: '状态',
+                width: 30,
+                dataIndex: 'enable',
+				xtype: 'statuscolumn',
+				trueValue: "on",
+				falseValue: "off",
+				renderer: function(data){
+                    var result;
+                    switch (data){
+                        case "on":
+							result = "启用";
+                            break;
+                        case "off":
+                            result = "禁用";
+                            break;
+                        default :
+                            break;
+                    }
+                    return result;
+                }
+            },
+            {
+                xtype: "settings",
+                width: 40
+            }
+        ],
+        operation: 'prompt|enable|disable|add|delete|search'
+    }).on('ev_load',  function(e,data, others){
+        var $gridEditor = $(portalGrid.grid('getEditor'));
+        if (others){
+        }
+		if(firstLoad){
+			firstLoad = false;
+			var combobox = $gridEditor.find('#serv_id');
+			combobox.combobox('loadData', ssidList);
+			
+			var templates = [];
+			var templatesProxy = new $.su.Proxy();
+			templatesProxy.query({authentication:{"table":"jump_page_list"}},function(data){
+				var jps = data.authentication.jump_page_list;
+				$.each(jps, function(_, item){
+					for (var key in item) {
+						templates.push({name:item[key].jump_page_name,value:item[key].jump_page_name});
+					}
+				});
+
+				var combobox = $gridEditor.find('#jump_page_name');
+				combobox.combobox('loadData', templates);
+			});
+
+			var groups = [];
+			var groupsProxy = new $.su.Proxy({});
+			groupsProxy.query({"authentication":{"table":"server_group_list"}},function(data){
+				var sgl = data.authentication.server_group_list;
+
+				$.each(sgl, function(_, item){
+					for (var key in item)
+					{
+						groups.push({name:item[key].group_name,value:item[key].group_name});
+					}
+				});
+
+				var combobox = $gridEditor.find('#web_auth_server_group');
+				combobox.combobox('loadData', groups);
+			});
+			if(auth_type==AUTH_MODE_INTERFACE){
+				var interfaceItem=[];
+				var interfaceProxy = new $.su.Proxy();
+				interfaceProxy.query({"network":{"table":"if_info"}},function(data){
+					var ifs = data.network["if_info"];
+					$.each(ifs, function(_, item){
+						for(var key in item){
+							if(item[key].isbridged != 1){	
+								interfaceItem.push({name:item[key].if_name,value:item[key].if_name});
+							}
+						}
+					});
+					var combobox = $gridEditor.find('#interface');
+					combobox.combobox('loadData', interfaceItem);
+				});
+			}
+		}
+    }).on("ev_operation", function(e, obj, action){
+        //var $gridEditor = $(portalGrid.grid('getEditor'));
+		/*此处为enable, disable代码*/
+		
+		var selectedKeys = portalGrid.grid("getSelected");
+		var store = portalGrid.grid('getStore');
+		var data_len = store.data.length;
+		var data = store.data;
+		var data_key = [];
+		var onekey = {};
+		var result = {};
+		var _string = "";
+		var j;
+		var map = {};
+		if (selectedKeys.length === 0)
+		{
+			portalGrid.get(0).noneSelectMsg_g.msg('show');
+			return;
+		}
+		else
+		{
+			portalGrid.grid("runProgress");
+			$.su.loading.show();
+			
+			if (!$.isArray(selectedKeys))
+			{	
+				selectedKeys = [selectedKeys];
+			}
+			
+			if (!$.isArray(data))
+			{
+				data = [data];
+			}
+			for(var i=0;i < data.length;i++){
+				var arr = data[i].itemName.split("portal_auth_list_");
+				map[data[i].key] = arr[1];
+			}
+			for (var i = 0; i < selectedKeys.length; i++)
+			{
+				onekey = {};
+				onekey["portal_id"] = map[selectedKeys[i]];
+				data_key.push(onekey);
+			}
+
+			var postData = {};
+			postData["authentication"] = {};
+			postData["authentication"]["table"] = "portal_auth_list";
+			postData["authentication"]["filter"] = {};
+			postData["authentication"]["filter"] = data_key;
+			postData["authentication"]["para"] = {};
+			postData["authentication"]["para"]["enable"] = (action == "enable" ? "on" : "off");
+			
+			globalProxy.modify(postData, function(){
+					reloadGrid(function(){
+						portalGrid.grid("prompt", true);
+					});
+					setTimeout(function(){//延时时间根据各模块情况自行调整
+						$.su.loading.hide();
+					}, data_len*1);
+			}, function(){
+				$.su.loading.hide();
+				portalGrid.grid("disGridChkbox");
+				portalGrid.grid("prompt", false, "");
+			});
+		}
+    });
+
+	var $gridEditor = $(portalGrid.grid('getEditor'));
+	$($gridEditor).on("ev_startEdit", function(e, index, key){
+        var store = portalGrid.grid('getStore');
+        var gridData= store.data;
+
+        var portalSsidBindListProxy = new $.su.Proxy({async: false});
+        var bindSsidList = []
+        var ssidListTmp = []
+        if (AUTH_MODE_SSID == auth_type) {
+            portalSsidBindListProxy.query({"authentication":{"table":"portal_auth_ssid_bind_list"}},function(data){
+                var ssid_list_array = data.authentication.portal_auth_ssid_bind_list;
+                if (ssid_list_array) {
+                    var cnt = 0
+                    $.each(ssid_list_array, function(_, item){
+                        for (var key in item)
+                        {
+                            bindSsidList[cnt] = item[key].serv_id;
+                            cnt = cnt + 1;                   
+                        }
+                    });
+                    
+                    // 对于add操作，ssid下拉列表中只能选择未绑定的ssid
+                    // 对于set操作，ssid下拉列表中可选择未绑定的ssid和该条目所绑定的ssid
+                    // 所以对于set操作，将对应的serv_id从绑定列表中剔除
+                    if ("add" != index) {
+                        for (var i = 0; i < bindSsidList.length; i++) {
+                            if (bindSsidList[i] == gridData[index].serv_id) {
+                                bindSsidList.splice(i, 1)
+                            }
+                        }
+                    }
+                }
+            });
+
+            var found = false
+            for (var i = 0; i < ssidList.length; i++) {
+                found = false
+                for (var j = 0; j < bindSsidList.length; j++) {
+                    if (bindSsidList[j] == ssidList[i].value) {
+                        found = true
+                        break
+                    }
+                }
+                if (false == found) {
+                    ssidListTmp.push({name:ssidList[i].name, value:ssidList[i].value});
+                }
+            }
+			
+            var combobox = $gridEditor.find('#serv_id');
+            combobox.combobox('loadData', ssidListTmp);
+            if ("add" != index) {
+                combobox.combobox("setValue", gridData[index].serv_id)
+            }
+        }
+
+        if(index == "add")
+        {
+            $("#web_portal").hide();
+            $("#wechat_portal").hide();
+            $("#sms_portal").hide();
+            $("#web_portal_auth_server_remote").hide();
+            $("#web_portal_remind_func").hide();
+            $("#sms_http_type").hide();
+            $("#wechat_concern_panel").hide();
+
+            $('#web_portal').show(); 
+            
+            $('#portal_type').find('li').removeClass('selected');
+            $('#portal_type').find('li:eq(0)').addClass('selected');
+            $("#qr_code_display").html($.su.CHAR.WPORTAL.WECHAT_QR_NEEDED);
+        }else{
+            var vid = $("#vlan_id").textbox('getValue');
+            if (0 == vid)
+            {
+                $("#vlan_id").textbox('setValue', '');
+            }
+            var web_auth_server_type = $("input#web_auth_server_type").combobox("getValue")
+            if(web_auth_server_type == "local")
+            {   
+                $("div#web_portal_auth_server_remote").hide();
+                web_auth_server_group.combobox("disable");
+            }
+            else
+            {
+                $("div#web_portal_auth_server_remote").show();
+                web_auth_server_group.combobox("enable");
+            }
+
+            var force_enable = $("input#wechat_force_concern").radio("getValue")
+            if(force_enable == "on"){
+                $("div#wechat_concern_panel").show();
+            }
+            else
+            {
+                $("div#wechat_concern_panel").hide();
+            }
+
+            var wechat_qrcode_value = $("#wechat_qrcode").textbox("getValue");
+
+            if ("on" == force_enable && !para_is_empty(wechat_qrcode_value)) {
+                var QR_URL = "../web-static/resources/authserver/images/";
+                var qr_url = QR_URL + wechat_qrcode_value;
+                var imgHTML = '<img src="' + qr_url + '?t=' + Math.random() + '">';
+                $("#qr_code_display").html("");
+                $("#qr_code_display").html(imgHTML);
+            } else {
+                $("#wechat_concern_qrcode_upload_tip").textbox('setValue', "---");
+                $("#wechat_qrcode").textbox("setValue", "");
+                $("#qr_code_display").html($.su.CHAR.WPORTAL.WECHAT_QR_NEEDED);
+            }
+        }
+
+
+        var complete_str
+        var auth_str
+        
+        if (AUTH_MODE_VLAN == auth_type)
+        {
+            complete_str = wechat_url + portal_port + complete_url
+            auth_str = wechat_url + portal_port + auth_url
+        }
+        else if (AUTH_MODE_SSID == auth_type)
+        {
+            $("#wechat_ssid").textbox("hide");
+            complete_str = wechat_url + portal_port + complete_url + ssid_mode
+            auth_str = wechat_url + portal_port + auth_url + ssid_mode
+        }
+        else if (AUTH_MODE_INTERFACE == auth_type)
+        {
+            complete_str = wechat_url + portal_port + router_complete_url + interface_mode + $("#interface").combobox("getValue")[0]
+            auth_str = wechat_url + portal_port + router_auth_url + interface_mode + $("#interface").combobox("getValue")[0]
+        }
+
+        $('#wechat_complete_url').textbox('setValue', complete_str);
+        $('#wechat_auth_url').textbox('setValue', auth_str);
+
+        
+        if (true == cwf_function_support) {
+            $('#basic_btn').hide();
+            $("#adv_btn").show();
+            $("#cwf").fieldset("hide");
+
+            $("#adv_btn").on('click',function(){
+                $("#cwf").fieldset("show");
+                $(this).hide();
+                $('#basic_btn').show();
+            });
+            $("#basic_btn").on('click',function(){
+                $("#cwf").fieldset("hide");
+                $(this).hide();
+                $('#adv_btn').show();
+            });
+        } else {
+            $('#basic_btn').hide();
+            $("#adv_btn").hide();
+        }
+
+
+        var sms_channel_type = $("input#sms_channel_type").combobox("getValue")
+        if(sms_channel_type == "http")
+        {
+            $("div#sms_http_type").show();
+            $("div#sms_cloud_type").hide();
+        }
+        else if(sms_channel_type=="alibaba_cloud")
+        {
+            $("div#sms_http_type").hide();
+            $("div#sms_cloud_type").show();
+            $("#sms_username").textbox("setFieldLabel", $.su.CHAR.WPORTAL.SMS_CHANNEL_TYPE_ALIYUN_USERNAME)
+            $("#sms_password").textbox("setFieldLabel", $.su.CHAR.WPORTAL.SMS_CHANNEL_TYPE_ALIYUN_PASSWORD)
+            $("#sms_template_id").textbox("setFieldLabel", $.su.CHAR.WPORTAL.SMS_CHANNEL_TYPE_ALIYUN_TEMPLATEID)
+            $("#sms_signname").textbox("setFieldLabel", $.su.CHAR.WPORTAL.SMS_CHANNEL_TYPE_ALIYUN_SIGNNAME)
+            $("#sms_app_id").textbox("setFieldLabel", $.su.CHAR.WPORTAL.SMS_CHANNEL_TYPE_ALIYUN_APPID)
+            $("#sms_app_id").textbox("hide");
+        }
+        else if(sms_channel_type=="tencent_cloud")
+        {
+            $("div#sms_http_type").hide();
+            $("div#sms_cloud_type").show();
+            $("#sms_username").textbox("setFieldLabel", $.su.CHAR.WPORTAL.SMS_CHANNEL_TYPE_TENCENT_USERNAME)
+            $("#sms_password").textbox("setFieldLabel", $.su.CHAR.WPORTAL.SMS_CHANNEL_TYPE_TENCENT_PASSWORD)
+            $("#sms_template_id").textbox("setFieldLabel", $.su.CHAR.WPORTAL.SMS_CHANNEL_TYPE_TENCENT_TEMPLATEID)
+            $("#sms_signname").textbox("setFieldLabel", $.su.CHAR.WPORTAL.SMS_CHANNEL_TYPE_TENCENT_SIGNNAME)
+            $("#sms_app_id").textbox("hide");
+        }
+        else if(sms_channel_type=="baidu_cloud")
+        {
+            $("div#sms_http_type").hide();
+            $("div#sms_cloud_type").show();
+            $("#sms_username").textbox("setFieldLabel", $.su.CHAR.WPORTAL.SMS_CHANNEL_TYPE_BAIDU_USERNAME)
+            $("#sms_password").textbox("setFieldLabel", $.su.CHAR.WPORTAL.SMS_CHANNEL_TYPE_BAIDU_PASSWORD)
+            $("#sms_template_id").textbox("setFieldLabel", $.su.CHAR.WPORTAL.SMS_CHANNEL_TYPE_BAIDU_TEMPLATEID)
+            $("#sms_signname").textbox("setFieldLabel", $.su.CHAR.WPORTAL.SMS_CHANNEL_TYPE_BAIDU_SIGNNAME)
+            $("#sms_app_id").textbox("setFieldLabel", $.su.CHAR.WPORTAL.SMS_CHANNEL_TYPE_BAIDU_APPID)
+            $("#sms_app_id").textbox("show");
+        }
+        else if(sms_channel_type=="netease_cloud")
+        {
+            $("div#sms_http_type").hide();
+            $("div#sms_cloud_type").show();
+            $("#sms_username").textbox("setFieldLabel", $.su.CHAR.WPORTAL.SMS_CHANNEL_TYPE_NETEASE_USERNAME)
+            $("#sms_password").textbox("setFieldLabel", $.su.CHAR.WPORTAL.SMS_CHANNEL_TYPE_NETEASE_PASSWORD)
+            $("#sms_template_id").textbox("setFieldLabel", $.su.CHAR.WPORTAL.SMS_CHANNEL_TYPE_NETEASE_TEMPLATEID)
+            $("#sms_signname").textbox("setFieldLabel", $.su.CHAR.WPORTAL.SMS_CHANNEL_TYPE_NETEASE_SIGNNAME)
+            $("#sms_app_id").textbox("hide");
+        }
+	});
+
+
+    var ERR_DEFAULT = "default";
+    var ERR_EMPTY = "empty";
+    var ERR_NO_QRCODE = "no_qrcode";
+
+    function para_is_empty(para) {
+        if (para == "" || para == null)
+        {
+            return true
+        }
+
+        return false
+    }
+
+    function onekey_para_check(){
+        var onekey_free_time = $('#onekey_free_time');
+        if(!onekey_free_time.textbox("validate"))
+        {
+            return ["onekey_free_time", "textbox", ERR_DEFAULT];
+        }
+
+        return [true, true, true];
+    }
+
+    function web_para_check(){
+        var web_auth_server_type_value = $('#web_auth_server_type').combobox('getValue');
+        if("remote" == web_auth_server_type_value){
+            var web_auth_server_group_value = $('#web_auth_server_group').combobox('getValue');
+            if(para_is_empty(web_auth_server_group_value)){
+                return ["web_auth_server_group", "combobox", ERR_EMPTY];
+            }
+
+            var web_free_time = $('#web_free_time');
+            if(!web_free_time.textbox("validate")){
+                return ["web_free_time", "textbox", ERR_DEFAULT];
+            }
+        }
+
+        return [true, true, true];
+    }
+
+    function wechat_para_check(){
+        var wechat_free_time = $('#wechat_free_time');
+        if(!wechat_free_time.textbox("validate")){
+            return ["wechat_free_time", "textbox", ERR_DEFAULT];
+        }
+
+        var wechat_enable = $("#wechat_enable").radio("getValue");
+
+        var wechat_ssid = $('#wechat_ssid');
+        var wechat_ssid_value = $('#wechat_ssid').textbox("getValue");
+        if (AUTH_MODE_VLAN == auth_type) {
+            if (!para_is_empty(wechat_ssid_value) && !wechat_ssid.textbox("validate")) {
+                return ["wechat_ssid", "textbox", ERR_DEFAULT];
+            } else if ("on" == wechat_enable && para_is_empty(wechat_ssid_value)) {
+                return ["wechat_ssid", "textbox", ERR_EMPTY];
+            }
+        }
+
+        var wechat_shop_id = $('#wechat_shop_id');
+        var wechat_shop_id_value = $('#wechat_shop_id').textbox("getValue");
+        if (!para_is_empty(wechat_shop_id_value) && !wechat_shop_id.textbox("validate")) {
+            return ["wechat_shop_id", "textbox", ERR_DEFAULT];
+        } else if ("on" == wechat_enable && para_is_empty(wechat_shop_id_value)) {
+            return ["wechat_shop_id", "textbox", ERR_EMPTY];
+        }
+
+        var wechat_app_id = $('#wechat_app_id');
+        var wechat_app_id_value = $('#wechat_app_id').textbox("getValue");
+        if (!para_is_empty(wechat_app_id_value) && !wechat_app_id.textbox("validate")) {
+            return ["wechat_app_id", "textbox", ERR_DEFAULT];
+        } else if ("on" == wechat_enable && para_is_empty(wechat_app_id_value)) {
+            return ["wechat_app_id", "textbox", ERR_EMPTY];
+        }
+
+        var wechat_secret_key = $('#wechat_secret_key');
+        var wechat_secret_key_value = $('#wechat_secret_key').textbox("getValue");
+        if (!para_is_empty(wechat_secret_key_value) && !wechat_secret_key.textbox("validate")) {
+            return ["wechat_secret_key", "textbox", ERR_DEFAULT];
+        } else if ("on" == wechat_enable && para_is_empty(wechat_secret_key_value)) {
+            return ["wechat_secret_key", "textbox", ERR_EMPTY];
+        }
+
+        var wechat_force_concern = $('#wechat_force_concern').radio('getValue');
+        if(wechat_force_concern == "on") {
+            var wechat_qrcode_value = $("#wechat_qrcode").textbox("getValue");
+            if (para_is_empty(wechat_qrcode_value) || wechat_qrcode_value == "---") {
+                return ["qr_code_display", "null", ERR_NO_QRCODE];
+            }
+        }
+
+        var wechat_app_secret = $('#wechat_app_secret');
+        var wechat_app_secret_value = $('#wechat_app_secret').textbox("getValue");
+        if (!para_is_empty(wechat_app_secret_value) && !wechat_app_secret.textbox("validate")) {
+            return ["wechat_app_secret", "textbox", ERR_DEFAULT];
+        }
+
+        var wechat_token_server = $('#wechat_token_server');
+        var wechat_token_server_value = $('#wechat_token_server').textbox("getValue");
+        if (!para_is_empty(wechat_token_server_value) && !wechat_token_server.textbox("validate")) {
+            return ["wechat_token_server", "textbox", ERR_DEFAULT];
+        }
+
+        return [true, true, true];
+    }
+
+    function sms_para_check(){
+        var sms_free_time = $('#sms_free_time');
+        if(!sms_free_time.textbox("validate")){
+            return ["sms_free_time", "textbox", ERR_DEFAULT];
+        }
+
+        var sms_auth_expiry = $('#sms_auth_expiry');
+        if(!sms_auth_expiry.textbox('validate')){
+            return ["sms_auth_expiry", "textbox", ERR_DEFAULT];
+        }
+
+        var sms_enable = $("#sms_enable").radio("getValue");
+        var sms_channel_type = $('#sms_channel_type').combobox('getValue');
+
+        if("http" == sms_channel_type) {
+
+            var sms_http_url = $('#sms_http_url');
+            var sms_http_url_value = $('#sms_http_url').textarea("getValue");
+
+            if (!para_is_empty(sms_http_url_value) && !sms_http_url.textarea("validate")) {
+                return ["sms_http_url", "textarea", ERR_DEFAULT];
+            } else if ("on" == sms_enable && para_is_empty(sms_http_url_value)) {
+                return ["sms_http_url", "textarea", ERR_EMPTY];
+            }
+
+            var sms_http_template = $('#sms_http_template');
+            var sms_http_template_value = $('#sms_http_template').textarea("getValue");
+
+            if (!para_is_empty(sms_http_template_value) && !sms_http_template.textarea('validate')) {
+                return ["sms_http_template", "textarea", ERR_DEFAULT];
+            } else if ("on" == sms_enable && para_is_empty(sms_http_template_value)) {
+                return ["sms_http_template", "textarea", ERR_EMPTY];
+            }
+
+        } else {
+            var sms_username = $('#sms_username');
+            var sms_username_value = $('#sms_username').textbox('getValue');
+            if (!para_is_empty(sms_username_value) && !sms_username.textbox('validate')) {
+                return ["sms_username", "textbox", ERR_DEFAULT];
+            } else if ("on" == sms_enable && para_is_empty(sms_username_value)) {
+                return ["sms_username", "textbox", ERR_EMPTY];
+            }
+
+            var sms_password = $('#sms_password');
+            var sms_password_value = $('#sms_password').textbox('getValue');
+            if (!para_is_empty(sms_password_value) && !sms_password.textbox('validate')) {
+                return ["sms_password", "textbox", ERR_DEFAULT];
+            } else if ("on" == sms_enable && para_is_empty(sms_password_value)) {
+                return ["sms_password", "textbox", ERR_EMPTY];
+            }
+
+            var sms_template_id = $('#sms_template_id');
+            var sms_template_id_value = $('#sms_template_id').textbox('getValue');
+            if (!para_is_empty(sms_template_id_value) && !sms_template_id.textbox('validate')) {
+                return ["sms_template_id", "textbox", ERR_DEFAULT];
+            } else if ("on" == sms_enable && para_is_empty(sms_template_id_value)) {
+                return ["sms_template_id", "textbox", ERR_EMPTY];
+            }
+
+            var sms_signname = $('#sms_signname');
+            var sms_signname_value = $('#sms_signname').textbox('getValue');
+            if (!para_is_empty(sms_signname_value) && !sms_signname.textbox('validate')) {
+                return ["sms_signname", "textbox", ERR_DEFAULT];
+            } else if ("on" == sms_enable && para_is_empty(sms_signname_value)) {
+                return ["sms_signname", "textbox", ERR_EMPTY];
+            }
+        }
+
+        return [true, true, true];
+    }
+
+
+    function auth_para_check() {
+        var editor = $(portalGrid.grid("getEditor"));
+        var store = portalGrid.grid("getStore");
+        var keyProperty = store.keyProperty;
+        var grid_array = store.data;
+        var editingId = editor.editor("getEditingId");
+
+        var typeArr = ["onekey_portal", "web_portal", "wechat_portal", "sms_portal"];
+        var error_flag = 0;
+        var widget_id, widget_type, err_type;
+
+        if(error_flag == 0){
+            var result = onekey_para_check();
+            widget_id = result[0];
+            widget_type = result[1];
+            err_type = result[2];
+            if(widget_id !== true){
+                $('#portal_type').find('li').removeClass('selected');
+                $('#portal_type').find('li:eq(0)').addClass('selected');
+                var current = "onekey_portal";
+                error_flag = 1;
+            }
+        }
+        if(error_flag == 0){
+            var result = web_para_check();
+            widget_id = result[0];
+            widget_type = result[1];
+            err_type = result[2];
+            if(widget_id !== true){
+                $('#portal_type').find('li').removeClass('selected');
+                $('#portal_type').find('li:eq(1)').addClass('selected');
+                var current = "web_portal";
+                error_flag = 1;
+            }
+        }
+        if(error_flag == 0){
+            var result = wechat_para_check();
+            widget_id = result[0];
+            widget_type = result[1];
+            err_type = result[2];
+            if(widget_id !== true){
+                $('#portal_type').find('li').removeClass('selected');
+                $('#portal_type').find('li:eq(2)').addClass('selected');
+                var current = "wechat_portal";
+                error_flag = 1;
+            }
+        }
+        if(error_flag == 0){
+            var result = sms_para_check();
+            widget_id = result[0];
+            widget_type = result[1];
+            err_type = result[2];
+            if(widget_id !== true){
+                $('#portal_type').find('li').removeClass('selected');
+                $('#portal_type').find('li:eq(3)').addClass('selected');
+                var current = "sms_portal";
+                error_flag = 1;
+            }
+        }
+
+        if(error_flag == 1){
+            for (var num=0;num<typeArr.length;num++) {
+                if (num !== current) {
+                    $('#' + typeArr[num]).hide();
+                }
+                $('#' + current).show();
+            }
+
+            if (ERR_DEFAULT == err_type) {
+                if(widget_type == "combobox"){
+                    $('#' + widget_id).combobox("validate");
+                }else if (widget_type == "textbox"){
+                    $('#' + widget_id).textbox("validate");
+                }else if (widget_type == "textarea"){
+                    $('#' + widget_id).textarea("validate");
+                }
+            } else if (ERR_EMPTY == err_type) {
+                if(widget_type == "combobox"){
+                    $('#' + widget_id).combobox("setError", $.su.CHAR.WPORTAL.PORTAL_PARA_NO_BLANK)
+                }else if (widget_type == "textbox"){
+                    $('#' + widget_id).textbox("setError", $.su.CHAR.WPORTAL.PORTAL_PARA_NO_BLANK)
+                }else if (widget_type == "textarea"){
+                    $('#' + widget_id).textarea("setError", $.su.CHAR.WPORTAL.PORTAL_PARA_NO_BLANK)
+                }
+            } else if (ERR_NO_QRCODE == err_type) {
+                $('#' + widget_id).html($.su.CHAR.WPORTAL.WECHAT_QR_NEEDED);
+                $('#' + widget_id).css("border-color","red");
+            }
+            
+            return false;
+        }
+
+
+        if($.isArray(grid_array) && grid_array.length > 0)
+        {
+            for(var k = 0; k < grid_array.length;k++)
+            {
+                var data = grid_array[k];
+                if (data[keyProperty] == editingId)
+                {
+                    continue;
+                }
+            }
+        }
+        
+        return true;
+    }
+
+	function reloadGrid(callback){
+		var store = portalGrid.grid('getStore'),
+            selectedKeys = portalGrid.grid('getSelected');
+
+		portalGrid.grid("disGridChkbox");
+		if (callback){
+			callback.call();
+		}
+        store.keyLength = 0;
+        store.load();
+    }
+
+    var help_multi_portal
+    if (AUTH_MODE_VLAN == auth_type && false == cwf_function_support)
+    {
+        help_multi_portal = new $.su.Help({
+            container: "div#portal_help",
+            content: "MULTI_PORTAL_VLAN"
+        })
+    }
+    if (AUTH_MODE_VLAN == auth_type && true == cwf_function_support)
+    {
+        help_multi_portal = new $.su.Help({
+            container: "div#portal_help",
+            content: "MULTI_PORTAL_VLAN_CWF"
+        })
+    }
+    else if (AUTH_MODE_SSID == auth_type && false == cwf_function_support)
+    {
+        help_multi_portal = new $.su.Help({
+            container: "div#portal_help",
+            content: "MULTI_PORTAL_SSID"
+        })
+    }
+    else if (AUTH_MODE_SSID == auth_type && true == cwf_function_support)
+    {
+        help_multi_portal = new $.su.Help({
+            container: "div#portal_help",
+            content: "MULTI_PORTAL_SSID_CWF"
+        })
+    }
+    else
+    {
+        help_multi_portal = new $.su.Help({
+            container: "div#portal_help",
+            content: "MULTI_PORTAL_INTERFACE"
+        })
+    }
+    $(".func_container").show();
+});
+</script>
+
+</body>
+
+</html>

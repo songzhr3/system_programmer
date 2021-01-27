@@ -1,0 +1,224 @@
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
+<html xmlns="http://www.w3.org/1999/xhtml">
+<head>
+<meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
+<title>DHCP_CLIENT</title>
+</head>
+
+<body>
+<div class="func_container">
+<div id="func_setting">
+    <div id="checkList">
+        <div id="checkListGrid">
+
+        </div>
+    </div>
+</div>
+    <div id="dhcp_server_help"></div>
+</div>
+
+<script type="text/javascript">
+try{
+    $
+}catch(e){
+    location.href = "/";
+};
+
+$(document).ready(function(e){
+
+	function sec_to_time(sec) {
+		var time_str = "";
+		if (sec > -1) {
+			var hour = Math.floor(sec / 3600);
+			var minute = Math.floor(sec / 60) % 60;
+			var second = sec % 60;
+
+			if (hour < 10) {
+				time_str = "0";
+			}
+			time_str += hour + ":";
+			if (minute < 10) {
+				time_str += "0";
+			}
+			time_str += minute + ":";
+			if (second < 10) {
+				time_str += "0";
+			}
+			time_str += second;
+		}
+		else
+		{
+			return "Permanent";
+		}
+
+		return time_str;
+	};
+
+	$("div#checkList").panel({
+		title: $.su.CHAR.DHCP_SERVER.CLIENTSLIST_V6
+	});
+	var interfaceItem=[];
+	var interfaceProxy = new $.su.Proxy({
+	});
+	interfaceProxy.query({"network":{table: "if", "filter":[{"zone":"LAN"}]}}, function(data){
+		var data = data.network["if"];
+		for (j=0; j<data.length; j++)
+		{
+			for (var key in data[j])
+			{
+				if (data[j][key].if_type != "pppoe") {
+					interfaceItem.push({name:data[j][key].if_name,value:data[j][key].if_name});
+				}
+			}
+		}
+	});
+	$("div#checkListGrid").grid({
+		store:{
+			proxy: {},
+			fields: [
+			    {name: "interface"},
+				{name: "hostname"},
+				{name: "macaddr"},
+				{name: "ipaddr"},
+				{name: "expires"}
+			],
+			parseKey: {
+				moduleName:"dhcpd6",
+				tableName:"dhcp_clients",
+				pageSizeName: "dhcpd6_client_pages",
+				maxSizeTableName: "dhcps6",
+				maxSizeOptionName: "lease_max"
+			},
+			autoLoad: true
+		},
+		minLines: 0,
+		paging_true:{},
+		columns: [
+			{
+				text: $.su.CHAR.DHCP_SERVER.ID,
+				xtype: "rownumberer"
+			},
+			{
+				text: $.su.CHAR.DHCP_SERVER.INTERFACE,
+				dataIndex: "interface",
+				width: 100,
+				renderer: function (data)
+				{
+					if(data == "lan")
+					{
+						var LAN = "LAN"
+						return LAN;
+					}
+					else
+					{
+						return data;
+					}
+
+				},
+				scan: {
+					type: "combobox",
+					cmp: $.search.compare.stringStrict,
+					items: function(){
+						return interfaceItem;
+					}
+				}
+			},
+			{
+				text: $.su.CHAR.DHCP_SERVER.CLIENT_NAME,
+				dataIndex: "hostname",
+				width: 160,
+				scan: {
+					cmp: $.search.compare.string
+				}
+			},
+			{
+				text: $.su.CHAR.DHCP_SERVER.MAC_ADDR,
+				width: 150,
+				dataIndex: "macaddr",
+				scan: {
+					cmp: $.search.compare.string,
+					check: $.search.compare.mac
+				}
+			},
+			{
+				text: $.su.CHAR.DHCP_SERVER.ASSIGNED_IP,
+				width: 150,
+				dataIndex: "ipaddr",
+				scan: {
+					cmp: $.search.compare.string
+				}
+			},
+			{
+				text: $.su.CHAR.DHCP_SERVER.LEASE_TIME,
+				dataIndex: "expires",
+				width: 100,
+				renderer: function (data)
+				{
+					var time_str = sec_to_time(data);
+
+					return time_str;
+				}
+			},
+			{
+				xtype: "globalSearch",
+				hidden: true,
+				columns: [
+					{
+						text: $.su.CHAR.DHCP_SERVER.INTERFACE,
+						dataIndex: "interface",
+						scan: {
+							type: "combobox",
+							items: function(){
+								return interfaceItem;
+							},
+							real_value: function(text) {
+								if ("LAN" == text)
+								{
+									text = text.toLowerCase();
+								}
+
+                                return text;
+                            }
+						}
+					},
+					{
+						text: $.su.CHAR.DHCP_SERVER.CLIENT_NAME,
+						dataIndex: 'hostname',
+						scan: {
+							type: "textbox",
+							vtype: "string"
+						}
+					},
+					{
+						text: $.su.CHAR.DHCP_SERVER.MAC_ADDR,
+						dataIndex: 'macaddr',
+						scan: {
+							type: "textbox",
+							vtype: "string",
+							check: $.search.compare.mac
+						}
+					},
+					{
+						text: $.su.CHAR.DHCP_SERVER.ASSIGNED_IP,
+						dataIndex: 'ipaddr',
+						scan: {
+							type: "textbox",
+							vtype: "string"
+						}
+					}
+				]
+			}
+		],
+		operation: "search|searchAll|refresh|autoRefresh",
+		autoRefresh:true
+	});
+
+	var helpDhcpServer = new $.su.Help({
+		container: "div#dhcp_server_help",
+		content: ["DHCP_CLIENT_LIST_V6"]
+	});
+});
+</script>
+</body>
+
+</html>

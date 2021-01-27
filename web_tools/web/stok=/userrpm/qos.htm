@@ -1,0 +1,879 @@
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
+<html xmlns="http://www.w3.org/1999/xhtml">
+<head>
+<meta http-equiv="Content-Type" content="text/html; charset=utf-8"/>
+<title>QOS</title>
+<style type="text/css">
+</style>
+</head>
+<body>
+<div class="func-container">
+    <div id="function_setting">
+        <form id="qos_settings">
+            <input id="qos_enable" name="qos_enable" value=""/>
+            <input id="threshold_enable" name="threshold_enable" value=""/>
+            <input id="qos_threshold" name="qos_threshold" value=""/>
+        </form>
+        <button id="submitBtn" type="button"></button>
+    </div>
+
+    <div id="local_function_setting">
+        <form id="local_qos_settings">
+            <input id="local_qos_enable" name="qos_enable" value=""/>
+            <input id="local_threshold_enable" name="threshold_enable" value=""/>
+            <input id="local_qos_threshold" name="qos_threshold" value=""/>
+        </form>
+        <button id="local_submitBtn" type="button"></button>
+    </div>
+
+    <div id="qos_rule_list">
+        <div id="qos_rule_grid"></div>
+    </div>
+
+    <div id="local_qos_rule_list">
+        <div id="local_qos_rule_grid"></div>
+    </div>
+
+	<div class="notice"><span id="caution"></span></div>
+    <div id="qos_help"></div>
+</div>
+
+<script type="text/javascript">
+try{
+    $
+}catch(e){
+    location.href = "/";
+};
+
+$(document).ready(function(e){
+    $(".func-container").hide();
+
+    var ipgroupNameTrans = {};
+    var ucl_is_support = false;
+    var ucl_is_enable = false;
+    new $.su.Proxy({async: false}).query({"function":{"name":"new_module_spec"}}, function(data){
+        if (typeof(data) != "undefined" && typeof(data['function']) != "undefined" && typeof(data['function'].new_module_spec.new_module_list) != "undefined")
+        {
+            for (var mod in data['function'].new_module_spec.new_module_list) {
+                if (data['function'].new_module_spec.new_module_list[mod] == "ucl_policy") {
+                    ucl_is_support = true;
+                    break;
+                }
+            }
+            if (ucl_is_support)
+            {
+                new $.su.Proxy({async: false}).query({"ucl":{"name": "global"}}, function(data){
+                    if (typeof(data) != "undefined" && typeof(data.ucl) != "undefined" && typeof(data.ucl.global) != "undefined" && data.ucl.global.enable == "on") ucl_is_enable = true;
+                });
+            }
+        }
+    });
+
+    var qosEnableProxy = new $.su.Proxy();
+
+    $("#function_setting").panel({
+        title: $.su.CHAR.QOS.SETTINGS,
+        collapsible: false
+    });
+
+    $("#qos_enable").checkbox({
+        items: [
+            {boxlabel: $.su.CHAR.QOS.ENABLE_QOS, inputValue: "on", uncheckedValue: "off"}
+        ]
+    }).on("ev_change", function(e, oldValue, newValue){
+        var val = (newValue[0]=="qos_enable" || newValue[0]=="on") ? "on" : "off";
+        switch(val){
+            case "on":
+                $("#threshold_enable").checkbox("enable");
+                $("#qos_threshold").closest(".widget-wrap-outer").find(".content.tips-content").css("color","#000");
+                break;
+            case "off":
+                $("#threshold_enable").checkbox("disable");
+                $("#threshold_enable").checkbox("setValue", "off");
+                $("#qos_threshold").textbox("disable");
+                $("#qos_threshold").textbox("setValue", 0);
+                $("#qos_threshold").closest(".widget-wrap-outer").find(".content.tips-content").css("color","#b3b3b3");
+                break;
+        }
+    });
+
+    $("#threshold_enable").checkbox({
+        cls:"inline",
+        items: [
+            {boxlabel: $.su.CHAR.QOS.ENABLE_QOS_THRESHOLD, inputValue:"on", uncheckedValue: "off"}
+        ]
+    }).on("ev_change", function(e, oldValue, newValue){
+        var val = (newValue[0]=="threshold_enable" || newValue[0]=="on") ? "on" : "off";
+        switch(val){
+            case "on":
+                $("#qos_threshold").textbox("enable");
+                $("#qos_threshold").closest(".widget-wrap-outer").find(".content.tips-content").css("color","#000");
+                break;
+            case "off":
+                $("#qos_threshold").textbox("disable");
+                $("#qos_threshold").textbox("setValue", 0);
+                $("#qos_threshold").closest(".widget-wrap-outer").find(".content.tips-content").css("color","#000");
+                break;
+        }
+    });
+
+    $("#qos_threshold").textbox({
+        cls: "inline",
+        inputCls: "xxxs lp",
+        labelCls: "xxxxs",
+        allowBlank: false,
+        maxLength: 3,
+        tips: $.su.CHAR.QOS.QOS_THRESHOLD,
+        validator: function(v){
+            var ret = new $.su.vtype({vtype: "number", min: 0, max: 100}).validate(v);
+            if (ret == true) {
+                var numInt = parseInt(v);
+                $("#qos_threshold").textbox("setValue", numInt.toString());
+            }
+            return ret;
+        }
+    });
+
+    $("#submitBtn").button({
+        text: "设置",
+        cls: "submit",
+        handler: function(e){
+            if ($("#qos_threshold").textbox("validate") != true){
+                return false;
+            }
+            var threshold_enable = $("#threshold_enable").checkbox("getValue1");
+            if (threshold_enable != "on") {
+                $("#qos_threshold").textbox("setValue", 0);
+            }
+            $.su.loading.show();
+            setting_form.form("submit", function(){
+                $.su.loading.hide();
+            } ,function(){
+                $.su.loading.hide();
+            },function(){
+                $.su.loading.hide();
+            });
+        }
+    });
+
+    var setting_form = $("#qos_settings").form({
+        proxy: qosEnableProxy,
+        fields: [
+            {name: "qos_enable", mapping: "qos_enable"},
+            {name: "threshold_enable", mapping: "threshold_enable"},
+            {name: "qos_threshold", mapping: "qos_threshold"}
+        ],
+        parseKey:{
+            moduleName: "qos",
+            sectionName: "setting"
+        },
+		autoLoad:false,
+        submitBtn: "#submitBtn"
+    });
+
+    $("#qos_rule_list").panel({
+        title: $.su.CHAR.QOS.RULE_LIST,
+        collapsible: false
+    });
+
+    var qosRuleProxy = new $.su.Proxy();
+
+    var qosRuleGrid = $("#qos_rule_grid").grid({
+        store: {
+            proxy: qosRuleProxy,
+            fields: [
+                {name: "name", mapping: "name"},
+                {name: "if_ping", mapping: "if_ping"},
+                {name: "if_pong", mapping: "if_pong"},
+                {name: "ip_group", mapping: "ip_group"},
+                {name: "rate_max", mapping: "rate_max"},
+                {name: "rate_max_mate", mapping: "rate_max_mate"},
+                {name: "mode", mapping: "mode"},
+                {name: "time", mapping: "time"},
+                {name: "comment", mapping: "comment"},
+                {name: "position", mapping: "position"},
+                {name: "enable", mapping: "enable"},
+                {name: "ip_type", mapping: "ip_type"}
+            ],
+            parseKey:{
+                moduleName: "qos",
+                tableName: "rule",
+                pageSizeName: "qos_entry"
+            },
+            autoLoad: false
+        },
+        paging_true:[],
+        editor: {
+            content:"default",
+            fields: [
+                {name: "name", mapping: "name"},
+                {name: "if_ping", mapping: "if_ping"},
+                {name: "if_pong", mapping: "if_pong"},
+                {name: "ip_group", mapping: "ip_group"},
+                {name: "ip_type", mapping: "ip_type"},
+                {name: "rate_max", mapping: "rate_max"},
+                {name: "mode", mapping: "mode"},
+                {name: "time", mapping: "time"},
+                {name: "comment", mapping: "comment"},
+                {name: "position", mapping: "position"},
+                {name: "enable", mapping: "enable"},
+                {name: "ip_type", mapping: "ip_type"}
+            ],
+            validator:function(){
+                var editor  = $(qosRuleGrid.grid("getEditor"));
+                var nameList = qosRuleGrid.grid('getStore').data;
+                var ruleName = editor.find(".text-text[name=name]").textbox("getValue");
+                var editingId = editor.editor("getEditingId");
+                var rulePosition = editor.find(".text-text[name=position]").textbox("getValue");
+                var ruleRateMax = editor.find(".text-text[name=rate_max]").textbox("getValue");
+                var ruleMode = editor.find(".radio-value[name=mode]").radio("getValue");
+                var ruleIpType = editor.find(".radio-value[name=ip_type]").radio("getValue");
+                var ruleSrcIface = editor.find('.combobox-value[name=if_ping]').combobox("getValue");
+                var ruleDstIface = editor.find('.combobox-value[name=if_pong]').combobox("getValue");
+                var ruleIpGroup = editor.find('.combobox-value[name=ip_group]').combobox("getValue");
+                var ruleTime = editor.find('.combobox-value[name=time]').combobox("getValue");
+
+                var modify_flag = 0;
+
+                for(var i=0; i<nameList.length; i++){
+                    if(editingId == nameList[i].key){
+                        modify_flag = 1;
+                        continue;
+                    }
+                    else if(nameList[i].name == ruleName){
+                        editor.form('setError', "    规则名已存在！");
+                        return false;
+                    }
+                    //检查是否存在相同配置的规则
+                    if(nameList[i].rate_max == ruleRateMax &&
+                            nameList[i].mode == ruleMode &&
+                            nameList[i].ip_type == ruleIpType &&
+                            nameList[i].ip_group == ruleIpGroup[0] &&
+                            nameList[i].time == ruleTime[0]){
+                        var sameSrcFlag = 1;
+                        if(nameList[i].if_ping instanceof Array &&
+                            nameList[i].if_ping.length == ruleSrcIface.length){
+                            for (var j=0; j<ruleSrcIface.length; j++){
+                                if(nameList[i].if_ping[j] != ruleSrcIface[j]){
+                                    sameSrcFlag = 0;
+                                    break;
+                                }
+                            }
+                        }
+                        else if(ruleSrcIface.length == 1){
+                            if(nameList[i].if_ping != ruleSrcIface[0]){
+                                sameSrcFlag = 0;
+                            }
+                        }
+                        else {
+                            sameSrcFlag = 0;
+                        }
+                        var sameDstFlag = 1;
+                        if(nameList[i].if_pong instanceof Array &&
+                            nameList[i].if_pong.length == ruleDstIface.length){
+                            for (var j=0; j<ruleDstIface.length; j++){
+                                if(nameList[i].if_pong[j] != ruleDstIface[j]){
+                                    sameDstFlag = 0;
+                                    break;
+                                }
+                            }
+                        }
+                        else if(ruleDstIface.length == 1){
+                            if(nameList[i].if_pong != ruleDstIface[0]){
+                                sameDstFlag = 0;
+                            }
+                        }
+                        else {
+                            sameDstFlag = 0;
+                        }
+
+                        if(sameSrcFlag && sameDstFlag){
+                            editor.form('setError', "    相同配置已存在！");
+                            return false;
+                        }
+                    }
+                }
+                //检查规则插入位置
+                if(rulePosition!=""){
+                    rulePosition = parseInt(rulePosition);
+                    if (rulePosition < 1) {
+                        editor.form('setError',"   添加到指定位置超过允许范围");
+                        return false;
+                    }
+                    if (modify_flag) {
+                        if (rulePosition > nameList.length) {
+                            editor.form('setError',"   添加到指定位置超过当前条目数");
+                            return false;
+                        }
+                    }
+                    if (rulePosition > nameList.length+1) {
+                        editor.form('setError',"   添加到指定位置超出范围");
+                        return false;
+                    }
+                    if (rulePosition == nameList.length+1) {
+                        editor.find(".text-text[name=position]").textbox('setValue', "");
+                    }
+                }
+                return true;
+            }
+        },
+        columns: [
+            {
+                xtype: "checkcolumn"
+            },
+            {
+                xtype: "rownumberer"
+            },
+            {
+                text: $.su.CHAR.QOS.RULE_NAME,
+                width: 100,
+                dataIndex: "name",
+                hidden: false,
+                editor: {
+                    xtype: "textbox",
+                    allowBlank: false,
+                    vtype: "name",
+                    maxLength:32
+                }
+            },
+            {
+                text: $.su.CHAR.QOS.IFACE_SRC,
+                width: 100,
+                dataIndex: "if_ping",
+                hidden: false,
+                editor: {
+                    xtype: "combobox",
+                    allowBlank: false,
+                    multiSelect: true,
+                    items: [
+                        {value: "---", name: "---"}
+                    ]
+                }
+            },
+            {
+                text: $.su.CHAR.QOS.IFACE_DST,
+                width: 100,
+                dataIndex: "if_pong",
+                hidden: false,
+                editor: {
+                    xtype: "combobox",
+                    multiSelect: true,
+                    allowBlank: false,
+                    items: [
+                        {value: "---", name: "---"}
+                    ]
+                }
+            },
+            {
+                text: $.su.CHAR.QOS.IP_GROUP,
+                width: 100,
+                dataIndex: "ip_group",
+                hidden: false,
+                editor: {
+                    xtype:"combobox",
+                    allowBlank: false,
+                    vtype: "string_visible_allow_blank",
+                    items: [
+                        {value: "IPGROUP_ANY", name: "IPGROUP_ANY", selected: true}
+                    ]
+                },
+                renderer: function (v) {
+                    return ipgroupNameTrans[v] || v;
+                }
+            },
+            {
+                text: $.su.CHAR.QOS.IP_TYPE,
+                width: 80,
+                dataIndex: "ip_type",
+                hidden: false,
+                editor: {
+                    xtype: "radio",
+                    columns: 2,
+                    items: [
+                        {boxlabel: $.su.CHAR.QOS.SRC_ADDR, name:'ip_type', inputValue:'src', checked:true},
+                        {boxlabel: $.su.CHAR.QOS.DST_ADDR, name:'ip_type', inputValue:'dst'}
+                    ]
+                }
+            },
+            {
+                text: $.su.CHAR.QOS.RATE,
+                width: 80,
+                dataIndex: "rate_max",
+                hidden: false,
+                editor: {
+                    xtype: "textbox",
+                    allowBlank: false,
+                    value: "1000",
+                    tips: "Kbps(100-10000000)",
+                    vtype: {
+                        vtype: "number",
+                        max: 10000000,
+                        min: 100
+                    }
+                }
+            },
+            {
+                text: $.su.CHAR.QOS.MODE,
+                width: 80,
+                dataIndex: "mode",
+                hidden: false,
+                renderer: function(v){
+                    if(v == "share"){
+                        return $.su.CHAR.QOS.MODE_SHARE;
+                    } else{
+                        return $.su.CHAR.QOS.MODE_PRIV;
+                    }
+                },
+                editor: {
+                    xtype: "radio",
+                    allowBlank: false,
+                    columns: 2,
+                    vtype: "string_visible_allow_blank",
+                    items: [
+                        {boxlabel: $.su.CHAR.QOS.MODE_SHARE, name: 'mode', inputValue: 'share'},
+                        {boxlabel: $.su.CHAR.QOS.MODE_PRIV, name: 'mode', inputValue: 'priv', checked: true}
+                    ]
+                }
+            },
+            {
+                text: $.su.CHAR.QOS.TIME_OBJ,
+                width: 80,
+                dataIndex: "time",
+                hidden: false,
+                editor: {
+                    xtype: "combobox",
+                    allowBlank: true,
+                    vtype: "string_visible_allow_blank",
+                    tipsCls: "inline-block",
+                    items: [
+                        {value: "Any", name: "Any", selected: true}
+                    ]
+                }
+            },
+            {
+                text: $.su.CHAR.QOS.NOTE,
+                dataIndex: "comment",
+                xtype: "comment",
+                hidden: true,
+                editor: {
+                    xtype: "textbox",
+                    allowBlank: true,
+                    vtype: "string_visible_allow_blank",
+                    tips: $.su.CHAR.ACCESS_CONTROL.OPTIONAL,
+                    maxLength: 50
+                }
+            },
+            {
+                text: $.su.CHAR.ACCESS_CONTROL.POSITION,
+                dataIndex: "position",
+                hidden:true,
+                editor: {
+                    xtype: "textbox",
+                    tips: $.su.CHAR.ACCESS_CONTROL.OPTIONAL,
+                    allowBlank: true,
+                    vtype: "number"
+                }
+            },
+            {
+                text: $.su.CHAR.QOS.STATUS,
+                width: 70,
+                xtype: "statuscolumn",
+                dataIndex: "enable",
+                hidden: false,
+                editor: {
+                    xtype: "checkbox",
+                    cls: "inline",
+                    items: [
+                        {boxlabel: $.su.CHAR.QOS.ENABLE_THIS_ENTRY, inputValue: 'on', uncheckedValue: 'off', checked: true}
+                    ]
+                }
+            },
+            {
+                xtype: "settings",
+                width: 70
+            }
+        ],
+        operation: 'prompt|add|delete'
+    }).on("ev_insert",function(){
+        qosRuleGrid.grid("getStore").load();
+    }).on("ev_remove", function(){
+        qosRuleGrid.grid("getStore").load();
+    }).on("ev_update", function(){
+        qosRuleGrid.grid("getStore").load();
+    });
+
+    var qosEditor = qosRuleGrid.grid('getEditor');
+    var src_iface = $(qosEditor).find('.combobox-value[name=if_ping]');
+    var dst_iface = $(qosEditor).find('.combobox-value[name=if_pong]');
+    var ip_group = $(qosEditor).find('.combobox-value[name=ip_group]');
+    var time = $(qosEditor).find('.combobox-value[name=time]');
+    var interfaceItem=[], ifaceItemValue=[], ipgroupItem=[], tmngtItem=[];
+
+    if (ucl_is_enable == false) {
+        //发送form请求,获取系统的interface列表,获取ip地址组对象,获取时间对象列表
+        var objProxy = new $.su.Proxy({async: false});
+        objProxy.query({"network":{"table": "if"}, "ipgroup":{"table": "rule_ipgroup"}, "time_mngt":{"table": "time_obj"}}, function(data){
+            //用于显示源接口和目的接口下拉框
+            var interfaceList = data.network["if"];
+            for (var i = 0; i < interfaceList.length; i++) {
+                for (var key in interfaceList[i]) {
+                    if(interfaceList[i][key].isbridged != 1){
+                        interfaceItem.push({name:interfaceList[i][key].if_name,value:interfaceList[i][key].if_name});
+                        ifaceItemValue.push(interfaceList[i][key].if_name);
+                    }
+                }
+            }
+            //提供给规则ip_group下拉框
+            var ipgroupList = data.ipgroup.rule_ipgroup;
+            for (var i=0; i<ipgroupList.length; i++){
+                for (var key in ipgroupList[i]) {
+                    var item = slpIpgroupToItem(ipgroupList[i][key]);
+                    ipgroupItem.push(item);
+                    ipgroupNameTrans[item.value] = item.name;
+                }
+            }
+            //提供给规则time下拉框
+            var tmngtList = data.time_mngt.time_obj;
+            for (var i=0; i<tmngtList.length; i++){
+                for (var key in tmngtList[i]) {
+                    tmngtItem.push({name: tmngtList[i][key].name, value: tmngtList[i][key].name});
+                }
+            }
+        });
+    }
+    if (interfaceItem.length != 0){
+        src_iface.combobox('loadData', interfaceItem);
+        dst_iface.combobox('loadData', interfaceItem);
+    }
+    if (ipgroupItem.length != 0){
+        ip_group.combobox("loadData", ipgroupItem);
+    }
+    if (tmngtItem.length != 0){
+        time.combobox("loadData", tmngtItem);
+    }
+
+    //源接口钩选了的项目，目的接口对应项目需要变成无法钩选
+    src_iface.on("ev_change", function(e, oldValue, newValue){
+        dst_iface.combobox("enableItem", ifaceItemValue);
+        var disableArray = src_iface.combobox("getValue");
+        dst_iface.combobox("disableItem", disableArray);
+    });
+    //目的接口钩选了的项目，源接口对应项目需要变成无法钩选
+    dst_iface.on("ev_change", function(e, oldValue, newValue){
+        src_iface.combobox("enableItem", ifaceItemValue);
+        var disableArray = dst_iface.combobox("getValue");
+        src_iface.combobox("disableItem", disableArray);
+    });
+    //新增规则时，源和目的接口的所有项目都恢复至可选状态
+    $(qosEditor).on("ev_startEdit", function(e, editingIndex, editingId){
+        if (editingIndex == "add"){
+            src_iface.combobox("enableItem", ifaceItemValue);
+            dst_iface.combobox("enableItem", ifaceItemValue);
+        }
+    });
+
+    // backup-qos show
+    $("#local_function_setting").panel({
+        title: $.su.CHAR.QOS.SETTINGS,
+        collapsible: false
+    });
+
+    $("#local_qos_enable").checkbox({
+        items: [
+            {boxlabel: $.su.CHAR.QOS.ENABLE_QOS, inputValue: "on", uncheckedValue: "off"}
+        ]
+    }).on("ev_change", function(e, oldValue, newValue){
+        var val = (newValue[0]=="qos_enable" || newValue[0]=="on") ? "on" : "off";
+        switch(val){
+            case "on":
+                $("#local_threshold_enable").checkbox("enable");
+                $("#local_qos_threshold").textbox("enable");
+                break;
+            case "off":
+                $("#local_threshold_enable").checkbox("disable");
+                $("#local_threshold_enable").checkbox("setValue", "off");
+                $("#local_qos_threshold").textbox("disable");
+                $("#local_qos_threshold").textbox("setValue", 0);
+                break;
+        }
+    });
+
+    $("#local_threshold_enable").checkbox({
+        cls:"inline",
+        items: [
+            {boxlabel: $.su.CHAR.QOS.ENABLE_QOS_THRESHOLD, inputValue:"on", uncheckedValue: "off"}
+        ]
+    });
+
+    $("#local_qos_threshold").textbox({
+        cls: "inline",
+        inputCls: "xxxs lp",
+        labelCls: "xxxxs",
+        allowBlank: false,
+        maxLength: 3,
+        tips: $.su.CHAR.QOS.QOS_THRESHOLD,
+        validator: function(v){
+            return (new $.su.vtype({vtype: "number", min: 0, max: 100}).validate(v));
+        }
+    });
+
+    $("#local_submitBtn").button({
+        text: "设置",
+        cls: "hidden",
+        handler: function(e){
+            if ($("#local_qos_threshold").textbox("validate") != true){
+                return false;
+            }
+            $.su.loading.show();
+            local_setting_form.form("submit", function(){
+                $.su.loading.hide();
+            },function(){
+                $.su.loading.hide();
+            },function(){
+                $.su.loading.hide();
+            });
+        }
+    });
+
+    var local_setting_form = $("#local_qos_settings").form({
+        proxy: qosEnableProxy,
+        fields: [
+            {name: "qos_enable", mapping: "qos_enable"},
+            {name: "threshold_enable", mapping: "threshold_enable"},
+            {name: "qos_threshold", mapping: "qos_threshold"}
+        ],
+        parseKey:{
+            moduleName: "qos_backup",
+            sectionName: "setting"
+        },
+		autoLoad:false,
+        submitBtn: "#local_submitBtn"
+    });
+
+    $("#local_qos_rule_list").panel({
+        title: $.su.CHAR.QOS.RULE_LIST,
+        collapsible: false
+    });
+    var localQosRuleGrid = $("#local_qos_rule_grid").grid({
+        store: {
+            proxy: qosRuleProxy,
+            fields: [
+                {name: "name", mapping: "name"},
+                {name: "if_ping", mapping: "if_ping"},
+                {name: "if_pong", mapping: "if_pong"},
+                {name: "ip_group", mapping: "ip_group"},
+                {name: "rate_max", mapping: "rate_max"},
+                {name: "rate_max_mate", mapping: "rate_max_mate"},
+                {name: "mode", mapping: "mode"},
+                {name: "time", mapping: "time"},
+                {name: "enable", mapping: "enable"},
+                {name: "ip_type", mapping: "ip_type"},
+                {name: "ucl_enable", mapping: "ucl_enable"}
+            ],
+            parseKey:{
+                moduleName: "qos_backup",
+                tableName: "rule",
+                pageSizeName: "qos_entry"
+            },
+            autoLoad: false
+        },
+        columns: [
+            {
+                xtype: "rownumberer"
+            },
+            {
+                text: $.su.CHAR.QOS.RULE_NAME,
+                width: 100,
+                dataIndex: "name",
+                hidden: false,
+                editor: {
+                    xtype: "textbox",
+                    allowBlank: false,
+                    vtype: "name",
+                    maxLength:32
+                }
+            },
+            {
+                text: $.su.CHAR.QOS.IFACE_SRC,
+                width: 100,
+                dataIndex: "if_ping",
+                hidden: false,
+                editor: {
+                    xtype: "combobox",
+                    multiSelect: true,
+                    allowBlank: false,
+                    items: [
+                        {value: "---", name: "---"}
+                    ]
+                }
+            },
+            {
+                text: $.su.CHAR.QOS.IFACE_DST,
+                width: 100,
+                dataIndex: "if_pong",
+                hidden: false,
+                editor: {
+                    xtype: "combobox",
+                    multiSelect: true,
+                    allowBlank: false,
+                    items: [
+                        {value: "---", name: "---"}
+                    ]
+                }
+            },
+            {
+                text: $.su.CHAR.QOS.IP_GROUP,
+                width: 100,
+                dataIndex: "ip_group",
+                hidden: false,
+                editor: {
+                    xtype:"combobox",
+                    allowBlank: false,
+                    vtype: "string_visible_allow_blank",
+                    items: [
+                        {value: "IPGROUP_ANY", name: "IPGROUP_ANY", selected: true}
+                    ]
+                }
+            },
+            {
+                text: $.su.CHAR.QOS.IP_TYPE,
+                width: 80,
+                dataIndex: "ip_type",
+                hidden: false,
+                editor: {
+                    xtype: "radio",
+                    columns: 2,
+                    items: [
+                        {boxlabel: $.su.CHAR.QOS.SRC_ADDR, name:'ip_type', inputValue:'src', checked:true},
+                        {boxlabel: $.su.CHAR.QOS.DST_ADDR, name:'ip_type', inputValue:'dst'}
+                    ]
+                }
+            },
+            {
+                text: $.su.CHAR.QOS.RATE,
+                width: 80,
+                dataIndex: "rate_max",
+                hidden: false,
+                editor: {
+                    xtype: "textbox",
+                    allowBlank: false,
+                    value: "1000",
+                    tips: "Kbps(100-10000000)",
+                    vtype: {
+                        vtype: "number",
+                        max: 10000000,
+                        min: 100
+                    }
+                }
+            },
+            {
+                text: $.su.CHAR.QOS.MODE,
+                width: 80,
+                dataIndex: "mode",
+                hidden: false,
+                renderer: function(v){
+                    if(v == "share"){
+                        return $.su.CHAR.QOS.MODE_SHARE;
+                    } else{
+                        return $.su.CHAR.QOS.MODE_PRIV;
+                    }
+                },
+                editor: {
+                    xtype: "radio",
+                    allowBlank: false,
+                    columns: 2,
+                    vtype: "string_visible_allow_blank",
+                    items: [
+                        {boxlabel: $.su.CHAR.QOS.MODE_SHARE, name: 'mode', inputValue: 'share', checked: true},
+                        {boxlabel: $.su.CHAR.QOS.MODE_PRIV, name: 'mode', inputValue: 'priv'}
+                    ]
+                }
+            },
+            {
+                text: $.su.CHAR.QOS.TIME_OBJ,
+                width: 80,
+                dataIndex: "time",
+                hidden: false,
+                editor: {
+                    xtype: "combobox",
+                    allowBlank: true,
+                    vtype: "string_visible_allow_blank",
+                    tipsCls: "inline-block",
+                    items: [
+                        {value: "Any", name: "Any", selected: true}
+                    ]
+                }
+            },
+            {
+                text: $.su.CHAR.QOS.STATUS,
+                width: 120,
+                dataIndex: "enable",
+                hidden: false,
+                renderer: function(v){
+                    if(v == "on"){
+                        return "<font>"+$.su.CHAR.QOS.ENABLED+"</font>";
+                    } else{
+                        return "<font>"+$.su.CHAR.QOS.DISABLED+"</font>";
+                    }
+                }
+            },
+            {
+                text: $.su.CHAR.QOS.UCL_STATUS,
+                width: 70,
+                dataIndex: "ucl_enable",
+                hidden: false,
+                renderer: function(v){
+                    return "<font>"+$.su.CHAR.QOS.UCL_ENABLED+"</font>";
+                }
+            }
+        ],
+        operation: 'prompt',
+        paging_true:[]
+    }).on("ev_update", function(){
+        localQosRuleGrid.grid("getStore").load();
+    });
+
+    function slpIpgroupToItem(ipgroup_obj) {
+        if (ipgroup_obj.flag == "system" && typeof(ipgroup_obj.comment) == "string" && ipgroup_obj.comment.length > 1) {
+            return {name: ipgroup_obj.comment, value: ipgroup_obj.name};
+        } else {
+            return {name: ipgroup_obj.name, value: ipgroup_obj.name};
+        }
+    }
+
+	function web_init()
+	{
+		// 开启终端上网策略功能后，不能修改条目
+		if (ucl_is_enable){
+			$('div#function_setting').hide();
+			$('div#local_function_setting').show();
+			local_setting_form.form("load");
+			$('div#qos_rule_list').hide();
+			$('div#local_qos_rule_list').show();
+			localQosRuleGrid.grid("getStore").load();
+		}else{
+			$('div#function_setting').show();
+			$('div#local_function_setting').hide();
+			setting_form.form("load");
+			$('div#qos_rule_list').show();
+			$('div#local_qos_rule_list').hide();
+			qosRuleGrid.grid("getStore").load();
+		}
+	}
+	web_init();
+
+	if (ucl_is_support) {
+		var cautionString = "<p><font>" + $.su.CHAR.QOS.CAUTION1 + "</font><br>" +
+							"<font>" + $.su.CHAR.QOS.CAUTION2 + "</font><br></p>";
+		$("#caution").html("<hr/>"+$.su.CHAR.QOS.CAUTION+"<br>" + cautionString);
+	}
+    var helpqos = new $.su.Help({
+        container: "div#qos_help",
+        content: ["QOS_SETTING", "QOS_LIST"]
+    });
+    $(".func-container").show();
+});
+</script>
+
+</body>
+</html>

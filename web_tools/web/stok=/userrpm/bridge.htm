@@ -1,0 +1,388 @@
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
+<html xmlns="http://www.w3.org/1999/xhtml">
+<head>
+<meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
+<title>BALANCE_BASIC</title>
+<style type="text/css">
+</style>
+</head>
+
+<body>
+<div class="func-container">
+	<div id="own-editor">
+		<input id="bridge-name" name="if_name"/>
+		<input id="include_ifs" name="bindif"/>
+		<input id="config_conn_ifname" name="configif"/>
+		<input id="stp" name="stp" checked="checked"/>
+		<a id="check_if_ref" href="javascript:void(0);" class="editor-inner-hyperlink" onclick="show_if_ref_info()">接口引用信息</a>
+	</div>
+	<div id="bridge_list">
+		<div id="bridge_grid">
+		</div>
+	</div>
+	<hr/>
+	<div class="notice">
+		<h6></h6>
+		<div id="warn"></div>
+		<div id="tips"></div>
+	</div>
+	<div id="link-detail-window">
+		<table class="link-detail-table detail">
+			<tr>
+				<td class="detail-value"></td>
+			</tr>
+		</table>
+	</div>
+
+	<div id="pro_bar_div" style="display: none;">
+		<div id="pro_bar_div_2" class="reboot-loading-msg">
+			<input id="pro_bar" type="text" />
+		</div>
+	</div>
+
+	<div id="bridge_help">
+	</div>
+
+<script type="text/javascript">
+try{
+	$
+}catch(e){
+	location.href = "/";
+};
+
+
+$(document).ready(function(e){
+	$(".func-container").hide();
+	var insert = true;
+	var factory_if= "MGMT";
+	var Bridge_Proxy = new $.su.Proxy({async:false});
+	var grid_Proxy = new $.su.Proxy({});
+
+	function getHasBridge()
+	{
+		var has_bridge = false;
+		Bridge_Proxy.query({"network":{"name":"LAN"}}, function(data){
+			bridge_data = data.network
+			if(bridge_data.length != 0){
+				if(typeof(bridge_data.LAN.t_configif) != "undefined"){
+					has_bridge = true;
+					factory_if = bridge_data.LAN.t_configif
+				}
+			}
+		});
+		return has_bridge;
+	}
+
+	if(getHasBridge() == false)
+	{
+		Bridge_Proxy.query({"network":{"table":"interface"}}, function(data){
+			data = data.network.interface;
+			for (var i = 0; i < data.length; i++){
+				for (var key in data[i]){
+					if (typeof(data[i][key].ipaddr) != "undefined" && data[i][key].ipaddr == $.su.url.factory_url){
+						factory_if = key;
+					}
+				}
+			}
+		});
+	}
+
+	$(".notice #tips").text($.su.CHAR.BRIDGE.NOTICE_TIPS);
+
+	$("#bridge_list").panel({
+		title: $.su.CHAR.BRIDGE.BRIDGE_SETTING,
+		collapsible: false
+	});
+
+	$('#bridge-name').textbox({
+		fieldLabel: $.su.CHAR.BRIDGE.BRIDGE_NAME/*$.su.CHAR.INTERFACE.IFNAME*/,
+		allowBlank: false,
+		maxLength: 12,
+		value:"LAN",
+		//tips: $.su.CHAR.INTERFACE.IFNAMETIPS,
+		validator: function(v) {
+			if(new $.su.vtype('name').validate(v) !== true)
+			{
+				return $.su.CHAR.BRIDGE.WRONG_NAME;
+			}
+			if (v.length > 12)
+			{
+				return $.su.CHAR.BRIDGE.WRONG_NAME_LENGTH;
+			}
+			return true;
+		}
+	});
+
+	var ifs = $("#include_ifs").combobox({
+		fieldLabel: $.su.CHAR.BRIDGE.INCLUDE_IFNAME,
+		multiSelect: true ,
+		allowBlank: false,
+		items:[
+				/*{name:"---",value:"---"}*/
+			]
+	}).on("ev_change", function(e, oldValue, newValue){
+
+		ifs.combobox("setValue", newValue.concat(factory_if));
+	});
+
+
+	$("#stp").checkbox({
+		fieldLabel:$.su.CHAR.BRIDGE.STP,
+		items: [
+			{boxlabel: $.su.CHAR.BRIDGE.STP_ENABLE, inputValue: "1", uncheckedValue: "0",checked:true}
+		]
+	});
+
+	var $linkDetail = $("#link-detail-window").msg({
+		closeBtn: true,
+		cls:"l",
+		title: "接口引用信息",
+		type: "window"
+	}).msg("hide");
+
+	show_if_ref_info = function _show_if_ref_info()
+	{
+		var Ref_Porxy = new $.su.Proxy({async:false});
+		var ref_list;
+		Ref_Porxy.query({"network":{"table":"if_ref_info"}}, function(data){
+			ref_list = data.network.if_ref_info;
+		});
+		var inhtml = "<table border='1' frame='void' style='width:100%'><tr><th><b>接口</b></th><th><b>相关配置</b></th></tr>";
+		if(typeof(ref_list) != 'undefined'){
+			$.map(ref_list, function(inf, i){
+				inhtml += '<tr><td>' + inf.if + '</td><td>' + inf.ref_function + '</td></tr>';
+			})
+		}
+		inhtml = inhtml + "</table>";
+		$linkDetail.find(".detail-value").html(inhtml).css({
+			"lineHeight":"20px",
+			"textAlign":"center",
+			"wordBreak":"break-all"
+		});
+		$linkDetail.msg('show');
+	}
+
+	var conn_ifname = $("#config_conn_ifname").textbox({
+		fieldLabel: $.su.CHAR.BRIDGE.CONFIG_CONN_IFNAME,
+		allowBlank: true
+	}).textbox("hide");
+
+	var phyItem = {};
+	var Bridge_Grid = $("#bridge_grid").grid({
+		maxRulesProperty: "bridge_max",
+		editor: {
+			validator: function()
+			{
+				var editor  = $(Bridge_Grid.grid("getEditor"));
+				var t_name = editor.find(".text-text[name=if_name]").textbox("getValue");
+				var t_bindif = editor.find("#include_ifs").combobox("getValue");
+				var store   = Bridge_Grid.grid("getStore");
+				var keyProperty = store.keyProperty;
+				var grid_array  = store.data;
+				//var config_conn = editor.find("#config_conn").checkbox("getValue1")
+				var editingId = editor.editor("getEditingId");
+
+				var config_conn_ifname = editor.find("#config_conn_ifname").combobox("getValue")
+				var t_names = []
+				var t_bindifs = []
+				if($.isArray(grid_array) && grid_array.length > 0)
+				{
+					for(var k = 0; k < grid_array.length; k++)
+					{
+						var data = grid_array[k];
+
+						if(data[keyProperty] == editingId)
+						{
+							continue;
+						}
+						else if((data["if_name"] == t_name))
+						{
+							$($("div#bridge_grid").grid("getEditor")).form('setError', "网桥名称冲突！");
+							return false;
+						}
+						else
+						{
+							t_names[data["if_name"]] = data["if_name"];
+							for (var i = 0; i < data["bindif"].length; i++)
+							{
+								t_bindifs[data["bindif"][i]] = data["bindif"][i];
+							}
+						}
+					}
+					for (var j = 0; j < t_bindif.length; j++)
+					{
+						if (t_bindifs[t_bindif[j]])
+						{
+							$($("div#bridge_grid").grid("getEditor")).form('setError', "包含接口冲突！");
+							return false;
+						}
+					}
+				}
+
+				return true;
+			},
+			content:"#own-editor",
+			fields: [
+				{name: "if_name"},
+				{name: "bindif"},
+				{name: "configif"},
+				{name: "stp"}
+			]
+		},
+		store:{
+			proxy: grid_Proxy,
+			fields: [
+				{name: "if_name"},
+				{name: "bindif"},
+				{name: "configif"},
+				{name: "stp"}
+			],
+			parseKey: {
+				moduleName: "network",
+				tableName: "bridge",
+				setFilter: function(index, itemName, data){
+					//console.log(index);
+					return [{
+						if_name: [itemName]
+					}];
+				},
+				delFilter: function(itemNames, data, indexes){
+					return [{
+						if_name: $.isArray(itemNames) ? itemNames : [itemNames]
+					}];
+				}
+			},
+			autoLoad: true
+		},
+		paging:[],
+		columns: [
+			{
+				xtype: "checkcolumn",
+				width: 32,
+				hidden:true
+			},
+			{
+				xtype: "rownumberer",
+				width: 30,
+				hidden:true
+			},
+			{
+				text: $.su.CHAR.BRIDGE.BRIDGE_NAME/*$.su.CHAR.BRIDGE.BRIDGENAME*/,
+				width: 50,
+				dataIndex: "if_name"
+			},
+			{
+				text: $.su.CHAR.BRIDGE.INCLUDE_IFNAME/*$.su.CHAR.BRIDGE.INCLUDEIF*/,
+				width: 50,
+				dataIndex: "bindif"
+			},
+			{
+				text: $.su.CHAR.BRIDGE.CONFIG_CONN_IFNAME,
+				width: 50,
+				hidden: true,
+				dataIndex: "configif"
+			},
+			{
+				xtype: "settings",
+				width: 60
+			}
+		],
+		operation: 'prompt|add'
+	}).on("ev_load", function(e,data, others){
+		if (getHasBridge() == true) {
+			$(".operation-btn.btn-add").hide();
+		}
+	}).on("ev_formatEditData", function(e, data){
+		data.bindif = $.isArray(data.bindif) ? data.bindif : [data.bindif];
+		data.configif = factory_if;
+	}).on("ev_formatAddData", function(e, data){
+		data.bindif = $.isArray(data.bindif) ? data.bindif : [data.bindif];
+		data.configif = factory_if;
+	}).on('ev_startEdit', function(e, index, key){
+		if(index != 'add'){
+			//如果无stp字段，则提示未开启stp
+			var bridgeStore = Bridge_Grid.grid('getStore');
+			var data = bridgeStore.getData(key);
+			if (typeof(data.stp) != "undefined")
+				$("#stp").checkbox('setValue',data.stp);
+			else
+				$("#stp").checkbox('setValue',"0");
+		}
+		var bridgeEditor = $(Bridge_Grid.grid('getEditor'));
+		bridgeEditor.find(".text-text[name=if_name]").textbox("disableStyle");
+	}).on("ev_remove", function(){
+		$(".operation-btn.btn-add").show();
+		show_pro_bar();
+	}).on("ev_insert", function(){
+		$(".operation-btn.btn-add").hide();
+		show_pro_bar();
+	}).on("ev_update", function(){
+		$(".operation-btn.btn-add").hide();
+		show_pro_bar();
+	});
+
+	var pro_bar_div = $("#pro_bar_div").msg({
+		cls: 'warning reboot-confirm-size',
+		closeBtn: false,
+		type: "window"
+	});
+
+	var pro_bar  = $('input#pro_bar').waitingbar({
+		fieldLabel: "正在应用修改，请等待",
+		labelCls:"xxl",
+		waitTime: 1000
+	});
+
+	function show_pro_bar()
+	{
+		$("#pro_bar_div").msg('show');
+		$("#pro_bar").waitingbar("run");
+		setTimeout(function() {
+			$("#pro_bar_div").msg('hide');
+			$("#mask").hide();
+		}, 5000);
+	}
+
+	// 初始化接口下拉框
+	var interfaceProxy = new $.su.Proxy();
+	interfaceProxy.query({
+		network: {
+			table: "if"
+		}
+	}, function(data){
+		var items = data.network["if"],
+			interfaceItem = [],
+			item;
+
+		for (var i = 0, len = items.length; i< len; i++) {
+			for (var key in items[i])
+			{
+				item = items[i][key];
+				if (item.if_type != "physical"){
+					continue;
+				}
+				if(item.if_name == factory_if){
+					interfaceItem.push({name:item.if_name,value:item.if_name, selected:true});
+				}else{
+					interfaceItem.push({name:item.if_name,value:item.if_name});
+				}
+
+				phyItem[item.t_name] = item;
+			}
+		}
+
+		var $editor = $(Bridge_Grid.grid("getEditor"));
+		var combobox = $editor.find('#include_ifs')
+		combobox.combobox('loadData', interfaceItem);
+	});
+
+	var helpParentalControl = new $.su.Help({
+		container: "div#bridge_help",
+		content: ["BRIDGE_SETTING"]
+	});
+	$(".func-container").show();
+});
+</script>
+</body>
+
+</html>

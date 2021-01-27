@@ -1,0 +1,662 @@
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
+<html xmlns="http://www.w3.org/1999/xhtml">
+<head>
+<meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
+<title>TP_LINK ID</title>
+</head>
+<body>
+<div class="cloud-tplink-id-box"></div>
+
+<style type="text/css">
+#cloud-tplink-id {
+	width: 400px;
+	margin: 32px auto;
+}
+
+#cloud-tplink-id-title {
+	margin-bottom: 24px;
+	text-align: center;
+	font-size: 16px;
+}
+
+#cloud-tplink_id-prev {
+	margin-left:18px;
+	margin-top:10px;
+	color: #007BFF;
+	cursor: pointer
+}
+
+.cloud-tpink-id-action {
+	margin-left:60px;
+	margin-top:10px;
+}
+
+.cloud-tpink-id-step {
+	display:inline;
+	white-space: nowrap;
+}
+
+#step-user-name-check {
+	padding: 10px 20px;
+	display: inline-block;
+	white-space:nowrap;
+}
+
+#step-pass-word-set {
+	padding: 10px 20px;
+	display: inline-block;
+	white-space:nowrap;
+}
+
+#step-finish {
+	padding: 10px 20px;
+	display: inline-block;
+	white-space:nowrap;
+}
+
+.cloud-tpink-id-step li.selected {
+	color: #333;
+	font-weight: 700;
+}
+
+.cloud-tpink-id-step li.selected .index {
+	background-color: #1785e6;
+}
+
+.cloud-tpink-id-step li.selected .index {
+	display: inline-block;
+	width: 16px;
+	height: 16px;
+	border-radius: 8px;
+	font-size: 12px;
+	line-height: 16px;
+	text-align: center;
+	color: #fff;
+	margin-right: 4px;
+}
+
+.cloud-tpink-id-step li .index {
+	display: inline-block;
+	width: 16px;
+	height: 16px;
+	background-color: #666;
+	border-radius: 8px;
+	font-size: 12px;
+	line-height: 16px;
+	text-align: center;
+	color: #fff;
+	margin-right: 4px;
+}
+
+.cloud-tpink-id-step li.selected>div:last-child {
+	background: #1785e6;
+}
+
+.cloud-tpink-id-step li>div:last-child {
+	background: #d9d9d9;
+	height: 3px;
+	width: 100%;
+	-webkit-transform: skew(-45deg);
+	-moz-transform: skew(-45deg);
+	-o-transform: skew(-45deg);
+	transform: skew(-45deg);
+}
+
+#button-cloud_tplink_id_bt {
+	margin-left: 80px;
+	width: 260px;
+	height: 32px;
+	font-size: 14px;
+	background: #5680B0;
+	color: #fff;
+}
+
+.cloud-user-name {
+	margin-left:77px;
+	display: inline-block;
+}
+
+#cloud-user-name-id {
+	margin-left:-160px;
+}
+
+.cloud-captcha {
+	margin-left:10px;
+	display: inline-block;
+}
+
+#cloud-captcha-id {
+	margin-left:-94px;
+}
+
+#get-captcha {
+	margin-top:10px;
+	color: #007BFF;
+	cursor: pointer;
+	text-decoration: underline;
+}
+
+#get-captcha-wait {
+	margin-top:10px;
+}
+
+.cloud-readme{
+	margin-left:77px;
+	display: inline-block;
+}
+
+#cloud-readme-label1 {
+	margin-left:-10px;
+}
+
+#cloud-readme-label2 {
+	margin-left:0px;
+	color: #007BFF;
+	cursor: pointer;
+	text-decoration: underline;
+}
+
+.cloud-pass-word {
+	margin-left:77px;
+	display: inline-block;
+}
+
+.cloud-pass-word-confirm {
+	margin-left:77px;
+	display: inline-block;
+}
+
+#cloud-pass-word-id {
+	margin-left:-143px;
+	margin-top: 17px;
+}
+
+#cloud-pass-word-confirm-id {
+	margin-left:-143px;
+	margin-top: 5px;
+	margin-bottom: 18px;
+}
+
+.cloud-finish {
+	margin-left:85px;
+	display: inline-block;
+	margin-top: 30px;
+	margin-bottom: 75px;
+	font-weight: bold
+}
+
+#get-error-msg {
+	width: 300px
+}
+
+</style>
+
+<script type="text/javascript">
+try{
+	$
+}catch(e){
+	location.href = "/";
+};
+
+$(document).ready(function(e){
+	// 销毁旧的MSG，在新建，避免每次进入重新建立
+	if ($.su.cloud_tplinkid_error_msg) {
+		$.su.cloud_tplinkid_error_msg.remove();
+	}
+
+	var gHtm = "";
+	gHtm += "<div id=\"cloud-tplink-id\">";
+	gHtm +=    "<div id=\"cloud-tplink_id-prev\"><-返回</div>";
+	gHtm +=    "<h1 id=\"cloud-tplink-id-title\">" + $.su.cloud_tplink_id_title + "</h1>";
+	gHtm +=    "<div class=\"cloud-tpink-id-action\">";
+	gHtm +=        "<ul class=\"cloud-tpink-id-step\">";
+	gHtm +=            "<li class=\"selected\" id=\"step-user-name-check\">";
+	gHtm +=                "<div>";
+	gHtm +=                    "<i class=\"index\">1</i>";
+	gHtm +=                    "<span>账号验证</span>";
+	gHtm +=                "</div>";
+	gHtm +=                "<div></div>";
+	gHtm +=            "</li>";
+	gHtm +=            "<li class=\"\" id=\"step-pass-word-set\">"
+	gHtm +=                "<div>";
+	gHtm +=                    "<i class=\"index\">2</i>";
+	gHtm +=                    "<span>设置密码</span>";
+	gHtm +=                "</div>";
+	gHtm +=                "<div></div>";
+	gHtm +=            "</li>";
+	gHtm +=            "<li class=\"\" id=\"step-finish\">";
+	gHtm +=                "<div>";
+	gHtm +=                    "<i class=\"index\">3</i>";
+	gHtm +=                    "<span>完成</span>";
+	gHtm +=                "</div>";
+	gHtm +=                "<div></div>";
+	gHtm +=            "</li>";
+	gHtm +=         "</ul>";
+	gHtm +=     "</div>";
+	gHtm +=     "<form id=\"cloud_tplinkid-form-id\">";
+	// 账号验证控件
+	gHtm +=     "<div id=\"user-name-check\">";
+	gHtm +=        "<div id=\"cloud-user-name-label-id\" class=\"cloud-user-name\">";
+	gHtm +=		       "<label id=\"cloud-user-name-label\">";
+	gHtm +=                "<span class=\"cloud-user-name-text\"></span>";
+	gHtm +=            "</label>";
+	gHtm +=        "</div>";
+	gHtm +=        "<div id=\"cloud-user-name-id\" class=\"cloud-user-name\">";
+	gHtm +=            "<input id=\"cloud_username\" name=\"cloud_username\" placeholder=\"手机号或邮箱地址\"/>";
+	gHtm +=        "</div>";
+	gHtm +=        "<div id=\"cloud-captcha-id\" class=\"cloud-captcha\">";
+	gHtm +=            "<input id=\"cloud_captcha\" name=\"cloud_captcha\" placeholder=\"请输入验证码\"/>";
+	gHtm +=        "</div>";
+	gHtm +=        "<div id=\"get-cloud-captcha-id\" class=\"cloud-captcha\">";
+	gHtm +=            "<div id=\"get-captcha\" class=\"get-captcha\">获取验证码</div>";
+	gHtm +=            "<div id=\"get-captcha-wait\" class=\"get-captcha-wait\">重新发送(120s)</div>";
+	gHtm +=        "</div>";
+	gHtm +=        "<div id=\"cloud-readme-id\" class=\"cloud-readme\">";
+	gHtm +=            "<input id=\"readme\" name=\"readme\" value=\"\"/>";
+	gHtm +=        "</div>";
+	gHtm +=        "<div id=\"cloud-readme-label1\" class=\"cloud-readme\">我已阅读并同意</div>";
+	gHtm +=        "<div id=\"cloud-readme-label2\" class=\"cloud-readme\">";
+	gHtm +=			    "<a target=\"_blank\" href=\"http://src.tplinkcloud.com.cn/agreement.html\" style=\"color:#007BFF\">TP-LINK用户协议</a>";
+	gHtm +=			"</div>"
+	gHtm +=     "</div>";
+	// 设置密码控件
+	gHtm +=     "<div id=\"pass-word-check\">";
+	gHtm +=        "<div id=\"cloud-pass-word-label-id\" class=\"cloud-pass-word\">";
+	gHtm +=		       "<label id=\"cloud-pass-word-label\">";
+	gHtm +=                "<span class=\"cloud-pass-word-text\"></span>";
+	gHtm +=            "</label>";
+	gHtm +=        "</div>";
+	gHtm +=        "<div id=\"cloud-pass-word-id\" class=\"cloud-pass-word\">";
+	gHtm +=            "<input id=\"cloud_password\" name=\"cloud_password\" placeholder=\"请输入6-32个字符\"/>";
+	gHtm +=        "</div>";
+	gHtm +=        "<div id=\"cloud-pass-word-confirm-label-id\" class=\"cloud-pass-word-confirm\">";
+	gHtm +=		       "<label id=\"cloud-pass-word-confirm-label\">";
+	gHtm +=                "<span class=\"cloud-pass-word-confirm-text\"></span>";
+	gHtm +=            "</label>";
+	gHtm +=        "</div>";
+	gHtm +=        "<div id=\"cloud-pass-word-confirm-id\" class=\"cloud-pass-word-confirm\">";
+	gHtm +=            "<input id=\"password_confirm\" name=\"password_confirm\" placeholder=\"请再次输入密码\"/>";
+	gHtm +=        "</div>";
+	gHtm +=     "</div>";
+	// 完成账号设置
+	gHtm +=     "<div id=\"finish-check\">";
+	gHtm +=        "<div id=\"cloud-finish-label-id\" class=\"cloud-finish\">";
+	gHtm +=		       "<label id=\"cloud-finish-label\">";
+	gHtm +=                "<span class=\"cloud-finish-text\"></span>";
+	gHtm +=            "</label>";
+	gHtm +=        "</div>";
+	gHtm +=     "</div>";
+	gHtm +=     "</form>";
+	gHtm +=     "<input id=\"cloud_tplink_id_bt\" name=\"cloud_tplink_id_bt\"/>";
+	// 错误信息提示
+	gHtm +=     "<div id=\"get-error-msg\">";
+	gHtm +=         "<div class=\"msg-content\">";
+	gHtm +=             "<div class=\"warn-text\" id=\"get-error-text\"></div>";
+	gHtm +=         "</div>";
+	gHtm +=     "</div>";
+	gHtm += "</div>";
+	$(".cloud-tplink-id-box").html(gHtm);
+
+	$("#get-captcha").show();
+	$("#get-captcha-wait").hide();
+
+	$.su.cloud_tplinkid_error_msg = $("#get-error-msg").msg({
+		type: "alert",
+		closeBtn: true,
+		cancelHandler:function() {
+		}
+	});
+	var error_msg_show = $.su.cloud_tplinkid_error_msg;
+	error_msg_show.msg("hideButtons");
+
+	var regPhone = new RegExp(/^[1](([3][0-9])|([4][5-9])|([5][0-3,5-9])|([6][5,6])|([7][0-8])|([8][0-9])|([9][1,8,9]))[0-9]{8}$/);
+	var regEmail = new RegExp(/^(\w)+((\.){0,1}[\w-]+)*@([a-zA-Z0-9-]+\.)+[a-zA-Z0-9]{2,4}$/);
+
+	var loginUserName = "TP-LINK ID";
+	if ($.su.cloud_tplink_id_title == "申请账号") {
+		loginUserName = "用&nbsp;&nbsp;&nbsp;&nbsp;户&nbsp;&nbsp;&nbsp;名";
+	}
+	$("label#cloud-user-name-label").find(".cloud-user-name-text").html(loginUserName);
+	$("#cloud_username").textbox({
+		maxLength: 64,
+		allowBlank: false,
+		validator:function(v) {
+			if (regPhone.test(v) !== true && regEmail.test(v) !== true) {
+				return $.su.CHAR.VTYPETEXT.INVALIDTEXT;
+			}
+			return true;
+		}
+	});
+
+	$("#cloud_captcha").textbox({
+		allowBlank: false
+	});
+
+	var stepOne = "cloudUserNameCheck"
+	var stepTwo = "cloudPasswordSet"
+	var stepThr = "cloudFinish"
+	var currentStep = "cloudUserNameCheck"
+
+	function cloudUserQuery() {
+		var usertype = getUsernameType();
+		var username = $("#cloud_username").textbox("getValue");
+		var password = $("#cloud_password").password("getValue");
+		var captcha = $("#cloud_captcha").textbox("getValue");
+		var params = {
+			"cloudUserName": username,
+			"cloudPassword": password,
+			"veriCode": captcha,
+			"accountType": usertype
+		};
+
+		var result = false;
+		var tplinkIdProxy= new $.su.Proxy({async: false, isWizard:true});
+		var dataQuery = {};
+		if ($.su.cloud_tplink_id_title == "创建TP-LINK ID" || $.su.cloud_tplink_id_title == "申请账号") {
+			dataQuery.cloud_user_register = params;
+		} else {
+			dataQuery.cloud_password_reset = params;
+		}
+		tplinkIdProxy.action({"istart":dataQuery}, function(data) {
+			result = true;
+		}, function(xhr) {
+			var error_str = "操作失败";
+			if (xhr && $.su.CHAR.ERROR_CODE[xhr.toString()]) {
+				error_str = $.su.CHAR.ERROR_CODE[xhr.toString()];
+			}
+			$("#get-error-text").html(error_str);
+			error_msg_show.msg("show");
+		}, function(xhr) {
+			var error_str = "操作失败";
+			if (xhr && $.su.CHAR.ERROR_CODE[xhr.toString()]) {
+				error_str = $.su.CHAR.ERROR_CODE[xhr.toString()];
+			}
+			$("#get-error-text").html(error_str);
+			error_msg_show.msg("show");
+		});
+
+		return result;
+	}
+
+	function checkCaptchaQuery() {
+		var username = $("#cloud_username").textbox("getValue");
+		var captcha = $("#cloud_captcha").textbox("getValue");
+		var params = {
+			"cloudUserName": username,
+			"veriCode": captcha
+		};
+
+		var result = false;
+		var tplinkIdProxy= new $.su.Proxy({async:false, isWizard:true});
+		var dataQuery = {};
+		if ($.su.cloud_tplink_id_title == "创建TP-LINK ID" || $.su.cloud_tplink_id_title == "申请账号") {
+			dataQuery.cloud_register_vericode_check = params;
+		} else {
+			dataQuery.cloud_reset_vericode_check = params;
+		}
+		tplinkIdProxy.action({"istart":dataQuery}, function(data) {
+			result = true;
+		}, function(xhr) {
+			var error_str = "验证码校验失败";
+			if (xhr && $.su.CHAR.ERROR_CODE[xhr.toString()]) {
+				error_str = $.su.CHAR.ERROR_CODE[xhr.toString()];
+			}
+			$("#get-error-text").html(error_str);
+			error_msg_show.msg("show");
+		}, function(xhr) {
+			var error_str = "验证码校验失败";
+			if (xhr && $.su.CHAR.ERROR_CODE[xhr.toString()]) {
+				error_str = $.su.CHAR.ERROR_CODE[xhr.toString()];
+			}
+			$("#get-error-text").html(error_str);
+			error_msg_show.msg("show");
+		});
+
+		return result;
+	}
+
+	$("#cloud_tplink_id_bt").button({
+		text:"下一步",
+		handler: function() {
+			if (currentStep == stepOne) {
+				// 检测账号参数
+				if ($("#cloud_username").textbox("validate") != true) {
+					return;
+				}
+				if ($("#cloud_captcha").textbox("getValue") == "") {
+					$("#cloud_captcha").textbox("setError", "该项不能为空");
+					return;
+				} else {
+					var captcha = $("#cloud_captcha").textbox("getValue");
+					var regcaptcha = new RegExp(/^[0-9]{6}$/);
+					if (captcha.length != 6 || regcaptcha.test(captcha) !== true) {
+						$("#cloud_captcha").textbox("setError", "验证码格式错误");
+						return;
+					}
+				}
+
+				// 检测验证码
+				if (false == checkCaptchaQuery()) {
+					return;
+				}
+
+				// 设置步骤提示
+				currentStep = stepTwo;
+				$("#step-user-name-check").attr("class", "");
+				$("#step-pass-word-set").attr("class", "selected");
+				step_show();
+			} else if (currentStep == stepTwo) {
+				// 检测密码参数
+				if ($("#cloud_password").password("validate") != true || $("#password_confirm").password("validate") != true) {
+					return;
+				}
+				var passwod = $("#cloud_password").password("getValue");
+				var password_confirm = $("#password_confirm").password("getValue");
+				if(passwod.length < 6 || passwod.length > 32){
+					$("input#cloud_password").password("setError", "密码长度最少为6位,最多为32位");
+					return false;
+				}
+				if (passwod != password_confirm) {
+					$("#password_confirm").password("setError", "确认密码错误");
+					return;
+				}
+
+				// 发送请求
+				if (false == cloudUserQuery()) {
+					return;
+				}
+
+				// 设置步骤提示
+				currentStep = stepThr;
+				$("#button-cloud_tplink_id_bt").text("返回到登入界面");
+				$("#step-pass-word-set").attr("class", "");
+				$("#step-finish").attr("class", "selected");
+				step_show();
+			} else {
+				$.su.cloud_tplink_id.hide();
+			}
+		}
+	});
+
+	$("#readme").checkbox({
+		items: [
+			{boxlabel:"", inputValue: "1", uncheckedValue: "0"}
+		]
+	}).on("ev_click", function(e, newValue) {
+		if (newValue == "1") {
+			$("#cloud_tplink_id_bt").button("enable");
+			document.getElementById("button-cloud_tplink_id_bt").style.backgroundColor = "#5680B0";
+		} else {
+			$("#cloud_tplink_id_bt").button("disable");
+			document.getElementById("button-cloud_tplink_id_bt").style.backgroundColor = "#d9d9d9";
+		}
+	});
+	$("#readme").checkbox("setValue", "1");
+
+	$("label#cloud-pass-word-label").find(".cloud-pass-word-text").html("密&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp码");
+	$("#cloud_password").password({
+		vtype:"ascii_visible",
+		minLength:6,
+		maxLength: 32,
+		allowVisible: true,
+		showLevel: true,
+		allowBlank: false
+	});
+	$("#cloud-pass-word-id input[type='password']").each(function() {
+		$(this).attr("placeholder", "请输入6-32位字符");
+	});
+	$("#cloud-pass-word-id input[type='text']").each(function() {
+		$(this).attr("placeholder", "请输入6-32位字符");
+	});
+
+	$("label#cloud-pass-word-confirm-label").find(".cloud-pass-word-confirm-text").html("确认密码");
+	$("#password_confirm").password({
+		vtype:"ascii_visible",
+		minLength:6,
+		maxLength: 32,
+		allowVisible: true,
+		showLevel: false,
+		allowBlank: false
+	});
+	$("#cloud-pass-word-confirm-id input[type='password']").each(function() {
+		$(this).attr("placeholder", "请再次输入密码");
+	});
+	$("#cloud-pass-word-confirm-id input[type='text']").each(function() {
+		$(this).attr("placeholder", "请再次输入密码");
+	});
+
+	if ($.su.cloud_tplink_id_title == "申请账号") {
+		$("label#cloud-finish-label").find(".cloud-finish-text").html("完成设置，请联系管理员进行审核");
+	} else {
+		$("label#cloud-finish-label").find(".cloud-finish-text").html("完成设置");
+	}
+
+	var tplinkIdForm = $("form#cloud_tplinkid-form-id").form({
+		proxy: new $.su.Proxy({}),
+		showPrompt: false,
+		fields: [
+			{name: "username"},
+			{name: "captcha"}
+		],
+		autoLoad: false
+	});
+
+	$("#cloud-tplink_id-prev").on("click", function(e) {
+		if (currentStep == stepTwo) {
+			currentStep = stepOne;
+			$("#step-user-name-check").attr("class", "selected");
+			$("#step-pass-word-set").attr("class", "");
+			step_show();
+		} else if (currentStep == stepThr) {
+			currentStep = stepTwo;
+			$("#button-cloud_tplink_id_bt").text("下一步");
+			$("#step-pass-word-set").attr("class", "selected");
+			$("#step-finish").attr("class", "");
+			step_show();
+		} else if (currentStep == stepOne) {
+			$.su.cloud_tplink_id.hide();
+		}
+	});
+
+	var captchaWaitingTime = 60;
+	if ($.su.captchaWaitingTimer) {
+		clearTimeout($.su.captchaWaitingTimer);
+	}
+	function refresh_waiting_time() {
+		captchaWaitingTime = captchaWaitingTime - 1;
+		if (captchaWaitingTime == 0) {
+			$("#get-captcha").show();
+			$("#get-captcha-wait").hide();
+			clearTimeout($.su.captchaWaitingTimer);
+			$.su.captchaWaitingTimer = "";
+			captchaWaitingTime = 60;
+		} else {
+			var waitingStr = "重新发送" + "(" + captchaWaitingTime.toString() + "s)";
+			$("#get-captcha").hide();
+			$("#get-captcha-wait").show();
+			$('#get-captcha-wait').html(waitingStr);
+			$.su.captchaWaitingTimer = setTimeout(function() {
+				refresh_waiting_time();
+			}, 1000);
+		}
+	}
+
+	function getUsernameType() {
+		var userType = 0;
+		var username = $("#cloud_username").textbox("getValue");
+		if (regEmail.test(username) == true) {
+			userType = 0;
+		} else if (regPhone.test(username) == true) {
+			userType = 1;
+		}
+		return userType;
+	}
+
+	$("#get-captcha").on("click", function(e) {
+		if ($("#cloud_username").textbox("validate") != true) {
+			return;
+		}
+
+		var userType = getUsernameType();
+		var username = $("#cloud_username").textbox("getValue");
+		var params = {
+			"cloudUserName": username,
+			"accountType": userType
+		};
+		var dataQuery = {};
+		if ($.su.cloud_tplink_id_title == "创建TP-LINK ID" || $.su.cloud_tplink_id_title == "申请账号") {
+			dataQuery.cloud_register_vericode_get = params;
+		} else {
+			dataQuery.cloud_reset_vericode_get = params;
+		}
+
+		var tplinkIdProxy= new $.su.Proxy({async:false, isWizard:true});
+		tplinkIdProxy.action({"istart":dataQuery}, function(data) {
+			// 私云返回验证码，直接填入对话框
+			if (data && data.veriCode) {
+				$("#cloud_captcha").textbox("setValue", data.veriCode);
+			}
+			// 刷新时间
+			refresh_waiting_time();
+		}, function(xhr) {
+			var error_str = "获取验证码失败";
+			if (xhr && $.su.CHAR.ERROR_CODE[xhr.toString()]) {
+				error_str = $.su.CHAR.ERROR_CODE[xhr.toString()];
+			}
+			$("#get-error-text").html(error_str);
+			error_msg_show.msg("show");
+		}, function(xhr) {
+			var error_str = "获取验证码失败";
+			if (xhr && $.su.CHAR.ERROR_CODE[xhr.toString()]) {
+				error_str = $.su.CHAR.ERROR_CODE[xhr.toString()];
+			}
+			$("#get-error-text").html(error_str);
+			error_msg_show.msg("show");
+		});
+	});
+
+	function step_show() {
+		if (currentStep == stepOne) {
+			$("#user-name-check").show();
+			$("#pass-word-check").hide();
+			$("#finish-check").hide();
+		} else if (currentStep == stepTwo) {
+			$("#user-name-check").hide();
+			$("#pass-word-check").show();
+			$("#finish-check").hide();
+		} else if (currentStep == stepThr) {
+			$("#user-name-check").hide();
+			$("#pass-word-check").hide();
+			$("#finish-check").show();
+		} else {
+			$("#user-name-check").show();
+			$("#pass-word-check").hide();
+			$("#finish-check").hide();
+		}
+	}
+	step_show();
+});
+</script>
+</body>
+
+</html>

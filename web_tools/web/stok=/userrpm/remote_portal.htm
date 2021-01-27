@@ -1,0 +1,796 @@
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
+<html xmlns="http://www.w3.org/1999/xhtml">
+<head>
+<meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
+<title>Remote Portal</title>
+</head>
+
+<style type="text/css">
+
+#note_cnt{
+    margin-top:20px;
+    margin-bottom:20px;
+}
+
+#remote_notice_title{
+    font-weight: bold;
+}
+
+</style>
+
+<body>
+<div class="func_container">
+    <div id="func_setting">
+    	<div id="portal_editor">
+    		<input id="enable" name="enable" value=""/>
+    		<input id="jump_page_name" name="jump_page_name" value=""/>
+    		<input id="vlan_id" name="vlan_id" value=""/>
+			<input id="serv_id" name="serv_id" value=""/>
+			<input id="interface" name="interface" value=""/>
+			<textarea id="success_url" name="success_url" value=""/>
+			<textarea id="fail_url" name="fail_url" value=""/>
+			<div id="remote_portal">
+				<input id="remote_enable" name="remote_enable" value=""/>
+				<textarea id="remote_url" name="remote_url" value=""/>
+				<input id="remote_auth_server_type" name="remote_auth_server_type" value=""/>
+				<div id="remote_portal_auth_server_remote">
+					<input id="remote_auth_server_group" name="remote_auth_server_group" value=""/>
+					<input id="remote_free_time" name="remote_free_time" value=""/>
+				</div>
+				<input id="remote_nosense_auth" name="remote_nosense_auth" value=""/>
+			</div>
+            <input id="note" name="note"/>
+            <div id="note_cnt" class="">
+                <h5 class="title" id="remote_notice_title"></h5>
+                <p><span class="" id="remote_notice_content"></span></p>
+            </div>
+    	</div>
+    	<div id="portal_list"></div>
+    </div>
+
+    <div id="portal_help"></div>
+</div>
+
+<script type="text/javascript">
+try{
+    $
+}catch(e){
+    location.href = "/";
+};
+
+$(document).ready(function(e){
+    $(".func_container").hide();
+
+    var AUTH_MODE_VLAN = "vlan"
+    var AUTH_MODE_SSID = "ssid"
+    var AUTH_MODE_INTERFACE = "interface"
+
+	var globalProxy = new $.su.Proxy({});
+	var firstLoad = true;
+	var ssidMap = {};
+	var ssidList = [];
+	var ssidListProxy = new $.su.Proxy({async: false});
+	var getData = new $.su.Proxy({async: false});
+
+    var auth_mode
+    var column_type;
+    var fail_url_auto_distribute = false
+	
+
+	function urlValidator(value)
+	{
+		var codeStr = /^([A-Za-z0-9\_\+\/\?\%\#\&\=\\\.\:\-\[\]]){1,250}$/;
+		if (!codeStr.test(value))
+		{
+			return $.su.CHAR.WPORTAL.URL_CHAR_ERR;
+		}
+		else
+		{
+			return true;
+		}
+	}
+
+
+	$("#func_setting").panel({
+        title: "认证规则列表"//$.su.CHAR.MAC_FILTERING.SETTINGS
+    });
+
+	$("#enable").radio({
+        fieldLabel: "状态",
+        columns: 2,
+        inputCls: 'xl',
+        items: [
+            {boxlabel: $.su.CHAR.WPORTAL.ON, inputValue: "on", checked: true},
+            {boxlabel: $.su.CHAR.WPORTAL.OFF, inputValue: "off"}
+        ]
+    }).radio("hide");
+
+    $('#jump_page_name').textbox({
+        fieldLabel: $.su.CHAR.WPORTAL.TEMPLATE_NAME,
+        inputCls: 'xl',
+        allowBlank: true,
+        maxLength: 50,
+        tips: $.su.CHAR.WPORTAL.TEMPLATE_NAME_TIP,
+        validator: function(value)
+        {
+            var codeStr = /^([A-Za-z0-9\_\-]){1,50}$/;
+            if ("" != value && !codeStr.test(value))
+            {
+                return $.su.CHAR.WPORTAL.TEMPLATE_NAME_ERR;
+            }
+            else
+            {
+                return true;
+            }
+        }
+    }).textbox("hide");
+    
+    $('#jump_page_name').combobox("autoWidth");
+
+    var vlan_id = $('#vlan_id').textbox({
+        fieldLabel: "生效VLAN",
+        inputCls: 'xl',
+        tipsCls: 's',
+        maxLength: 4,
+        vtype: {
+            vtype: "number",
+            max: 4094,
+            min: 1
+        },
+        tips: $.su.CHAR.WPORTAL.VLANID_TIP
+    });
+
+    var ssid = $("#serv_id").combobox({
+        fieldLabel : "生效SSID",
+        allowBlank:false,
+        multiSelect: false,
+		inputCls: 'xl',
+        items:[
+                {name:"---",value:"---", selected:true}
+            ]
+    });
+
+    var bind_interface = $('#interface').combobox({
+        fieldLabel: '生效接口', //$.su.CHAR.INTERFACE.TIMEOBJ,
+        //multiSelect:true,
+        allowBlank: false,
+		inputCls: 'xl',
+        items:[
+            {value:"---", name: "---", selected: true}
+        ]
+    }).on("ev_change", function(e, oldValue, newValue){
+    });
+
+    $('#success_url').textarea({
+        fieldLabel: $.su.CHAR.WPORTAL.AUTH_SUCCESS_URL,
+        inputCls: 'xl',
+        tipsCls: 'a',
+        labelCls: 'widget-fieldlabel-wrap m top_align',
+        maxLength: 120,
+        vtype: "ascii_visible",
+        tips: $.su.CHAR.WPORTAL.AUTH_SUCCESS_URL_TIP,
+        validator: function(value)
+        {
+            return urlValidator(value);
+        }
+    });
+
+    $('#fail_url').textarea({
+        fieldLabel: $.su.CHAR.WPORTAL.AUTH_FAIL_URL,
+        inputCls: 'xl',
+        tipsCls: 'a',
+        labelCls: 'widget-fieldlabel-wrap m top_align',
+        maxLength: 120,
+        vtype: "ascii_visible",
+        tips: $.su.CHAR.WPORTAL.AUTH_FAIL_URL_TIP,
+        validator: function(value)
+        {
+            return urlValidator(value);
+        }
+    });
+
+    $('#note').textbox({
+        fieldLabel: $.su.CHAR.WPORTAL.TEMPLATE_NOTE,
+        maxLength: 50,
+        allowBlank: true,
+        inputCls: 'xl',
+        vtype: "string_visible_allow_blank",
+        tips: $.su.CHAR.WPORTAL.TEMPLATE_NOTE_TIP
+    });
+
+    $("#remote_enable").radio({
+        fieldLabel: "状态",
+        columns: 2,
+        inputCls: 'xl',
+        items: [
+            {boxlabel: $.su.CHAR.WPORTAL.ON, inputValue: "on", checked: true},
+            {boxlabel: $.su.CHAR.WPORTAL.OFF, inputValue: "off"}
+        ]
+    }).radio("hide");
+
+    $('#remote_url').textarea({
+        fieldLabel: "远程Portal地址",
+        inputCls: 'xl',
+        tipsCls: 'a',
+        labelCls: 'widget-fieldlabel-wrap m top_align',
+        maxLength: 100,
+        vtype: "ascii_visible",
+        allowBlank: false,
+        tips: $.su.CHAR.WPORTAL.REMOTE_ADDRESS_TIP,
+        validator: function(value)
+        {
+            return urlValidator(value);
+        }
+    });
+
+    $('#remote_auth_server_type').combobox({
+        fieldLabel: $.su.CHAR.WPORTAL.AUTHSERVER_TYPE,
+        tipsCls: 's',
+        inputCls: 'xl',
+        allowBlank: true,
+        maxLength: 50,
+        vtype: "name",
+        items: [
+            {value:"local", name: $.su.CHAR.WPORTAL.AUTHSERVER_TYPE_LOCAL, selected: true}
+        ]
+    }).on("ev_change", function(e, oldValue, newValue){
+        var value = newValue[0];
+        if (value == "local")
+        {
+            $("div#remote_portal_auth_server_remote").hide();
+			remote_auth_server_group.combobox("disable");
+        }
+        else if ("remote" == value)
+        {
+            $("div#remote_portal_auth_server_remote").show();
+			remote_auth_server_group.combobox("enable");
+        }
+    });
+
+    var remote_auth_server_group = $('#remote_auth_server_group').combobox({
+        fieldLabel: $.su.CHAR.WPORTAL.AUTHSERVER_GROUP,
+        tipsCls: 's',
+        inputCls: 'xl',
+        maxLength: 50,
+        allowBlank: false,
+        vtype: "name"
+        //bigdata: true
+    });
+    $('#remote_auth_server_group').combobox("autoWidth");
+
+    $('#remote_free_time').textbox({
+        fieldLabel: $.su.CHAR.WPORTAL.FREETIME,
+        inputCls: 'xl',
+        tipsCls: 's',
+        maxLength: 5,
+        allowBlank: true,
+        vtype: {
+            vtype: "number",
+            max: 43200,
+            min: 1
+        },
+        tips: $.su.CHAR.WPORTAL.FREETIME_TIP
+    });
+
+    $("#remote_nosense_auth").radio({
+        fieldLabel: $.su.CHAR.WPORTAL.NONSENSE_AUTH,
+        columns: 2,
+        inputCls: 'xl',
+        items: [
+            {boxlabel: $.su.CHAR.WPORTAL.START, inputValue: "on"},
+            {boxlabel: $.su.CHAR.WPORTAL.STOP, inputValue: "off", checked: true}
+        ]
+    });
+    
+    getData.query({"profile":{"name":"portal_config"}, "authentication":{"name":"portal"}},function(data){
+        var nonsense_support = data.profile.portal_config.web_nonsense_auth_attr;
+        var fail_url_auto_distribute_attr = data.profile.portal_config.fail_url_auto_distribute_attr; 
+        if(nonsense_support == "0")
+        {
+            $("#remote_nosense_auth").radio("hide");
+        }
+        if (fail_url_auto_distribute_attr == "1")
+        {
+            fail_url_auto_distribute = true
+        }
+        remote_auth_server_group.combobox("disable");
+        
+        auth_mode = data.authentication.portal.auth_mode;
+        if (AUTH_MODE_VLAN == auth_mode)
+        {
+            ssid.combobox("hide");
+			ssid.combobox("disable");
+            bind_interface.combobox("hide");
+			bind_interface.combobox("disable");
+			column_type =   {
+                text: '生效VLAN',
+                width: 40,
+                dataIndex: 'vlan_id',
+				renderer: function(data){
+					if(data == "0")return "---";
+					return data;
+                },
+				scan: {
+					cmp: $.search.compare.num
+				}
+            };
+        }
+        else if(AUTH_MODE_INTERFACE == auth_mode)
+        {
+            ssid.combobox("hide");
+			ssid.combobox("disable");
+            vlan_id.textbox("hide");
+			vlan_id.textbox("disable");
+			column_type =   {
+                text: '生效接口',
+                width: 40,
+                dataIndex: 'interface',
+				scan: {
+					type: "textbox",
+					cmp: $.search.compare.string
+				}
+            }
+        }
+        else
+        {
+            vlan_id.textbox("hide");
+			vlan_id.textbox("disable");
+            bind_interface.combobox("hide");
+			bind_interface.combobox("disable");
+			column_type =   {
+                text: '生效SSID',
+                width: 40,
+                dataIndex: 'serv_id',
+				renderer: function(data){
+					return ssidMap[data];
+                },
+				scan: {
+					type: "textbox",
+					cmp: function(src, tar, index){
+						if(typeof src == "string" && src.length > 0)
+						{
+							if(ssidMap[src] && ssidMap[src].indexOf(tar) >= 0)return true;
+						}
+						return false;
+					}
+				}
+            };
+        }
+    });
+	if(AUTH_MODE_SSID == auth_mode){
+		ssidListProxy.query({"apmng_wserv":{"table":"wlan_serv"}},function(data){
+			var wrs = data.apmng_wserv.wlan_serv;
+			$.each(wrs, function(_, item){
+				for (var key in item)
+				{
+					ssidList.push({name:$.su.func.escapeHtml(item[key].ssid), value:item[key].serv_id});
+					ssidMap[item[key].serv_id] = $.su.func.escapeHtml(item[key].ssid);
+				}
+			});
+		});
+	}
+
+    $("h5#remote_notice_title").html($.su.CHAR.WPORTAL.WPORTAL_NOTE_TITLE);
+    if (true == fail_url_auto_distribute) {
+        $("#remote_notice_content").html("1、" + $.su.CHAR.WPORTAL.FAIL_URL_AUTO_DISTRIBUTE_TIP);
+    } else {
+        $("#remote_notice_content").html("1、" + $.su.CHAR.WPORTAL.FAIL_URL_MANUAL_SET_TIP);
+    }
+
+    var portalGrid = $('#portal_list').grid({
+    	store:{
+    		proxy: globalProxy,
+            autoLoad: true,
+            fields: [
+            	{name: "portal_id"},
+                {name: "enable"},
+                {name: "jump_page_name"},
+                {name: "default_page_type"},
+                {name: "vlan_id"},
+                {name: "serv_id"},
+                {name: "ssid_id"},
+                {name: "interface"},
+                {name: "success_url"},
+                {name: "fail_url"},
+                {name: "note"},
+
+                {name: "remote_enable"},
+                {name: "remote_url"},
+                {name: "remote_auth_server_type"},
+                {name: "remote_auth_server_group"},
+                {name: "remote_free_time"},
+                {name: "remote_nosense_auth"}
+            ],
+            parseKey:{
+                moduleName: "authentication",
+                tableName: "portal_auth_list",
+                pageSizeName: "portal_auth_entry",
+				maxSizeTableName: "wportal",
+				maxSizeOptionName: "portal_max",
+                getFilter:function(index, itemNames, data){
+                    var filter = [];
+                    var oneFilter = {};
+
+                    oneFilter = {remote_enable: "on"};
+                    filter.push(oneFilter);
+                    oneFilter = {remote_enable: "off"};
+                    filter.push(oneFilter);
+
+                    return filter;
+                },
+                setFilter:function(index, itemNames, data){
+                    var filter = [];
+                    var oneFilter = {};
+
+
+					var itemNameStr = "";
+					var pos = -1;
+					if (!$.isArray(itemNames))
+					{
+						itemNames = [itemNames];
+					}
+					for (var i = 0; i < itemNames.length; i++)
+					{
+						itemNameStr = itemNames[i].toString();
+						pos = itemNameStr.lastIndexOf('_');
+						if(0 >= pos )
+							continue;
+						oneFilter = {};
+						oneFilter["portal_id"] =  itemNameStr.slice(pos+1).toString();
+						filter.push(oneFilter);
+					}
+                    return filter;
+                },
+                delFilter: function(itemNames, data, indexes){
+                    var _string = "";
+                    var filter = [];
+                    var oneFilter = {};
+                    var j;
+					var itemNameStr = "";
+					var pos = -1;
+                    if (!$.isArray(itemNames))
+                    {
+                        itemNames = [itemNames];
+                    }
+
+                    if (!$.isArray(indexes))
+                    {
+                        indexes = [indexes];
+                    }
+                    for (var i = 0; i < itemNames.length; i++)
+                    {
+                        oneFilter = {};
+						itemNameStr = itemNames[i].toString();
+						pos = itemNameStr.lastIndexOf('_');
+						if(0 >= pos )
+							continue;
+                        oneFilter["portal_id"] = itemNameStr.slice(pos+1).toString();
+                        filter.push(oneFilter);
+                    }
+                    return filter;
+                },
+                rmField: ["name"],
+                formField: ["name"],
+                keyProperty: ["name"],
+                pagingField: ["name"],
+                autoLoad: true,
+                loadDelay: 1
+            }
+        },
+        editor:{
+        	validator:function(){
+                var editor  = $(portalGrid.grid("getEditor"));
+                var store   = portalGrid.grid("getStore");
+                var keyProperty = store.keyProperty;
+                var grid_array  = store.data;
+                var editingId = editor.editor("getEditingId");
+                var i = 0;
+
+                if($.isArray(grid_array) && grid_array.length > 0)
+                {
+                    for(var k = 0; k < grid_array.length;k++)
+                    {
+                        var data = grid_array[k];
+                        if (data[keyProperty] == editingId)
+                        {
+                            continue;
+                        }
+                    }
+                }
+                return true;
+            },
+            content: '#portal_editor',
+            fields: [
+            	{name: "portal_id"},
+                {name: "enable"},
+                {name: "jump_page_name"},
+                {name: "default_page_type"},
+                {name: "vlan_id"},
+                {name: "serv_id"},
+                {name: "ssid_id"},
+                {name: "interface"},
+                {name: "success_url"},
+                {name: "fail_url"},
+                {name: "note"},
+
+                {name: "remote_enable"},
+                {name: "remote_url"},
+                {name: "remote_auth_server_type"},
+                {name: "remote_auth_server_group"},
+                {name: "remote_free_time"},
+                {name: "remote_nosense_auth"}
+            ]
+        },
+        paging_true:[],
+        columns: [
+            {
+                xtype: 'checkcolumn',
+                width: 20
+            },
+            {
+                xtype: 'rownumberer',
+                width: 20
+            },
+            column_type,
+            {
+                text: '备注',
+                width: 40,
+                dataIndex: 'note',
+				scan: {
+					cmp: $.search.compare.string
+				}
+            },
+			{
+                text: '状态',
+                width: 30,
+                dataIndex: 'enable',
+				xtype: 'statuscolumn',
+				trueValue: "on",
+				falseValue: "off",
+				renderer: function(data){
+                    var result;
+                    switch (data){
+                        case "on":
+							result = "启用";
+                            break;
+                        case "off":
+                            result = "禁用";
+                            break;
+                        default :
+                            break;
+                    }
+                    return result;
+                }
+            },
+            {
+                xtype: "settings",
+                width: 40
+            }
+        ],
+        operation: 'prompt|enable|disable|add|delete|search'
+    }).on('ev_load',  function(e,data, others){
+    	var $gridEditor = $(portalGrid.grid('getEditor'));
+        if (others)
+        {
+        }
+		if(firstLoad){
+			firstLoad = false;
+			if (AUTH_MODE_SSID == auth_mode)
+			{
+				var combobox = $gridEditor.find('#serv_id');
+				combobox.combobox('loadData', ssidList);
+			}
+			else if (AUTH_MODE_INTERFACE == auth_mode)
+			{
+				var interfaceItem=[];
+				var interfaceProxy = new $.su.Proxy();
+				interfaceProxy.query({"network":{"table":"if_info"}},function(data){
+					var ifs = data.network["if_info"];
+					$.each(ifs, function(_, item){
+						for(var key in item){
+							if(item[key].isbridged != 1){
+								interfaceItem.push({name:item[key].if_name,value:item[key].if_name});
+							}
+						}
+					});
+					var combobox = $gridEditor.find('#interface');
+					combobox.combobox('loadData', interfaceItem);
+				});
+			}
+
+			var groups = [];
+			var groupsProxy = new $.su.Proxy({});
+			groupsProxy.query({"authentication":{"table":"server_group_list"}},function(data){
+				var sgl = data.authentication.server_group_list;
+
+				$.each(sgl, function(_, item){
+					for (var key in item)
+					{
+						groups.push({name:item[key].group_name,value:item[key].group_name});
+					}
+				});
+
+				var combobox = $gridEditor.find('#remote_auth_server_group');
+				combobox.combobox('loadData', groups);
+			});
+        }
+    }).on("ev_operation", function(e, obj, action){
+		var selectedKeys = portalGrid.grid("getSelected");
+		var store = portalGrid.grid('getStore');
+		var data_len = store.data.length;
+		var data = store.data;
+		var data_key = [];
+		var onekey = {};
+		var result = {};
+		var _string = "";
+		var j;
+		var map = {};
+		if (selectedKeys.length === 0)
+		{
+			portalGrid.get(0).noneSelectMsg_g.msg('show');
+			return;
+		}
+		else
+		{
+			portalGrid.grid("runProgress");
+			$.su.loading.show();
+			
+			if (!$.isArray(selectedKeys))
+			{	
+				selectedKeys = [selectedKeys];
+			}
+			
+			if (!$.isArray(data))
+			{
+				data = [data];
+			}
+			for(var i=0;i < data.length;i++){
+				var arr = data[i].itemName.split("portal_auth_list_");
+				map[data[i].key] = arr[1];
+			}
+			for (var i = 0; i < selectedKeys.length; i++)
+			{
+				onekey = {};
+				onekey["portal_id"] = map[selectedKeys[i]];
+				data_key.push(onekey);
+			}
+
+			var postData = {};
+			postData["authentication"] = {};
+			postData["authentication"]["table"] = "portal_auth_list";
+			postData["authentication"]["filter"] = {};
+			postData["authentication"]["filter"] = data_key;
+			postData["authentication"]["para"] = {};
+			postData["authentication"]["para"]["enable"] = (action == "enable" ? "on" : "off");
+			
+			globalProxy.modify(postData, function(){
+					reloadGrid(function(){
+						portalGrid.grid("prompt", true);
+					});
+					setTimeout(function(){//延时时间根据各模块情况自行调整
+						$.su.loading.hide();
+					}, data_len*1);
+			}, function(){
+				$.su.loading.hide();
+				portalGrid.grid("disGridChkbox");
+				portalGrid.grid("prompt", false, "");
+			});
+		}
+    });
+    
+    
+    var $gridEditor = $(portalGrid.grid('getEditor'));
+    $($gridEditor).on("ev_startEdit", function(e, index, key){
+        var store = portalGrid.grid('getStore');
+        var gridData= store.data;
+        
+        var portalSsidBindListProxy = new $.su.Proxy({async: false});
+        var bindSsidList = []
+        var ssidListTmp = []
+        if (AUTH_MODE_SSID == auth_mode) {
+            portalSsidBindListProxy.query({"authentication":{"table":"portal_auth_ssid_bind_list"}},function(data){
+                var ssid_list_array = data.authentication.portal_auth_ssid_bind_list;
+                if (ssid_list_array) {
+                    var cnt = 0
+                    $.each(ssid_list_array, function(_, item){
+                        for (var key in item)
+                        {
+                            bindSsidList[cnt] = item[key].serv_id;
+                            cnt = cnt + 1;                   
+                        }
+                    });
+                    // 对于add操作，ssid下拉列表中只能选择未绑定的ssid
+                    // 对于set操作，ssid下拉列表中可选择未绑定的ssid和该条目所绑定的ssid
+                    // 所以对于set操作，将对应的serv_id从绑定列表中剔除
+                    if ("add" != index) {
+                        for (var i = 0; i < bindSsidList.length; i++) {
+                            if (bindSsidList[i] == gridData[index].serv_id) {
+                                bindSsidList.splice(i, 1)
+                            }
+                        }
+                    }
+                }
+            });
+
+            var found = false
+            for (var i = 0; i < ssidList.length; i++) {
+                found = false
+                for (var j = 0; j < bindSsidList.length; j++) {
+                    if (bindSsidList[j] == ssidList[i].value) {
+                        found = true
+                        break
+                    }
+                }
+                if (false == found) {
+                    ssidListTmp.push({name:ssidList[i].name, value:ssidList[i].value});
+                }
+            }
+
+            var combobox = $gridEditor.find('#serv_id');
+            combobox.combobox('loadData', ssidListTmp);
+            if ("add" != index) {
+                combobox.combobox("setValue", gridData[index].serv_id)
+            }
+        }
+
+    	var vid = $("#vlan_id").textbox('getValue');
+    	if (0 == vid)
+		{
+			$("#vlan_id").textbox('setValue', '');
+		}
+
+        var server_type = $("#remote_auth_server_type").combobox('getValue')
+        if ("local" == server_type)
+        {
+            $("div#remote_portal_auth_server_remote").hide();
+            remote_auth_server_group.combobox("disable");
+        }
+        else if ("remote" == server_type)
+        {
+            $("div#remote_portal_auth_server_remote").show();
+            remote_auth_server_group.combobox("enable");
+        }
+    });
+
+
+    function reloadGrid(callback){
+		var store = portalGrid.grid('getStore'),
+        selectedKeys = portalGrid.grid('getSelected');
+
+		portalGrid.grid("disGridChkbox");
+		if (callback){
+			callback.call();
+		}
+        store.keyLength = 0;
+        store.load();
+    }
+
+
+    var helpSessmngr
+    if (AUTH_MODE_VLAN == auth_mode)
+    {
+        helpSessmngr = new $.su.Help({
+            container: "div#portal_help",
+            content: "REMOTE_PORTAL_VLAN"
+        });
+    }
+    else if (AUTH_MODE_SSID == auth_mode)
+    {
+        helpSessmngr = new $.su.Help({
+            container: "div#portal_help",
+            content: "REMOTE_PORTAL_SSID"
+        });
+    }
+    else
+    {
+        helpSessmngr = new $.su.Help({
+            container: "div#portal_help",
+            content: "REMOTE_PORTAL_INTERFACE"
+        });
+    }
+    $(".func_container").show();
+});
+
+</script>
+</body>
+</html>

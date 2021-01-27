@@ -1,0 +1,631 @@
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN"
+        "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
+<html xmlns="http://www.w3.org/1999/xhtml">
+<head>
+    <meta http-equiv="Content-Type" content="text/html; charset=utf-8"/>
+    <style type="text/css">
+		.top {
+  		  min-width: 1480px !important;
+		}
+		.top-main .top-content {
+ 		   min-width: 1405px !important;
+        }
+        #log_detail_msg td:nth-child(1) {
+            text-align: right;
+            white-space: pre-wrap;
+        }
+
+        #log_detail_msg td:nth-child(2) {
+            text-align: left;
+            white-space: pre-wrap;
+            word-break:break-all;
+            word-wrap:break-word;;
+        }
+
+        #log_detail_msg table {
+            width: 100%;
+            line-height: 2em;
+        }
+    </style>
+    <title>audit_log</title>
+</head>
+
+<body>
+<div class="func-container">
+    <div id="auditlog_list">
+        <div id="auditlog_list_grid">
+
+        </div>
+        <div id="sort_remind"></div>
+
+    </div>
+
+    <div id="auditlog-detail"></div>
+
+    <div id="clean_alarm_cnt">
+        <h4 class="title">
+            <span class="icon" ></span>
+            <span class="text" id="error_str"></span>
+        </h4>
+    </div>
+
+    <div id="auditlog_help"></div>
+</div>
+<div id="log_detail_msg">
+    <div id="title-container">
+        <table id = "log_detail_content" style="table-layout:fixed;">
+
+        </table>
+    </div>
+</div>
+
+<script type="text/javascript">
+    try{
+        $
+    }catch(e){
+        location.href = "/";
+    };
+
+    $(document).ready(function(e){
+        var log_detail_msg = $("#log_detail_msg").msg({
+            grid: auditlog_grid,
+            cls: 'l',
+            closeBtn: true,
+            type: "alert",
+            okHandler: function (e) {
+                log_detail_msg.msg('hide');
+            },
+            cancelHandler: function () {
+                log_detail_msg.msg('hide');
+            }
+        });
+        $("#title-container").panel({
+            title: $.su.CHAR.AUDITLOG.DETAIL,
+            collapsible: false
+        });
+        var clean_proxy = new $.su.Proxy({});
+        $("#auditlog_list").panel({
+            title: $.su.CHAR.AUDITLOG.AUDITLOG_LIST,
+            collapsible: false
+        });
+
+        var zoneItem=[];
+        var auditPolicyItem=[];
+        var auditProfileItem=[];
+        var disk_status = "";
+        var itemProxy = new $.su.Proxy({async: false});
+        itemProxy.query(
+        {
+            "zone":{"table":"zone"},
+            "audit_policy":{"table": "audit_policy"},
+            "audit_profile":{"table": "audit_profile"},
+            "system": {"name": "check_disk_status"}
+        }, function(data){
+            for(var i=0; i<data.zone.zone.length;i++){
+                for(var j in data.zone.zone[i]){
+                    zoneItem.push({name:data.zone.zone[i][j].name,value:data.zone.zone[i][j].name});
+                    break;
+                }
+            }
+            var auditPolicyList = data.audit_policy.audit_policy;
+            for(var i=0; i<auditPolicyList.length;i++){
+                for(var j in auditPolicyList[i]){
+                    auditPolicyItem.push({name:auditPolicyList[i][j].name,value:auditPolicyList[i][j].name});
+                    break;
+                }
+            }
+            var auditProfileList = data.audit_profile.audit_profile;
+            for(var i=0; i<auditProfileList.length;i++){
+
+                for(var j in auditProfileList[i]){
+                    auditProfileItem.push({name:auditProfileList[i][j].name,value:auditProfileList[i][j].name});
+                    break;
+                }
+            }
+            disk_status = data.system.check_disk_status.status;
+        });
+
+        $("#clean_alarm_cnt").msg({
+            cls: 'warning reboot-confirm-size',
+            msg: $.su.CHAR.SYSLOG.LOG_CLEAN_ALARM,
+            type: "alert"
+        });
+
+        var order = "down";
+
+        var auditlogProxy = new $.su.Proxy({});
+
+        var auditlog_grid = $("div#auditlog_list_grid").grid({
+            store:{
+                proxy: auditlogProxy,
+                parseKey: {					/* 此处在store中增加parseKey，便于store对象在底层对数据进行预处理，以实现SLP数据结构和SU数据结构的转变 */
+                    moduleName: "audit_policy",
+                    pageSizeName: "auditlog_entry",
+                    tableName: "audit_log"
+                },
+                fields: [
+                    {name: "log_id"},
+                    {name: "time"},
+                    {name: "audit_type"}, //审计类型：HTTP/FTP/邮件/IM
+                    {name: "src_zone"},
+                    {name: "dst_zone"},
+                    {name: "src_ip"},
+                    {name: "dst_ip"},
+                    {name: "src_port"},
+                    {name: "dst_port"},
+                    {name: "user"},
+                    {name: "proto"},
+                    {name: "app"},
+                    {name: "action"},
+                    {name: "audit_policy"},
+                    {name: "audit_profile"},
+                    {name: "audit_action"}, //审计行为：
+                    {name: "detail"},	//比较长，点击后显示完整信息
+                    {name: "url"},
+                    {name: "host"},
+                    {name: "title"},
+                    {name: "file_name"},
+                    {name: "file_size"},
+                    {name: "direction"},
+                    {name: "ftp_cmd"},
+                    {name: "file_name"},
+                    {name: "file_size"},
+                    {name: "sender"},
+                    {name: "receiver"},
+                    {name: "subject"},
+                    {name: "attachment_name"},
+                    {name: "attachment_size"},
+                    {name: "account"}
+                ],
+                autoLoad: true
+            },
+            selectionDisplay: true,
+            maxLines: 11,
+            minLines: 0,
+            paging_true:{},
+            columns: [
+                {
+                    text: $.su.CHAR.AUDITLOG.ID,
+                    xtype: "rownumberer",
+                    width:40
+                },
+                {
+                    text: $.su.CHAR.AUDITLOG.TIME,
+                    width:160,
+                    dataIndex: "time",
+                    scan: {
+                        cmp: $.search.compare.string
+                    }
+                },
+                {
+                    text: $.su.CHAR.AUDITLOG.AUDIT_TYPE,
+                    width:50,
+                    dataIndex: "audit_type",
+                    scan: {
+                        cmp: $.search.compare.string
+                    }
+                },
+                {
+                    text: $.su.CHAR.AUDITLOG.SRC_ZONE,
+                    width:80,
+                    dataIndex: "src_zone",
+                    scan: {
+                        cmp: $.search.compare.string
+                    }
+                },
+                {
+                    text: $.su.CHAR.AUDITLOG.DST_ZONE,
+                    width:80,
+                    dataIndex: "dst_zone",
+                    scan: {
+                        cmp: $.search.compare.string
+                    }
+                },
+                {
+                    text: $.su.CHAR.AUDITLOG.SRC_IP,
+                    width:100,
+                    dataIndex: "src_ip",
+                    scan: {
+                        cmp: $.search.compare.ip
+                    }
+                },
+                {
+                    text: $.su.CHAR.AUDITLOG.DST_IP,
+                    width:100,
+                    dataIndex: "dst_ip",
+                    scan: {
+                        cmp: $.search.compare.ip
+                    }
+                },
+                {
+                    text: $.su.CHAR.AUDITLOG.SRC_PORT,
+                    width:50,
+                    dataIndex: "src_port",
+                    scan: {
+                        cmp: $.search.compare.string
+                    },
+                    renderer: function(dd, index, data){
+                        if (data.proto == "UDP" || data.proto == "TCP") return dd;
+                        else return "---";
+                    }
+                },
+                {
+                    text: $.su.CHAR.AUDITLOG.DST_PORT,
+                    width:50,
+                    dataIndex: "dst_port",
+                    scan: {
+                        cmp: $.search.compare.string
+                    },
+                    renderer: function(dd, index, data){
+                        if (data.proto == "UDP" || data.proto == "TCP") return dd;
+                        else return "---";
+                    }
+                },
+                {
+                    text: $.su.CHAR.AUDITLOG.USER,
+                    width:60,
+                    dataIndex: "user",
+                    scan: {
+                        cmp: $.search.compare.string
+                    }
+                },
+                {
+                    text: $.su.CHAR.AUDITLOG.PROTO,
+                    width:60,
+                    dataIndex: "proto",
+                    scan: {
+                        cmp: $.search.compare.string
+                    }
+                },
+                {
+                    text: $.su.CHAR.AUDITLOG.APP,
+                    width:60,
+                    dataIndex: "app",
+                    scan: {
+                        cmp: $.search.compare.string
+                    }
+                },
+                {
+                    text: $.su.CHAR.AUDITLOG.ACTION,
+                    width:60,
+                    dataIndex: "action",
+                    scan: {
+                        cmp: $.search.compare.string
+                    }
+                },
+                {
+                    text: $.su.CHAR.AUDITLOG.AUDIT_POLICY,
+                    width:80,
+                    dataIndex: "audit_policy",
+                    scan: {
+                        cmp: $.search.compare.string
+                    }
+                },
+                {
+                    text: $.su.CHAR.AUDITLOG.AUDIT_PROFILE,
+                    width:80,
+                    dataIndex: "audit_profile",
+                    scan: {
+                        cmp: $.search.compare.string
+                    }
+                },
+                {
+                    text: $.su.CHAR.AUDITLOG.AUDIT_ACTION,
+                    width:60,
+                    dataIndex: "audit_action",
+                    scan: {
+                        cmp: $.search.compare.string
+                    }
+                },
+                {
+                    text: $.su.CHAR.AUDITLOG.DETAIL,
+                    width:80,
+                    dataIndex: "detail",
+                    renderer: function(dd, index, data){
+                        return"<a href='javascript:void(0);' class='btn-detail' data-index='"+ index +"'>详细</a>";
+                    }
+                },
+                //todo 全局搜索时间端的字段待确定
+                {
+                    xtype: "globalSearch",
+                    hidden: true,
+                    columns: [
+                        {
+                            text: $.su.CHAR.AUDITLOG.SRC_ZONE,
+                            width: 100,
+                            dataIndex: "src_zone",
+                            scan: {
+                                type: "combobox",
+                                vtype: "string",
+                                items: zoneItem
+                            }
+                        },
+                        {
+                            text: $.su.CHAR.AUDITLOG.DST_ZONE,
+                            width: 100,
+                            dataIndex: "dst_zone",
+                            scan: {
+                                type: "combobox",
+                                vtype: "string",
+                                items: zoneItem
+                            }
+                        },
+                        {
+                            text: $.su.CHAR.AUDITLOG.SRC_IP,
+                            width: 100,
+                            dataIndex: "src_ip",
+                            scan: {
+                                type: "textbox",
+                                vtype : "string"
+                            }
+                        },
+                        {
+                            text: $.su.CHAR.AUDITLOG.DST_IP,
+                            width: 100,
+                            dataIndex: "dst_ip",
+                            scan: {
+                                type: "textbox",
+                                vtype : "string"
+                            }
+                        },
+                        {
+                            text: $.su.CHAR.AUDITLOG.SRC_PORT,
+                            width: 100,
+                            dataIndex: "src_port",
+                            scan: {
+                                type: "textbox",
+                                vtype : "string"
+                            }
+                        },
+                        {
+                            text: $.su.CHAR.AUDITLOG.DST_PORT,
+                            width: 100,
+                            dataIndex: "dst_port",
+                            scan: {
+                                type: "textbox",
+                                vtype : "string"
+                            }
+                        },
+                        {
+                            text: $.su.CHAR.AUDITLOG.USER,
+                            width: 100,
+                            dataIndex: "user",
+                            scan: {
+                                type: "textbox",
+                                vtype : "string"
+                            }
+                        },
+                        {
+                            text: $.su.CHAR.AUDITLOG.PROTO,
+                            width: 100,
+                            dataIndex: "proto",
+                            scan: {
+                                type: "textbox",
+                                vtype : "string"
+                            }
+                        },
+                        {
+                            text: $.su.CHAR.AUDITLOG.APP,
+                            width:100,
+                            dataIndex: "app",
+                            scan:{
+                                type: "textbox",
+                                vtype: "string"
+                            }
+                        },
+                        {
+                            text: $.su.CHAR.AUDITLOG.AUDIT_POLICY,
+                            width: 100,
+                            dataIndex: "audit_policy",
+                            scan: {
+                                type: "combobox",
+                                vtype: "string",
+                                items: auditPolicyItem
+                            }
+                        },
+                        {
+                            text: $.su.CHAR.AUDITLOG.AUDIT_PROFILE,
+                            width: 100,
+                            dataIndex: "audit_profile",
+                            scan: {
+                                type: "combobox",
+                                vtype: "string",
+                                items: auditProfileItem
+                            }
+                        },
+                        {
+                            text: $.su.CHAR.AUDITLOG.AUDIT_TYPE,
+                            width: 100,
+                            dataIndex: "audit_type",
+                            scan: {
+                                type: "combobox",
+                                vtype : "string",
+                                items: [{name: "HTTP", value: "HTTP"},
+                                        {name: "FTP", value: "FTP"},
+                                        {name: "EMAIL", value: "EMAIL"},
+                                        {name: "IM", value: "IM"}]
+                            }
+                        },
+                        {
+                            text: $.su.CHAR.AUDITLOG.AUDIT_ACTION,
+                            width: 100,
+                            dataIndex: "audit_action",
+                            scan: {
+                                type: "combobox",
+                                vtype : "string",
+                                items: [{name: "网页浏览", value: "网页浏览"},
+                                        {name: "HTTP传输文件", value: "HTTP传输文件"},
+                                        {name: "FTP执行命令", value: "FTP执行命令"},
+                                        {name: "FTP传输文件", value: "FTP传输文件"},
+                                        {name: "发送邮件", value: "发送邮件"},
+                                        {name: "接收邮件", value: "接收邮件"},
+                                        {name: "IM上线",value:"IM上线"}]
+                            }
+                        },
+                        {
+                            text:$.su.CHAR.AUDITLOG.ACTION,
+                            width: 100,
+                            dataIndex: "action",
+                            scan: {
+                                type: "combobox",
+                                vtype: "string",
+                                items: [{name:"阻止",value:"阻止"},{name:"放行",value:"放行"}]
+                            }
+                        },
+                    ],
+
+                    render_search: function(){
+                    },
+                    render_show: function(){
+                    },
+                    render_return: function(){
+                    }
+                }
+            ],
+            exportCfg:{
+                text:$.su.CHAR.AUDITLOG.SAVE_LOG,
+                url: $.su.url.subs + $.su.url.stok + "/admin/audit_policy/download_auditlog",
+                checkCallback: function(callback){
+                    var exportCheckProxy = new $.su.Proxy();
+
+                    exportCheckProxy.query({audit_policy:{name:"auditlog_download"}}, function(data){
+                        data = data.audit_policy.auditlog_download;
+
+                        if (data.status == "1")
+                        {
+                            callback(true);
+                        }
+                        else
+                        {
+                            callback(false);
+                        }
+                    });
+                }
+            },
+            operation: ["clear","search","searchLog","refreshLog","autoRefresh","export"],
+            autoRefresh: false
+        }).on("ev_clear", function(e, obj, action){
+            if ("online" == disk_status){
+                $(clean_alarm_cnt).msg("show");
+            }else{
+                clean_proxy.action({"audit_policy":{"auditlog_clean":{}}}, function(data){
+                    $(auditlog_grid.get(0).store).trigger("ev_refresh", []);
+                });
+            }
+        }).delegate('a.btn-detail', 'click', function(e){
+            var index = $(this).data('index');
+            var data = auditlog_grid.grid("getStore").getDataByIndex(parseInt(index));
+            showDetail(data);
+        });
+
+        function showDetail(data) {
+            var detail_name = {"audit_action": $.su.CHAR.AUDITLOG_DETAIL.AUDIT_ACTION,
+                            "url":$.su.CHAR.AUDITLOG_DETAIL.URL,
+                            "host":$.su.CHAR.AUDITLOG_DETAIL.HOST,
+                            "title":$.su.CHAR.AUDITLOG_DETAIL.TITLE,
+                            "ftp_cmd":$.su.CHAR.AUDITLOG_DETAIL.FTP_CMD,
+                            "file_name":$.su.CHAR.AUDITLOG_DETAIL.FILE_NAME,
+                            "file_size":$.su.CHAR.AUDITLOG_DETAIL.FILE_SIZE,
+                            "direction":$.su.CHAR.AUDITLOG_DETAIL.DIRECTION,
+                            "sender":$.su.CHAR.AUDITLOG_DETAIL.SENDER,
+                            "receiver":$.su.CHAR.AUDITLOG_DETAIL.RECEIVER,
+                            "subject":$.su.CHAR.AUDITLOG_DETAIL.SUBJECT,
+                            "attachment_name":$.su.CHAR.AUDITLOG_DETAIL.ATTACHMENT_NAME,
+                            "attachment_size":$.su.CHAR.AUDITLOG_DETAIL.ATTACHMENT_SIZE,
+                            "account":$.su.CHAR.AUDITLOG_DETAIL.ACCOUNT,
+                            "detail":$.su.CHAR.AUDITLOG.DETAIL};
+
+            var detail_info = $(document).find("table#log_detail_content");
+            detail_info.find("tr").remove();
+            detail_info.find("td").remove();
+            for(var key in detail_name){
+                var detail_form = "";
+                detail_form += "<tr id =\""+ key.toString()+"\">";
+                detail_form +=  "</tr>";
+                detail_info.append(detail_form);
+            }
+
+            for(var key in data){
+                if(key == ".name")
+                    continue;
+                detail_form = "";
+                var detail_tr = detail_info.find("tr#"+key.toString());
+                console.log("%s",key);
+                detail_form += "<td id =\""+ key.toString()+"_key\" width=\"110px\"></td>";
+                detail_form += 	"<td id = \""+key.toString()+"_data\" width=\"350px\"></td>";
+                detail_tr.append(detail_form);
+            }
+
+            for(var key in data){
+                if(key == ".name")
+                    continue;
+                if(data[key]){
+                    detail_info.find("td#"+key+"_key").text(detail_name[key]+":  ");
+                    detail_info.find("td#"+key+"_data").text(data[key]);
+                }
+            }
+            log_detail_msg.msg('show');
+        }
+
+        var g_dataIndex = "time";
+        function dataSort(x, y) {
+            if(order == "down"){
+                if (x[g_dataIndex] > y[g_dataIndex]) {
+                    return -1;
+                }else if (x[g_dataIndex] < y[g_dataIndex]) {
+                    return 1;
+                }
+            }else{
+                if (x[g_dataIndex] > y[g_dataIndex]) {
+                    return 1;
+                }else if (x[g_dataIndex] < y[g_dataIndex]) {
+                    return -1;
+                }
+            }
+        }
+
+        function sort_click_cb(dataIndex) {
+            var store = auditlog_grid.grid("getStore");
+            var data = store.data;
+            g_dataIndex = dataIndex;
+            store.loadData(data.sort(dataSort));
+            if(order == "down"){
+                order = "up";
+            }else{
+                order = "down";
+            }
+        }
+
+        auditlog_grid.delegate("th.grid-header-1", "click", function(e){sort_click_cb("time")});
+        auditlog_grid.delegate("th.grid-header-2", "click", function(e){sort_click_cb("audit_type")});
+        auditlog_grid.delegate("th.grid-header-3", "click", function(e){sort_click_cb("src_zone")});
+        auditlog_grid.delegate("th.grid-header-4", "click", function(e){sort_click_cb("dst_zone")});
+        auditlog_grid.delegate("th.grid-header-5", "click", function(e){sort_click_cb("src_ip")});
+        auditlog_grid.delegate("th.grid-header-6", "click", function(e){sort_click_cb("dst_ip")});
+        auditlog_grid.delegate("th.grid-header-7", "click", function(e){sort_click_cb("src_port")});
+        auditlog_grid.delegate("th.grid-header-8", "click", function(e){sort_click_cb("dst_port")});
+        auditlog_grid.delegate("th.grid-header-9", "click", function(e){sort_click_cb("user")});
+        auditlog_grid.delegate("th.grid-header-10", "click", function(e){sort_click_cb("proto")});
+        auditlog_grid.delegate("th.grid-header-11", "click", function(e){sort_click_cb("app")});
+        auditlog_grid.delegate("th.grid-header-12", "click", function(e){sort_click_cb("action")});
+        auditlog_grid.delegate("th.grid-header-13", "click", function(e){sort_click_cb("audit_policy")});
+        auditlog_grid.delegate("th.grid-header-14", "click", function(e){sort_click_cb("audit_profile")});
+        auditlog_grid.delegate("th.grid-header-15", "click", function(e){sort_click_cb("audit_action")});
+
+        $("th").css({
+            "color": "#00E",
+            "cursor": "pointer"
+        });
+
+        $("#sort_remind").html("<hr/>如需要按指定内容排序，请点击表头切换排序方式。");
+        $(".grid-panel").css("marginBottom","40px");
+
+        var AUDITLOG_help = new $.su.Help({
+            container: "div#auditlog_help",
+            content: ["AUDITLOG"]
+        });
+    });
+</script>
+</body>
+
+</html>

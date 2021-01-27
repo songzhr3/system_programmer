@@ -1,0 +1,1075 @@
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
+<html xmlns="http://www.w3.org/1999/xhtml">
+<head>
+<meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
+<style type="text/css">
+.icon-radio {
+	display: inline-block;
+	width: 13px;
+	height: 13px;
+	background: url('../web-static/themes/old/img/icons-02.png') no-repeat;
+	margin-right: 7px;
+	background-position: -92px -74px;
+}
+.radio-unit.checked  .icon-radio{
+	background-position: -128px -74px;
+
+}
+.radio-unit{
+	line-height:24px;
+	padding: 4px 10px;
+}
+.radio-unit p{
+	padding-left: 25px;
+}
+.radio-unit .text{
+	font-weight: bold;
+}
+.cloud-platform{
+	color:#115b96;
+}
+
+p#notice {
+	margin-top: -40px;
+}
+</style>
+<title>cloud_management</title>
+</head>
+
+<body>
+<div class="func-container">
+	<div id="account">
+		<form id="cloud-setting">
+			<input id="mngt_switch" name="mngt_switch"/>
+			<input id="cloud_type" name="cloud_type" />
+			<input id="read_only" name="read_only" style="display:none"/>
+			<input type="text"  id="mac" name="mac" value="" style="padding-left:10px;display:none"/>
+			<div class="widget-container" style="display:none">
+				<input type="text"  id="bind_status" name="bind_status" value="" style="display:inline-block;padding-left:10px;display:none"/>
+				<span id="site_name" style = "display:inline-block;padding-left:10px"/>
+				&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;
+				<a id="cloud_platform_href" name="cloud_platform_href" style="display:none" target="_blank" href="https://smbcloud.tp-link.com.cn">登录TP-LINK商用网络云平台</a>
+				<button type="button" id="unbind_device" name="unbind_device" style="display:none" value=""></button>
+			</div>
+			</br>
+			<button type="button" id="reboot" name="reboot"></button>
+			<p id="internet_tip" style="display:inline-block;padding-left:20px">
+			</p>
+		</form>
+		<div id="unbind_alert_cnt">
+			<h4 class="title"  id="unbind_confirm_cnt">
+				<span class="icon"></span>
+				<span class="text" id="unbind_confirm_content"></span>
+			</h4>
+		</div>
+		<div id="backconfig_alert_cnt">
+			<h4 class="title"  id="backconfig_confirm_cnt">
+				<span class="icon"></span>
+				<span class="text" id="backconfig_confirm_content"></span>
+			</h4>
+		</div>
+		<div id="closecloud_alert_cnt">
+			<h4 class="title"  id="opencloud_confirm_cnt">
+				<span class="icon"></span>
+				<span class="text" id="opencloud_confirm_content"></span>
+			</h4>
+			<br>
+			<div class="radio-unit checked" index="1">
+				<span class="icon icon-radio"></span>
+				<span class="text">保留</span>
+				<p>其他功能参数不变，仍保持现有设置。</p>
+			</div>
+			<div class="radio-unit " index="2">
+				<span class="icon icon-radio"></span>
+				<span class="text">不保留，导入本地配置文件</span>
+				<p>所有功能参数均将会更新为配置文件中的设置。导入成功后，设备将自动重启。</p>
+			</div>
+			<div style="padding-left:35px">
+				<span id="importing_tip" style="color:red;float:right;line-height:30px"></span>
+				<div id="restore-setting">
+					<input id="file" name="archive" type="file" />
+				</div>
+			</div>
+			<div class="radio-unit" index="3">
+				<span class="icon icon-radio"></span>
+				<span class="text">不保留，恢复出厂默认设置</span>
+				<p>其他功能参数不变，仍保持现有设置。</p>
+			</div>
+			<br />
+			<p class="unbind_warming"></p>
+		</div>
+		<div id="restore_alert_cnt">
+			<div id="restore_pro_cnt" class="reboot-loading-msg">
+				<input id="restore_pro_bar" type="text" />
+			</div>
+		</div>
+		<div id="reboot_alert_cnt">
+			<div id="reboot_pro_cnt" class="reboot-loading-msg">
+				<input id="reboot_pro_bar" type="text" />
+			</div>
+		</div>
+		<form id="backup-setting" enctype="multipart/form-data">
+		</form>
+	</div>
+
+	<div id="private_config">
+		<form id="private-cloud-setting">
+			<input id="server" name="server" />
+			<input id="port" name="port" />
+			<input id="comment" name="comment" />
+			<br>
+			<input id="private_cloud_set" name="private_cloud_set"></button>
+		</form>
+	</div>
+	<p id = "notice" style="display:none"/>
+	<div id="factory_alert_cnt">
+		<h4 class="title"  id="factory_confirm_cnt">
+			<span class="icon"></span>
+			<span class="text" id="factory_confirm_content"></span>
+		</h4>
+		<div id="factory_pro_cnt" class="reboot-loading-msg hidden">
+			<input id="factory_pro_bar" type="text" />
+		</div>
+	</div>
+
+	<div id="factory_failed_cnt">
+		<h4 class="title">
+			<span class="icon" ></span>
+			<span class="text" id="factory_error_str"></span>
+		</h4>
+	</div>
+
+	<div id="help_admin_config"></div>
+</div>
+
+<script type="text/javascript">
+try{
+	$
+}catch(e){
+	location.href = "/";
+};
+
+$(document).ready(function(e){
+	$("div.func-container").hide();
+	var g_support_private_cloud = false;
+	var BACKUP_URL = "";
+	var RESTORE_URL = "";
+
+	var read_only_ori_status = "off";
+	var mngt_switch_ori_status = "off";
+	var bind_ori_status = "0";
+	var g_ori_cloud_type = "";
+	// 关闭或者切换云管理功能提示框弹出后，点击确定是否需要改变云管理的状态
+	// 切换云类型不需要改变，关闭云类型需要改变
+	var g_set_cloud_status = true;
+	$("div.func-container").page({
+		title: "云管理",
+		help: ""	//可能是个调用的id 也可能是个url
+	});
+
+	$("div#account").panel({
+		title: "云管理",
+		collapsible: false,
+		help:$("#help_admin_config")
+	});
+
+	var $mngt_switch = $("input#mngt_switch").radio({
+		fieldLabel: "云管理",
+		columns: 2,
+		labelCls:"s",
+		items: [
+			{boxlabel:"启用", name:"mngt_switch",inputValue:"on"},
+			{boxlabel:"禁用",name:"mngt_switch",inputValue:"off"}
+		]
+	}).on("ev_change", function(e, oldValue, newValue){
+		if(newValue == "off" || newValue == "0")
+		{
+			$("input#read_only").radio("setValue","off");
+			$("input#read_only").radio("disable");
+			$cloud_type.combobox("hide");
+		}
+		else
+		{
+			$("input#read_only").radio("enable");
+			$("input#read_only").radio("setValue","on");
+			if (g_support_private_cloud) {
+				$cloud_type.combobox("show");
+			}
+		}
+	});
+	
+
+
+	var $cloud_type = $("input#cloud_type").combobox({
+		fieldLabel: "云类型",
+		labelCls: "s",
+		inputCls: "xl",
+		items: [
+			{value: "user_define", name: "TP-LINK本地NMS管理平台"},
+			{value: "public", name: "TP-LINK商用网络云平台", selected: true}
+		]
+	}).combobox("hide");
+
+	var $private_config = $("div#private_config").panel({
+		title: "TP-LINK本地NMS管理平台设置",
+		collapsible: false
+	}).hide();
+
+	var $private_cloud_setting = $("form#private-cloud-setting").form({
+		proxy: new $.su.Proxy(),
+		fields: [
+			{name: "server"},
+			{name: "port"},
+			{name: "comment"}
+		]
+	});
+
+	var $server = $("#server").textbox({
+		fieldLabel: "服务器地址",
+		labelCls: "s",
+		allowBlank: false,
+		maxLength: 250,
+		tips: "（IP或者域名）",
+		validator:function(value)
+		{
+		 	var suObj = $.su.vtype.types["ip"];
+		 	suObj.allowLoopFlag = false;
+
+			var isIP  = suObj.regex.test(value);
+			var retStr = $.su.vtype.types["ip_all"].validator(value);
+			if(  !isIP  || true != retStr )
+			{
+				if (isIP)
+				{
+					return retStr;
+				}
+				else
+				{
+					if ( !$.su.vtype.types["domain_more"].regex.test(value) )
+					{
+						return $.su.CHAR.VTYPETEXT.IP_DOMAIN
+					}
+				}
+			}
+
+			return true;
+		}
+	});
+
+	var $port = $("#port").textbox({
+		fieldLabel: "端口",
+		labelCls: "s",
+		allowBlank: false,
+		vtype: {
+			vtype: "number",
+			max: 65534,
+			min: 1024
+		},
+		tips: "（1024-65534）"
+	});
+
+	var $comment = $("#comment").textbox({
+		fieldLabel: "描述",
+		labelCls: "s",
+		allowBlank: true,
+		maxLength: 256,
+		tips: "（可选,1-256个字符）"
+	});
+
+	var $private_cloud_set = $("#private_cloud_set").button({
+		text: "设置",
+		handler: function(){
+			// 校验设置内容
+			var obj, obj_type;
+			var ret = true;
+			$private_config.find("input:not(:disabled)").each(function(_, input) {
+				var $input = $(input);
+				if (input.xtype && $input[input.xtype]("validate") == false) {
+					ret = false;
+					obj = $(input);
+					obj_type = input.xtype;
+					return false;
+				}
+			});
+
+			if (ret == false) {
+				obj[obj_type]("validate");
+				return;
+			}
+
+			// 读取界面配置信息
+			var server = $server.textbox("getValue");
+			var port = $port.textbox("getValue");
+			var comment = $comment.textbox("getValue");
+
+			var tums_info = {}
+			tums_info = {
+				server: server,
+				port: port,
+				comment: comment
+			};
+
+			// 发送修改数据的请求
+			setting_proxy.modify({
+				cloud_config: {
+					tums_info: tums_info
+				}
+			}, function() {
+				$private_cloud_setting.form("prompt", true);
+			}, function() {
+				$private_cloud_setting.form("prompt", false);
+			});
+		},
+		cls: "submit inline-block"
+	});
+
+	var private_config_display = function(show) {
+		if (show && g_support_private_cloud) {
+			$private_config.panel("show");
+		}
+		else {
+			$private_config.panel("hide");
+		}
+	};
+
+	$("input#read_only").radio({
+		fieldLabel: "允许云端远程配置",
+		columns: 2,
+		labelCls:"s",
+		items: [
+			{boxlabel:"启用（无线相关配置参数在TP-LINK商用网络云平台集中配置管理）", name:"read_only",inputValue:"on"},
+			{boxlabel:"禁用",name:"read_only",inputValue:"off"}
+		]
+	}).radio("hide");
+
+	$("#mac").textbox({
+		fieldLabel: "MAC地址",
+		labelCls:"s",
+		inputCls:"xl",
+		readOnly:true
+	}).textbox("hide");
+
+	$("#bind_status").textbox({
+		fieldLabel: "云管理状态",
+		labelCls:"s",
+		readOnly:true
+	});
+
+	var setting_proxy = new $.su.Proxy({
+		autoLoad:false
+	});
+
+	$("button#unbind_device").button({
+		text:"解除绑定",
+		cls: "inline-block",
+		handler:function(){
+			$("#unbind_confirm_content").html("解除云端绑定成功后需重新登录。确定解除云端绑定吗？");
+			$('#unbind_confirm_cnt').show();
+			$("#unbind_alert_cnt").msg('showButtons');
+			$("#unbind_alert_cnt").msg("show");
+		},
+		fieldLabel:null
+	});
+
+	var internetStatusProxy = new $.su.Proxy();
+
+	function get_connect_status() {
+		if (!$.contains(document, $("form#cloud-setting").get(0))) {
+			clearInterval(window.netStatusInterval);
+			return;
+		}
+		internetStatusProxy.query({
+			online_check: {
+				table: "state"
+			}
+		}, function(data){
+            var status = data.online_check.state;
+            var is_up = false;
+
+            // 只要有一个接口在线就认为设备在线
+            for (var i in status) {
+                if ("up" == status[i].state) {
+                    is_up = true;
+                    break;
+                }
+            }
+			if (!is_up){
+				// 接口设置所在的一级菜单的id和名称
+				var fst_name = "network-setting";
+				var fst_text = $.su.CHAR.MENU.NETWORK_SETTING;
+				if ("network" in $.su.menu.advanced.settings.list) {
+					// FW 系列在 ER 菜单基础上扩展，所以要先判断 FW
+					fst_name = "network";
+					fst_text = $.su.CHAR.MENU.NETWORK;
+				} else if ("basic-setting" in $.su.menu.advanced.settings.list) {
+					// ER系列接口所在的一级菜单名称不同
+					fst_name = "basic-setting";
+					fst_text = $.su.CHAR.MENU.BASIC_SETTING;
+				}
+
+				$("#internet_tip").html("<font color='red'>设备未连接到internet，请前往 "
+					 + "<a id='interface_url' style='cursor: pointer;font-weight:bold' "
+						 + "onclick=\"$.su.menu.advanced.goTo('" + fst_name + "', 'interface');\">"
+						 + fst_text + " -> 接口设置"
+					 + "</a> 检查网络连接。</font>");
+			} else {
+				$("#internet_tip").html("");
+			}
+		})
+	}
+	window.netStatusInterval;
+
+	$("form#cloud-setting").form({
+		proxy: setting_proxy,
+		/*去掉默认提示框*/
+		//showPrompt: false,
+		fields: [
+			{name: "mngt_switch", mapping: "mngt_switch"},
+			{name: "read_only", mapping: "read_only"},
+			{name: "mac", mapping: "mac"},
+			{name: "bind_status", mapping: "bind_status"}
+		]
+	}).on("ev_loadData", function(e, data){
+		// console.log(data);
+	});
+
+	var form_load_data = function(async) {
+		// 是否异步请求参数没有传递的话默认是异步
+		if (async == undefined) {
+			async = true;
+		}
+
+		var tmp_proxy = new $.su.Proxy({
+			async: async
+		})
+		tmp_proxy.query({
+			cloud_config:
+			{
+				name: ["conf_mngt", "bind_info", "cloud_type", "tums_info", "cloud_type_capability"]
+			},
+			system:
+			{
+				name: "device_info"
+			}
+		}, function(data) {
+			var conf_mngt = data.cloud_config.conf_mngt;
+			var bind_info = data.cloud_config.bind_info;
+			var device_info = data.system.device_info;
+			var cloud_type_capability = data.cloud_config.cloud_type_capability;
+
+			if (cloud_type_capability != undefined && cloud_type_capability.table_support == "1") {
+				g_support_private_cloud = true;
+			}
+			else {
+				g_support_private_cloud = false;
+			}
+
+			var mngt_switch = conf_mngt.mngt_switch;
+			var read_only = conf_mngt.read_only;
+			var mac = device_info.mac;
+			var bind_status = bind_info.bind_status;
+
+			var cloud_type = data.cloud_config.cloud_type.cloud_type;
+			var tums_info = data.cloud_config.tums_info;
+			g_ori_cloud_type = cloud_type;
+
+			clearInterval(window.netStatusInterval);
+			if (mngt_switch == "0"){
+				$("#notice").hide();
+				mngt_switch = "off";
+				$("#internet_tip").html("");
+			}else{
+				mngt_switch = "on";
+				var notice_html = "<br><br><b>注意:</b><br>";
+				notice_html += "1.开启云管理后，可以登录“<a href='https://smbcloud.tp-link.com.cn' target='_blank' class='cloud-platform'>TP-LINK商用网络云平台</a>”配置认证等参数，其余功能参数仍需在本地管理界面设置。<br>";
+				notice_html += "2.请记住本设备MAC地址（" + mac + "），在“<a href='https://smbcloud.tp-link.com.cn' target='_blank' class='cloud-platform'>TP-LINK商用网络云平台</a>”添加设备时需要使用该MAC地址。<br>";
+				notice_html += "3.为保证设备能正常使用云管理功能，请确保系统时间与当前时间保持一致。<br>";
+				notice_html += "4.还未下载TP-LINK商云APP？请扫描以下二维码：<br><img src='../web-static/themes/old/img/cloud_app_qr.png'/>";
+				$('#notice').html(notice_html);
+				$("#notice").show();
+				get_connect_status();
+				window.netStatusInterval = setInterval(get_connect_status, 10000);
+			}
+
+			if (read_only == "0"){
+				read_only = "on";
+			}else{
+				read_only = "off";
+			}
+
+			read_only_ori_status = read_only;
+			mngt_switch_ori_status = mngt_switch;
+
+			$("#mngt_switch").radio("setValue", mngt_switch);
+			$("#read_only").radio("setValue", read_only);
+
+			$("#mac").textbox("setValue", mac);
+			if (g_support_private_cloud) {
+				$cloud_type.combobox("setValue", cloud_type);
+			}
+
+			// 私云设置部分文本框赋值
+			$private_cloud_setting.find("input").each(function(_, input) {
+				var $input = $(input);
+				if (input.xtype && tums_info[input.name]) {
+					$input[input.xtype]("setValue", tums_info[input.name]);
+				}
+			});
+
+			// var bind_status = data.bind_status
+			bind_ori_status = bind_status;
+			var str_bind_status;
+			if (bind_status == "0"){
+				str_bind_status = "未添加绑定到TP-LINK商用网络云平台的任何项目中"
+			}else{
+				str_bind_status = "已添加绑定到TP-LINK商用网络云平台项目"+"<a href='https://smbcloud.tp-link.com.cn' target='_blank' class='btn-site-name' style='text-decoration:underline' title='"+data.site_name+"'>&nbsp;"+ data.site_name+ "&nbsp;</a>"+"中";
+			}
+			$("#site_name").html(str_bind_status);
+
+			if (mngt_switch == "on" && bind_status == "0"){
+				$("#cloud_platform_href").css('display','inline-block');
+			}else{
+				$("#cloud_platform_href").css('display','none');
+			}
+
+			if (bind_status == "0"){
+				$("#unbind_device").css('display','none');
+			}else if(mngt_switch == "on"){
+				$("#unbind_device").css('display','inline-block');
+
+				$("button#unbind_device").button("enable");
+			}
+
+			// 如果开启了云管理，并且云类型为私云，则显示私云设置
+			if (mngt_switch == "on" && $cloud_type.combobox("getValue") == "user_define") {
+				private_config_display(true);
+				$("#notice").hide();
+			}
+			else {
+				private_config_display(false);
+			}
+
+			$("#bind_status").closest("div.widget-container").css("display", "inline-block");
+			$("#bind_status").closest("div.widget-container").css("margin-top", "5px");
+			$("#bind_status").closest("div.widget-container").css("margin-right", "0px");
+			$("#bind_status").css("width", "325px");
+		})
+	}
+
+	$("#reboot").button({
+		text: "设置",
+		handler: function(){
+			var  read_only_cur_status = $("#read_only").radio("getValue");
+			var  mngt_switch_cur_status = $("#mngt_switch").radio("getValue");
+			var current_cloud_type = $("#cloud_type").combobox("getValue");
+			if ($.isArray(current_cloud_type)) {
+				current_cloud_type = current_cloud_type[0];
+			}
+
+			// 根据云类型修改弹框的提示语
+			if (g_ori_cloud_type == "user_define") {
+				$(".unbind_warming").text($.su.CHAR.CLOUD_MANAGEMENT.UNBIND_FROM_USER_DEFINE);
+			}
+			else if (g_ori_cloud_type == "public"){
+				$(".unbind_warming").text($.su.CHAR.CLOUD_MANAGEMENT.UNBIND_FROM_PUBLIC);
+			}
+			else {
+				$(".unbind_warming").text("");
+			}
+
+			if(mngt_switch_cur_status == "off" && "on" == mngt_switch_ori_status){
+				if(bind_ori_status == "1")
+				{
+					resetRadioCfg(1, true);
+					$("#closecloud_alert_cnt").msg("show");
+				}else{
+					cloud_setting_form_submit(true,false);
+				}
+			}else if(mngt_switch_ori_status == "off" && "on" == mngt_switch_cur_status){
+				$("#backconfig_alert_cnt").msg("show");
+				return;
+			}else{
+				// 已经绑定到云，切换云类型，弹出可能解绑的提示框
+				if (bind_ori_status == "1" && g_ori_cloud_type != current_cloud_type) {
+					resetRadioCfg(1, false);
+					$("#closecloud_alert_cnt").msg("show");
+				}
+				else {
+					cloud_setting_form_submit(false);
+				}
+			}
+		},
+		cls: "submit inline-block"
+	});
+	$("#unbind_alert_cnt").msg({
+		okHandler:function(){
+			$("#unbind_alert_cnt").msg('hideButtons');
+			$('#unbind_confirm_cnt').hide();
+			$.su.loading.show();
+			$("form#cloud-setting").form("submit",{method:"unbind"},function(data){
+				$("form#cloud-setting").form("setPrompt", true);
+				$.su.loading.hide();
+			},function(error){
+				$.su.loading.hide();
+				$("form#cloud-setting").form("setPrompt", false);
+			},function(fail){
+				$.su.loading.hide();
+				$("form#cloud-setting").form("setPrompt", false);
+			});
+			return true;
+		},
+		// cls:"m warning",
+		cancelHandler:function(){
+			return true;
+		},
+		cls: 'warning reboot-confirm-size',
+		closeBtn: false,
+		type: "confirm"
+	});
+	function cloud_setting_form_submit(set_cloud_status,open,config_save_type,loading_show)
+	{
+		if(loading_show !== false)$.su.loading.show();
+		var type_str = "";
+		if(config_save_type == 1)type_str = "remain";
+		else if(config_save_type == 3)type_str = "reset";
+		var restore_factory = false;
+
+		// 如果不做修改，跟之前配置保持一致
+		if (!set_cloud_status) {
+			open = (mngt_switch_ori_status == "on");
+		}
+
+		// console.log("restore_factory", restore_factory);
+
+		if (restore_factory) {
+			$.su.loading.hide();
+			$.su.mask.show();
+			$("#factory_alert_cnt").msg("show");
+			return;
+		}
+
+		var mngt_switch = open ? "1" : "0";
+		var cloud_type = $cloud_type.combobox("getValue");
+		if (g_support_private_cloud == false) {
+			cloud_type = "public";
+		}
+		if ($.isArray(cloud_type)) {
+			cloud_type = cloud_type[0];
+		}
+		var post_data = {
+			cloud_config: {
+				conf_mngt: {
+					mngt_switch: mngt_switch,
+					config_save_type:type_str
+				}
+			}
+		};
+		if (g_support_private_cloud) {
+			// 只有支持私云，设置按钮才传递云类型的配置信息
+			post_data.cloud_config.cloud_type = {
+				cloud_type: cloud_type,
+				config_save_type:type_str
+			};
+		}
+		setting_proxy.modify(post_data, function(data) {
+			var status = 0;
+			if(open)status=1;
+			if(set_cloud_status)$.su.menu.set_cloud_mgt_status(status);
+			$.su.menu.set_setting_function_selected(1);
+			$.su.loading.hide();
+			$("form#cloud-setting").form("prompt", true);
+			form_load_data();
+		}, function(error) {
+			$.su.loading.hide();
+			$("form#cloud-setting").form("prompt", false);
+		}, function(fail) {
+			$.su.loading.hide();
+			$("form#cloud-setting").form("prompt", false);
+		});
+	}
+	var get_ret = false;
+	var query_interval = 0;
+	var query_count = 0;
+	$("#backconfig_alert_cnt").msg({
+		okHandler:function(){
+			var backupProxy = new $.su.Proxy();
+			backupProxy.action({"system":{"download_conf":null}}, function(data){
+				$.su.loading.show();
+				BACKUP_URL = data.url;
+				$("#backup-setting").form('submit', {});
+				cloud_setting_form_submit(true,true,false,false);
+			});
+			return true;
+		},
+		noHandler:function(){
+			cloud_setting_form_submit(true,true);
+			return true;
+		},
+		cls: 'warning reboot-confirm-size',
+		closeBtn: true,
+		type: "confirm",
+		yesText:"立即备份",
+		noText:"忽略"
+	});
+	$("#closecloud_alert_cnt").msg({
+		okHandler:function(){
+			var config_save_type = $(".radio-unit.checked").attr('index');
+			if(config_save_type == 2 && false == $("#restore-setting").form('validate'))return false;
+			var restoreProxy = new $.su.Proxy();
+			if(config_save_type == 2)
+			{
+				cloud_setting_form_submit(true,false,config_save_type);
+				$.su.loading.show();
+				$("#importing_tip").html("导入中...");
+				$("#importing_tip").show();
+
+				setTimeout(function() {
+					// 获取上传文件路径
+					restoreProxy.action({"system":{"upload_conf":null}}, function(data){
+						if (data.error_code == 0) {
+							// 上传配置文件
+							RESTORE_URL = data.url;
+							$("#restore-setting").form('submit',{},function(data){
+								if (data.error_code == 0) {
+								//上传成功
+								$.su.loading.hide();
+								// $.su.sec_mask.hide();
+								// $.su.mask.hide();
+								$('#closecloud_alert_cnt').msg('close');
+								//restore_hideMsg();
+								reboot_showMsg();
+								rebootHandle();
+								//重启,需要从后台获取导入进度，判断是否需要重启  
+								//restoreProxy.action({system:{reboot:null}});
+								}
+								else
+								{
+									$.su.loading.hide();
+									$("#importing_tip").html("导入失败");
+								}
+							}, function(error) {
+								$.su.loading.hide();
+								$("#importing_tip").html("导入失败");
+							}, function(fail) {
+								$.su.loading.hide();
+								$("#importing_tip").html("导入失败");
+							});
+						}
+						else {
+							$.su.loading.hide();
+							$("#importing_tip").html("导入失败");
+						}
+					}, function(error) {
+						$.su.loading.hide();
+						$("#importing_tip").html("导入失败");
+					}, function(fail) {
+						$.su.loading.hide();
+						$("#importing_tip").html("导入失败");
+					});
+				}, 2*1000);
+				return false;
+			}
+			else
+			{
+				$('#closecloud_alert_cnt').msg('close');
+				cloud_setting_form_submit(g_set_cloud_status,false,config_save_type);
+				return true;
+			}
+		},
+		// cls:"m warning",
+		cancelHandler:function(){
+			return true;
+		},
+		cls: 'l',
+		closeBtn: true,
+		type: "confirm",
+		yesText: "确定",
+		noText: "取消"
+	});
+	var timeout = 0;
+	var rebootInterval = 0;
+	var isRebootFinish = false;
+	function rebootHandle()
+	{
+		var protocol = window.location.protocol;
+		/*获取当前host，去掉端口部分*/
+		var host = window.location.host;
+		/*获取当前端口号*/
+		var port = window.location.port;
+		var is_http = true;
+		var ip = "192.168.1.253";
+		switch(protocol){
+			case "http:":
+				is_http = true;
+				if("" == port){
+					port = "80";
+					ip = host;
+				}else{
+					host = host.split(":");
+					ip = host[0];
+				}
+				break;
+			case "https:":
+				is_http = false;
+				if("" == port){
+					port = "443";
+					ip = host;
+				}else{
+					host = host.split(":");
+					ip = host[0];
+				}
+				break;
+			default:
+				break;
+		}
+
+		var res_ip = ip;
+		var res_port = port;
+
+		// TODO: 通过ip获取用户配置的ip的接口未完成，先采用当前的ip进行跳转
+		// 如果用户修改了ip但是没有保存配置会跳转失败
+		// var href = window.location;
+		// var get_url_proxy = new $.su.Proxy({
+		// 	url: BACKUP_URL_NEW
+		// });
+
+		// get_url_proxy.read({method:"get_ip_port",ip:ip},function(data){
+		// 	res_ip = data.ip;
+		// 	if(is_http)
+		// 	{
+		// 		res_port = data.http_port;
+		// 		href = "http://";
+		// 	}
+		// 	else
+		// 	{
+		// 		res_port = data.https_port;
+		// 		href = "https://";
+		// 	}
+		// 	href = href + res_ip + ":" + res_port;
+		// });
+		var href = window.location.href;
+
+		var reboot_count = 0;
+		if(window.indexPageConfTimeout)clearInterval(window.indexPageConfTimeout);
+		if(!timeout)
+		{
+			timeout = setTimeout(function() {
+				rebootInterval = setInterval(function(){
+					if(reboot_count >= 70)
+					{
+						clearInterval(rebootInterval);
+						location.href= href;
+					}
+					else
+					{
+						$.ajax({
+							url: "./login.htm",
+							async: true,
+							dataType: "html",
+
+							success: function(data){
+								isRebootFinish = true;
+							},
+							error: function(){
+								isRebootFinish = false;
+							}
+						});
+
+						if(isRebootFinish){
+							clearInterval(rebootInterval);
+							location.href= "./login.htm";
+						}
+						reboot_count = reboot_count + 1;
+					}
+				}, 1000);
+			}, 70*1000);
+		}
+	}
+	$("#restore_alert_cnt").msg({
+		cls: 'warning reboot-confirm-size',
+		closeBtn: false,
+		type: "confirm"
+	});
+	$("#reboot_alert_cnt").msg({
+		cls: 'warning reboot-confirm-size',
+		closeBtn: false,
+		type: "confirm"
+	});
+	var restore_pro_bar  = $('input#restore_pro_bar').waitingbar({
+		fieldLabel: $.su.CHAR.CLOUD_MANAGEMENT.RESTORE_PRO_TIPS,
+		separator: "",
+		labelCls:"xxl"
+	});
+
+	var reboot_pro_bar  = $('input#reboot_pro_bar').waitingbar({
+		fieldLabel:  $.su.CHAR.CLOUD_MANAGEMENT.REBOOT,
+		separator: "",
+		labelCls:"xxl"
+	});
+
+	var get_result = new $.su.Proxy();
+
+	// set_cloud_status: 与cloud_setting_form_submit函数的第一个参数相同
+	// 表示是否需要更改云管理开关状态
+	function resetRadioCfg(index, set_cloud_status) {
+		if (set_cloud_status == false) {
+			// 如果是切换云管理类型，禁用导入本地配置
+			$(".radio-unit[index=2]").hide();
+			$("#restore-setting").hide();
+			if (index == 2) {
+				index = 1;
+			}
+		}
+		else {
+			$(".radio-unit[index=2]").show();
+			$("#restore-setting").show();
+		}
+
+		$(".radio-unit").removeClass("checked");
+		$(".radio-unit[index="+index+"]").addClass("checked");
+		if(index == 2)$("#file").file("enable");
+		else{
+			$("#file").file("reset");
+			$("#file").file("disable");
+		}
+		$("#importing_tip").html("");
+		$("#importing_tip").hide();
+
+		g_set_cloud_status = set_cloud_status;
+	}
+	$("#file").file({
+		fieldLabel: "配置文件",
+		labelCls:"xxs",
+		allowBlank:false,
+		extension: "bin",
+		max_len: 100
+	});
+
+	$("#restore-setting").form({
+		proxy:{},
+		formEnctype: "multipart/form-data",
+		traditional: true,
+		hiddenFrame: true,
+		fields: [
+			{"name": "archive"}
+		],
+		fileUrlCb: function(){
+			return $.su.url.subs + $.su.url.stok + RESTORE_URL;
+		}
+	})
+
+	function restore_showMsg(){
+		$("#restore_alert_cnt").msg("hideButtons");
+		$("#restore_alert_cnt").msg("show");
+		restore_pro_bar.waitingbar("run");
+	}
+	function restore_hideMsg(){
+		$("#restore_alert_cnt").msg("close");
+		restore_pro_bar.waitingbar("stop");
+	}
+	function reboot_showMsg(){
+		$("#reboot_alert_cnt").msg("hideButtons");
+		$("#reboot_alert_cnt").msg("show");
+		reboot_pro_bar.waitingbar("run");
+	}
+	$('.radio-unit').unbind().bind("click",function(){
+		$('.radio-unit').removeClass('checked');
+		$(this).addClass('checked');
+		if($(this).attr('index') == 2)$("#file").file("enable");
+		else{
+			$("#file").file("reset");
+			$("#file").file("disable");
+			$("#importing_tip").html("");
+			$("#importing_tip").hide();
+		}
+	});
+	$("#backconfig_confirm_content").html("<b style='font-size:15px'>是否备份本地配置？</b>"+"<br><br>设备使用云管理后，认证配置将被清空，建议您先备份本地配置。如果您已备份本地配置，可忽略此消息。");
+
+	$("#backup-setting").form({
+		proxy:{/*url: BACKUP_URL_NEW*/},
+		formEnctype: "multipart/form-data",
+		traditional: true,
+		hiddenFrame: true,
+		autoLoad: false,
+		fileUrlCb: function(){
+			return $.su.url.subs + $.su.url.stok + BACKUP_URL;
+		}
+	});
+
+	function factory_write()
+	{
+		// 恢复出厂设置
+		var factory_proxy = new $.su.Proxy();
+		factory_proxy.action({"system":{"reset":null}}, function(data){
+
+		},function(errcode){
+			hideProMsg();
+			clearTimeout(timeout);
+		},function(){
+			hideProMsg();
+			clearTimeout(timeout);
+		});
+		factory_pro_bar.waitingbar("run");
+		timeout = setTimeout(function() {
+			location.href= $.su.url.factory_url;
+		}, 160*1000);
+	}
+
+	function hideProMsg()
+	{
+		factory_pro_bar.waitingbar("stop");
+		factory_pro_bar.waitingbar("reset");
+		$("#factory_alert_cnt").hide();
+		$("#factory_alert_cnt").msg("close", function(){
+			$("#factory_alert_cnt").msg('showButtons');
+			$('#factory_confirm_cnt').show();
+			$("#factory_pro_cnt").hide();
+		});
+	}
+
+	$("#factory_alert_cnt").msg({
+		okHandler:function(){
+			$("#factory_alert_cnt").msg('hideButtons');
+			$('#factory_confirm_cnt').hide();
+			$("#factory_pro_cnt").show();
+			factory_write();
+			return false;
+		},
+		cancelHandler:function(){
+			return true;
+		},
+		cls: 'warning reboot-confirm-size',
+		closeBtn: false,
+		type: "confirm"
+	});
+
+	$("#factory_confirm_content").html($.su.CHAR.CLOUD_MANAGEMENT.FACTORY_CONFIRM_CONTENT);
+
+	var factory_pro_bar  = $('input#factory_pro_bar').waitingbar({
+		labelCls:"xxl",
+		fieldLabel: "正在恢复出厂设置，大约需要2分40秒时间，请不要做任何其他操作",
+		separator: ""
+	});
+	form_load_data(false);
+
+	if (g_support_private_cloud) {
+		$("#opencloud_confirm_content").html("云管理功能关闭或者切换云类型后，通过云平台配置的认证配置是否需要保留？");
+	}
+	else {
+		$("#opencloud_confirm_content").html("云管理功能关闭后，通过云平台配置的认证配置是否需要保留？");
+	}
+
+	var help_items = ["CLOUD_MANAGEMENT"];
+	if (g_support_private_cloud) {
+		help_items = ["CLOUD_MANAGEMENT_WITH_PRIVATE_CLOUD", "PRIVATE_CLOUD_CONFIG"];
+	}
+	var helpAdmin = new $.su.Help({
+		container: "div#help_admin_config",
+		content: help_items
+	});
+	$(".func-container").show();
+});
+</script>
+</body>
+
+</html>

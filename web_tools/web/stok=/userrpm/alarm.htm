@@ -1,0 +1,302 @@
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN"
+        "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
+<html xmlns="http://www.w3.org/1999/xhtml">
+<head>
+    <meta http-equiv="Content-Type" content="text/html; charset=utf-8"/>
+    <title>alarm</title>
+</head>
+
+<body>
+<div class="func-container">
+    <div id="alarm_list">
+        <div id="alarm_list_grid"></div>
+        <div id="sort_remind"></div>
+    </div>
+
+    <div id="alarm_help"></div>
+</div>
+
+<script type="text/javascript">
+    try{
+        $
+    }catch(e){
+        location.href = "/";
+    };
+
+    $(document).ready(function(e){
+        var clean_proxy = new $.su.Proxy({});
+
+        var module_item=[
+            {name:$.su.CHAR.ALARM.MODULES.ALL,value:"ALL"}
+        ];
+
+        var module_proxy = new $.su.Proxy({
+            async: false
+        });
+
+        module_proxy.query({
+            "alarm": {
+                "table": "alarm_modules"
+            }
+        }, function(data) {
+            var module_list = data.alarm.alarm_modules || [];
+            for (var i = 0; i < module_list.length; i++) {
+                var module_name = module_list[i];
+                module_item.push(
+                    {
+                        name: $.su.CHAR.ALARM.MODULES[module_name.toUpperCase()],
+                        value: module_name
+                    }
+                )
+            }
+        });
+
+        var level_item=[
+            {name:$.su.CHAR.ALARM.LEVELS.ALL,           value:"ALL"},
+            {name:$.su.CHAR.ALARM.LEVELS.EMERGENCY,     value:"Emergency"},
+            {name:$.su.CHAR.ALARM.LEVELS.ALERT,         value:"Alert"},
+            {name:$.su.CHAR.ALARM.LEVELS.CRITICAL,      value:"Critical"},
+            {name:$.su.CHAR.ALARM.LEVELS.ERROR,         value:"Error"},
+            {name:$.su.CHAR.ALARM.LEVELS.WARNING,       value:"Warning"},
+            {name:$.su.CHAR.ALARM.LEVELS.NOTIFICATION,  value:"Notification"},
+            {name:$.su.CHAR.ALARM.LEVELS.INFORMATIONAL, value:"Informational"},
+            {name:$.su.CHAR.ALARM.LEVELS.DEBUGGING,     value:"Debugging"}
+        ];
+
+        $("#alarm_list").panel({
+            title: $.su.CHAR.ALARM.TITLE,
+            collapsible: false
+        });
+
+        var order = "down";
+        var alarmLevel = ["EMERGENCY", "ALERT", "CRITICAL", "ERROR", "WARNING", "NOTIFICATION", "INFORMATIONAL", "DEBUGGING"];
+
+        var alarmProxy = new $.su.Proxy({});
+
+        var alarm_grid = $("div#alarm_list_grid").grid({
+            store:{
+                proxy: alarmProxy,
+                parseKey: {
+                    moduleName: "alarm",
+                    pageSizeName: "alarm_entry",
+                    tableName: "alarm_info"
+                },
+                fields: [
+                    {name: "time"},
+                    {name: "module"},
+                    {name: "level"},
+                    {name: "content"}
+                ],
+                autoLoad: true
+            },
+            selectionDisplay: true,
+            maxLines: 11,
+            minLines: 0,
+            paging_true:{},
+            columns: [
+                {
+                    text: $.su.CHAR.ALARM.ID,
+                    xtype: "rownumberer",
+                    width:40
+                },
+                {
+                    text: $.su.CHAR.ALARM.TIME,
+                    width:140,
+                    dataIndex: "time",
+                    scan: {
+                        cmp: $.search.compare.string
+                    }
+                },
+                {
+                    text: $.su.CHAR.ALARM.MODULE,
+                    width:120,
+                    renderer:function(val, index){
+                        var res = $.su.CHAR.ALARM.MODULES[val.toUpperCase()];
+                        if(!res)
+                        {
+                            res = val;
+                        }
+
+                        return res;
+                    },
+                    dataIndex: "module",
+                    scan: {
+                        cmp: function(src, tar){
+                            if(!("string" == typeof(src)) || !("string" == typeof(tar))) return false;
+
+                            var str = $.su.CHAR.ALARM.MODULES[src.toUpperCase()];
+                            if(!("string" == typeof(str))) return false;
+
+                            if(str.indexOf(tar) >= 0)return true;
+                            return false;
+                        }
+                    }
+                },
+                {
+                    text:  $.su.CHAR.ALARM.LEVEL,
+                    width:100,
+                    renderer:function(val, index){
+                        val = alarmLevel[parseInt(val)];
+                        var res = $.su.CHAR.ALARM.LEVELS[val];
+                        var colorRed = "<span style=\"color:#ff0000;\">";
+                        var colorOrange = "<span style=\"color:#ff9900;\">";
+                        var spanEnd = "</span>";
+                        if(!res)
+                        {
+                            res = val;
+                        }else{
+                            switch(val){
+                                case "EMERGENCY":
+                                case "ALERT":
+                                case "CRITICAL":
+                                case "ERROR":
+                                    res = colorRed + res + spanEnd;
+                                    break;
+                                case "WARNING":
+                                    res = colorOrange + res + spanEnd;
+                                    break;
+                                default:
+                                    break;
+                            }
+                        }
+                        return res;
+                    },
+                    dataIndex: "level",
+                    scan: {
+                        cmp: function(src, tar){
+                            if(!("number" == typeof(src)) || !("string" == typeof(tar))) return false;
+
+                            var str = $.su.CHAR.ALARM.LEVELS[alarmLevel[src]];
+                            if(!("string" == typeof(str))) return false;
+
+                            if(str.indexOf(tar) >= 0)return true;
+                            return false;
+                        }
+                    }
+                },
+                {
+                    text: $.su.CHAR.ALARM.CONTENT,
+                    width:600,
+                    dataIndex: "content",
+                    renderer:function(val, index, data){
+                        val = $.su.func.escapeHtml(val);
+                        var colorNormal = "<span>";
+                        var colorRed = "<span style=\"color:#ff0000;\">";
+                        var colorOrange = "<span style=\"color:#ff9900;\">";
+                        var spanEnd = "</span>";
+                        switch(alarmLevel[data.level]){
+                            case "EMERGENCY":
+                            case "ALERT":
+                            case "CRITICAL":
+                            case "ERROR":
+                                val = colorRed + val + spanEnd;
+                                break;
+                            case "WARNING":
+                                val = colorOrange + val + spanEnd;
+                                break;
+                            default:
+                                val = colorNormal + val + spanEnd;
+                                break;
+                        }
+                        return val;
+                    },
+                    scan: {
+                        cmp: $.search.compare.string
+                    }
+                },
+                //TODO 全局搜索时间端的字段待确定
+                {
+                    xtype: "globalSearch",
+                    hidden: true,
+                    columns: [
+                        {
+                            text: $.su.CHAR.ALARM.MODULE,
+                            width: 100,
+                            dataIndex: 'module',
+                            scan: {
+                                type: "combobox",
+                                vtype: "string",
+                                items: module_item
+                            }
+                        },
+                        {
+                            text: $.su.CHAR.ALARM.LEVEL,
+                            width: 100,
+                            dataIndex: "level",
+                            scan: {
+                                type: "combobox",
+                                vtype: "string",
+                                items: level_item
+                            }
+                        }
+                    ],
+                    render_search: function(){
+                    },
+                    render_show: function(){
+                    },
+                    render_return: function(){
+                    }
+                }
+            ],
+            operation: ["clear","search","searchLog","refresh","autoRefresh"],
+            autoRefresh: false
+        }).on("ev_clear", function(e, obj, action){
+            clean_proxy.action({"alarm":{"clean_alarm_info":{}}}, function(data){
+                $(alarm_grid.get(0).store).trigger("ev_refresh", []);
+            });
+        });
+
+
+        var g_dataIndex = "time";
+        function dataSort(x, y) {
+            if("down" == order){
+                if (x[g_dataIndex] > y[g_dataIndex]) {
+                    return -1;
+                }else if (x[g_dataIndex] < y[g_dataIndex]) {
+                    return 1;
+                }else{
+                    return 0;
+                }
+            }else{
+                if (x[g_dataIndex] > y[g_dataIndex]) {
+                    return 1;
+                }else if (x[g_dataIndex] < y[g_dataIndex]) {
+                    return -1;
+                }else{
+                    return 0;
+                }
+            }
+        }
+        function sort_click_cb(dataIndex) {
+            var store = alarm_grid.grid("getStore");
+            var data = store.data;
+            g_dataIndex = dataIndex;
+            store.loadData(data.sort(dataSort));
+            if(order == "down"){
+                order = "up";
+            }else{
+                order = "down";
+            }
+        }
+        alarm_grid.delegate("th.grid-header-1", "click", function(e){sort_click_cb("time")});
+        alarm_grid.delegate("th.grid-header-2", "click", function(e){sort_click_cb("type")});
+        alarm_grid.delegate("th.grid-header-3", "click", function(e){sort_click_cb("level")});
+        alarm_grid.delegate("th.grid-header-4", "click", function(e){sort_click_cb("content")});
+
+        $("th").css({
+            "color": "#00E",
+            "cursor": "pointer"
+        });
+
+        $("#sort_remind").html("<hr/>如需要按指定内容排序，请点击表头切换排序方式。");
+        $(".grid-panel").css("marginBottom","40px");
+
+        var ALARM_help = new $.su.Help({
+            container: "div#alarm_help",
+            content: ["ALARM", "ALARM_LIST"]
+        });
+    });
+</script>
+</body>
+
+</html>

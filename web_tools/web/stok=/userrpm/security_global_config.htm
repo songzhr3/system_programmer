@@ -1,0 +1,104 @@
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
+<html xmlns="http://www.w3.org/1999/xhtml">
+<head>
+<meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
+<title>global_config</title>
+</head>
+
+<body>
+<div class="func-container">
+    <div id="global">
+         <form id="security_global_config">
+            <input id="http_resume" name="http_resume"/>
+            <input id="ftp_resume" name="ftp_resume"/>
+        </form>
+    </div>
+    <div id="help_security_global_config"></div>
+</div>
+
+<script type="text/javascript">
+try{
+    $
+}catch(e){
+    location.href = "/";
+};
+
+$(document).ready(function(e){
+
+    $("div.func-container").page({
+        title: $.su.CHAR.SECURITY_GLOBAL_CONFIG.TITLE,
+    });
+
+    $("div#global").panel({
+        title: $.su.CHAR.SECURITY_GLOBAL_CONFIG.TITLE,
+        collapsible: false
+    });
+
+    $("input#http_resume").checkbox({
+        fieldLabel:$.su.CHAR.SECURITY_GLOBAL_CONFIG.BLOCK_HTTP_RESUME_FUNCTION,
+        items:[
+            {boxlabel: "<br>", inputValue: "on", uncheckedValue: "off"},
+        ],
+    });
+
+    $("input#ftp_resume").checkbox({
+        fieldLabel:$.su.CHAR.SECURITY_GLOBAL_CONFIG.BLOCK_FTP_RESUME_FUNCTION,
+        items:[
+            {boxlabel: "<br>", inputValue: "on", uncheckedValue: "off"}
+        ]
+    });
+
+    var pwdProxy = new $.su.Proxy({async: false});
+    $("form#security_global_config").form({
+        proxy: pwdProxy,
+        /*去掉默认提示框*/
+        //showPrompt: false,
+        fields: [
+            {name: "http_resume"},
+            {name: "ftp_resume"},
+        ],
+        parseKey: {
+            moduleName:"security_global_config",
+            sectionName:"global_config"
+        },
+        autoLoad:true,
+        validator:function(){
+            return true;
+        },
+        submitBtn: "default"
+    });
+
+    tarButton = $("form#security_global_config").find("button.button-button");
+
+    $(tarButton).button({
+        handler: function(){
+            if($("form#security_global_config").form("validate") !== true){
+                return false;
+            }
+
+            $.su.loading.show();
+            $("form#security_global_config").form("submit",{},function(data){
+                $("form#security_global_config").form("setPrompt", true);
+                $.su.loading.hide();
+
+                window.sessionsExceedTime = val_timeout;
+                window.restartSessionsTime();
+            },function(error){
+                $.su.loading.hide();
+                $("form#security_global_config").form("setPrompt", false);
+            },function(fail){
+                $.su.loading.hide();
+                $("form#security_global_config").form("setPrompt", false);
+            });
+        }
+    });
+
+    var helpAdmin = new $.su.Help({
+        container: "div#help_security_global_config",
+        content: ["SECURITY_GLOBAL_CONFIG"]
+    });
+});
+</script>
+</body>
+
+</html>

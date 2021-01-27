@@ -1,0 +1,504 @@
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
+<html xmlns="http://www.w3.org/1999/xhtml">
+<head>
+<meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
+<style type="text/css">
+    #preview-frame{
+        border: none;
+        width: 400px;
+        height: 600px;
+    }
+</style>
+<title>认证服务器组</title>
+</head>
+
+<body>
+<div class="func_container">
+    <div id="func_setting">
+        <div id="authgroup_editor">
+			<input id="group_name" name="group_name" value=""/>
+            <input id="server_type" name="server_type" value=""/>
+            <input id="main_server" name="main_server" value=""/>
+            <input id="backup_server" name="backup_server" value=""/>
+			<input id="recovery_time" name="recovery_time" value="30"/>
+            <input id="note" name="note" value=""/>
+
+        </div>
+        <div id="authgroup_list"></div>
+    </div>
+
+    <div id="authgroup_help"></div>
+</div>
+
+<script type="text/javascript">
+
+//<![CDATA[
+try{
+    $
+}catch(e){
+    location.href = "/";
+};
+$(document).ready(function(e){
+    //var URL_GLOBAL = $.su.url("/admin/ac_authgroup?form=servergrouplist");
+    $(".func_container").hide();
+    var firstLoad = true;
+
+    function stringToBytes(str)
+    {
+        var ch, st, re = [];
+        for (var i = 0; i < str.length; i++ )
+        {
+            ch = str.charCodeAt(i);  // get char
+            st = [];    			// set up "stack"
+            if ( ch < 0x007F )
+            {
+                st.push( ch & 0xFF );
+            }
+            else if ( (0x0080 <= ch) && (ch <= 0x07ff) )
+            {
+
+                st.push((ch & 0x003F) + 128 );
+                st.push(((ch>>6)&0x001F) + 192)
+            }
+            else if ((0x0800 <= ch ) && (ch <= 0xffff))
+            {
+                st.push((ch & 0x003F)+128);
+                st.push(((ch>>6)&0x003F)+128);
+                st.push(((ch>>12)&0x000F)+224);
+            }
+            re = re.concat( st.reverse() );
+        }
+        return re;  // return an array of bytes
+    }
+
+    function  strASCencode(sourceId)
+    {
+        var  temp = [];
+        var  index = 0;
+        var  ptr = 0;
+        var  high, low,inthis;
+        var  tempEncode = '';
+        temp = stringToBytes(sourceId);
+
+        for ( index = 0; index < temp.length; index++ )
+        {
+
+            high = (temp[index]>>4)&(0x0F);
+            low  = (temp[index])&(0x0F);
+
+            if ( high >= 0 && high <= 9 )
+            {
+                high += 48;
+            }
+            if ( high >= 10 && high <= 15 )
+            {
+                high += 55;
+            }
+
+            if ( low >= 0 && low <= 9 )
+            {
+                low += 48;
+            }
+            if ( low >= 10 && low<= 15 )
+            {
+                low += 55;
+            }
+            ptr = index<<1;
+            tempEncode += String.fromCharCode(high);
+            tempEncode +=String.fromCharCode(low);
+        }
+        return tempEncode;
+    }
+
+    function asctochar(high, low)
+    {
+        var connect = 0;
+        if ( high >= '0' && high <= '9' )
+        {
+            high = high.charCodeAt() - 48;
+        }
+        if ( high >= 'A' && high <= 'F' )
+        {
+            high = high.charCodeAt() - 55;
+        }
+        if ( low >= '0' && low <= '9' )
+        {
+            low = low.charCodeAt() - 48;
+        }
+        if ( low >= 'A' && low <= 'F' )
+        {
+            low = low.charCodeAt() - 55;
+        }
+        connect = high*16+low;
+        return connect;
+    }
+
+    function strASCdecode(sourceId)
+    {
+        var tempstr = sourceId;/*document.getElementById(sourceId).value*/
+        var index = 0;
+        var ptr = 0;
+        var tempDecode = '';
+        var high, low, high1,low1,high2,low2,inter1, inter2, inter;
+        var charcode = 0;
+        for ( index = 0; index <  tempstr.length; )
+        {
+            high = tempstr.slice(index,index+1);
+            low  = tempstr.slice(index+1,index+2);
+            inter = asctochar(high,low);
+            if ( 0 <= inter && inter <= 0x007f )
+            {
+                tempDecode += String.fromCharCode(inter);
+                index += 2;
+                continue;
+            }
+            if ( 192 <= inter && inter <= 223 )
+            {
+                high1 = tempstr.slice(index+2,index+3);
+                low1 = tempstr.slice(index+3,index+4);
+                inter1 = asctochar(high1,low1);
+                charcode = ((inter-192)<<6) + (inter1-128);
+                tempDecode += String.fromCharCode(charcode);
+                index += 4;
+                continue;
+            }
+            if ( 224<= inter && inter <= 239 )
+            {
+                high1 = tempstr.slice(index+2,index+3);
+                low1 = tempstr.slice(index+3,index+4);
+                high2 = tempstr.slice(index+4,index+5);
+                low2 = tempstr.slice(index+5,index+6);
+                inter1 = asctochar(high1,low1);
+                inter2 = asctochar(high2,low2);
+                charcode = ((inter-224)<<12)+((inter1-128)<<6)+(inter2-128);
+                tempDecode += String.fromCharCode(charcode);
+                index += 6;
+                continue;
+            }
+            else
+            {
+                tempDecode = sourceId;
+                break;
+            }
+        }
+        return tempDecode;
+    }
+
+
+    $("#func_setting").panel({
+        title: $.su.CHAR.WPORTAL.AUTH_GROUP
+    });
+
+	$('#group_name').textbox({
+        fieldLabel: $.su.CHAR.WPORTAL.AUTH_GROUP_NAME,
+        inputCls: 'xl',
+        maxLength: 50,
+        allowBlank: false,
+		vtype: 'string_visible_allow_blank',
+        tips: $.su.CHAR.WPORTAL.AUTH_GROUP_NAME_TIP,
+        validator: function(value)
+        {
+            var codeStr = /^([A-Za-z0-9\_\-]){1,50}$/;
+            if (!codeStr.test(value))
+            {
+                return $.su.CHAR.WPORTAL.AUTH_GROUP_NAME_ERR;
+            }
+            else
+            {
+                return true;
+            }
+        }
+    });
+
+	$("#server_type").radio({
+        fieldLabel: $.su.CHAR.WPORTAL.AUTH_GROUP_TYPE,
+        columns: 1,
+		inputCls: 'xl',
+        items: [
+            {boxlabel: $.su.CHAR.WPORTAL.AUTH_GROUP_TYPE_RADIUS, inputValue: "radius", checked: true}
+        ]
+    });
+
+	$('#main_server').combobox({
+        fieldLabel: $.su.CHAR.WPORTAL.AUTH_GROUP_MAIN_SERVER,
+        tipsCls: 's',
+		inputCls: 'xl',
+        allowBlank: false,
+        maxLength: 50,
+        vtype: "name",
+		bigdata: true,
+		validator: function(val){
+			if (val == "---" || val == "" || 0 == val)
+			{
+				$('#main_server').combobox('setError',$.su.CHAR.WPORTAL.AUTH_GROUP_MAIN_SERVER_NOT_EMPTY);
+				return false;
+			}
+			else
+				return true;
+		},
+		items: [
+            {value:"---", name: "---", selected: true}
+        ]
+    });
+	$('#main_server').combobox("autoWidth");
+
+	$('#backup_server').combobox({
+        fieldLabel: $.su.CHAR.WPORTAL.AUTH_GROUP_BACKUP_SERVER,
+        tipsCls: 's',
+		inputCls: 'xl',
+        maxLength: 50,
+        vtype: "name",
+		bigdata: true,
+		tips: $.su.CHAR.WPORTAL.AUTH_GROUP_BACKUP_SERVER_TIP,
+		validator: function(val){
+            var main_val = $('#main_server').combobox("getValue");
+            if (val[0] === main_val[0])
+            {
+                $('#backup_server').combobox('setError',$.su.CHAR.WPORTAL.AUTH_GROUP_BACKUP_SERVER_NOT_EQUAL);
+                return false;
+            }
+            else
+            {
+                return true;
+            }
+        },
+		items:[
+            {value:"---", name: "---", selected: true}
+        ]
+    });
+	$('#backup_server').combobox("autoWidth");
+
+	$('#recovery_time').textbox({
+        fieldLabel: $.su.CHAR.WPORTAL.AUTH_GROUP_RECOVERY,
+        inputCls: 'xl',
+        tipsCls: 's',
+        maxLength: 4,
+        allowBlank: false,
+		vtype: {
+            vtype: "number",
+            max: 1440,
+            min: 30
+        },
+        tips: $.su.CHAR.WPORTAL.AUTH_GROUP_RECOVERY_TIP
+    });
+
+	$('#note').textbox({
+        fieldLabel: $.su.CHAR.WPORTAL.AUTH_GROUP_NOTE,
+        inputCls: 'xl',
+        tipsCls: 's',
+        maxLength: 50,
+		vtype: "string_visible_allow_blank",
+        tips: $.su.CHAR.WPORTAL.AUTH_GROUP_NOTE_TIP
+    });
+
+
+	var globalProxy = new $.su.Proxy(/*{
+        url: URL_GLOBAL
+    }*/);
+
+	var authgroupGrid = $('#authgroup_list').grid({
+        store: {
+            proxy: globalProxy,
+            autoLoad: true,
+            fields: [
+				{name: "entry_id"},
+                {name: "group_name"},
+                {name: "server_type"},
+                {name: "main_server"},
+                {name: "backup_server"},
+                {name: "recovery_time"},
+                {name: "note"}
+            ],
+			keyProperty:["entry_id"],
+            rmField: ["entry_id"],
+			strEncode: [','],
+			parseKey:{
+				moduleName: "authentication",
+				tableName: "server_group_list",
+				pageSizeName: "server_group_entry",
+				maxSizeTableName: "wportal",
+				maxSizeOptionName: "auth_group_max",
+				setFilter:function(index, itemName, data){
+					var dataSet = $('#authgroup_list').grid("getStore").data;
+					return [{"entry_id" : dataSet[index].entry_id}];
+				},
+				delFilter:function(itemNames, data, indexes){
+					var result = [];
+					for (var i = 0; i < indexes.length; i++)
+					{
+						result.push({ "entry_id" : indexes[i].entry_id})
+					}
+					return result;
+				}
+			}
+        },
+
+		editor: {
+                validator:function(){
+                var editor  = $(authgroupGrid.grid("getEditor"));
+                //var name    = editor.find(".text-text[name=template_name]").textbox("getValue");
+                var store   = authgroupGrid.grid("getStore");
+                var keyProperty = store.keyProperty;
+                var grid_array  = store.data;
+                var editingId = editor.editor("getEditingId");
+                var i = 0;
+
+                if($.isArray(grid_array) && grid_array.length > 0)
+                {
+                    for(var k = 0; k < grid_array.length;k++)
+                    {
+                        var data = grid_array[k];
+                        if (data[keyProperty] == editingId)
+                        {
+                            continue;
+                        }
+                    }
+                }
+
+                return true;
+            },
+            content: '#authgroup_editor',
+            fields: [
+                {name: "group_name"},
+                {name: "server_type"},
+                {name: "main_server"},
+                {name: "backup_server"},
+                {name: "recovery_time"},
+                {name: "note"}
+            ]
+        },
+		paging_true:{},
+        columns: [
+            {
+                xtype: 'checkcolumn',
+                width: 30
+            },
+            {
+                xtype: 'rownumberer',
+                width: 30
+            },
+            {
+                text: $.su.CHAR.WPORTAL.AUTH_GROUP_NAME,
+                width: 70,
+                dataIndex: 'group_name',
+				scan: {
+					cmp: $.search.compare.string
+				}
+            },
+			{
+                text: $.su.CHAR.WPORTAL.AUTH_GROUP_TYPE,
+                width: 50,
+                dataIndex: 'server_type',
+				renderer: function(data){
+                    var result;
+                    switch (data){
+                        case "local":
+							result = $.su.CHAR.WPORTAL.AUTH_GROUP_TYPE_LOCAL;
+                            break;
+                        case "radius":
+                            result = $.su.CHAR.WPORTAL.AUTH_GROUP_TYPE_RADIUS;
+                            break;
+                        default :
+                            break;
+                    }
+                    return result;
+                },
+				scan: {
+					type: "combobox",
+					cmp: $.search.compare.string,
+					items: [
+						{value: "radius", name: $.su.CHAR.WPORTAL.AUTH_GROUP_TYPE_RADIUS}
+					]
+				}
+            },
+			{
+                text: $.su.CHAR.WPORTAL.AUTH_GROUP_NOTE,
+                width: 70,
+                dataIndex: 'note',
+				scan: {
+					cmp: $.search.compare.string
+				}
+            },
+            {
+                xtype: "settings",
+                width: 30
+            }
+        ],
+
+		operation: 'prompt|add|delete|search'
+
+    }).on('ev_load',  function(e, data, others){
+
+        if (others)
+        {
+            //console.log(others.max_rules);
+            //maxrules = others.max_rules;
+        }
+
+		var main_servers = [];
+		var backup_servers = [];
+        var serversProxy = new $.su.Proxy({
+            async: true
+        });
+        serversProxy.query({authentication:{table:"radius_list"}}, function(data){
+			var servers = [];
+            var i = 0;
+
+			for (i = 0, len = data.authentication.radius_list.length; i < len; i++)
+			{
+				for (var obj in data.authentication.radius_list[i]);
+				{
+					servers.push(data.authentication.radius_list[i][obj])
+				}
+			}
+
+            for (i = 0, len = servers.length; i < len; i++){
+                main_servers.push({name:$.su.func.escapeHtml(servers[i].server_name),value:servers[i].server_name});
+            }
+            var combobox = $gridEditor.find('#main_server');
+            combobox.combobox('loadData', main_servers);
+
+			for (i = 0, len = servers.length; i < len; i++){
+                backup_servers.push({name:$.su.func.escapeHtml(servers[i].server_name),value:servers[i].server_name});
+            }
+            if(0 != servers.length)
+            {
+                backup_servers.push({value:"---", name: "---"});
+            }
+            var combobox2 = $gridEditor.find('#backup_server');
+            combobox2.combobox('loadData', backup_servers);
+/*
+			for (i = 0; i < data[0].length(); i++){
+                backup_servers.push({name:$.su.func.escapeHtml(data[0][i]),value:data[1][i]});
+            }
+            var combobox2 = $gridEditor.find('#backup_server');
+            combobox2.combobox('loadData', backup_servers);
+*/
+        });
+    });
+	var $gridEditor = $(authgroupGrid.grid('getEditor'));
+
+	$($gridEditor).on("ev_startEdit", function(e, index, key){
+		if ("add" == index)
+		{
+			$("#group_name").textbox('enableStyle');
+		}
+		else
+		{
+			$("#group_name").textbox('disableStyle');
+		}
+	});
+
+	var helpAuthGroup = new $.su.Help({
+        container: "div#authgroup_help",
+        content: ["AC_AUTHGROUP_CONFIG"]
+    });
+    $(".func_container").show();
+});
+
+
+//]]>
+</script>
+</body>
+
+</html>

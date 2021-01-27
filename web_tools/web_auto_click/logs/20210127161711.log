@@ -1,0 +1,211 @@
+2021-01-27 16:17:11,949 - browser - INFO - You had select Firefox browser.
+2021-01-27 16:17:11,949 - browser - INFO - The test server url is: http://172.28.184.184:8010/web/stok=/
+2021-01-27 16:17:28,534 - browser - INFO - Starting firefox browser.
+2021-01-27 16:17:29,734 - browser - INFO - Open url: http://172.28.184.184:8010/web/stok=/
+2021-01-27 16:17:30,866 - browser - INFO - Maximize the current window.
+2021-01-27 16:17:30,878 - browser - INFO - Set implicitly wait 10 seconds.
+2021-01-27 16:17:41,041 - auto_click - ERROR - Failed to wait the element with Message: 
+
+2021-01-27 16:17:41,662 - auto_click - INFO - The loading begins
+2021-01-27 16:17:42,501 - auto_click - INFO - The loading begins
+2021-01-27 16:17:43,348 - auto_click - INFO - The loading begins
+2021-01-27 16:17:55,092 - auto_click - ERROR - Failed to wait the element with Message: 
+
+2021-01-27 16:18:06,563 - auto_click - ERROR - Failed to wait the element with Message: 
+
+2021-01-27 16:18:07,520 - auto_click - INFO - The loading begins
+2021-01-27 16:18:19,358 - auto_click - ERROR - Failed to wait the element with Message: 
+
+2021-01-27 16:18:30,847 - auto_click - ERROR - Failed to wait the element with Message: 
+
+2021-01-27 16:18:42,161 - auto_click - ERROR - Failed to wait the element with Message: 
+
+2021-01-27 16:18:44,516 - auto_click - INFO - The loading begins
+2021-01-27 16:18:45,984 - auto_click - INFO - The loading begins
+2021-01-27 16:18:46,922 - auto_click - INFO - The loading begins
+2021-01-27 16:18:58,583 - auto_click - ERROR - Failed to wait the element with Message: 
+
+2021-01-27 16:19:00,161 - auto_click - INFO - The loading begins
+2021-01-27 16:19:01,509 - auto_click - INFO - The loading begins
+2021-01-27 16:19:02,296 - auto_click - INFO - The loading begins
+2021-01-27 16:19:13,980 - auto_click - ERROR - Failed to wait the element with Message: 
+
+2021-01-27 16:19:15,343 - auto_click - INFO - The loading begins
+2021-01-27 16:19:16,600 - auto_click - INFO - The loading begins
+2021-01-27 16:19:28,151 - auto_click - ERROR - Failed to wait the element with Message: 
+
+2021-01-27 16:19:40,458 - auto_click - ERROR - Failed to wait the element with Message: 
+
+2021-01-27 16:19:41,018 - auto_click - INFO - The loading begins
+2021-01-27 16:19:52,537 - auto_click - ERROR - Failed to wait the element with Message: 
+
+2021-01-27 16:19:53,839 - auto_click - INFO - The loading begins
+2021-01-27 16:19:55,128 - auto_click - INFO - The loading begins
+2021-01-27 16:19:55,996 - auto_click - INFO - The loading begins
+2021-01-27 16:19:57,082 - auto_click - INFO - The loading begins
+2021-01-27 16:19:58,729 - auto_click - INFO - The loading begins
+2021-01-27 16:20:00,187 - auto_click - INFO - The loading begins
+2021-01-27 16:20:01,107 - auto_click - INFO - The loading begins
+2021-01-27 16:20:02,263 - auto_click - INFO - The loading begins
+2021-01-27 16:20:03,497 - auto_click - INFO - The loading begins
+2021-01-27 16:20:15,444 - auto_click - ERROR - Failed to wait the element with Message: 
+
+2021-01-27 16:20:16,799 - auto_click - INFO - The loading begins
+2021-01-27 16:20:17,764 - auto_click - INFO - The loading begins
+2021-01-27 16:20:19,777 - auto_click - INFO - The loading begins
+2021-01-27 16:20:31,335 - auto_click - ERROR - Failed to wait the element with Message: 
+
+2021-01-27 16:20:31,645 - auto_click - INFO - The loading begins
+2021-01-27 16:20:32,863 - auto_click - INFO - The loading begins
+2021-01-27 16:20:34,279 - auto_click - INFO - The loading begins
+2021-01-27 16:20:45,484 - auto_click - ERROR - Failed to wait the element with Message: 
+
+2021-01-27 16:20:46,051 - auto_click - INFO - The loading begins
+2021-01-27 16:20:57,233 - auto_click - ERROR - Failed to wait the element with Message: 
+
+2021-01-27 16:21:10,539 - auto_click - ERROR - Failed to wait the element with Message: 
+
+2021-01-27 16:21:21,681 - auto_click - ERROR - Failed to wait the element with Message: 
+
+2021-01-27 16:21:22,508 - auto_click - INFO - The loading begins
+2021-01-27 16:21:24,100 - auto_click - INFO - The loading begins
+2021-01-27 16:21:25,391 - auto_click - INFO - The loading begins
+2021-01-27 16:21:27,389 - auto_click - INFO - The loading begins
+2021-01-27 16:21:28,384 - auto_click - INFO - The loading begins
+2021-01-27 16:21:41,311 - auto_click - ERROR - Failed to wait the element with Message: 
+
+2021-01-27 16:21:52,859 - auto_click - ERROR - Failed to wait the element with Message: 
+
+2021-01-27 16:22:03,554 - auto_click - ERROR - Failed to wait the element with Message: 
+
+2021-01-27 16:22:03,847 - auto_click - INFO - The loading begins
+2021-01-27 16:22:16,204 - auto_click - ERROR - Failed to wait the element with Message: 
+
+2021-01-27 16:22:26,779 - auto_click - ERROR - Failed to wait the element with Message: 
+
+2021-01-27 16:22:27,286 - auto_click - INFO - The loading begins
+2021-01-27 16:22:37,994 - auto_click - ERROR - Failed to wait the element with Message: 
+
+2021-01-27 16:22:38,270 - auto_click - INFO - The loading begins
+2021-01-27 16:22:40,103 - auto_click - INFO - The loading begins
+2021-01-27 16:22:41,578 - auto_click - INFO - The loading begins
+2021-01-27 16:22:42,561 - auto_click - INFO - The loading begins
+2021-01-27 16:22:44,448 - auto_click - INFO - The loading begins
+2021-01-27 16:22:56,424 - auto_click - ERROR - Failed to wait the element with Message: 
+
+2021-01-27 16:23:07,661 - auto_click - ERROR - Failed to wait the element with Message: 
+
+2021-01-27 16:23:18,809 - auto_click - ERROR - Failed to wait the element with Message: 
+
+2021-01-27 16:23:19,284 - auto_click - INFO - The loading begins
+2021-01-27 16:23:31,012 - auto_click - ERROR - Failed to wait the element with Message: 
+
+2021-01-27 16:23:32,004 - auto_click - INFO - The loading begins
+2021-01-27 16:23:33,069 - auto_click - INFO - The loading begins
+2021-01-27 16:23:44,258 - auto_click - ERROR - Failed to wait the element with Message: 
+
+2021-01-27 16:23:44,645 - auto_click - INFO - The loading begins
+2021-01-27 16:23:45,532 - auto_click - INFO - The loading begins
+2021-01-27 16:23:46,521 - auto_click - INFO - The loading begins
+2021-01-27 16:23:48,299 - auto_click - INFO - The loading begins
+2021-01-27 16:23:49,911 - auto_click - INFO - The loading begins
+2021-01-27 16:23:51,155 - auto_click - INFO - The loading begins
+2021-01-27 16:23:52,544 - auto_click - INFO - The loading begins
+2021-01-27 16:23:54,121 - auto_click - INFO - The loading begins
+2021-01-27 16:23:55,641 - auto_click - INFO - The loading begins
+2021-01-27 16:24:08,629 - auto_click - ERROR - Failed to wait the element with Message: 
+
+2021-01-27 16:24:19,770 - auto_click - ERROR - Failed to wait the element with Message: 
+
+2021-01-27 16:24:20,106 - auto_click - INFO - The loading begins
+2021-01-27 16:24:21,468 - auto_click - INFO - The loading begins
+2021-01-27 16:24:22,170 - auto_click - INFO - The loading begins
+2021-01-27 16:24:23,369 - auto_click - INFO - The loading begins
+2021-01-27 16:24:25,207 - auto_click - INFO - The loading begins
+2021-01-27 16:24:26,751 - auto_click - INFO - The loading begins
+2021-01-27 16:24:28,477 - auto_click - INFO - The loading begins
+2021-01-27 16:24:29,517 - auto_click - INFO - The loading begins
+2021-01-27 16:24:40,935 - auto_click - ERROR - Failed to wait the element with Message: 
+
+2021-01-27 16:24:41,354 - auto_click - INFO - The loading begins
+2021-01-27 16:24:52,397 - auto_click - ERROR - Failed to wait the element with Message: 
+
+2021-01-27 16:24:52,666 - auto_click - INFO - The loading begins
+2021-01-27 16:25:04,288 - auto_click - ERROR - Failed to wait the element with Message: 
+
+2021-01-27 16:25:05,621 - auto_click - INFO - The loading begins
+2021-01-27 16:25:07,466 - auto_click - INFO - The loading begins
+2021-01-27 16:25:08,993 - auto_click - INFO - The loading begins
+2021-01-27 16:25:21,009 - auto_click - ERROR - Failed to wait the element with Message: 
+
+2021-01-27 16:25:31,589 - auto_click - ERROR - Failed to wait the element with Message: 
+
+2021-01-27 16:25:31,893 - auto_click - INFO - The loading begins
+2021-01-27 16:25:32,976 - auto_click - INFO - The loading begins
+2021-01-27 16:25:34,012 - auto_click - INFO - The loading begins
+2021-01-27 16:25:35,377 - auto_click - INFO - The loading begins
+2021-01-27 16:25:36,908 - auto_click - INFO - The loading begins
+2021-01-27 16:25:37,718 - auto_click - INFO - The loading begins
+2021-01-27 16:25:39,035 - auto_click - INFO - The loading begins
+2021-01-27 16:25:40,883 - auto_click - INFO - The loading begins
+2021-01-27 16:25:41,901 - auto_click - INFO - The loading begins
+2021-01-27 16:25:43,046 - auto_click - INFO - The loading begins
+2021-01-27 16:25:43,786 - auto_click - INFO - The loading begins
+2021-01-27 16:25:45,614 - auto_click - INFO - The loading begins
+2021-01-27 16:25:46,473 - auto_click - INFO - The loading begins
+2021-01-27 16:25:47,696 - auto_click - INFO - The loading begins
+2021-01-27 16:25:48,782 - auto_click - INFO - The loading begins
+2021-01-27 16:25:50,802 - auto_click - INFO - The loading begins
+2021-01-27 16:25:52,195 - auto_click - INFO - The loading begins
+2021-01-27 16:25:54,073 - auto_click - INFO - The loading begins
+2021-01-27 16:25:55,034 - auto_click - INFO - The loading begins
+2021-01-27 16:25:56,226 - auto_click - INFO - The loading begins
+2021-01-27 16:25:57,087 - auto_click - INFO - The loading begins
+2021-01-27 16:25:59,141 - auto_click - INFO - The loading begins
+2021-01-27 16:26:01,111 - auto_click - INFO - The loading begins
+2021-01-27 16:26:12,638 - auto_click - ERROR - Failed to wait the element with Message: 
+
+2021-01-27 16:26:13,051 - auto_click - INFO - The loading begins
+2021-01-27 16:26:14,123 - auto_click - INFO - The loading begins
+2021-01-27 16:26:15,345 - auto_click - INFO - The loading begins
+2021-01-27 16:26:17,521 - auto_click - INFO - The loading begins
+2021-01-27 16:26:29,615 - auto_click - ERROR - Failed to wait the element with Message: 
+
+2021-01-27 16:26:42,075 - auto_click - ERROR - Failed to wait the element with Message: 
+
+2021-01-27 16:26:53,467 - auto_click - ERROR - Failed to wait the element with Message: 
+
+2021-01-27 16:27:04,854 - auto_click - ERROR - Failed to wait the element with Message: 
+
+2021-01-27 16:27:05,628 - auto_click - INFO - The loading begins
+2021-01-27 16:27:17,312 - auto_click - ERROR - Failed to wait the element with Message: 
+
+2021-01-27 16:27:17,858 - auto_click - INFO - The loading begins
+2021-01-27 16:27:19,975 - auto_click - INFO - The loading begins
+2021-01-27 16:27:20,504 - auto_click - INFO - The loading begins
+2021-01-27 16:27:22,465 - auto_click - INFO - The loading begins
+2021-01-27 16:27:23,670 - auto_click - INFO - The loading begins
+2021-01-27 16:27:25,524 - auto_click - INFO - The loading begins
+2021-01-27 16:27:36,805 - auto_click - ERROR - Failed to wait the element with Message: 
+
+2021-01-27 16:27:47,866 - auto_click - ERROR - Failed to wait the element with Message: 
+
+2021-01-27 16:27:49,412 - auto_click - INFO - The loading begins
+2021-01-27 16:27:50,369 - auto_click - INFO - The loading begins
+2021-01-27 16:27:51,452 - auto_click - INFO - The loading begins
+2021-01-27 16:27:53,189 - auto_click - INFO - The loading begins
+2021-01-27 16:28:05,224 - auto_click - ERROR - Failed to wait the element with Message: 
+
+2021-01-27 16:28:17,694 - auto_click - ERROR - Failed to wait the element with Message: 
+
+2021-01-27 16:28:29,180 - auto_click - ERROR - Failed to wait the element with Message: 
+
+2021-01-27 16:28:30,795 - auto_click - INFO - The loading begins
+2021-01-27 16:28:42,019 - auto_click - ERROR - Failed to wait the element with Message: 
+
+2021-01-27 16:28:42,531 - auto_click - INFO - The loading begins
+2021-01-27 16:28:44,458 - auto_click - INFO - The loading begins
+2021-01-27 16:28:45,518 - auto_click - INFO - The loading begins
+2021-01-27 16:28:57,864 - auto_click - ERROR - Failed to wait the element with Message: 
+
+2021-01-27 16:28:57,864 - browser - INFO - Now, Close and quit the browser.

@@ -1,0 +1,164 @@
+<html xmlns="http://www.w3.org/1999/xhtml">
+<head>
+<meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
+<title>cloud-site-show</title>
+</head>
+<body>
+<div class="cloud-site-show-box"></div>
+<style>
+#cloud-site {
+	width: 400px;
+	margin: 32px auto;
+}
+
+#cloud-site-show-title {
+	margin-bottom: 24px;
+	text-align: center;
+	font-size: 16px;
+}
+
+.cloud_site_add #site_add {
+	color: #007BFF;
+	cursor: pointer
+}
+
+.cloud_site_add #site_add:hover {
+	text-decoration:underline
+}
+
+#button-bt_cloud_site {
+	margin: 0px -45px -24px 320px;
+}
+
+</style>
+<script type="text/javascript">
+
+//<![CDATA[
+try{
+	$
+}catch(e){
+	location.href = "/";
+};
+
+$(document).ready(function(e){
+	var gHtm = "";
+	gHtm += "<div id=\"cloud-site\">";
+	gHtm +=	    "<h1 id='cloud-site-show-title'>设置项目</h1>";
+	gHtm +=     "<form id=\"cloud-site-form\">"
+	gHtm +=	        "<input id=\"site\" name=\"site\" value=\"\"/>";
+	gHtm +=     "</form>"
+	gHtm +=	    "<div class=\"cloud_site_add\">";
+	gHtm +=         "<div id=\"site_add\"></div>";
+	gHtm +=     "</div>";
+	gHtm +=     "</br>";
+	gHtm +=     "<input id=\"bt_cloud_site\" name=\"bt_cloud_site\"/>";
+	gHtm += "</div>";
+	$(".cloud-site-show-box").html(gHtm);
+	$(".cloud_site_add #site_add").text("+添加项目");
+
+	$("input#site").combobox({
+		fieldLabel : "选择项目",
+		allowBlank:false,
+		multiSelect: false,
+		items: []
+	});
+
+	function gotoCloud() {
+		// 获取云端的跳转token
+		var tokenProxy = new $.su.Proxy({isWizard:true});
+		var tokenData = {"istart":{"name":"cloud_token_get"}};
+		tokenProxy.query(tokenData, function(token) {
+			if (token && token.istart && token.istart.cloud_token_get) {
+				var url = token.istart.cloud_token_get.url + "?token=" + token.istart.cloud_token_get.token;
+				window.location.href = url;
+			} else {
+				cloudSiteForm.form("prompt", false, "跳转失败");
+			}
+		});
+	}
+
+	var cloud_sites_list = [];
+	var proxy = new $.su.Proxy({async: false, isWizard:true});
+	proxy.query({"istart":{"table":"cloud_site_get"}}, function(data) {
+		if (data && data.istart && data.istart.cloud_site_get) {
+			var sites = data.istart.cloud_site_get;
+			for (var i=0; i<sites.length; i++) {
+				for (var key in sites[i]) {
+					cloud_sites_list.push({name: sites[i][key].siteName,value: sites[i][key].siteId});
+				}
+			}
+		}
+		if (cloud_sites_list.length == 0) {
+			$("input#site").combobox("hide");
+		} else {
+			$("input#site").combobox("show");
+			$("input#site").combobox("loadData", cloud_sites_list);
+			$("input#site").combobox("setValue", cloud_sites_list[0].value);
+		}
+	});
+
+	var istartGlobalProxy = new $.su.Proxy({async: false});
+	istartGlobalProxy.query({"istart":{"name":"global"}}, function(global) {
+		if (global && global.istart && global.istart.global) {
+			var projectId = global.istart.global.projectId;
+			if (projectId) {
+				$("input#site").combobox("setValue", projectId);
+			}
+		}
+	});
+
+	var  bindInfoProxy = new $.su.Proxy({async: false});
+	bindInfoProxy.query({"cloud_config":{"name":"bind_info"}}, function(bindInfo) {
+		if (bindInfo && bindInfo.cloud_config && bindInfo.cloud_config.bind_info) {
+			var bind_status = parseInt(bindInfo.cloud_config.bind_info.bind_status);
+			if (1 == bind_status) {
+				gotoCloud();
+			}
+		}
+	});
+
+	$(".cloud_site_add #site_add").on("click", function(e) {
+		$.su.cloud_site_add.show();
+	});
+
+	var cloudSiteForm = $("form#cloud-site-form").form({
+		proxy: new $.su.Proxy({}),
+		showPrompt: false,
+		fields: [
+			{name: "site"}
+		],
+		autoLoad: false
+	});
+
+	$("#bt_cloud_site").button({
+		text:"绑定设备",
+		handler: function() {
+			if ($("#site").combobox("validate") != true){
+				return;
+			}
+			$("#bt_cloud_site").button("disable");
+			var siteId = $("input#site").combobox("getValue")[0];
+			var data = {"istart":{"cloud_device_bind":{"siteId":siteId}}};
+			var proxy = new $.su.Proxy({isWizard:true});
+			proxy.action(data, function(result) {
+				if (result.error_code == ENONE) {
+					cloudSiteForm.form("prompt", false, "绑定成功");
+					gotoCloud();
+				}
+			}, function(xhr) {
+				cloudSiteForm.form("prompt", false, "绑定失败");
+			}, function(xhr) {
+				cloudSiteForm.form("prompt", false, "绑定失败");
+			});
+			setTimeout(function() {
+				$("#bt_cloud_site").button("enable");
+			}, 500);
+		}
+	});
+});
+
+//]]>
+</script>
+</body>
+
+</html>

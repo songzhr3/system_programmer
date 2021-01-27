@@ -1,0 +1,429 @@
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
+<html xmlns="http://www.w3.org/1999/xhtml">
+<head>
+<meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
+<title>DHCP_SERVER</title>
+</head>
+
+<body>
+<div class="func_container">
+	<div id="func_setting">
+		<div id = "global_settings_panel">
+			 <form id = "global_settings">
+				<input id="alloc_target" name="alloc_target" value=""/>
+				<input id="addrtype" name="addrtype" />
+				<div id="ippool_div" class="hidden">
+					 <input id="ippool" name="ippool" />
+				</div>
+				<div id="ip_range">
+					<input id="pool_start" name="pool_start" />
+					<input id="pool_end" name="pool_end" />
+				</div>
+				<input id="lease_time" name="lease_time" />
+				<input id="gateway" name="gateway" />
+				<input id="domain" name="domain" />
+				<input id="pri_dns" name="pri_dns" />
+				<input id="snd_dns" name="snd_dns" />
+				<input id="enable" name="enable" />
+				</br>
+				<button type="button" id="set" name="set"></button>
+			 </form>
+		</div>
+	</div>
+	<div id="alert_msg">
+		<h4 class="title">
+			<span class="icon" ></span>
+			<span class="text" id="error_str"></span>
+		</h4>
+	</div> 
+    <div id="dhcp_server_help"></div>
+</div>
+
+<script type="text/javascript">
+try{
+    $
+}catch(e){
+    location.href = "/";
+};
+
+$(document).ready(function(e){
+	$("#global_settings_panel").panel({
+        title: $.su.CHAR.DHCP_SERVER.GLOBAL_SETTINGS,
+        collapsible: false
+    });
+
+	$("#alloc_target").radio({
+		fieldLabel: $.su.CHAR.DHCP_SERVER.ALLOC_TARGET,
+		columns: 2,
+		items:[
+			{boxlabel: $.su.CHAR.DHCP_SERVER.ALLOC_FOR_AP_ONLY, name:'alloc_target', inputValue:'for_ap'},
+			{boxlabel: $.su.CHAR.DHCP_SERVER.ALLOC_FOR_ALL, name:'alloc_target', inputValue:'for_all'}
+		]
+	});
+	
+	function showAlert(msg)
+	{
+		$("#error_str").html(msg);
+		$("#alert_msg").msg("show", function(){
+		});
+	}
+	$("#alert_msg").msg({
+		cls: 'warning reboot-confirm-size',
+		type: "alert"
+	});
+	var dhcpProxy = new $.su.Proxy({
+    });
+
+	$("#global_settings").form({
+        proxy: dhcpProxy,
+		showPromptFail: false,
+        fields: [
+			{name: "alloc_target"},
+			{name: "domain"},
+			{name: "enable"},
+			{name: "gateway"},
+			{name: "lease_time"},
+			{name: "pool_start"},
+			{name: "pool_end"},
+			{name: "pri_dns"},
+			{name: "snd_dns"}
+        ],
+        validator: checkIpRange,
+		submitBtn: null
+    });
+	$("#set").button({
+        text: "设置",
+        handler: function(){
+			// 如果只填写了备用DNS没有填写首选DNS，把备用DNS当做首选DNS提交
+			var pri_dns = $pri_dns.textbox("getValue");
+			var sec_dns = $sec_dns.textbox("getValue");
+			if (pri_dns == "" && sec_dns != "") {
+				$pri_dns.textbox("setValue", sec_dns);
+				$sec_dns.textbox("setValue", "");
+			}
+			if($("#global_settings").form("validate")){
+				var postData = {};
+				var allocSettings = {};
+				var dhcpSettings = {};
+				var textBoxItem = ["pool_start","pool_end","lease_time","gateway","domain","pri_dns","snd_dns"];
+				var checkboxItem = ["enable"];
+				for(var i = 0;i < textBoxItem.length;i++){
+					dhcpSettings[textBoxItem[i]] = $('#'+textBoxItem[i]).textbox("getValue");
+				}
+				for(var i = 0;i < checkboxItem.length;i++){
+					dhcpSettings[checkboxItem[i]] = $('#'+checkboxItem[i]).checkbox("getValue")[0];
+					if(dhcpSettings[checkboxItem[i]] == "on"||dhcpSettings[checkboxItem[i]]==checkboxItem[i])dhcpSettings[checkboxItem[i]]="on";
+					else dhcpSettings[checkboxItem[i]]="off";
+				}
+				allocSettings["alloc_target"] = $('#alloc_target').radio("getValue");
+				postData["dhcpd"] = {};
+				postData["dhcpd"][dhcpEntryName] = dhcpSettings;
+				postData["dhcpd"]["settings"] = allocSettings;
+				
+				dhcpProxy.modify(postData, function(){
+					reloadSetting();
+					$("#global_settings").form("prompt", true, "设置成功");
+				});
+			}
+        },
+		cls: 'inline-block'
+    });
+	/*self-define content begins*/
+	var ippoolItem=[];
+	var ippool_addr_start=[];
+	var ippool_addr_end = [];
+	var lanIf = undefined;
+	var dhcpEntryName = undefined;
+	var interfaceIpProxy = new $.su.Proxy({
+	});
+	interfaceIpProxy.query({"network":{"name": "multivlan_bridge_if"}}, function(data){
+		lanIf = data.network.multivlan_bridge_if;
+	});
+
+	/*pool_start*/
+	$('#pool_start').textbox({
+		fieldLabel:$.su.CHAR.DHCP_SERVER.IP_ADDR_START,
+		allowBlank: false,	
+		textFormat: $.su.format.ip,
+		vtype:"ip",
+		maxLength:15
+	});
+
+	/*pool_end*/
+	$('#pool_end').textbox({
+		fieldLabel:$.su.CHAR.DHCP_SERVER.IP_ADDR_END,
+		allowBlank: false,	
+		textFormat: $.su.format.ip,
+		vtype:"ip",
+		maxLength:15
+	});
+
+	/*ippool*/
+	$('#ippool').combobox({
+		fieldLabel:$.su.CHAR.DHCP_SERVER.IP_ADDR_POOL,
+		alwaysTrigger: true,
+		items:[
+			{name:"---",value:"---"}
+		]
+	});
+	var max_leases = parseInt("<%=max_lease_num%>");
+
+	/*addrtype*/
+	$('#addrtype').combobox({
+		fieldLabel:$.su.CHAR.DHCP_SERVER.IP_ADDR_TYPE,
+		items:[
+			{name: $.su.CHAR.DHCP_SERVER.IPPOOL,value:'ippool'},
+			{name: $.su.CHAR.DHCP_SERVER.IPRANGE,value:'iprange',selected:true}
+		]
+	}).on('ev_change', function(e, oldValue, newValue){
+		if(newValue == "iprange"){
+			$('#ippool_div').hide();
+			$('#ip_range').show();
+		}
+		else if(newValue == "ippool"){
+			$('#ippool_div').show();
+			$('#ip_range').hide();
+		}
+	});
+
+	$('#addrtype').combobox('hide')
+	$('#lease_time').textbox({
+		fieldLabel:$.su.CHAR.DHCP_SERVER.LEASETIME,
+		tips: $.su.CHAR.DHCP_SERVER.LEASENOTE,
+		textFormat: $.su.format.number,
+		allowBlank: false,
+		maxLength: 4,
+		vtype: {
+			 vtype: "number",
+			 max: 2880,
+			 min: 2
+		},
+		setValueCb:function(value){
+			return (value/60) + "";
+		},
+		getValueCb:function(value){
+			return (value*60) + "";
+		}
+	});
+
+	/*gateway*/
+	$('#gateway').textbox({
+		fieldLabel:$.su.CHAR.DHCP_SERVER.GATEWAY,
+		tips: $.su.CHAR.DHCP_SERVER.OPTIONAL,
+		allowBlank: true,					
+		textFormat: $.su.format.ip,
+		vtype: 'ip',
+		maxLength:15
+	});
+
+	/*domain*/
+	$('#domain').textbox({
+		fieldLabel:$.su.CHAR.DHCP_SERVER.DOMAIN,
+		tips: $.su.CHAR.DHCP_SERVER.OPTIONAL,
+		allowBlank: true,
+		vtype:'domain'
+	});
+
+	/*pri_dns*/
+	var $pri_dns = $('#pri_dns').textbox({
+		fieldLabel:$.su.CHAR.DHCP_SERVER.PRIMARYDNS,
+		tips: $.su.CHAR.DHCP_SERVER.OPTIONAL,
+		allowBlank: true,		
+		textFormat: $.su.format.ip,
+		vtype: 'ip',
+		maxLength:15,
+		validator: function(v) {
+			var sec_dns = $sec_dns.textbox("getValue");
+			if(v == sec_dns) {
+				return "主备DNS服务器不能相同。";
+			}
+			return true;
+		}
+	});
+
+	/*sec_dns*/
+	var $sec_dns = $('#snd_dns').textbox({
+		fieldLabel:$.su.CHAR.DHCP_SERVER.SECONDARYDNS,
+		tips: $.su.CHAR.DHCP_SERVER.OPTIONAL,
+		allowBlank: true,		
+		textFormat: $.su.format.ip,
+		vtype: 'ip',
+		maxLength:15,
+		validator: function(v) {
+			var pri_dns = $pri_dns.textbox("getValue");
+			if (v == pri_dns) {
+				return "主备DNS服务器不能相同。";
+			}
+			return true;
+		}
+	});
+
+	/*enable*/
+	$('#enable').checkbox({
+		fieldLabel:$.su.CHAR.GRID.STATUS,
+		 items: [
+		  {boxlabel: $.su.CHAR.DHCP_SERVER.ENABLE, inputValue:'on', uncheckedValue:'off',checked:true}
+		  ]
+	});
+
+	$('#ippool_div').hide();
+	$('#ip_range').show();
+	reloadSetting();
+	
+	function reloadSetting(){
+		//console.log("reload");
+		
+		dhcpProxy.query({"dhcpd":{"table":"dhcpd_list","name":"settings"}},function(data){
+			if(data.dhcpd.settings.alloc_target){
+				$("#alloc_target").radio("setValue",data.dhcpd.settings.alloc_target);
+			}
+			if(!data||!data.dhcpd.dhcpd_list){
+				return;
+			}
+			var dhcpData = undefined;
+			if(data.dhcpd.dhcpd_list.length > 0){
+				for(var j in data.dhcpd.dhcpd_list[0]){
+					dhcpEntryName = j;
+					dhcpData = data.dhcpd.dhcpd_list[0][j];
+					break;
+				}
+			}
+			if(!dhcpData){
+				return;
+			}
+			var textBoxItem = ["pool_start","pool_end","lease_time","gateway","domain","pri_dns","snd_dns"];
+			var checkboxItem = ["enable"];
+			for(var i = 0;i < textBoxItem.length;i++){
+				$('#'+textBoxItem[i]).textbox("setValue", dhcpData[textBoxItem[i]]?dhcpData[textBoxItem[i]]:"");
+			}
+			for(var i = 0;i < checkboxItem.length;i++){
+				$('#'+checkboxItem[i]).checkbox("setValue", dhcpData[checkboxItem[i]]);
+			}
+		});
+    }
+	/*将点分十进制的IP地址转换成整数形式*/
+	function ipToInt(str_ip)
+
+	{
+		var patternIp = /^\s*[0-9]{1,3}\.{1}[0-9]{1,3}\.{1}[0-9]{1,3}\.{1}[0-9]{1,3}\s*$/;
+		var ip_array = str_ip.split(".");
+		if(ip_array.length != 4)
+
+		{
+			return -1;      
+		}
+		if(!patternIp.test(str_ip))
+		{
+			return -1;
+		}	
+		return (Number(ip_array[0])*(1<<24)+(Number(ip_array[1])<<16 |Number(ip_array[2])<<8 |Number(ip_array[3])));   
+	}
+	function intToIp(num) 
+	{
+		var str;
+		var tt = new Array();
+		tt[0] = (num >>> 24) >>> 0;
+		tt[1] = ((num << 8) >>> 24) >>> 0;
+		tt[2] = (num << 16) >>> 24;
+		tt[3] = (num << 24) >>> 24;
+		str = String(tt[0]) + "." + String(tt[1]) + "." + String(tt[2]) + "." + String(tt[3]);
+		return str;
+	}
+	//判断是否是某个接口的网络地址，true为是这个网段的网络地址，false则相反
+	function isNetIp(str_ip,str_inf_ip,str_inf_mask)
+
+	{
+		var int_inf_ip = str_inf_ip&0xFFFFFFFF;
+		var int_inf_mask = str_inf_mask&0xFFFFFFFF;
+		var int_ip = str_ip&0xFFFFFFFF;
+	
+		if(int_ip == (int_inf_ip&int_inf_mask))
+		{
+			return true;
+		}
+		return false;
+	}
+	//判断是否是某个接口的广播地址，true为是这个接口的广播地址，false则相反
+	function isBroadcastIp(str_ip,str_inf_ip,str_inf_mask)
+	{
+		var int_inf_ip = str_inf_ip&0xFFFFFFFF;
+		var int_inf_mask = str_inf_mask&0xFFFFFFFF;
+		var int_ip = str_ip&0xFFFFFFFF;	
+		if((int_ip&int_inf_mask) == (int_inf_ip&int_inf_mask))
+		{
+			if(((int_ip&(~int_inf_mask))==(~int_inf_mask)))
+			{
+				return true;
+			}
+		}
+		return false;
+	}
+	function checkIpRange()
+	{
+		var start_ip = $('#pool_start').textbox('getValue');
+		var end_ip = $('#pool_end').textbox('getValue');
+
+		if(ipToInt(start_ip) > ipToInt(end_ip))
+		{
+			showAlert("起始地址不能大于结束地址" );
+			return false;
+		}
+		if (lanIf)
+		{
+			if (lanIf['ip'] && lanIf['netmask'])
+			{
+				var ipInt_st = ipToInt(start_ip);
+				var ipInt_end = ipToInt(end_ip);
+				ipIntSvr = ipToInt(lanIf['ip']);
+				netMaskInt = ipToInt(lanIf['netmask']);
+				if ((ipInt_st&netMaskInt) != (ipIntSvr&netMaskInt))
+				{
+					showAlert("开始地址与接口不在同一网段");
+					return false;;	
+				}
+				if(isNetIp(ipInt_st,ipIntSvr,netMaskInt))
+				{
+					showAlert("开始地址不能为接口的网络地址");
+					return false;
+				}
+				if(isBroadcastIp(ipInt_st,ipIntSvr,netMaskInt))
+				{
+					showAlert("开始地址不能为接口的广播地址");
+					return false;
+				}
+				if ((ipInt_end&netMaskInt) != (ipIntSvr&netMaskInt))
+				{
+					showAlert("结束地址与接口不在同一网段");
+					return false;	
+				}
+				if(isNetIp(ipInt_end,ipIntSvr,netMaskInt))
+				{
+					showAlert("结束地址不能为接口的网络地址");
+					return false;
+				}
+				if(isBroadcastIp(ipInt_end,ipIntSvr,netMaskInt))
+				{
+					showAlert("结束地址不能为接口的广播地址");
+					return false;
+				}
+			}
+		}
+		if(ipToInt(end_ip) - ipToInt(start_ip) >= max_leases)
+		{
+			showAlert("起始地址到结束地址的范围不能超过"+max_leases+"，已自动修正结束地址，请确认提交");
+			$('#pool_end').textbox('setValue',intToIp(ipToInt(start_ip)+max_leases-1));
+			return false;
+		}
+		return true;
+	}
+	var helpDhcpServer = new $.su.Help({
+		container: "div#dhcp_server_help",
+		content: ["DHCP_SERVER_MULTIVLAN_BRIDGE_SETTINGS"]
+	});
+
+
+});
+</script>
+</body>
+
+</html>

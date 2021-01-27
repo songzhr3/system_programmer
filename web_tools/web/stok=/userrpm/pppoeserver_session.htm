@@ -1,0 +1,211 @@
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
+<html xmlns="http://www.w3.org/1999/xhtml">
+<head>
+<meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
+<title>PPPOESERVER_SESSION</title>
+<style type="text/css">
+</style>
+</head>
+
+<body>
+
+<div class="func-container">
+	<div id="session">
+		<input id="session_total_num" name="session_total_num" value=""/>
+		<div id="session_list"></div>
+	</div>
+
+	<div id="session_help"></div>
+</div>
+
+<script type="text/javascript">
+
+$(document).ready(function(e){
+	$('div#session').panel({
+		title: $.su.CHAR.PPPOESERVER_SESSION.session,
+		collapsible: false
+	});
+
+	$("#session_total_num").textbox({
+		fieldLabel: $.su.CHAR.PPPOESERVER_SESSION.TOTAL_NUM,
+		inputCls:'xxl',
+		readOnly:true
+	}).textbox("hide");
+
+	var sessionGrid = $('#session_list').grid({
+		deleteConfirmMsgText:$.su.CHAR.PPPOESERVER_SESSION.DELETE_CONFIRM,
+		store: {
+			proxy: new $.su.Proxy(),
+			autoLoad: true,
+			fields: [
+				{name: "pid"},
+				{name: "username"},
+				{name: "state"},
+				{name: "ip"},
+				{name: "mac"},
+				{name: "connected_time"},
+				{name: "note"}
+			],
+			parseKey:{
+				moduleName: "pppoe_server",
+				pageSizeName: "pppoeserver_session_entry",
+				tableName: "session",
+				delFilter: function(itemNames, data, indexes){
+					var _string = "";
+					var filter = [];
+					var oneFilter = {};
+					var j;
+					var dataSet = sessionGrid.grid("getStore").data;
+
+					if (!$.isArray(itemNames))
+					{
+						itemNames = [itemNames];
+					}
+
+					if (!$.isArray(indexes))
+					{
+						indexes = [indexes];
+					}
+					for (var i = 0; i < itemNames.length; i++)
+					{
+						oneFilter = {};
+						oneFilter["pid"] = dataSet[i]["pid"];
+						filter.push(oneFilter);
+					}
+					return filter;
+				}
+			},
+			rmField: ["pid"]
+		},
+		paging_true:{},
+		columns: [
+			{
+				xtype: 'checkcolumn',
+				width: $.su.CHAR.SETTING.PPPOESERVER_SESSION.CHECK_COLUMN_WIDTH
+			},
+			{
+				xtype: 'rownumberer',
+				width: $.su.CHAR.SETTING.PPPOESERVER_SESSION.ROW_NUMBER_WIDTH
+			},
+			{
+				text: $.su.CHAR.PPPOESERVER_SESSION.COL_NAME,
+				width: $.su.CHAR.SETTING.PPPOESERVER_SESSION.NAME_WIDTH,
+				dataIndex: 'username',
+				scan: {
+					cmp: $.search.compare.string
+				}
+			},
+			{
+				text: $.su.CHAR.PPPOESERVER_SESSION.COL_STATE,
+				width: $.su.CHAR.SETTING.PPPOESERVER_SESSION.STATE_WIDTH,
+				dataIndex: 'state',
+				renderer: function(dd, index, data){
+					if("connected" == data.state){
+						return $.su.CHAR.PPPOESERVER_SESSION.CONNECT
+					}else{
+						return $.su.CHAR.PPPOESERVER_SESSION.DISCONNECT
+					}
+				}
+			},
+			{
+				text: $.su.CHAR.PPPOESERVER_SESSION.COL_IP,
+				width: $.su.CHAR.SETTING.PPPOESERVER_SESSION.IP_WIDTH,
+				dataIndex: 'ip',
+				scan: {
+					cmp: $.search.compare.string
+				}
+			},
+			{
+				text: $.su.CHAR.PPPOESERVER_SESSION.COL_MAC,
+				width: $.su.CHAR.SETTING.PPPOESERVER_SESSION.MAC_WIDTH,
+				dataIndex: 'mac',
+				scan: {
+					cmp: $.search.compare.string
+				}
+			},
+			{
+				text: $.su.CHAR.PPPOESERVER_SESSION.COL_TIME,
+				width: $.su.CHAR.SETTING.PPPOESERVER_SESSION.TIME_WIDTH,
+				dataIndex: 'connected_time',
+				renderer: function(dd, index, data){
+					var str = ""
+					var tm = parseInt(data.connected_time);
+					var day = Math.floor(tm / (24 * 60 * 60));
+					if(0 != day){
+						str = str + day.toString() + $.su.CHAR.PPPOESERVER_SESSION.DAY;
+					}
+					var hour = Math.floor((tm - day * 24 * 60 * 60) / (60 * 60))
+					if(0 != hour){
+						str = str + hour.toString() + $.su.CHAR.PPPOESERVER_SESSION.HOUR;
+					}
+					var minute = Math.floor((tm - day * 24 * 60 * 60 - hour * 60 * 60) / 60);
+					if(0 != minute){
+						str = str + minute.toString() + $.su.CHAR.PPPOESERVER_SESSION.MINUTE;
+					}
+					var second = Math.floor(tm % 60);
+					if(0 != second){
+						str = str + second.toString() + $.su.CHAR.PPPOESERVER_SESSION.SECOND;
+					}
+					return str;
+				}
+			},
+			{
+				text: $.su.CHAR.PPPOESERVER_SESSION.COL_NOTE,
+				width: $.su.CHAR.SETTING.PPPOESERVER_SESSION.NOTE_WIDTH,
+				dataIndex: 'note',
+				xtype:"comment",
+				scan: {
+					cmp: $.search.compare.string
+				}
+			},
+			{
+				text: $.su.CHAR.PPPOESERVER_SESSION.COL_DISCONNECT,
+				width: $.su.CHAR.SETTING.PPPOESERVER_SESSION.DISCONNECT_WIDTH,
+				renderer: function(dd, index, data){
+					inHTML = "<div class=\"button-container interface-operation\">";
+					inHTML +=	"<a title=\"" + $.su.CHAR.PPPOESERVER_SESSION.COL_DISCONNECT + "\" class=\"grid-content-btn grid-content-btn-delete btn-delete grid-delete\""
+								+ " href=\"javascript:void(0);\" data-pid=\"" + data.pid + "\" >";
+					inHTML +=		"<span class=\"icon\"></span>";
+					inHTML +=	"</a>";
+					inHTML +="</div>";
+					return inHTML;
+				}
+			}
+		],
+		operation:
+			"prompt|delete|search|searchAll|refresh"
+	}).delegate("a.grid-delete", "click", function(e){
+		var pid = $(this).attr("data-pid");
+		var proxy = new $.su.Proxy();
+		proxy.del({"pppoe_server":{"table": "session", "filter":[{"pid":""+pid}]}}, function(data){
+			if (data.error_code == 0)
+				reloadGrid();
+			else
+				$("span#global-warning-text").html($.su.CHAR.ERROR_CODE[data.error_code]);
+		});
+	}).on('ev_load',  function(e, data, others){
+		$("#session_total_num").textbox('setValue', others.all_num);
+	});
+
+	$("a.operation-btn.btn-delete span.text").text($.su.CHAR.PPPOESERVER_SESSION.COL_DISCONNECT);
+
+	function reloadGrid(){
+		var store = sessionGrid.grid('getStore');
+		store.keyLength = 0;
+		store.load();
+		sessionGrid.grid("disGridChkbox");
+		sessionGrid.grid("prompt", true);
+	}
+
+	var pppoeserver_info_help = new $.su.Help({
+		container: "div#session_help",
+		content: ["PPPOE_SERVER_SESSION_HELP"]
+	});
+
+});
+
+</script>
+
+</body>
+
+</html>

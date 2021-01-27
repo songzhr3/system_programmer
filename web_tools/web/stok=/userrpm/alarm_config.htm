@@ -1,0 +1,513 @@
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
+<html xmlns="http://www.w3.org/1999/xhtml">
+<head>
+    <meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
+    <title>alarm_config</title>
+    <style type="text/css">
+        #smtp div.textarea-container div.textbox-error-tips{
+            margin-top: 200px;
+        }
+    </style>
+</head>
+<body>
+<div class="func-container">
+    <!-- Main configuration interface -->
+    <div id="function_setting">
+        <!-- Event configuration form -->
+        <form id="alarm_event_config">
+            <input id="alarm_switch"  name="alarm_switch" />
+            <input id="module_switch" name="module_switch" />
+            <input id="modules"       name="modules" />
+            <input id="level_switch"  name="level_switch" />
+            <input id="levels"        name="levels" />
+        </form>
+        <!-- Email configuration form -->
+        <form id="alarm_email_config">
+            <div id="smtp">
+                <input    id="email_switch"  name="email_switch" />
+                <input    id="smtp_server"   name="smtp_server" />
+                <input    id="encrypt_type"  name="starttls" />
+                <input    id="smtp_port"     name="smtp_port" />
+                <input    id="sender"        name="sender" />
+                <textarea id="reciever"      name="reciever"></textarea>
+                <input    id="auth_switch"   name="auth_switch" />
+                <input    id="auth_account"  name="auth_account" />
+                <input    id="auth_password" name="auth_password" />
+            </div>
+	    <div id="tls_remind"></div>
+            <div id="content">
+                <input id="subject"  name="subject" />
+                <input id="send_gap" name="send_gap" />
+            </div>
+            <button id="email_test" type="button"></button>
+        </form>
+        <!-- Buttons -->
+        <button id="submit_config" type="button"></button>
+
+        <!-- Wating bar -->
+        <div id="alarm_config_msg" class="hidden warning">
+            <div id="alarm_config_cnt" class="reboot-loading-msg">
+                <input id="alarm_config_bar" type="text" />
+            </div>
+        </div>
+    </div>
+
+    <!-- Help Info -->
+    <div id="alarm_config_help"></div>
+</div>
+
+<script type="text/javascript">
+    try{
+        $
+    }catch(e){
+        location.href = "/";
+    };
+
+    $(document).ready(function(e){
+        $(".func-container").hide();
+        var padding = "&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;";
+        var settingProxy = new $.su.Proxy();
+
+        // Event configuration
+        if('alarm_event_config' === $.su.app.runningModule.name){
+            $("#alarm_email_config").hide();
+
+            $("#alarm_switch").checkbox({
+                items: [{
+                    boxlabel      : $.su.CHAR.ALARM_CONFIG.EVENT.ALARM_SWITCH,
+                    inputValue    : "on",
+                    uncheckedValue: "off"
+                }]
+            }).on("ev_change", function(e, oldValue, newValue){
+                var val = (newValue[0]=="alarm_switch"||newValue[0]=="on") ? "on" : "off";
+                switch(val)
+                {
+                    case "on":
+                        $("#level_switch").checkbox("enable");
+                        $("#module_switch").checkbox("enable");
+                        break;
+                    case "off":
+                        $("#level_switch").checkbox("disable");
+                        $("#module_switch").checkbox("disable");
+                        break;
+                }
+            });
+
+            $("#level_switch").checkbox({
+                items: [{
+                    boxlabel      : $.su.CHAR.ALARM_CONFIG.EVENT.LEVEL_SWITCH,
+                    inputValue    : "on",
+                    uncheckedValue: "off"
+                }]
+            }).on("ev_change", function(e, oldValue, newValue){
+                var val = (newValue[0]=="level_switch"||newValue[0]=="on") ? "on" : "off";
+                switch(val)
+                {
+                    case "on":
+                        $("#levels").combobox("enable");
+                        break;
+                    case "off":
+                        $("#levels").combobox("disable");
+                        $("#levels").combobox("setValue","ALL");
+                        break;
+                }
+            });
+
+            $("#levels").combobox({
+                allowBlank : false,
+                multiSelect: true,
+                items      : [
+                    {name:$.su.CHAR.ALARM.LEVELS.ALL,           value:"ALL"},
+                    {name:$.su.CHAR.ALARM.LEVELS.EMERGENCY,     value:"Emergency"},
+                    {name:$.su.CHAR.ALARM.LEVELS.ALERT,         value:"Alert"},
+                    {name:$.su.CHAR.ALARM.LEVELS.CRITICAL,      value:"Critical"},
+                    {name:$.su.CHAR.ALARM.LEVELS.ERROR,         value:"Error"},
+                    {name:$.su.CHAR.ALARM.LEVELS.WARNING,       value:"Warning"},
+                    {name:$.su.CHAR.ALARM.LEVELS.NOTIFICATION,  value:"Notification"},
+                    {name:$.su.CHAR.ALARM.LEVELS.INFORMATIONAL, value:"Informational"},
+                    {name:$.su.CHAR.ALARM.LEVELS.DEBUGGING,     value:"Debugging"}
+                ]
+            });
+
+            $("#module_switch").checkbox({
+                items: [{
+                    boxlabel      : $.su.CHAR.ALARM_CONFIG.EVENT.MODULE_SWITCH,
+                    inputValue    : "on",
+                    uncheckedValue: "off"
+                }]
+            }).on("ev_change", function(e, oldValue, newValue){
+                var val = (newValue[0]=="module_switch"||newValue[0]=="on") ? "on" : "off";
+                switch(val)
+                {
+                    case "on":
+                        $("#modules").combobox("enable");
+                        break;
+                    case "off":
+                        $("#modules").combobox("disable");
+                        $("#modules").combobox("setValue", "ALL");
+                        break;
+                }
+            });
+
+            var alarm_modules = [
+                {name:$.su.CHAR.ALARM.MODULES.ALL, value:"ALL"}
+            ];
+
+            var moduleProxy = new $.su.Proxy({
+                async: false
+            });
+
+            moduleProxy.query({
+                alarm: {
+                    table: "alarm_modules"
+                }
+            }, function(data) {
+                var module_list = data.alarm.alarm_modules || [];
+                for (var i = 0; i < module_list.length; i++) {
+                    var module_name = module_list[i];
+                    alarm_modules.push(
+                        {
+                            name : $.su.CHAR.ALARM.MODULES[module_name.toUpperCase()],
+                            value: module_name
+                        }
+                    )
+                }
+            });
+
+            $("#modules").combobox({
+                fieldLabel: "",
+                allowBlank: false,
+                multiSelect: true,
+                items: alarm_modules
+            });
+
+            // Form
+            var alarmForm = $("#alarm_event_config").form({
+                proxy: settingProxy,
+                autoLoad: true,
+                fields: [
+                    {name:"alarm_switch",  mapping:"alarm_switch"},
+                    {name:"level_switch",  mapping:"level_switch"},
+                    {name:"levels",        mapping:"levels"},
+                    {name:"module_switch", mapping:"module_switch"},
+                    {name:"modules",       mapping:"modules"}
+                ],
+                parseKey: {
+                    moduleName: "alarm",
+                    sectionName: "event"
+                },
+                submitBtn: "#submit_config"
+            }).on("ev_loadData", function(data){
+                if ($("#module_switch").checkbox("getValue1")!="on"){
+                    $("#modules").combobox("setValue", "ALL")
+                };
+                if ($("#level_switch").checkbox("getValue1")!="on"){
+                    $("#levels").combobox("setValue", "ALL")
+                }
+            });
+
+            // Help info
+            var ALARM_CONFIG_help = new $.su.Help({
+                container: "div#alarm_config_help",
+                content: ["ALARM_CONFIG", "ALARM_EVENT_CONFIG_LIST"]
+            });
+        }
+
+        // Email configuration
+        if('alarm_email_config' === $.su.app.runningModule.name){
+            $("#alarm_event_config").hide();
+
+            // Email feature's global switch.
+            $("#email_switch").checkbox({
+                items:[{
+                    boxlabel      : $.su.CHAR.ALARM_CONFIG.EMAIL.EMAIL_SWITCH,
+                    inputValue    : "on",
+                    uncheckedValue: "off"
+                }]
+            }).on("ev_change", function(e, oldValue, newValue){
+                var val = (newValue[0]=="email_switch"||newValue[0]=="on") ? "on" : "off";
+                switch(val)
+                {
+                    case "on": // Enable chain
+                        $("#smtp_server").textbox("enable");
+                        $("#encrypt_type").radio("enable");
+                        $("#smtp_port").textbox("enable");
+                        $("#sender").textbox("enable");
+                        $("#reciever").textarea("enable");
+                        $("#auth_switch").checkbox("enable");
+                        break;
+                    case "off": // Disable chain
+                        $("#smtp_server").textbox("disable");
+                        $("#encrypt_type").radio("disable");
+                        $("#smtp_port").textbox("disable");
+                        $("#sender").textbox("disable");
+                        $("#reciever").textarea("disable");
+                        $("#auth_switch").checkbox("setValue", "off");
+                        $("#auth_switch").checkbox("disable");
+                        break;
+                }
+            });
+
+            // SMTP server - Basic
+            $("#smtp").panel({
+                title      : padding + $.su.CHAR.ALARM_CONFIG.EMAIL.SMTP,
+                collapsible: false
+            });
+
+            $("#smtp_server").textbox({
+                fieldLabel: padding + $.su.CHAR.ALARM_CONFIG.EMAIL.SMTP_SERVER,
+                allowBlank: false,
+                labelCls  : "m",
+                vtype     : "ip_domain",
+                maxLength : 100
+            });
+
+            $("#encrypt_type").radio({
+                fieldLabel: padding + $.su.CHAR.ALARM_CONFIG.EMAIL.ENCRYPT_TYPE,
+                tips      : $.su.CHAR.ALARM_CONFIG.EMAIL.TIPS.ENCRYPT_TYPE,
+                columns   : 2,
+                items     :[
+                    {boxlabel: $.su.CHAR.ALARM_CONFIG.EMAIL.ENCTYPE.STARTTLS, name:"starttls", inputValue:"on", checked:true},
+                    {boxlabel: $.su.CHAR.ALARM_CONFIG.EMAIL.ENCTYPE.TLS, name:"starttls", inputValue:"off"}
+                ],
+                allowBlank: false
+            });
+
+            $("#smtp_port").textbox({
+                fieldLabel: padding + $.su.CHAR.ALARM_CONFIG.EMAIL.SMTP_PORT,
+                tips      : $.su.CHAR.ALARM_CONFIG.EMAIL.TIPS.PORT,
+                allowBlank: false,
+                labelCls  : "m",
+                vtype     : "number",
+                minLength : 1,
+                maxLength : 5
+            });
+
+            $("#sender").textbox({
+                fieldLabel: padding + $.su.CHAR.ALARM_CONFIG.EMAIL.SENDER,
+                allowBlank: false,
+                labelCls  : "m",
+                vtype     : "email",
+                maxLength : 50
+            });
+
+            var RECIEVER_NUM_MIN = 1;
+            var RECIEVER_NUM_MAX = 10;
+            $("#reciever").textarea({
+                fieldLabel: padding + $.su.CHAR.ALARM_CONFIG.EMAIL.RECIEVER,
+                allowBlank: false,
+                tips      : $.su.CHAR.ALARM_CONFIG.EMAIL.TIPS.RECIEVER,
+                inputCls  : "long",
+                setValueCb: function(data){
+                    var dataString = data.join("\n");
+                    return dataString;
+                },
+                getValueCb: function(data){
+                    var tmp = data.replace(/\s/g,"\n")
+                    var dataArray = tmp.split(/;|\n/);
+
+                    for (var i = 0; i < dataArray.length; i++)
+                    {
+                        if (dataArray[i] == "")
+                        {
+                            dataArray.splice(i , 1);
+                            i--;
+                        }
+                    }
+                    return dataArray;
+                },
+                validator : function(data){
+                    var dataArray = data.replace(/\s/g,"\n").trim().split(/;|\n/);
+                    var dataSet = new Set(dataArray);
+
+                    if (dataArray.length > dataSet.size){
+                        return $.su.CHAR.ALARM_CONFIG.EMAIL.INVALID_TEXT.RECIEVER.DUPLICATE;
+                    }
+
+                    if (dataArray.length < RECIEVER_NUM_MIN || dataArray.length > RECIEVER_NUM_MAX){
+                        return $.su.CHAR.ALARM_CONFIG.EMAIL.INVALID_TEXT.RECIEVER.INVALID_LEN;
+                    }
+
+                    return true;
+                }
+            });
+
+            // SMTP server- Authentication
+            $("#auth_switch").checkbox({
+                items:[{
+                    boxlabel      : $.su.CHAR.ALARM_CONFIG.EMAIL.AUTH_SWITCH,
+                    inputValue    : "on",
+                    uncheckedValue: "off"
+                }]
+            }).on("ev_change", function(e, oldValue, newValue){
+                var val = (newValue[0]=="auth_switch"||newValue[0]=="on") ? "on" : "off";
+                switch(val)
+                {
+                    case("on"): // Enable chain
+                        $("#auth_account").textbox("enable");
+                        $("#auth_password").password("enable");
+                        break;
+                    case("off"): // Disable chain
+                        $("#auth_account").textbox("disable");
+                        $("#auth_password").password("disable");
+                        break;
+                }
+            });
+
+            $("#auth_account").textbox({
+                fieldLabel: padding + $.su.CHAR.ALARM_CONFIG.EMAIL.AUTH_ACCOUNT,
+                allowBlank: false,
+                labelCls  : "m",
+                minLength : 1,
+                maxLength : 40
+            });
+
+            $("#auth_password").password({
+                fieldLabel  : padding + $.su.CHAR.ALARM_CONFIG.EMAIL.AUTH_PASSWORD,
+                allowBlank  : false,
+                labelCls    : "m",
+                vtype       : "password",
+                showLevel   : false,
+                allowVisible: true,
+                minLength   : 1,
+                maxLength   : 30
+            });
+
+            // Email content
+            $("#content").panel({
+                title      : $.su.CHAR.ALARM_CONFIG.EMAIL.CONTENT,
+                collapsible: false
+            })
+
+            $("#subject").textbox({
+                fieldLabel: padding + $.su.CHAR.ALARM_CONFIG.EMAIL.SUBJECT,
+                tips      : $.su.CHAR.ALARM_CONFIG.EMAIL.TIPS.SUBJECT,
+                allowBlank: false,
+                labelCls  : "m",
+                vtype     : "string_visible",
+                minLength : 1,
+                maxLength : 50
+            });
+
+            $("#send_gap").textbox({
+                fieldLabel: padding + $.su.CHAR.ALARM_CONFIG.EMAIL.SEND_GAP,
+                tips      : $.su.CHAR.ALARM_CONFIG.EMAIL.TIPS.SECOND,
+                allowBlank: false,
+                labelCls  : "m",
+                vtype     : "number",
+                min       : 0,
+                max       : 300
+            });
+            // Form
+            var alarmForm = $("#alarm_email_config").form({
+                proxy: settingProxy,
+                autoLoad: true,
+                fields: [
+                    {name: "email_switch",  mapping:"email_switch"},
+                    {name: "smtp_server",   mapping:"smtp_server"},
+                    {name: "starttls",      mapping:"starttls"},
+                    {name: "smtp_port",     mapping:"smtp_port"},
+                    {name: "sender",        mapping:"sender"},
+                    {name: "reciever",      mapping:"reciever"},
+                    {name: "auth_switch",   mapping:"auth_switch"},
+                    {name: "auth_account",  mapping:"auth_account"},
+                    {name: "auth_password", mapping:"auth_password"},
+                    {name: "subject",       mapping:"subject"},
+                    {name: "send_gap",      mapping:"send_gap"}
+                ],
+                parseKey: {
+                    moduleName: "alarm",
+                    sectionName: "email"
+                },
+                submitBtn: "#submit_config"
+            });
+
+            $("#alarm_config_msg").msg({
+                type     : "confirm",
+                global   : true,
+                closeBtn : false,
+                cls      : "reboot-confirm-size"
+            });
+
+            $("#alarm_config_bar").waitingbar({
+                fieldLabel: $.su.CHAR.ALARM_CONFIG.EMAIL.TIPS.EMAIL_TEST,
+                labelCls  : "xxl",
+                separator : ""
+            });
+
+            var showAlarmConfigBar = function(show){
+                if(show){
+                    $("#alarm_config_msg").msg("hideButtons");
+                    $("#alarm_config_bar").waitingbar("show");
+                    $("#alarm_config_bar").waitingbar("run");
+                    $("#alarm_config_msg").msg("show");
+                }else{
+                    $("#alarm_config_msg").msg("hide");
+                    $("#alarm_config_msg").msg("close");
+                    $("#alarm_config_bar").waitingbar("stop");
+                    $("#alarm_config_bar").waitingbar("reset");
+                }
+            };
+
+            var emailTestProxy  = new $.su.Proxy();
+
+            // Email testing button
+            $("#email_test").button({
+                text   : $.su.CHAR.ALARM_CONFIG.EMAIL.EMAIL_TEST,
+                cls    : "submit",
+                handler: function(e){
+                    var data = {
+                        "alarm": {
+                            "email_test": {}
+                        }
+                    };
+                    emailTestProxy.action(data, function(data){
+                        showAlarmConfigBar(false);
+                        var errcode = data.error_code;
+                        if (0 == errcode)
+                        {
+                            var msg = $("div#global-warning-msg");
+                            $("span#global-warning-text").html($.su.CHAR.ALARM_CONFIG.MSG.SUCCEED);
+                            if (msg.is(":hidden")){
+                                msg.msg("show");
+                            }
+                        }
+                    },function(data){
+                        showAlarmConfigBar(false);
+                    },function(data){
+                        showAlarmConfigBar(false);
+                    });
+
+                    showAlarmConfigBar(true);
+                }
+            });
+
+            $("#tls_remind").html("<hr/>" + ($.su.CHAR.ALARM_CONFIG.EMAIL.REMINDS.TLS));
+            $("#tls_remind").css("marginBottom","40px");
+
+            var ALARM_CONFIG_help = new $.su.Help({
+                container: "div#alarm_config_help",
+                content  : ["ALARM_CONFIG", "ALARM_EMAIL_CONFIG_LIST"]
+            });
+        }
+
+        // Submit button
+        $("#submit_config").button({
+            text   : $.su.CHAR.ALARM_CONFIG.SUBMIT,
+            cls    : "submit",
+            handler: function(e){
+                alarmForm.form("submit", {}, function(data){
+                    $.su.loading.hide();
+                },function(error){
+                    $.su.loading.hide();
+                },function(fail){
+                    $.su.loading.hide();
+                });
+            }
+        });
+
+        $(".func-container").show();
+    });
+</script>
+</body>
+</html>

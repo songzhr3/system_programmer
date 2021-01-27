@@ -1,0 +1,1418 @@
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
+<html xmlns="http://www.w3.org/1999/xhtml">
+<head>
+<meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
+<title>TIME_MNGT</title>
+
+</head>
+
+<body>
+<div class="func-container">
+	 <div id="time_mngt_list">
+ 		<div id="time_mngt_grid">
+
+		</div>
+	 </div>
+
+ 	<div id="own_editor">
+		<input class = "hidden" id = "flag" name = "flag" value = "user">
+		<input id="name" name="name"/>
+		<input id="mode" name="mode" value="calendar"/>
+
+		<div id="custom_set">
+			<input class = "hidden" id="time_section" name="time_section" value=""/>
+			<input class = "hidden" id="weekday" name="weekday" value=""/>
+			<input id="weekdays" name="weekdays" value=""/>
+			<input id="fromHour" name="fromHour" value=""/>
+			<input id="fromMin" name="fromMin" value=""/>
+			<input id="toHour" name="toHour" value=""/>
+			<input id="toMin" name="toMin" value=""/>
+			<button id="addTime" name="addTime" class="add-time"></button>
+
+			<ul id="time_seg">
+
+			</ul>
+
+
+		</div>
+
+		<div id="calendar_set">
+			<input id="slots" name="slots"/>
+			<input class = "hidden" id="mon" name="mon"/>
+			<input class = "hidden" id="tue" name="tue"/>
+			<input class = "hidden" id="wed" name="wed"/>
+			<input class = "hidden" id="thu" name="thu"/>
+			<input class = "hidden" id="fri" name="fri"/>
+			<input class = "hidden" id="sat" name="sat"/>
+			<input class = "hidden" id="sun" name="sun"/>
+		</div>
+
+		<input id="comment" name="comment"/>
+	</div>
+
+	 <div id="time_mngt_help"></div>
+</div>
+
+<script type="text/javascript">
+try{
+    $
+}catch(e){
+    location.href = "/";
+};
+
+$(document).ready(function(e){
+	$(".func-container").hide();
+
+	var timeValue = '';
+	var timeSegment = [];
+
+	var timeZoneObj = {
+		"0": 'GMT-12:00',
+	    "60": 'GMT-11:00',
+	    "120": 'GMT-10:00',
+	    "180": 'GMT-09:00',
+	    "240": 'GMT-08:00',
+	    "300": 'GMT-07:00',
+	    "360": 'GMT-06:00',
+	    "420": 'GMT-05:00',
+	    "450": 'GMT-04:30',
+	    "480": 'GMT-04:00',
+	    "510": 'GMT-03:30',
+	    "540": 'GMT-03:00',
+	    "600": 'GMT-02:00',
+	    "660": 'GMT-01:00',
+	    "720": 'GMT'      ,
+	    "780": 'GMT+01:00',
+	    "840": 'GMT+02:00',
+	    "900": 'GMT+03:00',
+	    "930": 'GMT+03:30',
+	    "960": 'GMT+04:00',
+	    "990": 'GMT+04:30',
+	    "1020": 'GMT+05:00',
+	    "1050": 'GMT+05:30',
+	    "1065": 'GMT+05:45',
+	    "1080": 'GMT+06:00',
+	    "1110": 'GMT+06:30',
+	    "1140": 'GMT+07:00',
+	    "1200": 'GMT+08:00',
+	    "1260": 'GMT+09:00',
+	    "1290": 'GMT+09:30',
+	    "1320": 'GMT+10:00',
+	    "1380": 'GMT+11:00',
+	    "1440": 'GMT+12:00',
+	    "1500": 'GMT+13:00'
+	};
+
+	var dayObj = {
+		"1": $.su.CHAR.ORDER["1ST_"],
+		"2": $.su.CHAR.ORDER["2ND"],
+		"3": $.su.CHAR.ORDER["3RD"]
+	};
+
+	var weekObj = {
+		"mon": $.su.CHAR.DATE.MON,
+		"tue": $.su.CHAR.DATE.TUES,
+		"wed": $.su.CHAR.DATE.WED,
+		"thu": $.su.CHAR.DATE.THUR,
+		"fri": $.su.CHAR.DATE.FRI,
+		"sat": $.su.CHAR.DATE.SAT,
+		"sun": $.su.CHAR.DATE.SUN
+	};
+
+	var weekdayObj = {
+		0: "mon",
+		1: "tue",
+		2: "wed",
+		3: "thu",
+		4: "fri",
+		5: "sat",
+		6: "sun"
+	};
+
+	var monthObj = {
+		"1": $.su.CHAR.DATE.JAN,
+		"2": $.su.CHAR.DATE.FEB,
+		"3": $.su.CHAR.DATE.MAR,
+		"4": $.su.CHAR.DATE.APR,
+		"5": $.su.CHAR.DATE.MAY,
+		"6": $.su.CHAR.DATE.JUN,
+		"7": $.su.CHAR.DATE.JUL,
+		"8": $.su.CHAR.DATE.AUG,
+		"9": $.su.CHAR.DATE.SEP,
+		"10": $.su.CHAR.DATE.OCT,
+		"11": $.su.CHAR.DATE.NOV,
+		"12": $.su.CHAR.DATE.DEC
+	};
+
+
+	$("input#name").textbox({
+		fieldLabel: $.su.CHAR.TIME_MNGT.NAME,
+		vtype:"string_visible_allow_blank",
+        tips:"(1-32个字符)",
+		minLength:0,
+		maxLength:32,
+		tipsCls:"after-button xl",
+		allowBlank:false,
+		cls: 'inline-block ',
+		vtype: "name"
+	});
+
+	var timeSettingProxy = new $.su.Proxy({
+		autoLoad: false
+	});
+
+	var timeSystem = 0;
+	var showSysTime = function(e, input, msg){
+		clearInterval(timeSystem);
+
+		var timeFormat = function(date){
+			//console.log(date);
+
+			var d = "";
+			var dd = date.date.split("/");
+			var y = dd[0];
+			var m = parseInt(dd[1], 10);
+			var dt = parseInt(dd[2], 10);
+
+			d += y + "年 ";
+			d += m + "月 ";
+			d += dt + "日 ";
+			d += weekObj[date.day.toLowerCase()] + " ";
+			d += date.time + " ";
+			d += timeZoneObj[date.timezone];
+
+
+			var inHTML = 	"<span class=\"label\">"+$.su.CHAR.TIME_MNGT.SYSTEM_TIME+":"+"</span>";
+				inHTML +=	"<span>";
+				inHTML += 	d;
+				inHTML += 	"</span>";
+			return inHTML;
+		};
+
+
+		function format(t){
+			var tString = t.toString();
+			if(t < 10){
+				tString = "0" + tString;
+			}
+			return tString;
+		}
+
+		timeSettingProxy.query({"time_mngt":{"name":"time"}}, function(data){
+			if (data){
+				data = data["time_mngt"]["time"];
+				var d = {
+					date: data.date,
+					day: data.day,
+					time: data.time,
+					timezone: data.timezone
+				};
+
+				var t = timeFormat(d);
+				msg.msg("setTitle", t);
+
+				timeSystem = setInterval(function(){
+					var t = d.time.split(":");
+					var second = parseInt(t[2], 10);
+					var min = parseInt(t[1], 10);
+					var hour = parseInt(t[0], 10);
+					/*秒数进位*/
+					if(59 == second){
+						second = 0;
+						min++;
+					}else{
+						second++;
+					}
+					if(60 == min){
+						min = 0;
+						hour++;
+					}
+					if(24 == hour){
+						hour = 0;
+					}
+
+					/*秒数补0*/
+					d.time = format(hour) + ":" + format(min) + ":" + format(second);
+					var t = timeFormat(d);
+					msg.msg("setTitle", t);
+				}, 1*1000);
+			};
+		});
+	};
+
+	var stopSysTime = function(){
+		clearInterval(timeSystem);
+	};
+
+    var tSeg = "";
+
+    //12个时间段
+    for(var i = 1 ; i <= 12 ; i++){
+        tSeg += "<li class=\"block\">";
+        tSeg +=     "<input id=\"time" + i + "\" name=\"time" + i + "\" value=\"\"/>";
+        tSeg +=     "<button id=\"time" + i + "M\" name=\"time" + i + "\" class=\"times del-time\"></button>";
+        tSeg += "</li>";
+    }
+
+    $("input#time_section").textbox({
+		cls: "hidden",
+		getValueCb: function(data){
+			var time_section = [];
+			var dataArray = data.split(",");
+
+			for(var i = 0; i < dataArray.length/2; i++)
+			{
+				if(!dataArray[i*2] || !dataArray[i*2 + 1])
+				{
+					break;
+				}
+				time_section.push(dataArray[i*2] + "," + dataArray[i*2 + 1]);
+			}
+
+			return time_section
+		}
+	})
+
+    $("ul#time_seg").html(tSeg);
+
+    $("#weekdays").checkbox({
+    	fieldLabel:$.su.CHAR.TIME_MNGT.WEEKDAYS,
+    	columns:7,
+    	disable:true,
+    	items: [
+            {boxlabel: $.su.CHAR.TIME_MNGT.MON, inputValue: "mon", uncheckedValue: "", name:"mon"},
+            {boxlabel: $.su.CHAR.TIME_MNGT.TUE, inputValue: "tue", uncheckedValue: "", name:"tue"},
+            {boxlabel: $.su.CHAR.TIME_MNGT.WED, inputValue: "wed", uncheckedValue: "", name:"wed"},
+            {boxlabel: $.su.CHAR.TIME_MNGT.THU, inputValue: "thu", uncheckedValue: "", name:"thu"},
+            {boxlabel: $.su.CHAR.TIME_MNGT.FRI, inputValue: "fri", uncheckedValue: "", name:"fri"},
+            {boxlabel: $.su.CHAR.TIME_MNGT.SAT, inputValue: "sat", uncheckedValue: "", name:"sat"},
+            {boxlabel: $.su.CHAR.TIME_MNGT.SUN, inputValue: "sun", uncheckedValue: "", name:"sun"}
+
+        ]
+    });
+
+    $("input#fromHour").textbox({
+    	fieldLabel:$.su.CHAR.TIME_MNGT.TIME_SEG,
+    	cls:"inline xxs",
+    	//allowBlank:false,
+    	inputCls:"xxxs lp",
+    	maxLength:2,
+    	vtype:{
+    		vtype:"number",
+    		min:0,
+    		max:23
+    	}
+
+    }).on("ev_change", function(e, newValue){
+    	/*if(2 == newValue.length && $("input#fromHour").textbox("validate") != false){
+    		$("input#fromMin").textbox("setFocus");
+    		$("input#fromMin").focus();
+    	}*/
+
+    });
+
+    $("input#fromMin").textbox({
+    	labelCls:"xxxxs",
+    	fieldLabel:":&nbsp",
+    	separator:"",
+    	cls:"inline xxs",
+    	//allowBlank:false,
+    	inputCls:"xxxs lp",
+    	maxLength:2,
+    	vtype:{
+    		vtype:"number",
+    		min:0,
+    		max:59
+    		}
+    }).on("ev_change", function(e, newValue){
+    	if($("input#fromHour").textbox("getValue") == "24" && newValue!= "" && parseInt(newValue) != 0){
+    		$("input#fromMin").textbox("setError", $.su.CHAR.TIME_MNGT.OVERLOP_HOUR_24);
+    		return false;
+    	}
+    	/*if(2 == newValue.length && $("input#fromMin").textbox("validate") != false){
+    		$("input#toHour").textbox("setFocus");
+    		$("input#toHour").focus();
+    	}*/
+
+
+    });
+
+    $("input#toHour").textbox({
+    	fieldLabel:"-&nbsp",
+    	separator:"",
+    	labelCls:"xxxxs",
+    	cls:"inline xxs",
+    	//allowBlank:false,
+    	inputCls:"xxxs lp",
+    	maxLength:2,
+    	vtype:{
+    		vtype:"number",
+    		min:0,
+    		max:24
+    		}
+    }).on("ev_change", function(e, newValue){
+
+    	/*if(2 == newValue.length && $("input#toHour").textbox("validate") != false){
+    		$("input#toMin").textbox("setFocus");
+    		$("input#toMin").focus();
+    	}*/
+
+
+    });
+
+    $("input#toMin").textbox({
+    	labelCls:"xxxxs",
+    	fieldLabel:":&nbsp",
+    	separator:"",
+    	cls:"inline xxs",
+    	//allowBlank:false,
+    	inputCls:"xxxs lp",
+    	maxLength:2,
+    	vtype:{
+    		vtype:"number",
+    		min:0,
+    		max:59
+    		}
+    }).on("ev_change", function(e, newValue){
+    	if($("input#toHour").textbox("getValue") == "24" && newValue!= "" &&  parseInt(newValue) != 0){
+    		$("input#toMin").textbox("setError", $.su.CHAR.TIME_MNGT.OVERLOP_HOUR_24);
+    		return false;
+    	}
+    });
+
+
+	var time1 = $("input#time1").textbox({
+    	//fieldLabel:"时间段1",
+    	cls:"inline",
+    	readOnly:"ture"
+    });
+
+    var time1M = $("button#time1M").button({
+    	cls:"inline",
+    	text:"-"
+    });
+
+    var time2 = $("input#time2").textbox({
+    	//fieldLabel:"时间段2",
+    	cls:"inline",
+    	readOnly:"ture"
+    });
+    var time2M = $("button#time2M").button({
+    	cls:"inline",
+    	text:"-"
+    });
+
+    var time3 = $("input#time3").textbox({
+    	//fieldLabel:"时间段3",
+    	cls:"inline",
+    	readOnly:"ture"
+    });
+    var time3M = $("button#time3M").button({
+    	cls:"inline",
+    	text:"-"
+    });
+
+    var time4 = $("input#time4").textbox({
+    	//fieldLabel:"时间段4",
+    	cls:"inline",
+    	readOnly:"ture"
+    });
+    var time4M = $("button#time4M").button({
+    	cls:"inline",
+    	text:"-"
+    });
+
+
+    var time5 = $("input#time5").textbox({
+    	//fieldLabel:"时间段5",
+    	cls:"inline",
+    	readOnly:"ture"
+    });
+    var time5M = $("button#time5M").button({
+    	cls:"inline",
+    	text:"-"
+    });
+
+
+    var time6 = $("input#time6").textbox({
+    	//fieldLabel:"时间段6",
+    	cls:"inline",
+    	readOnly:"ture"
+    });
+    var time6M = $("button#time6M").button({
+    	cls:"inline",
+    	text:"-"
+    });
+
+
+    var time7 = $("input#time7").textbox({
+    	//fieldLabel:"时间段7",
+    	cls:"inline",
+    	readOnly:"ture"
+    });
+    var time7M = $("button#time7M").button({
+    	cls:"inline",
+    	text:"-"
+    });
+
+
+    var time8 = $("input#time8").textbox({
+    	cls:"inline",
+    	readOnly:"ture"
+    });
+    var time8M = $("button#time8M").button({
+    	cls:"inline",
+    	text:"-"
+    });
+
+    var time9 = $("input#time9").textbox({
+        cls:"inline",
+        readOnly:"ture"
+    });
+    var time9M = $("button#time9M").button({
+        cls:"inline",
+        text:"-"
+    });
+
+    var time10 = $("input#time10").textbox({
+        cls:"inline",
+        readOnly:"ture"
+    });
+    var time10M = $("button#time10M").button({
+        cls:"inline",
+        text:"-"
+    });
+
+    var time11 = $("input#time11").textbox({
+        cls:"inline",
+        readOnly:"ture"
+    });
+    var time11M = $("button#time11M").button({
+        cls:"inline",
+        text:"-"
+    });
+
+    var time12 = $("input#time12").textbox({
+        cls:"inline",
+        readOnly:"ture"
+    });
+    var time12M = $("button#time12M").button({
+        cls:"inline",
+        text:"-"
+    });
+
+
+    var cuSet = $("#custom_set").fieldset({
+		fields: [
+			{name: "weekday"},
+			{name: "fromHour"},
+			{name: "fromMin"},
+			{name: "toHour"},
+			{name: "toMin"},
+			{name: "addTime"},
+			{name: "time1"},
+			{name: "time2"},
+			{name: "time3"},
+			{name: "time4"},
+			{name: "time5"},
+			{name: "time6"},
+			{name: "time7"},
+			{name: "time8"},
+            {name: "time9"},
+            {name: "time10"},
+            {name: "time11"},
+            {name: "time12"}
+		]
+	});
+
+	var caSet = $("#calendar_set").fieldset({
+		fields:[
+			{name: "slots"}
+		]
+	});
+
+
+    /*时间补0*/
+    function timeParse(text){
+    	var time = parseInt(text);
+    	if(time < 10){
+    		text = "0" + time.toString();
+    	}
+    	return text;
+    }
+
+    /*时间组件刷新*/
+    function timeRenew(){
+
+    	for (var i = 1; i <= 12; i++){
+    		var obj = "input#time" + i.toString();
+    		var btn = "button#time" + i.toString() + "M";
+    		$(obj).textbox("hide");
+    		$(btn).button("hide");
+    	}
+
+    	for (var i = 1; i <= timeSegment.length; i++){
+    		obj = "input#time" + i.toString();
+    		btn = "button#time" + i.toString() + "M";
+    		$(obj).textbox("show");
+    		$(btn).button("show");
+    		var timeString = timeSegment[i-1].fHour + ":" + timeSegment[i-1].fMin + " - " + timeSegment[i-1].tHour + ":" + timeSegment[i-1].tMin ;
+    		$(obj).textbox("setValue", timeString);
+    	}
+    }
+
+    /*添加一个时间段*/
+    $("#addTime").button({
+    	cls:"inline",
+    	text:"+"
+    }).click(function(){
+    	if(timeSegment.length >= 12){
+    		if ($.su.app && $.su.app.errorOperation && $.su.app.errorOperation.denied){
+    			$.su.app.errorOperation.denied(-54201);
+			}
+    		return false;
+    	}
+		if ("" == $("input#fromHour").textbox("getValue") ||
+			"" == $("input#toHour").textbox("getValue") ||
+			"" == $("input#fromMin").textbox("getValue") ||
+			"" == $("input#toMin").textbox("getValue"))
+		{
+			return false;
+		}
+    	if(!$("input#fromHour").textbox("validate")){
+    		return false;
+    	}
+    	if(!$("input#toHour").textbox("validate")){
+    		return false;
+    	}
+    	if(!$("input#fromMin").textbox("validate")){
+    		return false;
+    	}
+    	if(!$("input#toMin").textbox("validate")){
+    		return false;
+    	}
+    	/*24为小时时，分钟只能为0*/
+
+    	if("24" == $("input#toHour").textbox("getValue")){
+    		if("00" != $("input#toMin").textbox("getValue") && "0" != $("input#toMin").textbox("getValue")){
+    			$("input#toMin").textbox("setError", $.su.CHAR.TIME_MNGT.OVERLOP_HOUR_24);
+    			return false;
+    		}
+    	}
+
+    	var fromHour = timeParse($("input#fromHour").textbox("getValue"));
+    	var fromMin = timeParse($("input#fromMin").textbox("getValue"));
+    	var fromTime = parseInt(fromHour) * 60 + parseInt(fromMin);
+    	var toHour = timeParse($("input#toHour").textbox("getValue"));
+    	var toMin = timeParse($("input#toMin").textbox("getValue"));
+    	var toTime = parseInt(toHour) * 60 + parseInt(toMin);
+
+    	if(toTime <= fromTime){
+    		if ($.su.app && $.su.app.errorOperation && $.su.app.errorOperation.denied){
+    			$.su.app.errorOperation.denied(-54202);
+			}
+    		return false;
+    	}
+
+    	var timeObj = {
+    		fHour : fromHour,
+    		fMin : fromMin,
+    		fTime : fromTime,
+    		tHour : toHour,
+    		tMin : toMin,
+    		tTime : toTime
+    	};
+
+
+    	for(var i = 0; i < timeSegment.length; i++){
+    		if(!(timeObj.tTime <= timeSegment[i].fTime || timeObj.fTime >= timeSegment[i].tTime)){
+    			if ($.su.app && $.su.app.errorOperation && $.su.app.errorOperation.denied){
+	    			$.su.app.errorOperation.denied(-54205);
+				}
+	    		return false;
+    		}
+    	}
+
+    	timeCount =  timeSegment.push(timeObj);
+        //console.log(timeSegment)
+		timeRenew();
+
+		$("#fromHour").textbox("setValue", "");
+		$("#toHour").textbox("setValue", "");
+		$("#fromMin").textbox("setValue", "");
+		$("#toMin").textbox("setValue", "");
+    });
+
+    /*删除一个时间段*/
+    $(".del-time").click(function(){
+    	me = this;
+    	var rownuber = parseInt($(me).attr('id').match(/[0-9]{1,}/));
+    	timeSegment.splice(rownuber-1, 1);
+    	timeRenew();
+    });
+
+
+	$("input#slots").timepicker({
+		fieldLabel: $.su.CHAR.TIME_MNGT.CALENDAR,
+		cls: 'time-settings'
+	}).on("ev_beforeshow", showSysTime).on("ev_close", stopSysTime);
+
+
+
+
+	var mode = $("#mode").radio({
+        fieldLabel: $.su.CHAR.TIME_MNGT.SET,
+        columns: 2,
+        //cls: 'part-seperate',
+        items:[
+            {boxlabel: $.su.CHAR.TIME_MNGT.CALENDAR, name:'mode', inputValue:'calendar'},
+            {boxlabel: $.su.CHAR.TIME_MNGT.MANUAL, name:'mode', inputValue: 'manual'}
+        ]
+    }).on('ev_change', function(e, oldValue, newValue){
+        switch(newValue)
+        {
+            case "calendar":
+            	cuSet.fieldset("hide");
+            	caSet.fieldset("show");
+
+				$("input#weekday").textbox("disable");
+				$("input#time_section").textbox("disable");
+				$("input#mon").textbox("enable");
+				$("input#tue").textbox("enable");
+				$("input#wed").textbox("enable");
+				$("input#thu").textbox("enable");
+				$("input#fri").textbox("enable");
+				$("input#sat").textbox("enable");
+				$("input#sun").textbox("enable");
+                break;
+            case "manual":
+            	caSet.fieldset("hide");
+           		cuSet.fieldset("show");
+
+				$("input#weekday").textbox("enable");
+				$("input#time_section").textbox("enable");
+				$("input#mon").textbox("disable");
+				$("input#tue").textbox("disable");
+				$("input#wed").textbox("disable");
+				$("input#thu").textbox("disable");
+				$("input#fri").textbox("disable");
+				$("input#sat").textbox("disable");
+				$("input#sun").textbox("disable");
+
+                break;
+        }
+    });
+
+
+
+
+	$("input#comment").textbox({
+		fieldLabel: $.su.CHAR.TIME_MNGT.DESCRIPTION,
+		vtype:"string_visible_allow_blank",
+		maxLength:50,
+		tipsCls:"s",
+		allowBlank:true,
+        tips:"(可选，1-50个字符)"
+	});
+
+	$("div#time_mngt_list").panel({
+		title: $.su.CHAR.TIME_MNGT.TABLE,
+		collapsible: false
+	});
+
+
+	var timeobjGridProxy = new $.su.Proxy();
+
+	var storeTest = new $.su.Store({
+		proxy: timeobjGridProxy,
+		fields: [
+			{name: "name", mapping: "name"},
+			{name: "mode", mapping: "mode"},
+			{name: "time_section", mapping: "time_section"},
+			{name: "weekday", mapping: "weekday"},
+			{name: "mon", mapping: "mon"},
+			{name: "tue", mapping: "tue"},
+			{name: "wed", mapping: "wed"},
+			{name: "thu", mapping: "thu"},
+			{name: "fri", mapping: "fri"},
+			{name: "sat", mapping: "sat"},
+			{name: "sun", mapping: "sun"},
+			{name: "comment", mapping: "comment"},
+			{name: "flag", mapping: "flag"}
+		],
+		parseKey: {
+			moduleName: "time_mngt",
+			tableName: "time_obj",
+			pageSizeName: "timeobj_entry"
+		},
+		autoLoad: true
+	});
+
+
+	var parentalGrid =  $("div#time_mngt_grid").grid({
+		store:storeTest,
+		minLines:0,
+		editor: {
+			content: "#own_editor",
+			validator:function(){
+                var editor  = $(parentalGrid.grid("getEditor"));
+                var ruleName = editor.find(".text-text[name=name]").textbox("getValue");
+                var store   = parentalGrid.grid("getStore");
+                var keyProperty = store.keyProperty;
+                var grid_array  = store.data;
+                var editingId = editor.editor("getEditingId");
+
+
+                /*名称判断*/
+                if(!$("#name").textbox("validate")){
+                    return false;
+                }
+
+                if( $.isArray(grid_array) && grid_array.length > 0)
+                {
+                    for(var k = 0; k < grid_array.length;k++)
+                    {
+                        var data = grid_array[k];
+                        if(data[keyProperty] == editingId)
+                        {
+                            continue;
+                        }
+                        else if(data.name == ruleName)
+                        {
+                            $(parentalGrid.grid("getEditor")).form('setError', $.su.CHAR.TIME_MNGT.NOT_ALLOW_REPEAT);
+                            return false;
+                        }
+                    }
+                }
+
+                if("manual" == mode.radio("getValue")){
+                    /*手动输入时间格式判断*/
+                    if (!$("input#fromHour").textbox("validate") || !$("input#fromMin").textbox("validate")
+                        || !$("input#toHour").textbox("validate") || !$("input#toMin").textbox("validate")){
+                        return false;
+                    }
+
+                    if("24" == $("input#toHour").textbox("getValue")){
+                        $("input#toMin").textbox("setValue", "00");
+                    }
+                    /*没点加号的也加入数组中*/
+                    var fromHour = timeParse($("input#fromHour").textbox("getValue"));
+                    var fromMin = timeParse($("input#fromMin").textbox("getValue"));
+                    var fromTime = parseInt(fromHour) * 60 + parseInt(fromMin);
+                    var toHour = timeParse($("input#toHour").textbox("getValue"));
+                    var toMin = timeParse($("input#toMin").textbox("getValue"));
+                    var toTime = parseInt(toHour) * 60 + parseInt(toMin);
+
+                    if("" != fromHour && "" != fromMin && "" != toHour && "" != toMin){
+                        if(toTime <= fromTime){
+                            if ($.su.app && $.su.app.errorOperation && $.su.app.errorOperation.denied){
+                                $.su.app.errorOperation.denied(-54202);
+                            }
+                            return false;
+                        }
+
+                        var timeObj = {
+                            fHour : fromHour,
+                            fMin : fromMin,
+                            fTime : fromTime,
+                            tHour : toHour,
+                            tMin : toMin,
+                            tTime : toTime
+                        };
+
+                        if(timeSegment.length < 12){
+                           timeCount =  timeSegment.push(timeObj);
+                           timeRenew();
+                        }
+                    }else if(timeSegment.length == 0){
+                        $(parentalGrid.grid("getEditor")).form('setError', $.su.CHAR.TIME_MNGT.NOT_ALLOW_TIME_EMPTY);
+                        return false;
+                    }
+
+                    /*按开始时间进行排序*/
+                    timeSegment.sort(function(a, b){
+                        return a.fTime - b.fTime;
+                    });
+                    /*合并时间段*/
+                    for(var i = 0; i < timeSegment.length - 1; i++){
+                        //如果当前结束时间大于等于下一段时间的开始，则合并
+                        if(timeSegment[i].tTime >= timeSegment[i+1].fTime){
+                            //下一段的开始等于本段开始
+                            timeSegment[i+1].fTime = timeSegment[i].fTime;
+                            timeSegment[i+1].fHour = timeSegment[i].fHour;
+                            timeSegment[i+1].fMin = timeSegment[i].fMin;
+                            //下一段的结束等于本段结束和下段结束时间中的较大值
+                            if(timeSegment[i].tTime > timeSegment[i+1].tTime){
+                                timeSegment[i+1].tTime = timeSegment[i].tTime;
+                                timeSegment[i+1].tHour = timeSegment[i].tHour;
+                                timeSegment[i+1].tMin = timeSegment[i].tMin;
+                            }
+                            //删除本段
+                            timeSegment.splice(i, 1);
+                            //删除后元素前移一位
+                            i--;
+                        }
+
+                    }
+                    timeRenew();
+
+                    /*每天的时间段数组*/
+                    var tEvery = [];
+                    for(var i = 0; i < timeSegment.length; i++){
+						tEvery.push(timeSegment[i].fHour + timeSegment[i].fMin + "," + timeSegment[i].tHour + timeSegment[i].tMin)
+                    }
+					$("input#time_section").textbox("setValue", tEvery);
+
+                    /*每周的循环重复*/
+                    var wDays = $("#weekdays").checkbox("getValue1");
+                    tWeekdays = 0;
+                    for(var i = 0; i < wDays.length; i++){
+						for(var j = 0; j < 7; j++)
+						{
+							if(wDays[i] == weekdayObj[j])
+								tWeekdays |= (1 << j);
+						}
+                    }
+					$("input#weekday").textbox("setValue", tWeekdays);
+
+					if("" == $("#weekdays").checkbox("getValue1")){
+						if ($.su.app && $.su.app.errorOperation && $.su.app.errorOperation.denied){
+			    			$.su.app.errorOperation.denied(-54204);
+						}
+						return false;
+					}
+
+                    var fromHour = timeParse($("input#fromHour").textbox("getValue"));
+                    var fromMin = timeParse($("input#fromMin").textbox("getValue"));
+                    var fromTime = parseInt(fromHour) * 60 + parseInt(fromMin);
+                    var toHour = timeParse($("input#toHour").textbox("getValue"));
+                    var toMin = timeParse($("input#toMin").textbox("getValue"));
+                    var toTime = parseInt(toHour) * 60 + parseInt(toMin);
+
+
+                    if("" != fromHour && "" != fromMin && "" != toHour && "" != toMin){
+                        if(toTime <= fromTime){
+                            if ($.su.app && $.su.app.errorOperation && $.su.app.errorOperation.denied){
+                                $.su.app.errorOperation.denied(-54202);
+                            }
+
+                            return false;
+                        }
+                    }
+				}
+				else
+				{
+					/*日历时间格式转换*/
+					var value = $("#slots").timepicker("getValue");
+					if(value == '{}'){
+						$(parentalGrid.grid("getEditor")).form('setError',$.su.CHAR.TIME_MNGT.NOT_ALLOW_TIME_EMPTY);
+						return false;
+					}
+					value = $.su.json.parseJSON(value);
+
+					for (var i = 0; i < 7; i++)
+					{
+						var obj = "input#" + weekdayObj[i];
+						$(obj).textbox("setValue", 0);
+					}
+					for (var day in value)
+					{
+						var timeArray = value[day],
+							dayValue = 0;
+
+						for (var index = 0, len = timeArray.length; index < len; index++)
+						{
+							var time = timeArray[index],
+								dataTimeStart = time[0],
+								dataTimeEnd = time[1];
+
+							for (var jndex = dataTimeStart; jndex < dataTimeEnd; jndex++)
+							{
+								dayValue |= 1 << jndex;
+							}
+						}
+
+						var obj = "input#" + day;
+						$(obj).textbox("setValue", dayValue);
+					}
+				}
+
+                /*禁用组件传值*/
+                $("#weekdays").checkbox("disableAllItem");
+                $("input#fromHour").textbox("disable");
+                $("input#fromMin").textbox("disable");
+                $("input#toHour").textbox("disable");
+                $("input#toMin").textbox("disable");
+                $("input#time1").textbox("disable");
+                $("input#time2").textbox("disable");
+                $("input#time3").textbox("disable");
+                $("input#time4").textbox("disable");
+                $("input#time5").textbox("disable");
+                $("input#time6").textbox("disable");
+                $("input#time7").textbox("disable");
+                $("input#time8").textbox("disable");
+                $("input#time9").textbox("disable");
+                $("input#time10").textbox("disable");
+                $("input#time11").textbox("disable");
+                $("input#time12").textbox("disable");
+
+                return true;
+			},
+			fields: [
+				{name: "name", mapping: "name"},
+				{name: "mode", mapping: "mode"},
+				{name: "time_section", mapping: "time_section"},
+				{name: "weekday", mapping: "weekday"},
+				{name: "mon", mapping: "mon"},
+				{name: "tue", mapping: "tue"},
+				{name: "wed", mapping: "wed"},
+				{name: "thu", mapping: "thu"},
+				{name: "fri", mapping: "fri"},
+				{name: "sat", mapping: "sat"},
+				{name: "sun", mapping: "sun"},
+				{name: "comment", mapping: "comment"},
+				{name: "flag", mapping: "flag"}
+			],
+			transParams: function(params){
+				for (var name in params)
+				{
+					if (name == "time_section")
+					{
+						params[name] = $("input#time_section").textbox("getValue");
+					}
+				}
+				return params;
+			}
+		},
+		paging_true:[],
+		columns: [
+			{
+				xtype: "checkcolumn"
+			},
+			{
+				text: $.su.CHAR.TIME_MNGT.ID,
+				xtype: "rownumberer"
+			},
+			{
+				text: $.su.CHAR.TIME_MNGT.NAME,
+				width:150,
+				dataIndex: "name"
+			},
+			{
+				text: $.su.CHAR.TIME_MNGT.SLOTS,
+				width:300,
+				xtype: "actioncolumn",
+				items: [
+					{
+						xtype: "timepicker",
+						cls: "time-settings",
+						inputCls: "time-settings",
+						fieldLabel: null,
+						viewOnly: true
+					}
+				],
+				renderer: function (dd, jndex, data){
+					if (data.mode == "calendar")
+					{
+						var timeString = "{";
+						var firstDay = true;
+
+						for (var i = 0; i < 7; i++)
+						{
+							if (data[weekdayObj[i]] && data[weekdayObj[i]] != "")
+							{
+								var dayString = "[";
+								var dayValue = parseInt(data[weekdayObj[i]]);
+								var hourStart, hourEnd;
+								var foundStart = false;
+								var firstHour = true;
+
+								for (j = 0; j < 24; j++)
+								{
+									if (dayValue >> j & 1)
+									{
+										if (!foundStart)
+										{
+											foundStart = true;
+											hourStart = j;
+										}
+									}
+									else
+									{
+										if (foundStart)
+										{
+											hourEnd = j;
+
+											if (firstHour)
+											{
+												firstHour = false;
+											}
+											else
+											{
+												dayString += ",";
+											}
+
+											dayString += "[" + hourStart.toString() + "," + hourEnd.toString() + "]";
+
+											foundStart = false;
+										}
+									}
+								}
+
+								if (foundStart)
+								{
+									if (!firstHour)
+									{
+										dayString += ",";
+									}
+									hourEnd = 24;
+									dayString += "[" + hourStart.toString() + "," + hourEnd.toString() + "]";
+								}
+
+								dayString += "]";
+
+								if (firstDay)
+								{
+									firstDay = false;
+								}
+								else
+								{
+									timeString += ",";
+								}
+
+								timeString += "&quot;" + weekdayObj[i] + "&quot;:" + dayString;
+							}
+						}
+
+						timeString += "}";
+						return timeString
+					}
+					else
+					{
+						return "---";
+					}
+				}
+			},
+			{
+				xtype: "comment",
+				dataIndex: "comment"
+
+			},
+			{
+				xtype: "settings"
+			}
+		],
+		operation: "prompt|add|delete"
+	}).on("ev_load", function(e,data, others){
+		/*先隐藏，防止窗口抖动*/
+		cuSet.fieldset("hide");
+	    caSet.fieldset("hide");
+	    time1.textbox("hide");
+	    time2.textbox("hide");
+	    time3.textbox("hide");
+	    time4.textbox("hide");
+	    time5.textbox("hide");
+	    time6.textbox("hide");
+	    time7.textbox("hide");
+	    time8.textbox("hide");
+        time9.textbox("hide");
+        time10.textbox("hide");
+        time11.textbox("hide");
+        time12.textbox("hide");
+	    time1M.button("hide");
+	    time2M.button("hide");
+	    time3M.button("hide");
+	    time4M.button("hide");
+	    time5M.button("hide");
+	    time6M.button("hide");
+	    time7M.button("hide");
+	    time8M.button("hide");
+        time9M.button("hide");
+        time10M.button("hide");
+        time11M.button("hide");
+        time12M.button("hide");
+        if(others)/* 通过json里的others参数传递动态阀值 */
+        {
+            maxrules = others.max_rules;
+        }
+        for (var i = 0; i < data.length; i++){
+        	//任意时间不允许修改
+            if (data[i].name === "Any")
+            {
+                $("div#time_mngt_grid").grid('disableRow', i);
+            }
+            //使用手动输入的时间不显示图标
+            if (data[i].mode === "manual"){
+            	//隐藏时间图标
+            	var tarTr = $("tr.grid-content-tr.grid-content-tr-key-" + i.toString());
+            	tarTr.find("div.timepicker-container").hide();
+            	//显示自定义的时间段
+				var weekday = parseInt(data[i].weekday);
+            	var time_section = data[i].time_section;
+            	var html = "";
+            	var sEvery = "";
+				var sFrom, sFromHour, sFromMin, sTo, sToHour, sToMin;
+
+				for(var j = 0; j < 7; j++)
+				{
+					if((weekday >> j) & 1)
+						html += weekObj[weekdayObj[j]] + " ";
+				}
+
+				for(var j = 0; j < time_section.length; j++){
+					sFrom = time_section[j].split(",")[0];
+					sTo = time_section[j].split(",")[1];
+					sFromHour = sFrom.substr(0, 2);
+					sFromMin = sFrom.substr(2, 4);
+					sToHour = sTo.substr(0, 2);
+					sToMin = sTo.substr(2, 4);
+					sEvery += sFromHour + ":" + sFromMin + "-" + sToHour + ":" + sToMin + "&nbsp&nbsp";
+					if(j % 2 != 0){
+						sEvery += "</br>";
+					}
+				}
+
+            	html += "</br>" + sEvery;
+
+            	tarTr.find("td.grid-content-td-action-column div.grid-content-td-wrap").html(html).css("lineHeight","20px");
+
+            }
+        }
+        for (var i=0; i<data.length; i++) {
+            if ( data[i].flag === "system" ) {
+                $("div#time_mngt_grid").grid('disableRow', i);
+            }
+        }		
+	}).on("ev_complete",function(e, index, data){
+		if (data.mode === "manual"){
+	    	//隐藏时间图标
+	    	var tarTr = $("tr.grid-content-tr.grid-content-tr-" + data.key);
+	    	tarTr.find("div.timepicker-container").hide();
+	    	//显示自定义的时间段
+	    	var weekday = parseInt(data.weekday);
+			var time_section = data.time_section;
+			var html = "";
+			var sEvery = "";
+			var sFrom, sFromHour, sFromMin, sTo, sToHour, sToMin;
+
+			for(var j = 0; j < 7; j++)
+			{
+				if((weekday >> j) & 1)
+					html += weekObj[weekdayObj[j]] + " ";
+			}
+
+			for(var j = 0; j < time_section.length; j++){
+				sFrom = time_section[j].split(",")[0];
+				sTo = time_section[j].split(",")[1];
+				sFromHour = sFrom.substr(0, 2);
+				sFromMin = sFrom.substr(2, 4);
+				sToHour = sTo.substr(0, 2);
+				sToMin = sTo.substr(2, 4);
+				sEvery += sFromHour + ":" + sFromMin + "-" + sToHour + ":" + sToMin + "&nbsp&nbsp";
+				if(j % 2 != 0){
+					sEvery += "</br>";
+				}
+			}
+
+	    	html += "</br>" + sEvery;
+	    	tarTr.find("td.grid-content-td-action-column div.grid-content-td-wrap").html(html).css("lineHeight","20px");
+	    }
+	});
+
+
+	var editor  = $(parentalGrid.grid("getEditor"));
+	editor.on("ev_startEdit", function(e, editingIndex, editingId){
+		/*启用组件传值*/
+		$("#weekdays").checkbox("enableAllItem");
+
+		/*清空文本框*/
+		$("#weekdays").checkbox("reset");
+		//$("input#time_section").textbox("setValue","");
+		$("input#fromHour").textbox("setValue","");
+		$("input#fromMin").textbox("setValue","");
+		$("input#toHour").textbox("setValue","");
+		$("input#toMin").textbox("setValue","");
+		timeSegment.splice(0, timeSegment.length);
+		timeRenew();
+
+		//加载时
+		switch(mode.radio("getValue")){
+			case "calendar":
+				cuSet.fieldset("hide");
+            	caSet.fieldset("show");
+
+				$("input#weekday").textbox("disable");
+				$("input#time_section").textbox("disable");
+				$("input#mon").textbox("enable");
+				$("input#tue").textbox("enable");
+				$("input#wed").textbox("enable");
+				$("input#thu").textbox("enable");
+				$("input#fri").textbox("enable");
+				$("input#sat").textbox("enable");
+				$("input#sun").textbox("enable");
+
+				//设置日历时间组件
+				var store = parentalGrid.grid("getStore");
+				var data = store.data[editingIndex];
+				var timeString = "{";
+				var firstDay = true;
+
+				for (var i = 0; i < 7; i++)
+				{
+					if (data && data[weekdayObj[i]] && data[weekdayObj[i]] != "")
+					{
+						var dayString = "[";
+						var dayValue = parseInt(data[weekdayObj[i]]);
+						var hourStart, hourEnd;
+						var foundStart = false;
+						var firstHour = true;
+
+						for (j = 0; j < 24; j++)
+						{
+							if (dayValue >> j & 1)
+							{
+								if (!foundStart)
+								{
+									foundStart = true;
+									hourStart = j;
+								}
+							}
+							else
+							{
+								if (foundStart)
+								{
+									hourEnd = j;
+
+									if (firstHour)
+									{
+										firstHour = false;
+									}
+									else
+									{
+										dayString += ",";
+									}
+
+									dayString += "[" + hourStart.toString() + "," + hourEnd.toString() + "]";
+
+									foundStart = false;
+								}
+							}
+						}
+
+						if (foundStart)
+						{
+							if (!firstHour)
+							{
+								dayString += ",";
+							}
+							hourEnd = 24;
+							dayString += "[" + hourStart.toString() + "," + hourEnd.toString() + "]";
+						}
+
+						dayString += "]";
+
+						if (firstDay)
+						{
+							firstDay = false;
+						}
+						else
+						{
+							timeString += ",";
+						}
+
+						timeString += "\"" + weekdayObj[i] + "\":" + dayString;
+					}
+				}
+
+				timeString += "}";
+				$("#slots").timepicker("setValue", timeString);
+			break;
+			case "manual":
+				caSet.fieldset("hide");
+           		cuSet.fieldset("show");
+
+				$("input#weekday").textbox("enable");
+				$("input#time_section").textbox("enable");
+				$("input#mon").textbox("disable");
+				$("input#tue").textbox("disable");
+				$("input#wed").textbox("disable");
+				$("input#thu").textbox("disable");
+				$("input#fri").textbox("disable");
+				$("input#sat").textbox("disable");
+				$("input#sun").textbox("disable");
+
+           		//显示自定义的时间段
+				var store = parentalGrid.grid("getStore");
+				var data = store.data;
+				var weekday = parseInt(data[editingIndex].weekday);
+		    	var time_section = data[editingIndex].time_section;
+		    	var weekdays = [];
+
+		    	//数据回显,设置周循环及每天时段
+				for(var j = 0; j < 7; j++)
+				{
+					if((weekday >> j) & 1)
+					{
+						weekdays.push(weekdayObj[j]);
+					}
+				}
+				$("#weekdays").checkbox("setValue", weekdays);
+
+				for(var j = 0; j < time_section.length; j++){
+					var from = time_section[j].split(",")[0];
+					var fromHour = from.substr(0, 2);
+					var fromMin  = from.substr(2, 4);
+					var fromTime = parseInt(fromHour) * 60 + parseInt(fromMin);
+					var to = time_section[j].split(",")[1];
+					var toHour = to.substr(0, 2);
+					var toMin  = to.substr(2, 4);
+					var toTime = parseInt(toHour) * 60 + parseInt(toMin);
+
+					var timeObj = {
+						fHour : fromHour,
+						fMin : fromMin,
+						fTime : fromTime,
+						tHour : toHour,
+						tMin : toMin,
+						tTime : toTime
+					};
+					timeSegment.push(timeObj);
+
+				}
+
+
+		    	timeRenew();
+
+
+			break;
+		}
+		if (editingIndex != "add"){
+			parentalGrid.find("#name").textbox("disableStyle");
+		}
+		else{
+			parentalGrid.find("#name").textbox("enableStyle");
+		}
+	}).on("ev_submit",function(){
+		$("input#mon").textbox("reset");
+		$("input#tue").textbox("reset");
+		$("input#wed").textbox("reset");
+		$("input#thu").textbox("reset");
+		$("input#fri").textbox("reset");
+		$("input#sat").textbox("reset");
+		$("input#sun").textbox("reset");
+	});
+
+	var helpParentalControl = new $.su.Help({
+		container: "div#time_mngt_help",
+		content: ["TIME_MNGT_SETTING"]
+	});
+
+	$.su.app.runningModule.addUnloadHandler(stopSysTime);
+
+	$(".func-container").show();
+
+});
+</script>
+</body>
+
+</html>

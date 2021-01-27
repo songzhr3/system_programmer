@@ -1,0 +1,386 @@
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
+<html xmlns="http://www.w3.org/1999/xhtml">
+<head>
+<meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
+<title>Arplist</title>
+<style type="text/css">
+</style>
+</head>
+
+<body>
+<div class="func-container">
+    <div id="import_bind">
+        <form id="bind_set">
+            <button id="bind_button" type="submit"></button>
+        </form>
+    </div>
+    <div id="arp_list">
+        <div id="arp_list_grid">
+        </div>
+    </div>
+
+    <div id="import_alert_cnt">
+        <div id="import_pro_cnt" class="reboot-loading-msg">
+            <input id="import_pro_bar" type="text" />
+        </div>
+    </div>
+
+    <div class="notice">
+        <hr/>
+        <h6>您可以通过点击表头的"IP地址"来进行排序。</h6>
+    </div>
+
+    <div id="arp_list_help"></div>
+</div>
+
+<script type="text/javascript">
+try{
+        $
+}catch(e){
+    location.href = "/";
+};
+
+$(document).ready(function(e){
+    //var URL= $.su.url("/admin/arplist?form=getlist");
+    //var URL_IMB_RULE_LIST = $.su.url("/admin/ipmac_import?form=bind_list");
+    var ruleListProxy = new $.su.Proxy({
+        //url: URL_IMB_RULE_LIST
+    });
+
+
+    $("#import_bind").panel({
+        title:$.su.CHAR.ARPSCAN.IMPORT_BIND,
+        collapsible:false
+    });
+
+    $("button#bind_button").button({
+        text:$.su.CHAR.ARPSCAN.INPUT_BUTTON
+    });
+
+    $("#arp_list").panel({
+        title: $.su.CHAR.ARPLIST.ARP_LIST,
+        collapsible: false
+    });
+
+    var zonelist = new $.su.Proxy({
+        //url: $.su.url("/admin/arplist?form=getzone"),
+        async: false
+    });
+    var zoneItem = [];
+    //zonelist.read({},function(data){
+    zonelist.query({"arp_defense":{"name":"zone_status"}},function(data){
+        //console.log(data);
+        zoneItem = data.arp_defense.zone_status;
+        //console.log(zoneItem)
+    });
+    var dev_to_zone = {};
+    for(var i=0;i<zoneItem.length;++i)
+    {
+        //console.log(zoneItem[i].dev)
+        //console.log(zoneItem[i].zone)
+        dev_to_zone[ zoneItem[i].dev ] = zoneItem[i].zone;
+    }
+    //console.log(dev_to_zone);
+    var listProxy = new $.su.Proxy({
+        //url:URL
+    });
+
+    $("#import_alert_cnt").msg({
+        cls: 'warning reboot-confirm-size',
+        type: "confirm",
+        closeBtn: false,
+        okHandler:function(){},
+        cancelHandler:function(){}
+    });
+
+    $("#import_alert_cnt").msg("hideButtons");
+
+    $("#import_pro_bar").waitingbar({
+        fieldLabel:"导入规则可能需要一些时间，请您耐心等待",
+        labelCls:"xxxl"
+    });
+
+    var order = "down";
+    function dataSort(x, y) {
+        xip = $.su.func.ipToInt(x.ip);
+        yip = $.su.func.ipToInt(y.ip);
+        if(order == "down"){
+            if (xip > yip) {
+                return -1;
+            }else if (xip < yip) {
+                return 1;
+            }
+        }else{
+            if (xip < yip) {
+                return -1;
+            }else if (xip > yip) {
+                return 1;
+            }
+        }
+
+
+    }
+
+    var listGrid = $("#arp_list_grid").grid({
+        operation: "refresh",
+        store:{
+            proxy:listProxy,
+            fields:[
+                {name:"ip"},
+                {name:"mac"},
+                {name:"interface"},
+                {name:"status"}
+            ],
+        parseKey: {                 /* 此处在store中增加parseKey，便于store对象在底层对数据进行预处理，以实现SLP数据结构和SU数据结构的转变 */
+            moduleName:"ip_mac_bind",       /* 此处的moduleName和tableName分别指数据块名和对应请求的table名 */
+            tableName:"sys_arp",
+            pageSizeName:"arp_list_entry",
+            maxSizeTableName:"imb",
+            maxSizeOptionName:"arp_list_max"
+        },
+            autoLoad:true
+        },
+        paging_true: {},
+        columns:[
+            {
+                xtype: "checkcolumn"
+            },
+            {
+                xtype: "rownumberer"
+            },
+            {
+                text: $.su.CHAR.ARPSCAN.IPADDR,
+                width: 100,
+                dataIndex: "ip"
+            },
+            {
+                text:$.su.CHAR.ARPSCAN.MAC,
+                width:100,
+                dataIndex:"mac"
+            },
+            {
+                text:$.su.CHAR.ARPLIST.INTERFACE,
+                width:100,
+                dataIndex:"interface",
+                renderer:function(data){
+                    /*for(var i=0;i<zoneItem.length;i++)
+                    {
+                        if(data == zoneItem[i].dev)
+                        {
+                            data = zoneItem[i].iface;
+                            return data;
+                        }
+                    }*/
+                    return dev_to_zone[data];
+                }
+            },
+            {
+                text:$.su.CHAR.ARPSCAN.STATUS,
+                width:60,
+                dataIndex:"status",
+                renderer:function(data){
+                    if(data == "0"){
+                        return "";
+                    }
+                    else if(data == "1"){
+                        return "冲突";
+                    }
+                    else if(data == "2")
+                    {
+                        return "已导入";
+                    }
+                }
+            }
+        ]
+    }).on("ev_rowinited",function(e,data,index,key){
+        disabledConflict();
+    });
+
+    function disabledConflict(){
+        setTimeout(function(){
+            var griddata = listGrid.grid('getStore').data;
+            var trList = listGrid.find("tr.grid-content-tr");
+            if(trList.length>0){
+                for(var index = 0; index<trList.length; ++index){
+                    if(griddata[index].status!="0"){
+                        $(trList[index]).addClass("disabled");
+                    }
+                }
+            }
+        },10);
+    }
+
+    /*导入到IP-MAC绑定列表*/
+    $(document).ready(function(e){
+        /*disabledConflict();
+        $("#refresh").click(function(){
+            disabledConflict();
+        });*/
+        $("button#bind_button").click(function(){
+            var data = listGrid.grid('getStore').data;
+            //console.log(data);
+            var trList = listGrid.find("tr.grid-content-tr");
+            var isSelectAny = false;
+            var noImportable = true;
+            var isSomethingWrong = false;
+            if(trList.length>0){
+                for(var index=0; index<trList.length; ++index){
+                    if (index == 0 && $(trList[0]).hasClass("empty")) {
+                        if ($.su.app && $.su.app.errorOperation && $.su.app.errorOperation.denied){
+                            var ERR_EMPRY_LIST = -51406;
+                            $.su.app.errorOperation.denied(ERR_EMPRY_LIST);
+                        }
+                        return;
+                    }
+                    if($(trList[index]).hasClass("selected") && data[index].status == "0"){
+                        /*旧方法
+                        var ip = $(trList[index]).find("td.grid-content-td-ipaddr").text();
+                        var mac = $(trList[index]).find("td.grid-content-td-mac").text();
+                        var iface =  $(trList[index]).find("td.grid-content-td-interface").text();
+                        var status = $(trList[index]).find("td.grid-content-td-status").text();
+                        if(iface = '&nbsp'||''||undefined){
+                            iface = 'GE4';
+                        }
+                        */
+                        isSelectAny = true;
+/*
+                        if(data[index].status !="0")
+                        {
+                            isSomethingWrong = true;
+                            continue;
+                        }
+
+*/
+                        if (data[index].status == "0"){
+                            noImportable = false;
+                        }
+                        if("undefined" == typeof(ip)){
+                            var ip = [data[index].ip];
+                            var mac = [data[index].mac];
+                            var iface = dev_to_zone[data[index].interface];
+                            iface = [iface];
+                            var status =  [data[index].status];
+                            var des = ["Auto Bind"];
+                            var enable = ["1"];
+                        }else{
+                            ip.push(data[index].ip);
+                            mac.push(data[index].mac);
+                            var tmp = dev_to_zone[data[index].interface];
+                            iface.push(tmp);
+                            status.push(data[index].status);
+                            des.push("Auto Bind");
+                            enable.push("1");
+                        }
+
+
+                        if("undefined" == typeof(tarList)){
+                            var tarList = [trList[index]];
+                            var dataList = [data[index]];
+                        }else{
+                            tarList.push(trList[index]);
+                            dataList.push(data[index]);
+                        }
+                    }
+                }
+
+
+                for(var index=0; index<ip.length; ++index){
+                    var tmp_data = {}
+                    tmp_data["ip"] = ip[index];
+                    tmp_data["mac"] = mac[index];
+                    tmp_data["interface"] = iface[index];
+                    tmp_data["enable"] = "1";
+                    tmp_data["hostname"] = "anonymous";
+                    if("undefined" == typeof(import_data)){
+                            var import_data = [tmp_data];
+                        }else{
+                            import_data.push(tmp_data);
+                        }
+                }
+
+                //console.log(import_data)
+
+                if(false == isSelectAny){
+                    if ($.su.app && $.su.app.errorOperation && $.su.app.errorOperation.denied){
+                        var NO_ITEM_SELECT = -51403;
+                        $.su.app.errorOperation.denied(NO_ITEM_SELECT);
+                    }
+                    return;
+                }
+
+                if(true == noImportable){
+                    if ($.su.app && $.su.app.errorOperation && $.su.app.errorOperation.denied){
+                        var NO_IMPORTABLE = -51407;
+                        $.su.app.errorOperation.denied(NO_IMPORTABLE);
+                    }
+                    return;
+                }
+
+                var trList = listGrid.find("tr.selected");
+                if(trList.length > 0){
+                    $("#import_alert_cnt").msg("show");
+                    $("#import_pro_bar").waitingbar("run");
+                    //del_check();
+                }
+
+
+                ruleListProxy.add({"ip_mac_bind":{table:"user_bind",para:import_data}}, function(data){
+                    $("#import_alert_cnt").msg("close");
+                    $("#import_pro_bar").waitingbar("stop");
+                    $("#import_pro_bar").waitingbar("reset");
+                    if ($.su.app && $.su.app.errorOperation && $.su.app.errorOperation.denied){
+                        $.su.app.errorOperation.denied(0);
+                    }
+                    for(var idx=0;idx<tarList.length;idx++){
+                        $(tarList[idx]).find("td.grid-content-td-status").html("已导入");
+                        dataList[idx].status = "2";
+                    }
+                    disabledConflict();
+
+                },function(errcode){
+                    $("#import_alert_cnt").msg("close");
+                    $("#import_pro_bar").waitingbar("stop");
+                    $("#import_pro_bar").waitingbar("reset");
+                });
+            }else{
+                if ($.su.app && $.su.app.errorOperation && $.su.app.errorOperation.denied){
+                    var NO_INTERFACE_PARAM = -51404;
+                    $.su.app.errorOperation.denied(NO_INTERFACE_PARAM);
+                }
+            }
+
+
+        });
+    });
+
+    $("th.ip").css({
+        "color": "#00E",
+        "cursor": "pointer"
+    });
+
+    listGrid.delegate("th.ip", "click", function(e){
+        $("label.checkbox-label.checked").removeClass("checked");
+        $("tr.selected").removeClass("selected");
+        $("div.checkbox-group-container.grid-header-checkbox.checkcolumn.inline.selected").removeClass("selected");
+        var store = listGrid.grid("getStore");
+        var data = store.data;
+        store.loadData(data.sort(dataSort));
+        if(order == "down"){
+            order = "up";
+        }else{
+            order = "down";
+        }
+        setTimeout(function() {
+            disabledConflict();
+        }, 300);
+
+    });
+
+    var arpList = new $.su.Help({
+        container: "div#arp_list_help",
+        content: ["ARPLIST_SCAN"] });
+});
+</script>
+</body>
+
+</html>

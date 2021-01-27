@@ -1,0 +1,573 @@
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
+<html xmlns="http://www.w3.org/1999/xhtml">
+<head>
+<meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
+<title>SLAAC</title>
+</head>
+
+<body>
+<div class="func_container">
+<div id="func_setting">
+	 <div id="slaac_server_list">
+	 	<div id="slaac_server_grid">
+		</div>
+		<input id="uci_index" name="uci_index"/>
+	 </div>
+	 
+	<div id="slaac_server_config">
+		<form id="slaac_server_change">
+			<input id="slaac_server_action" name="action"/>
+		</form>
+	</div>
+	
+	 <div id="server_content">
+	 	<input id="interface" name="interface" />
+		<input id="prefix" name="prefix" value=""/>
+		<input id="dns_type" name="dns_type"/>
+		<input id="pri_dns" name="pri_dns" value=""/>
+		<input id="snd_dns" name="snd_dns" value=""/>
+		<input id="enable" name="enable" value=""/>
+	 </div>
+</div>
+    <div id="slaac_server_help"></div>
+</div>
+
+<script type="text/javascript">
+try{
+    $
+}catch(e){
+    location.href = "/";
+};
+
+$(document).ready(function(e){
+	$("#server_content").hide();
+	$("#slaac_server_config").hide();
+
+	var use_if_prefix
+	var slaac_profile = new $.su.Proxy({async: false});
+    slaac_profile.query({"profile":{"name":"slaac_config"}}, function(data){
+    	use_if_prefix = data.profile.slaac_config.use_iface_prefix
+    });
+
+    $("#slaac_server_list").panel({
+		title: $.su.CHAR.SLAAC_SERVER.SLAAC_SERVER_LIST,
+		collapsible: false
+	});
+
+	/*self-define content begins*/
+
+    $("input#uci_index").textbox({
+        labelCls: 's',
+        allowBlank: true
+    }).textbox("hide");
+
+	 /*interface*/
+	$("#interface").combobox({
+		fieldLabel: $.su.CHAR.SLAAC_SERVER.INTERFACE,
+		items:[
+			{name:"---",value:"---"}
+		],
+		allowBlank: false
+	}).on("ev_change", function (e, oldValue, newValue){
+		for (var i = 0; i < ifstatus.length; i++)
+		{
+			if (newValue[0] == ifstatus[i]['if_name']
+				|| (newValue[0] == "LAN" && ifstatus[i]['if_name'] == "lan"))
+			{
+				if ("1" == use_if_prefix)
+				{
+					prefix.subnet("disableStyle");
+					if (ifstatus[i]['ip6ifaceid'] == "eui64")
+					{
+						prefix.subnet("setValue", ifstatus[i]['prefix'] + "/64")
+					}
+					else if (ifstatus[i]['ip6ifaceid'] == "manual")
+					{
+						prefix.subnet("setValue", ifstatus[i]['ip6addr'] + "/" + ifstatus[i]['prefixlen'])
+					}
+				}
+				else if (ifstatus[i]['ip6ifaceid'] == "eui64" && undefined != ifstatus[i]['prefix_if'] && "" != ifstatus[i]['prefix_if'])
+				{
+					prefix.subnet("disableStyle");
+					prefix.subnet("setValue", ifstatus[i]['prefix'] + "/64")
+				}
+				else
+				{
+					prefix.subnet("enableStyle");
+				}
+
+				return
+			}
+		}
+	});
+	var prefix = $('#prefix').subnet({
+        fieldLabel: $.su.CHAR.SLAAC_SERVER.PREFIX,
+		tipsCls: 'm',
+		inputCls: 'xl',
+		ipType: "ipv6",
+        allowBlank: true,
+		patialBlank: true,
+        tips: $.su.CHAR.SLAAC_SERVER.PREFIX_TIPS
+    });
+
+	$('#dns_type').combobox({
+		fieldLabel:$.su.CHAR.SLAAC_SERVER.DNS_TYPE,
+		items:[
+			{name: $.su.CHAR.SLAAC_SERVER.DNS_TYPE_DHCPv6,value:'DHCPv6',selected:true},
+			{name: $.su.CHAR.SLAAC_SERVER.DNS_TYPE_RDNSS,value:'RDNSS'}
+		]
+	});
+	$('#pri_dns').textbox({
+		fieldLabel:$.su.CHAR.SLAAC_SERVER.PRIMARYDNS,
+		tips: $.su.CHAR.SLAAC_SERVER.OPTIONAL,
+		allowBlank: true,		
+		textFormat: $.su.format.ipv6,
+		vtype: 'ipv6',
+		maxLength:39
+	});
+	$('#snd_dns').textbox({
+		fieldLabel:$.su.CHAR.SLAAC_SERVER.SECONDARYDNS,
+		tips: $.su.CHAR.SLAAC_SERVER.OPTIONAL,
+		allowBlank: true,		
+		textFormat: $.su.format.ipv6,
+		vtype: 'ipv6',
+		maxLength:39
+	});
+	$('#enable').checkbox({
+		fieldLabel:$.su.CHAR.GRID.STATUS,
+		 items: [
+		  {boxlabel: $.su.CHAR.SLAAC_SERVER.ENABLE, inputValue:'on', uncheckedValue:'off',checked:true}
+		  ]
+	});
+
+
+	var proxy = new $.su.Proxy({async: false});
+	var phyifItems = [];
+	var interfaceItemAll = [];
+	proxy.query({"network": {table: "if", "filter":[{"zone":"LAN"}]}}, function(data){
+		if (data.error_code != ENONE)
+		{
+			return;
+		}
+
+		var ifs = data.network["if"];
+		var i = 0;
+		var j = 0;
+		$.each(ifs, function(_, item){
+			for (var key in item)
+			{
+				switch(item[key].if_type)
+				{
+				case "physical":
+					phyifItems[j++] = item[key].if_name.toString();
+					break;
+				case "bridge":
+					phyifItems[j++] = item[key].if_name.toString();
+					break;
+				default:
+					break;
+				}
+				interfaceItemAll.push({name:item[key].if_name,value:""+key});
+			}
+		});
+	});
+	var interfaceIpProxy = new $.su.Proxy({
+		async: false
+	});
+	var ifstatus = [];
+	var post_data = {
+		network: {
+			table: "if_info"
+		}
+	}
+	if (phyifItems && $.isArray(phyifItems) && phyifItems.length != 0)
+		post_data.network.filter = [{base_name:$.isArray(phyifItems) ? phyifItems : [phyifItems]}];
+	else
+		post_data.network.filter = [];
+
+	proxy.query(post_data, function(data){  // #### Attention: What is the target here?
+		var data = data.network.if_info;
+		var i = 0;
+		$.each(data, function(_, item){
+			for (var key in item)
+			{
+				if ((item[key].ip6ifaceid == "manual" && item[key].ip6addr != undefined && item[key].ip6addr != "") || 
+					(item[key].ip6ifaceid == "eui64" && item[key].prefix != undefined && item[key].prefix != ""))
+					ifstatus[i++] = item[key];
+			}
+		});
+	});
+
+	function getInterface()
+	{
+		var interfaceItem=[];
+		var interfaceProxy = new $.su.Proxy({async: false});
+
+		interfaceProxy.query({"network":{"table": "if"},"dhcpd6":{"table":"dhcpd_list"},"slaac":{"table": "slaac_list"}}, function(data){
+			var if_data = data.network["if"];
+			var dhcp_data = data.dhcpd6.dhcpd_list;
+			var slaac_data = data.slaac.slaac_list;
+			var dhcp_slaac_interface_used = {};
+
+			$.each(dhcp_data, function(_, item){
+				for (var key in item)
+				{
+					dhcp_slaac_interface_used[item[key].interface] = true;
+					if (item[key].interface == "lan")
+						dhcp_slaac_interface_used["LAN"] = true;
+				}
+			});
+
+			$.each(slaac_data, function(_, item){
+				for (var key in item)
+				{
+					dhcp_slaac_interface_used[item[key].interface] = true;
+					if (item[key].interface == "lan")
+						dhcp_slaac_interface_used["LAN"] = true;
+				}
+			});
+
+			$.each(if_data, function(_, item){
+				for (var key in item)
+				{
+					var if_canuse = 0;
+
+					if (ifstatus.length > 0)
+					{
+						for (var i = 0; i < ifstatus.length; i++)
+						{
+							if (ifstatus[i]['if_type'] != 'ethernet' && ifstatus[i]['if_type'] != 'bridge' && ifstatus[i]['if_type'] != 'physical')
+								continue;
+							if (ifstatus[i]['proto'] == 'dhcp')
+								continue;
+							if (ifstatus[i]['if_name'] == "lan" && item[key].if_name == "LAN" && 
+								((ifstatus[i]["ip6ifaceid"] == "manual" && ifstatus[i]['ip6addr'] != undefined && ifstatus[i]['ip6addr'] != "") || 
+								 (ifstatus[i]["ip6ifaceid"] == "eui64" && ifstatus[i]["prefix"] != undefined && ifstatus[i]["prefix"] != "")))
+							{
+								if_canuse = 1;
+								break;
+							}
+							if (ifstatus[i]['if_name'] == item[key].if_name && 
+								((ifstatus[i]["ip6ifaceid"] == "manual" && ifstatus[i]['ip6addr'] != undefined && ifstatus[i]['ip6addr'] != "") || 
+								 (ifstatus[i]["ip6ifaceid"] == "eui64" && ifstatus[i]["prefix"] != undefined && ifstatus[i]["prefix"] != "")))
+							{
+								if_canuse = 1;
+								break;
+							}
+						}
+					}
+
+					if (item[key].if_type != "pppoe" && !dhcp_slaac_interface_used[item[key].if_name] && 1 == if_canuse) {
+						interfaceItem.push({name:item[key].if_name,value:key});
+					}
+				}
+			});
+		});
+		return interfaceItem;
+	}
+
+	/*self-define content ends*/
+
+	var serverListsProxy = new $.su.Proxy({});
+	var slaacServerGrid = $("div#slaac_server_grid").grid({
+		store:{
+			proxy: serverListsProxy,
+			extraProperty: "interface",
+			fields: [
+				{name: "uci_index"},
+				{name: "interface"},
+				{name: "prefix", 
+				dataFormat: function(data) {
+					var arr_data = data.split("/");
+                    return $.su.func.ipv6Simplyfy(arr_data[0]) + "/" + arr_data[1];
+				}},
+				{name: "dns_type"},
+				{name: "pri_dns"},
+				{name: "snd_dns"},
+				{name: "enable"}
+			],
+			parseKey: {
+				moduleName: "slaac",
+				tableName: "slaac_list",
+				pageSizeName: "slaac_list_pages",
+				maxSizeTableName: "slaac",
+				maxSizeOptionName: "server_max"
+			},
+			formField: ["uci_index"],
+			rmField: ["uci_index"],
+			autoLoad: true,
+			loadDelay: 12
+		},
+		minLines: 0,
+		paging: {},
+		editor: {
+			content:"#server_content",
+			fields: [
+				{name: "uci_index"},
+				{name: "interface"},
+				{name: "prefix"},
+				{name: "dns_type"},
+				{name: "pri_dns"},
+				{name: "snd_dns"},
+				{name: "enable"}
+			]
+		},
+		paging_true:{},
+		columns: [
+			{
+				xtype: "checkcolumn",
+				width: 20
+			},
+			{
+				text: $.su.CHAR.SLAAC_SERVER.ID, 
+				xtype: "rownumberer",
+				width: 20
+			},
+			{
+                text: $.su.CHAR.SLAAC_SERVER.INTERFACE,                
+				width: 30,				
+                dataIndex: "interface",
+                renderer: function (data)
+				{
+					if(data == "lan")
+					{
+						var LAN = "LAN"
+						return LAN;
+					}
+					else
+					{
+						return data;
+					}
+
+				},
+				scan: {
+					type: "combobox",
+					cmp: $.search.compare.stringStrict,
+					items: function(){
+						return interfaceItemAll;
+					}
+				}
+            },
+			{
+                text: $.su.CHAR.SLAAC_SERVER.PREFIX,                			
+                dataIndex: "prefix",
+				width: 60,
+				scan: {
+					cmp: $.search.compare.string
+				}
+            },
+			{
+                text: $.su.CHAR.SLAAC_SERVER.DNS_TYPE,               
+                dataIndex: "dns_type",
+				width: 30,
+				renderer:function(dd){
+					if(dd == "DHCPv6")return $.su.CHAR.SLAAC_SERVER.DNS_TYPE_DHCPv6;
+					if(dd == "RDNSS")return $.su.CHAR.SLAAC_SERVER.DNS_TYPE_RDNSS;
+					return "---";
+				},
+				scan: {
+					type: "combobox",
+					cmp: $.search.compare.stringStrict,
+					items:[
+						{name: $.su.CHAR.SLAAC_SERVER.DNS_TYPE_DHCPv6,value:'DHCPv6',selected:true},
+						{name: $.su.CHAR.SLAAC_SERVER.DNS_TYPE_RDNSS,value:'RDNSS'}
+					]
+				}
+            },
+			{
+                text: $.su.CHAR.SLAAC_SERVER.PRIMARYDNS,               
+				width: 55,
+                dataIndex: "pri_dns",
+				scan: {
+					cmp: $.search.compare.string
+				}
+            },
+			{
+                text: $.su.CHAR.SLAAC_SERVER.SECONDARYDNS,               
+				width: 55,
+                dataIndex: "snd_dns",
+				hidden:true,
+				scan: {
+					cmp: $.search.compare.string
+				}
+            },
+			{
+                text: $.su.CHAR.GRID.STATUS,
+                xtype: "statuscolumn",
+                dataIndex: "enable",
+				width: 30,
+				scan: {
+					cmp: $.search.compare.num
+				}
+            },
+			{
+				xtype: "settings",
+				width: 30
+			}
+		],
+		operation: "prompt|enable|disable|add|delete|search"
+	}).on("ev_load", function(e,data, others){
+	    if(others)/* 通过json里的others参数传递动态阀值 */
+        {
+            maxrules = others.max_rules;
+        }
+	}).on("ev_operation", function(e, obj, action){
+		var selectedKeys = slaacServerGrid.grid("getSelected");
+		var editor  = $(slaacServerGrid.grid("getEditor"));
+		if(slaacServerGrid.grid("isEditing"))
+		{
+			console.log("isEditing");
+		}
+		else
+		{
+			var store = slaacServerGrid.grid('getStore');
+			var data_len = store.data.length;
+			if(selectedKeys.length === 0){
+				slaacServerGrid.get(0).noneSelectMsg_g.msg('show');
+				return;
+			}else{
+				$slaac_server_action.textbox('setValue', action);
+				var action_value = "enable" == action ? "on" : "off";
+				slaacServerGrid.grid("runProgress");
+				$.su.loading.show();
+				var postData = {};
+				var paraValue = {};
+				if (store.parseKey)
+				{
+					var moduleName = store.parseKey.moduleName;
+					postData[moduleName] = {};
+
+					for(var j = 0; j < selectedKeys.length; j++)
+					{
+						for(var i = 0; i < store.data.length; i++)
+						{
+							if(store.data[i].key == selectedKeys[j])
+							{
+								var ele = {};
+								var dOld = $.extend({}, store.getData(store.data[i].key));
+								var keyProperty = store.keyProperty;
+
+								delete dOld[keyProperty];
+
+								var opt = {};
+								opt["enable"] = action_value;
+
+								var	dNew = $.extend({}, dOld, opt);
+
+								postData[moduleName][store.data[i].itemName] = store.sendDataFormat(dNew);
+
+								break;
+							}
+						}
+					}
+				}
+				else
+				{
+					return
+				}
+
+				serverListsProxy.modify(postData,  function(data){
+						reloadSlaacGrid(function(){
+							slaacServerGrid.grid("prompt", true);
+						});
+						setTimeout(function(){//延时时间根据各模块情况自行调整
+							$.su.loading.hide();
+						}, data_len*12);
+				}, function(){
+					$.su.loading.hide();
+					slaacServerGrid.grid("disGridChkbox");
+					slaacServerGrid.grid("prompt", false, "");
+				});
+			}
+		}
+	});
+
+	$("#server_content").show();
+	var isloading = false;
+	var editor = $("div#slaac_server_grid").grid("getEditor");
+	$(editor).on("ev_startEdit", function(e, index, key){
+		$("#server_content").show();
+		
+		prefix.subnet("enableStyle");
+		if ("1" == use_if_prefix)
+		{
+			prefix.subnet("disableStyle");
+		}
+
+		if (index != 'add'){
+			isloading = true;
+			var slaacServerData = slaacServerGrid.grid("getStore").getData(key)
+			var ifnameItem = slaacServerData['interface'];
+			if (ifnameItem == "lan")
+				ifnameItem = "LAN";
+
+			var ifname = [];
+			ifname.push({name:""+ifnameItem, value:""+ifnameItem, selected:true});
+			$(editor).find("#interface").combobox("reset");
+			$(editor).find("#interface").combobox("loadData", ifname);
+			$(editor).find("#prefix").subnet("reset");
+			$(editor).find("#prefix").subnet("setValue", slaacServerData.prefix);
+			var ifbox = $(editor).find('.combobox-container');
+			$(ifbox[0]).addClass('disabled');
+			isloading = false;
+
+			var cur_interface = slaacServerData.interface
+			for (var i = 0; i < ifstatus.length; i++)
+			{
+				if (cur_interface == ifstatus[i]['if_name'])
+				{
+					if (ifstatus[i]['ip6ifaceid'] == "eui64" && undefined != ifstatus[i]['prefix_if'] && "" != ifstatus[i]['prefix_if'])
+					{
+						prefix.subnet("disableStyle");
+					}
+
+					break;
+				}
+			}
+		}
+		else {
+			var interfaceItem=[];
+			interfaceItem = getInterface();
+
+			$(editor).find("#interface").combobox("enable");
+			$(editor).find("#interface").combobox("loadData", interfaceItem);
+			$(editor).find('#dns_type').combobox("setValue","DHCPv6");
+		}
+	});
+	
+	var $slaac_server_change_form = $("#slaac_server_change").form({
+		proxy: new $.su.Proxy({}),
+		fields: [
+            {name: "action"}
+        ],
+		submitBtn: "default",
+		autoLoad: false,
+		callback: function(){
+            reloadSlaacGrid();
+        }
+	});
+	var $slaac_server_action = $('#slaac_server_action').textbox({
+        fieldLabel: ''
+    }).textbox('hide');
+	
+	function reloadSlaacGrid(callback){
+		var slaac_store = slaacServerGrid.grid('getStore'),
+            selectedKeys = slaacServerGrid.grid('getSelected');
+			
+		slaacServerGrid.grid("disGridChkbox");
+		if (callback){
+			callback.call();
+		}
+        slaac_store.keyLength = 0;
+        slaac_store.load({});
+    }
+
+	var helpSlaacServer = new $.su.Help({
+		container: "div#slaac_server_help",
+		content: ["SLAAC_SERVER_SETTINGS"]
+	});
+});
+</script>
+</body>
+
+</html>

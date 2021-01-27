@@ -1,0 +1,229 @@
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
+<html xmlns="http://www.w3.org/1999/xhtml">
+<head>
+<meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
+<title>DNS_SMART</title>
+<style type="text/css">
+</style>
+</head>
+
+<body>
+<div class="func-container">
+    <div id="function_setting">
+        <form id="dns_smart_settings">
+            <input id="dns_smart_enable" name="dns_smart_enable" value=""/>
+        </form>
+    </div>
+
+    <div id="dns_addr_setting">
+        <form id="dns_addr_database">
+            <input id="file" name="dns_database" type="file" />
+            <button type="button" id="input" name="input"></button>
+        </form>
+    </div>
+
+    <div id="dns_alert_cnt">
+        <h4 class="title" id="confirm_cnt">
+            <span class="icon"></span>
+            <span class="text" id="confirm_content"></span>
+        </h4>
+
+        <div id="dns_pro_cnt" class="reboot-loading-msg hidden">
+            <p id="dns_note"  class="reboot-progressbar-text"></p>
+            <input id="dns_pro_bar" type="text" />
+        </div>
+    </div>
+
+    <div id="dns_failed_cnt">
+        <h4 class="title">
+            <span class="icon" ></span>
+            <span class="text" id="error_str"></span>
+        </h4>
+    </div>
+
+    <div id="dns_smart_help">    </div>
+</div>
+
+<script type="text/javascript">
+try{
+    $
+}catch(e){
+    location.href = "/";
+};
+
+
+$(document).ready(function(e){
+    var dns_smart_global_Proxy = new $.su.Proxy()
+    var dns_databse_Proxy = new $.su.Proxy();
+    var dns_query_interval = false;
+    var dns_pro_id = false;
+    var dns_total_time = 2*1000;
+	var IMPORT_URL = "/admin/dns/smart_dns_import";
+
+
+    $("#function_setting").panel({
+        title: $.su.CHAR.DNS_SETTING.SETTINGS,
+        collapsible: false,
+        help:$("#dns_smart_help")
+    });
+
+    $("#dns_smart_enable").checkbox({
+        items: [
+            {boxlabel: $.su.CHAR.DNS_SETTING.ENABLE_DNS_SMART, inputValue: "on", uncheckedValue: "off"}
+        ]
+    });
+
+    $("#dns_smart_settings").form({
+        proxy: dns_smart_global_Proxy,
+        fields: [
+            {name: "dns_smart_enable", mapping: "dns_smart_enable"}
+        ],
+        parseKey:{
+            moduleName: "dns",
+            sectionName: "global"
+        },        
+        submitBtn: "default"
+    });
+
+    $("#dns_addr_setting").panel({
+        title: $.su.CHAR.DNS_SETTING.USER_DEFINE_DATABASE,
+        collapsible: false
+    });
+
+    $("#dns_note").html($.su.CHAR.DNS_SETTING.DNS_USER_DB_WARN);
+
+    $("#file").file({
+        fieldLabel: $.su.CHAR.DNS_SETTING.DATABASE_DIR,
+        allowBlank:false,
+        extension: "txt",
+        cls:"inline"
+    });
+    
+    var dns_query_interval = false;
+    function hideImportProMsg() {
+        clearTimeout(dns_query_interval);
+        dns_pro_bar.progressbar("stop");
+        dns_pro_bar.progressbar("reset");
+        dns_query_interval = false;
+        $("#dns_alert_cnt").hide();
+        $("#dns_alert_cnt").msg("close", function(){
+            $("#dns_alert_cnt").msg('showButtons');
+            $("#confirm_cnt").show();
+            $("#dns_pro_cnt").hide();
+        });
+    }
+
+    function dns_smart_database_import() {
+        dns_pro_bar.progressbar("animate", 0, 1, dns_total_time, function(){
+            setTimeout(function() {
+                hideImportProMsg();
+            }, 1200);
+        });
+        $("#dns_addr_database").form('submit', function(){
+            dns_pro_bar.progressbar("stop");
+            dns_pro_bar.progressbar("setValue", 1, "", true);
+            setTimeout(function() {
+                hideImportProMsg();
+            }, 2000);
+        },function(){
+            hideImportProMsg();
+        },function(){
+            hideImportProMsg();
+        });
+    }
+    
+    $("#dns_failed_cnt").msg({
+        cls: 'warning reboot-confirm-size',
+        type: "alert"
+    });
+
+    $("#dns_alert_cnt").msg({
+        okHandler:function(){
+            $("#dns_alert_cnt").msg('hideButtons');
+            $('#confirm_cnt').hide();
+            $("#dns_pro_cnt").show();
+
+            dns_smart_database_import();
+            return false;
+        },
+        cancelHandler:function(){
+            return true;
+        },
+        cls: 'warning reboot-confirm-size',
+        closeBtn: false,
+        type: "confirm"
+    });
+
+    $("button#input").button({
+        text: $.su.CHAR.DNS_SETTING.INPUT_BUTTON,
+        handler: function(){
+            if(!$("#file").file("validate"))
+            {
+                return false;
+            }
+            dns_smart_global_Proxy.query({"dns": {"name":"global"}}, function(data){ 
+                if (data.dns.global.dns_smart_enable == "off") {
+                    $("#dns_failed_cnt").msg("show");
+                    return false;
+                }
+                else
+                {
+                    if($("#dns_addr_database").form('validate'))
+                    {
+                        $("#dns_alert_cnt").msg("show");
+                    }
+                    else
+                    {
+                        return false;
+                    }
+                }
+            });
+        },
+        cls: "submit inline"
+    });
+
+    var dns_pro_bar  = $('input#dns_pro_bar').progressbar({
+        fieldLabel: null,
+        cls: 'inline',
+        width: 326,
+        height: 6,
+        value: 0
+    });
+
+    $("#confirm_content").html($.su.CHAR.DNS_SETTING.INPUT_USER_CONFIRM);
+
+    $("#error_str").html($.su.CHAR.DNS_SETTING.IMPORT_SMART_ON_BEFORE);
+
+    $("#dns_addr_database").form({
+        proxy: {},
+        formEnctype: "multipart/form-data",
+        traditional: true,
+        hiddenFrame: true,
+        fields: [
+            {"name": "archive"}
+        ],
+        fileUrlCb: function(){
+            return $.su.url.subs + $.su.url.stok + IMPORT_URL;
+        }
+    });
+
+    $.su.app.runningModule.addUnloadHandler(function(){
+        if(dns_query_interval)
+        {
+            clearInterval(dns_query_interval);
+            dns_query_interval = false;
+        }
+        dns_pro_bar.progressbar("stop");
+        dns_pro_bar.progressbar("reset");
+
+    });
+
+    var helpDns = new $.su.Help({
+        container: "div#dns_smart_help",
+        content: ["DNS_SMART_HELP"]
+    });
+});
+</script>
+</body>
+
+</html>

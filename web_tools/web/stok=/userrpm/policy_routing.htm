@@ -1,0 +1,379 @@
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
+<html xmlns="http://www.w3.org/1999/xhtml">
+<head>
+<meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
+<title>POLICY_ROUTING</title>
+<style type="text/css">
+</style>
+</head>
+
+<body>
+<div class="func-container">
+    <div id="policy_rule_list">
+        <div id="policy_rule_grid">
+        </div>
+    </div>
+    <div id="policy_routing_hlep">    </div>
+</div>
+
+<script type="text/javascript">
+try{
+    $
+}catch(e){
+    location.href = "/";
+};
+
+
+$(document).ready(function(e){
+    var policy_rule_Proxy = new $.su.Proxy();
+    var ipgroupNameTrans = {};
+
+    $("#policy_rule_list").panel({
+        title: $.su.CHAR.POLICY_ROUTE.RULE_LIST,
+        collapsible: false
+    });
+
+
+
+    var ruleGrid = $("#policy_rule_grid").grid({
+        editor: {
+            content:"default",
+            fields: [
+                {name: "name"},
+                {name: "service_type"},
+                {name: "src_ipgroup"},
+                {name: "dst_ipgroup"},
+                {name: "if"},
+                {name: "timeobj"},
+                {name: "forced"},
+                {name: "comment"},
+                {name: "enable"},
+                {name: "index"}
+            ],
+            validator:function(e){
+                var index_input = $("input[name=index]");
+                var data = ruleGrid.grid("getStore").data;
+                var number = index_input.textbox("getValue");
+                if (number == "") {
+                    return true;
+                }
+                number = parseInt(number);
+                var paging = $(ruleGrid.grid("getPaging"));
+                var totalNum = paging.get(0).totalNum;
+                var editId = $(ruleGrid.grid("getEditor")).editor("getEditingId");
+                if (editId == "add") {
+                    totalNum++; /* 插入时，允许用户把插入位置填多一个 */
+                }
+                if (number < 1 || number > totalNum) {
+                    index_input.textbox("setError", "输入的位置超出了指定的范围");
+                    return false;
+                }
+                return true;
+            }
+        },
+        paging_true:{
+            /* 本页支持移动条目，需手动刷新，故禁止分页组件刷新 */
+            evInsert: false,
+            evUpdate: false
+        },
+        store:{
+            proxy: policy_rule_Proxy,
+            fields: [
+                {name: "name"},
+                {name: "service_type"},
+                {name: "src_ipgroup"},
+                {name: "dst_ipgroup"},
+                {name: "if"},
+                {name: "timeobj"},
+                {name: "forced"},
+                {name: "comment"},
+                {name: "enable"},
+                {name: "index"}
+            ],
+            parseKey: {
+                moduleName: "policy_route",
+                tableName: "policy_rule",
+                pageSizeName: "policy_route_entry"
+            },
+            autoLoad: true
+        },
+        columns: [
+            {
+                xtype: "checkcolumn"
+            },
+            {
+                xtype: "rownumberer"
+            },
+            {
+                text: $.su.CHAR.POLICY_ROUTE.RULE_NAME,
+                width: 100,
+                dataIndex: "name",
+                editor: {
+                    xtype: "textbox",
+                    allowBlank: false,
+                    vtype:"name"
+                }
+            },
+            {
+                text: $.su.CHAR.POLICY_ROUTE.SERVICE_TYPE,
+                width: 90,
+                dataIndex: "service_type",
+                editor: {
+                    xtype: "combobox",
+                    allowBlank: false,
+                    vtype:"string_visible_allow_blank",
+                    items:[
+                        {name:"ALL",value:"ALL", selected:true}
+                    ]
+                }
+            },
+            {
+                text: $.su.CHAR.POLICY_ROUTE.SRC_ADDR,
+                width: 100,
+                dataIndex: "src_ipgroup",
+                editor: {
+                    xtype: "combobox",
+                    allowBlank: false,
+                    vtype:"string_visible_allow_blank",
+                    items:[
+                        {name:"IPGROUP_ANY",value:"IPGROUP_ANY", selected:true}
+                    ]
+                },
+                renderer: function (v) {
+                    return ipgroupNameTrans[v] || v;
+                }
+            },
+            {
+                text: $.su.CHAR.POLICY_ROUTE.DST_ADDR,
+                width: 100,
+                dataIndex: "dst_ipgroup",
+                editor: {
+                    xtype: "combobox",
+                    allowBlank: false,
+                    vtype:"string_visible_allow_blank",
+                    items:[
+                        {name:"IPGROUP_ANY",value:"IPGROUP_ANY", selected:true}
+                    ]
+                },
+                renderer: function (v) {
+                    return ipgroupNameTrans[v] || v;
+                }
+            },
+            {
+                text: $.su.CHAR.POLICY_ROUTE.INTERFACE,
+                width: 100,
+                dataIndex: "if",
+                editor: {
+                    xtype: "combobox",
+                    allowBlank: false,
+                    multiSelect: true,
+                    vtype:"string_visible_allow_blank",
+                    items:[
+                        {name:"---",value:"---"}
+                    ]
+                }
+            },
+            {
+                text: $.su.CHAR.POLICY_ROUTE.TIME,
+                width: 100,
+                dataIndex: "timeobj",
+                editor: {
+                    xtype: "combobox",
+                    allowBlank: false,
+                    vtype:"string_visible_allow_blank",
+                    items:[
+                        {name:"Any",value:"Any", selected:true}
+                    ]
+                }
+            },
+            {
+                text: $.su.CHAR.POLICY_ROUTE.FORCED,
+                width: 60,
+                dataIndex: "forced",
+                editor: {
+                    xtype: "checkbox",
+                    allowBlank: false,
+                    items:[
+                        {boxlabel: $.su.CHAR.POLICY_ROUTE.FORCED_DESC, name:'forced', inputValue:'on',uncheckedValue:"off",checked:true}
+                    ]
+                },
+                renderer: function(v){
+                    if (v == "on") {
+                        return $.su.CHAR.OPERATION.YES;
+                    } else if (v == "off") {
+                        return $.su.CHAR.OPERATION.NO;
+                    } else {
+                        return "--";
+                    }
+                }
+            },
+            {
+                text: $.su.CHAR.POLICY_ROUTE.COMMENT,
+                dataIndex: "comment",
+                xtype:"comment",
+                editor: {
+                    xtype: "textbox",
+                    tips: $.su.CHAR.POLICY_ROUTE.OPTIONAL,
+                    allowBlank: true,
+                    maxLength: 50,
+                    vtype:"string_visible_allow_blank"
+                }
+            },
+            {
+                text: $.su.CHAR.POLICY_ROUTE.INDEX,
+                dataIndex: "index",
+                hidden:true,
+                editor: {
+                    xtype: "textbox",
+                    tips: $.su.CHAR.POLICY_ROUTE.OPTIONAL,
+                    allowBlank: true,
+                    vtype:"number"
+                }
+            },
+
+            {
+                text: $.su.CHAR.POLICY_ROUTE.STATUS,
+                xtype: "statuscolumn",
+                dataIndex: "enable",
+                editor: {
+                    xtype: "checkbox",
+                    items:[
+                        {boxlabel: $.su.CHAR.POLICY_ROUTE.ENABLE_RULE, name:'enable', inputValue:'on',uncheckedValue:"off",checked:true}
+                    ]
+                }
+            },
+            {
+                xtype: "settings"
+            }
+
+        ],
+        operation: 'prompt|add|delete'
+    }).on("ev_load", function(e,data, others){
+        if(others)
+        {
+            //console.log(others.max_rules)
+            maxrules = others.max_rules;
+        }
+
+    }).on("ev_insert", function(e, index, data){
+        var paging = $(ruleGrid.grid("getPaging"));
+        var numPerPage = paging.get(0).numPerPage;
+        var totalNum = paging.get(0).totalNum + 1;
+        var gotoPage = paging.get(0).currentPage;
+        if (data && data[0] && data[0].index) {
+            gotoPage = parseInt((parseInt(data[0].index)-1)/parseInt(numPerPage));
+        } else {
+            gotoPage = parseInt((totalNum-1)/parseInt(numPerPage));
+        }
+        paging.paging_true("goToPage", gotoPage, "ev_insert");
+    }).on("ev_update", function(e, key, index, data){
+        var paging = $(ruleGrid.grid("getPaging"));
+        var numPerPage = paging.get(0).numPerPage;
+        var totalNum = paging.get(0).totalNum;
+        var gotoPage = paging.get(0).currentPage;
+        if (data && data.index) {
+            gotoPage = parseInt((parseInt(data.index)-1)/parseInt(numPerPage));
+        }
+        paging.paging_true("goToPage", gotoPage, "ev_update");
+    });
+
+    var i;
+    var editor = ruleGrid.grid('getEditor');
+    var combobox;
+
+    /*发送form请求,获取服务类型列表*/
+        var serviceItem=[];
+        var serviceProxy = new $.su.Proxy({
+                async: false
+        });
+        serviceProxy.query({"service":{"table":"service"}}, function(data){
+				data = data.service.service;
+				for (i=0; i<data.length; i++){
+					for (var k in data[i]){
+						serviceItem.push({name:data[i][k].name,value:data[i][k].name})
+					}
+				}
+
+                combobox = $(editor).find('.combobox-value[name=service_type]');
+                combobox.combobox('loadData',serviceItem);
+        });
+
+
+        /*发送form请求,获取地址列表*/
+        var src_ipgroupItem=[];
+        var dst_ipgroupItem=[];
+        var ipgroupProxy = new $.su.Proxy({
+                async: false
+        });
+        ipgroupProxy.query({"ipgroup":{"table":"rule_ipgroup"}}, function(data){
+				data = data.ipgroup.rule_ipgroup;
+				for (i=0; i<data.length; i++){
+					for (var k in data[i]){
+						var item = slpIpgroupToItem(data[i][k]);
+						if (data[i][k].name != "IPGROUP_LAN"){
+							dst_ipgroupItem.push(item);
+						}
+
+						src_ipgroupItem.push(item);
+						ipgroupNameTrans[item.value] = item.name;
+					}
+				}
+
+                combobox = $(editor).find('.combobox-value[name=src_ipgroup]');
+                combobox.combobox('loadData',src_ipgroupItem);
+                combobox = $(editor).find('.combobox-value[name=dst_ipgroup]');
+                combobox.combobox('loadData',dst_ipgroupItem);
+        });
+
+        /*发送form请求,获取interface列表.用于显示于接口下拉框*/
+        var interfaceItem=[];
+        var interfaceProxy = new $.su.Proxy({async: false});
+		interfaceProxy.query({"network":{"table": "if"}}, function(data){
+            data = data.network["if"];
+            for (var i = 0; i < data.length; i++){
+                for (var key in data[i]){
+                    if(data[i][key].isbridged != 1){
+                        interfaceItem.push({name:data[i][key].if_name,value:data[i][key].if_name});
+                    }
+                }
+            }
+
+            combobox = $(editor).find('.combobox-value[name=if]');
+            combobox.combobox('loadData',interfaceItem);
+        });
+
+        /*发送form请求,获取时间对象列表 */
+        var timeItem=[];
+        var timeProxy = new $.su.Proxy({
+                async: false
+        });
+
+        timeProxy.query({"time_mngt":{"table":"time_obj"}}, function(data){
+			data = data.time_mngt.time_obj;
+            for (i=0; i<data.length; i++){
+				for (var k in data[i]){
+					timeItem.push({name:data[i][k].name, value:data[i][k].name})
+				}
+            }
+
+            var combobox = $(editor).find('.combobox-value[name=timeobj]');
+            combobox.combobox('loadData',timeItem);
+        });
+
+        function slpIpgroupToItem(ipgroup_obj) {
+        if (ipgroup_obj.flag == "system" && typeof(ipgroup_obj.comment) == "string" && ipgroup_obj.comment.length > 1) {
+            return {name: ipgroup_obj.comment, value: ipgroup_obj.name};
+        } else {
+            return {name: ipgroup_obj.name, value: ipgroup_obj.name};
+        }
+    }
+
+    var helpIspRouting = new $.su.Help({
+        container: "div#policy_routing_hlep",
+        content: ["POLICY_ROUTING_SETTING", "POLICY_ROUTING_LIST"]
+    });
+});
+</script>
+</body>
+
+</html>

@@ -1,0 +1,225 @@
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
+<html xmlns="http://www.w3.org/1999/xhtml">
+<head>
+<meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
+<title>Service group</title>
+<style type="text/css">
+</style>
+</head>
+
+<body>
+<div class="func-container">
+	<div id="service-group-list">
+		<div id="service-group-grid">
+		</div>
+	</div>
+
+	<div id = "own_editor">
+		<input class = "hidden" type = "text" id = "flag" name = "flag" value = "user">
+		<div id = "group_name">
+			<input id = "name" name = "name" >
+		</div>
+		<div id = "group_view">
+			<input id = "service" name = "service" >
+		</div>
+		<div id = "group_comment" >
+			<input id = "comment" name = "comment" >
+		</div>
+		<input class = "hidden" id = "ref" name = "ref">
+	</div>
+
+	<div id="service-group-help"></div>
+</div>
+
+<script type="text/javascript">
+try{
+	$
+}catch(e){
+	location.href = "/";
+};
+
+$(document).ready(function(e){
+	$(".func-container").hide();
+
+	//获取服务列表，用于构造服务组下拉框
+	var serviceMap=[];
+	var serviceItems=[];
+	new $.su.Proxy({async: false}).query({"service":{"table":"service"}}, function(data){
+		for (var i=0; i<data.service.service.length; i++){
+			for (var j in data.service.service[i])
+			{
+				serviceMap[j] = data.service.service[i][j].name;
+				serviceItems.push({name:data.service.service[i][j].name,value:j});
+				break;
+			}
+		}
+	});
+
+	$("#service-group-list").panel({
+		title: $.su.CHAR.SERVICE_TYPE.PANEL_LIST
+	});
+
+	$("input#service").combobox({
+		fieldLabel: $.su.CHAR.SERVICE_TYPE.SERVICE,
+		multiSelect: true,
+		items:serviceItems
+	})
+
+	$("input#name").textbox({
+		fieldLabel: $.su.CHAR.SERVICE_TYPE.GROUP_NAME,
+		tips:"(1-28个字符)",
+		tipsCls:"s",
+		allowBlank:false,
+		maxLength:28,
+		vtype: "name"
+	});
+
+	$("input#comment").textbox({
+		fieldLabel: $.su.CHAR.SERVICE_TYPE.COMMENT,
+		tips:"(可选，1-50个字符)",
+		tipsCls:"s",
+		allowBlank:true,
+		maxLength:50
+	});
+
+	$("input#ref").textbox({
+		fieldLabel: ""
+	});
+
+	var serviceGroupGrid = $("#service-group-grid").grid({
+		editor: {
+			validator:function()
+			{
+				var editor  = $(serviceGroupGrid.grid("getEditor"));
+				var ruleName = editor.find(".text-text[name=name]").textbox("getValue");
+
+				var store 	= serviceGroupGrid.grid("getStore");
+				var keyProperty = store.keyProperty;
+				var grid_array  = store.data;
+
+				var editingId = editor.editor("getEditingId");
+
+				if($.isArray(grid_array) && grid_array.length > 0)
+				{
+					for(var k = 0; k < grid_array.length;k++)
+					{
+						var data = grid_array[k];
+
+						if(data[keyProperty] == editingId)
+						{
+							continue;
+						}
+						else if(data["name"] == ruleName)
+						{
+							$($("div#service-group-grid").grid("getEditor")).form('setError', "	服务组名称不能重复！");
+							return false;
+						}
+					}
+				}
+				return true;
+			},
+			content:"#own_editor",
+			fields: [
+				{name: "name"},
+				{name: "service"},
+				{name: "comment"}
+			]
+		},
+		store:{
+			proxy: new $.su.Proxy(),
+			fields: [
+				{name: "name"},
+				{name: "service"},
+				{name: "comment"},
+				{name: "flag"},
+				{name: "ref"}
+			],
+			parseKey: {
+				moduleName: "service",
+				pageSizeName: "sevice_group_entry",
+				tableName: "service_group"
+			},
+			autoLoad: true
+		},
+		paging_true:{},
+		columns: [
+			{
+				xtype: "checkcolumn"
+			},
+			{
+				xtype: "rownumberer"
+			},
+			{
+				text: $.su.CHAR.SERVICE_TYPE.GROUP_NAME,
+				width: 150,
+				dataIndex: "name",
+				scan: {
+					cmp: $.search.compare.string
+				}
+			},
+			{
+				text: $.su.CHAR.SERVICE_TYPE.SERVICE,
+				width: 150,
+				dataIndex: "service",
+				renderer:function(dd, index, data){
+					if (typeof(data.service) == "undefined") return "---";
+					if (typeof(data.service) == "string") data.service = [data.service];
+
+					//把value转换为name
+					var namelist=[];
+					data.service.forEach(function(item,index){
+						namelist[index]=serviceMap[item];
+					});
+					return namelist;
+				}
+			},
+			{
+				xtype: "comment",
+				scan: {
+					cmp: $.search.compare.string
+				}
+			},
+			{
+				xtype: "settings"
+			}
+		],
+		operation: 'prompt|add|delete'
+	}).on("ev_load", function(e, data, others){
+		for (var i = 0; i < data.length; i++){
+			//不允许修改已被引用的对象，简化业务模块逻辑
+			if (data[i].ref > 0 || data[i].flag == "system"){
+				$(serviceGroupGrid).grid('disableRow',i);
+			}
+		}
+	}).on("ev_formatAddData", function(e, data){
+		if (typeof(data.service) == "string"){
+			data.service = [data.service];
+		}
+	}).on("ev_formatEditData", function(e, data){
+		if (typeof(data.service) == "string"){
+			data.service = [data.service];
+		}else if(typeof(data.service) == "undefined"){
+			data.service = [];
+		}
+	});
+	var editor = $(serviceGroupGrid.grid("getEditor"));
+	editor.on("ev_startEdit", function(e, index, key){
+
+		if (index == "add"){
+			editor.find("#name").textbox("enableStyle");
+		}
+		else{
+			editor.find("#name").textbox("disableStyle");
+		}
+	})
+	var helpServiceGroupGrid = new $.su.Help({
+		container: "div#service-group-help",
+		content: ["SERVICE_GROUP_SETTING"]
+	});
+
+	$(".func-container").show();
+});
+</script>
+</body>
+
+</html>

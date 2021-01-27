@@ -1,0 +1,116 @@
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
+<html xmlns="http://www.w3.org/1999/xhtml">
+<head>
+<meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
+<title>cloud_tip_check</title>
+</head>
+
+<body>
+<div class="func-container">
+	<div id="account">
+		<form id="cloud_tip_check">
+			<div id="wservice-note"></div>
+			<div id="extra-tip"></div>
+			<button type="button" id="local-conf" name="local-conf"></button>
+			<button type="button" id="cloud-conf" name="cloud-conf"></button>
+		</form>
+		<div id="cloudOpen_alert_cnt">
+			<h4 class="title"  id="cloudOpen_confirm_cnt">
+				<span class="icon"></span>
+				<span class="text" id="cloudOpen_confirm_content"></span>
+			</h4>
+		</div>
+	</div>
+</div>
+
+<script type="text/javascript">
+try{
+	$
+}catch(e){
+	location.href = "/";
+};
+
+$(document).ready(function(e){
+	var $li = $("#tab-menu ul.tab-menu-ul:visible li.selected");
+	var title = $li.find("a.nav span").text();
+	var a = $("div.func-container").page({
+		title: title,
+		help:""
+	});
+	$("div#account").panel({
+		title: title,
+		collapsible: false
+	});
+	$(".top-tip").hide();
+	$.su.menu.fixMarginTop(-32);
+	$('#wservice-note').html($.su.CHAR.CLOUD_TIP.SETTING_NOTE);
+	$('#extra-tip').html($.su.CHAR.CLOUD_TIP.EXTRA_TIP);
+	$('#extra-tip a').css("color","#115b96");
+	$("#local-conf").button({
+		text: "继续本地配置",
+		cls: "inline-block",
+		handler: function(){
+			var cloudProxy = new $.su.Proxy();
+			cloudProxy.modify({
+				cloud_config: {
+					ui_notify_info: {
+						setting_function_selected: "1"
+					}
+				}
+			}, function(){
+				// debugger;
+				$.su.menu.set_setting_function_selected(1);
+				if ($.su.menu.level == 3) {
+					$li.find("a.nav").trigger("click");
+					return;
+				}
+
+				var name = 	$.su.menu.cloud_tip_name,
+					li_fstId = "menu-" + $.su.menu.advanced.settings.idTag + "-" + name + "-li",
+					tabId = $("ul.menu-tree li#" + li_fstId).find('a.sec').attr('tab-id');
+				$("#tab-menu-ul-wservice-setting").remove();
+				// 显示之前隐藏的tab栏
+				$("#" + tabId).show();
+				$("#" + li_fstId).addClass("selected").find('a.fst').addClass("selected");
+				if($.su.menu.level == 1) {
+					$.su.menu.advanced.open(name);
+					// var secName = $.su.menu.sec_name;
+					// $("#" + li_fstId).find('li.sec a.sec[data-name='+secName+']').trigger("click");
+					$("#" + li_fstId).find('li.sec a.sec:first').trigger("click");
+					$('ul.menu-tree li.fst a.fst[data-name="wservice"]').find(".icon").css("visibility","visible");
+					$('ul.menu-tree li.fst a.fst[data-name="portal"]').find(".icon").css("visibility","visible");
+				}
+				else if ($.su.menu.level == 2)
+				{
+					$("#" + li_fstId).find('li.sec a.sec.selected').trigger("click");
+				}
+			});
+		}
+	});
+	$('#cloud-conf').button({
+		text: "去开启云管理",
+		cls: "inline-block",
+		handler:function(){
+			var cloudProxy = new $.su.Proxy();
+			cloudProxy.modify({
+				cloud_config: {
+					ui_notify_info: {
+						setting_function_selected: "1"
+					}
+				}
+			},function(){
+				$.su.menu.set_setting_function_selected(1);
+				$(".top-tip").hide();
+				$('ul.menu-tree li.fst a.fst[data-name="wservice"]').find(".icon").css("visibility","visible");
+				$('ul.menu-tree li.fst a.fst[data-name="portal"]').find(".icon").css("visibility","visible");
+				$.su.menu.fixMarginTop(-32);
+				$("#tab-menu-ul-wservice-setting").remove();
+				$.su.menu.advanced.goTo("cloud_mngr","global");
+			})
+		}
+	})
+});
+</script>
+</body>
+
+</html>

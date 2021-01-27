@@ -1,0 +1,299 @@
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
+<html xmlns="http://www.w3.org/1999/xhtml">
+<head>
+<meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
+<title>portal para</title>
+</head>
+
+<body>
+<div class="func-container">
+	<div id="portal_para">
+	 	<form id="portal_para-setting">
+			<input id="age_enable" name="age_enable"/>
+			<input type="text"  id="age_time" name="age_time" value="" />
+	    	<input type="text"  id="portal_port" name="portal_port" value="" />
+			<div id="cmcc_panel">
+				<input type="text"  id="cmcc_port" name="cmcc_port" value="" />
+				<input type="text"  id="cmcc_portal_port" name="cmcc_portal_port" value="" />
+			</div>
+			<input id="auth_mode" name="auth_mode" value="" />
+	    </form>
+	</div>
+	
+	<div id="portal_alert_cnt">
+        <h4 class="title" id="portal_confirm_cnt">
+            <span class="icon"></span>
+            <span class="text" id="portal_confirm_content"></span>
+        </h4>
+    </div>
+	
+	<div id="help_portal_para"></div>
+</div>
+
+<script type="text/javascript">
+try{
+    $
+}catch(e){
+    location.href = "/";
+};
+
+$(document).ready(function(e){
+	var http_port = "80";
+	var https_port = "443";
+	var ssh_port = "22";
+	var get_cmcc_port;
+	var portal_port = "8080";
+	var old_auth_mode = "vlan";
+	var adminProxy = new $.su.Proxy({});
+	var globalProxy = new $.su.Proxy({});
+    var auth_mode_trans;
+
+	adminProxy.query({"system":{"name":"service_port"}}, function(data){
+		if (undefined != data.system.service_port.http_port)
+		{
+			http_port = data.system.service_port.http_port
+		}
+		if (undefined != data.system.service_port.https_port)
+		{
+			https_port = data.system.service_port.https_port;
+		}
+		if (undefined != data.system.service_port.ssh_port)
+		{
+			ssh_port = data.system.service_port.ssh_port;
+		}
+    });
+
+	$("div#portal_para").panel({
+		title: $.su.CHAR.WPORTAL.PORTAL_PARA_TITLE,
+		collapsible: false
+	});
+
+	$("#age_enable").checkbox({
+		items: [
+			{boxlabel: $.su.CHAR.WPORTAL.PORTAL_AGE_ENABLE, inputValue: "on", uncheckedValue: "off"}
+		]
+	}).on("ev_change", function (e, oldValue, newValue) {
+		var val = (newValue[0] == "age_enable" || newValue[0] == "on") ? "on" : "off";
+		switch (val) {
+			case "on":
+				$("#age_time").textbox("enable");
+				break;
+			case "off":
+				$("#age_time").textbox("disable");
+				break;
+		}
+	});
+
+	$("input#age_time").textbox({
+		fieldLabel: $.su.CHAR.WPORTAL.PORTAL_AGE,
+		allowBlank: false,
+		tips: $.su.CHAR.WPORTAL.PORTAL_AGE_TIP,
+		maxLength: 2,
+		vtype: {
+            vtype: "number",
+            max: 30,
+            min: 5
+        }
+	});
+
+	$("input#portal_port").textbox({
+		fieldLabel: $.su.CHAR.WPORTAL.PORTAL_PORT,
+		allowBlank: false,
+		tips: $.su.CHAR.WPORTAL.PORTAL_PORT_TIP,
+		maxLength: 5,
+		validator: function(v){
+				var val_portal_port = $("input#portal_port").textbox("getValue");
+				var val_cmcc_port = $("input#cmcc_port").textbox("getValue");
+				var res = new $.su.vtype({vtype: "number"}).validate(v);
+
+				if(res != true)return res;
+
+				v = parseInt(v);
+				if (v == 80 || (1024 <= v && 65535 >= v))
+				{
+					if (parseInt(val_portal_port) == parseInt(http_port))
+					{
+						return $.su.CHAR.WPORTAL.PORTAL_PORT_ERR2;
+					}
+					else if (parseInt(val_portal_port) == parseInt(https_port))
+					{
+						return $.su.CHAR.WPORTAL.PORTAL_PORT_ERR1;
+					}
+					
+					$("input#portal_port").textbox('setValue', v);
+					return true;
+				}
+				else
+				{
+					return $.su.CHAR.WPORTAL.PORTAL_PORT_ERR4;
+				}
+			}
+	});
+
+	$("input#cmcc_port").textbox({
+		fieldLabel: $.su.CHAR.WPORTAL.CMCC_PORT,
+		allowBlank: false,
+		tips: $.su.CHAR.WPORTAL.CMCC_PORT_TIP,
+		maxLength: 5,
+		vtype: {
+            vtype: "number",
+            max: 65535,
+            min: 1024
+        }
+	});
+
+	$("input#cmcc_portal_port").textbox({
+		fieldLabel: $.su.CHAR.WPORTAL.CMCC_PORTAL_PORT,
+		allowBlank: false,
+		tips: $.su.CHAR.WPORTAL.CMCC_PORTAL_PORT_TIP,
+		maxLength: 5,
+		vtype: {
+            vtype: "number",
+            max: 65535,
+            min: 1
+        }
+	});
+
+    	$("input#cmcc_port").textbox('hide');
+    	$("input#cmcc_portal_port").textbox('hide');
+
+	$("#auth_mode").radio({
+        fieldLabel: $.su.CHAR.WPORTAL.PORTAL_MODE,
+        columns: 2,
+        items: [
+            {boxlabel: $.su.CHAR.WPORTAL.PORTAL_MODE_SSID, inputValue: "ssid"},
+            {boxlabel: $.su.CHAR.WPORTAL.PORTAL_MODE_VLAN, inputValue: "vlan"}
+        ]
+    });
+
+	$("#portal_alert_cnt").msg({
+        okHandler:function(){
+			$("#portal_alert_cnt").msg('hide');
+            $("#portal_alert_cnt").msg('close');
+			$("#portal_confirm_cnt").hide();
+			$("form#portal_para-setting").form("submit",{},function(){
+				old_auth_mode = $("#auth_mode").radio("getValue");
+			});
+            return false;
+        },
+        cancelHandler:function(){
+            return true;
+        },
+        cls: 'warning reboot-confirm-size',
+        closeBtn: false,
+        type: "confirm"
+    });
+	var getData = new $.su.Proxy({async: false});
+    getData.query({"profile":{"name":"portal_config"}},function(data){
+    	auth_mode_trans = data.profile.portal_config.auth_mode_trans_attr;
+
+    	if (auth_mode_trans=="0")
+    	{
+    		items = [
+    			{boxlabel: $.su.CHAR.WPORTAL.PORTAL_MODE_SSID, inputValue: "ssid"},
+            	{boxlabel: $.su.CHAR.WPORTAL.PORTAL_MODE_INTERFACE, inputValue: "interface"}
+    		]
+    		$("#auth_mode").radio("loadData", items);
+    	}
+		if (auth_mode_trans=="2")
+		{
+			$("#auth_mode").radio("hide")
+		}
+    });
+
+	$("#portal_confirm_content").html($.su.CHAR.WPORTAL.CONFIRM_CONTENT);
+	
+	$("form#portal_para-setting").form({
+		proxy: globalProxy,
+		fields: [
+			{name: "portal_port", mapping: "portal_port"},
+			{name: "age_time", mapping: "age_time"},
+			{name: "age_enable", mapping: "age_enable"},
+			{name: "cmcc_port", mapping: "cmcc_port"},
+			{name: "cmcc_portal_port", mapping: "cmcc_portal_port"},
+			{name: "auth_mode", mapping: "auth_mode"}
+		],
+		parseKey:{
+			moduleName: "authentication",
+			sectionName: "portal_para"
+		},
+		validator:function(){
+			if($("input#portal_port").textbox("validate") !== true)
+			{
+				return false;
+			}
+
+			return true;
+		},
+		submitBtn: "default"
+	}).on("ev_loadData", function(e, data){
+		if (undefined != data && undefined != data.auth_mode)
+		{
+			old_auth_mode = data.auth_mode;
+		}
+	});
+
+	tarButton = $("form#portal_para-setting").find("button.button-button");
+	$(tarButton).button({
+		handler: function(){
+			if($("form#portal_para-setting").form("validate") !== true){
+				return false;
+			}
+			
+			if(!$("input#portal_port").textbox("validate")){
+				return;
+			}
+			
+			if(!$("input#cmcc_port").textbox("validate")){
+				return;
+			}
+			
+			var auth_mode = $("#auth_mode").radio("getValue");
+			if(old_auth_mode != auth_mode)
+			{
+				$("#portal_confirm_cnt").show();
+				$("#portal_alert_cnt").msg("show");
+			}
+			else
+			{
+				$("form#portal_para-setting").form("submit", {}, function(data){
+					$("form#portal_para-setting").form("prompt", "ok");
+				},function(errorcode){
+					globalProxy.query({"authentication":{"name":"portal"}}, function(data){
+						get_cmcc_port = data.cmcc_port;
+					});
+
+					$("#cmcc_port").textbox("setValue", get_cmcc_port);
+				}, null, false);
+			}
+		}
+	});
+
+	var helpPortalPara
+    if (auth_mode_trans == "1")
+    {
+        helpPortalPara = new $.su.Help({
+            container: "div#help_portal_para",
+            content: "PORTAL_PARA_VLAN_SSID"
+        })
+    }
+	else if (auth_mode_trans == "2")
+	{
+        helpPortalPara = new $.su.Help({
+            container: "div#help_portal_para",
+            content: "PORTAL_PARA_INTERFACE_SSID"
+        })
+	}
+    else
+    {
+        helpPortalPara = new $.su.Help({
+            container: "div#help_portal_para",
+            content: "PORTAL_PARA_INTERFACE"
+        })
+    }
+
+});
+</script>
+</body>
+
+</html>

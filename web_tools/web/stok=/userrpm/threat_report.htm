@@ -1,0 +1,79 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <title>威胁报表</title>
+    <script type="text/javascript" src="../web-static/js/report_new/initPage.js?random=20201217044300"></script>
+    <script type="text/javascript" src="../web-static/js/report_new/constant.js?random=20201217044300"></script>
+</head>
+
+<body>
+    <div class="func_container">
+        <div id="threat_report"></div>
+    </div>
+    <script type="text/javascript">
+        try {
+            $
+        } catch (e) {
+            location.href = "/";
+        }
+        $(document).ready(function(e) {
+            var threat_report_options = {
+                pageId: 'threat_report',
+                panel: '威胁报表',
+                condition: REPORT_INFO.THREAT_REPORT.CONDITION,
+                radioOption: REPORT_INFO.THREAT_REPORT.RADIO_OPTION,
+                triggerOption: REPORT_INFO.TRIGGER_OPTION,
+                currentCondition: 'threat_src_ip',
+                graphType: REPORT_INFO.GRAPHTYPE.THREAT_REPORT,
+                grid: {
+                    store: {
+                        proxy: new $.su.Proxy(),
+                        fields: [{
+                            name: "index"
+                        }, {
+                            name: "cnt"
+                        }, {
+                            name: "cnt_sum"
+                        }],
+                        parseKey: {
+                            moduleName: "report_new",
+                            tableName: "threat_report_list",
+                            pageSizeName: "threat_report_list_entry"
+                        },
+                        autoLoad: true
+                    },
+                    columns: [{
+                        text: '序号',
+                        xtype: "rownumberer"
+                    }, {
+                        text: '源地址',
+                        dataIndex: "index",
+                        width: 100
+                    }, {
+                        text: '威胁次数',
+                        dataIndex: "cnt",
+                        width: 200,
+                        renderer: function(val, index, data) {
+                            var percent = toPercent(val, data.cnt_sum);
+
+                            var div = '<div style="position:absolute;">' +
+                                        '<div class="report-new-Progress" style="width: 500px">' +
+                                            '<div class="report-new-bar" style="width: NUM"></div>' +
+                                            '<span class="percent-value">STR</span>' +
+                                        '</div>' +
+                                        '<span class="report-new-Str"  style="left: 520px">SPHIT</span>' +
+                                    '</div>';
+                            var progressDom = div.replace(/NUM/g, percent).replace(/STR/g, percent).replace(/SPHIT/g, data.cnt.toString());
+                            return progressDom;
+                        }
+                    }]
+                }
+            };
+            initPage(threat_report_options);
+        });
+    </script>
+</body>
+
+</html>

@@ -1,0 +1,160 @@
+.ms-container{
+  margin: 0;
+}
+
+.ms-container .ms-list-wrap {
+  display: none;
+  position: absolute;
+  width: auto;
+  min-width: 100%;
+  overflow: hidden;
+  top: 32px;
+  left: 0;
+  box-shadow: 1px 1px 5px #898989;
+  max-height: 240px;
+  background-color: #ffffff;
+  z-index: 99;
+}
+.ms-container .ms-list-wrap:after{
+  content: ".";
+  display: block;
+  height: 0;
+  line-height: 0;
+  font-size: 0;
+  clear: both;
+  min-height: 0;
+  visibility: hidden;
+}
+
+.ms-container .ms-label {
+   width: 110px;
+  display: inline-block;
+}
+
+.ms-container .ms-wrap-outer {
+   display: inline-block;
+/*    min-width: 300px;
+   max-width: 550px; */
+   width:180px;
+   position: relative;
+   background-color: #f5f5f5;
+   border: 1px solid #e6e6e6;
+}
+
+.ms-container .combobox-switch span{
+  display: block;
+  background: url(/web-static/themes/old/img/icons-02.png?random=20190827203753) no-repeat -220px -5px;
+  height: 8px;
+  width: 10px;
+  margin: 10px auto;
+}
+
+.ms-container .combobox-switch{
+  position: absolute;
+  right: 0;
+  top: 0;
+  width: 26px;
+  height: 26px;
+  border: 0px none;
+  vertical-align: middle;
+  display: inline-block;
+}
+
+.ms-container .search-input {
+  border: 0px none;
+  vertical-align: middle;
+  text-indent: 4px;
+  line-height: 22px;
+  height: 26px;
+  z-index: -1;
+  background: transparent;
+  color: #1a1a1a;
+  width: 100%;
+  cursor: pointer;
+}
+
+.ms-container .multi-select-custom-header {
+  text-align: center;
+  height: 24px;
+  line-height: 24px;
+  color: #115b96;
+  background: #e4edf2;
+}
+
+.ms-container .ms-selectable, .ms-container .ms-selection{
+  background: #fff;
+  color: #555555;
+  float: left;
+  width: 50%;
+}
+.ms-container .ms-selection{
+  float: right;
+}
+
+.ms-container .ms-list{
+  -webkit-box-shadow: inset 0 1px 1px rgba(0, 0, 0, 0.075);
+  -moz-box-shadow: inset 0 1px 1px rgba(0, 0, 0, 0.075);
+  box-shadow: inset 0 1px 1px rgba(0, 0, 0, 0.075);
+  -webkit-transition: border linear 0.2s, box-shadow linear 0.2s;
+  -moz-transition: border linear 0.2s, box-shadow linear 0.2s;
+  -ms-transition: border linear 0.2s, box-shadow linear 0.2s;
+  -o-transition: border linear 0.2s, box-shadow linear 0.2s;
+  transition: border linear 0.2s, box-shadow linear 0.2s;
+  border: 1px solid #ccc;
+  -webkit-border-radius: 3px;
+  -moz-border-radius: 3px;
+  border-radius: 3px;
+  position: relative;
+  height: 200px;
+  padding: 0;
+  overflow-y: auto;
+}
+
+.ms-container .ms-list.ms-focus{
+  border-color: rgba(82, 168, 236, 0.8);
+  -webkit-box-shadow: inset 0 1px 1px rgba(0, 0, 0, 0.075), 0 0 8px rgba(82, 168, 236, 0.6);
+  -moz-box-shadow: inset 0 1px 1px rgba(0, 0, 0, 0.075), 0 0 8px rgba(82, 168, 236, 0.6);
+  box-shadow: inset 0 1px 1px rgba(0, 0, 0, 0.075), 0 0 8px rgba(82, 168, 236, 0.6);
+  outline: 0;
+  outline: thin dotted \9;
+}
+
+.ms-container ul{
+  margin: 0;
+  list-style-type: none;
+  padding: 0;
+}
+
+.ms-container .ms-optgroup-container{
+  width: 100%;
+}
+
+.ms-container .ms-optgroup-label{
+  margin: 0;
+  padding: 5px 0px 0px 5px;
+  cursor: pointer;
+  color: #999;
+}
+
+.ms-container .ms-selectable li.ms-elem-selectable,
+.ms-container .ms-selection li.ms-elem-selection{
+  border-bottom: 1px #eee solid;
+  padding: 2px 10px;
+  color: #555;
+  font-size: 11px;
+}
+
+.ms-container .ms-selectable li.ms-hover,
+.ms-container .ms-selection li.ms-hover{
+  cursor: pointer;
+  color: #fff;
+  text-decoration: none;
+  background-color: #08c;
+}
+
+.ms-container .ms-selectable li.disabled,
+.ms-container .ms-selection li.disabled{
+  background-color: #eee;
+  color: #aaa;
+  cursor: text;
+}

@@ -1,0 +1,175 @@
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
+<html xmlns="http://www.w3.org/1999/xhtml">
+<head>
+<meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
+<title>IPV6 BRIDGE</title>
+<style type="text/css">
+</style>
+</head>
+
+<body>
+<div class="func-container">
+	<div id="ipv6_setting">
+		<form id="ipv6_form">
+			<input id="enable" name="enable">
+			<input id="ipv6_WAN" name="ipv6_WAN">
+			<input id="ipv6_LAN" name="ipv6_LAN">
+		</form>
+		<button id="bt_ipv6"></button>
+	</div>
+
+	<div id="ipv6_bridge_help">
+	</div>
+
+<script type="text/javascript">
+try{
+	$
+}catch(e){
+	location.href = "/";
+};
+
+
+$(document).ready(function(e){
+	$(".func-container").hide();
+
+	var LAN_interfaceItem = [];
+	var LAN_interfaceProxy = new $.su.Proxy({async: false});
+	LAN_interfaceProxy.query({"network":{"name":"LAN"}}, function(data){
+		if(undefined != data.network.LAN && undefined != data.network.LAN.t_bindif){
+			LAN_interfaceItem = data.network.LAN.t_bindif;
+		}
+	});
+
+	var interfaceItem = [];
+	var interfaceProxy = new $.su.Proxy({async: false});
+	interfaceProxy.query({
+	network: {
+		table: "if"
+	}
+	}, function(data){
+		var items = data.network["if"],
+			item;
+
+		for (var i = 0, len = items.length; i< len; i++) {
+			for (var key in items[i])
+			{
+				item = items[i][key];
+				if("bridge_v6" == item.if_name || "pppoe" == item.if_type || "ethernet" == item.if_type){
+					continue;
+				}
+				if(undefined != LAN_interfaceItem && 0 != LAN_interfaceItem.length){
+					if(-1 != LAN_interfaceItem.indexOf(item.if_name)){
+						continue;
+					}
+				}
+				interfaceItem.push({name:item.if_name,value:item.if_name});
+			}
+		}
+	});
+
+
+	$('#ipv6_setting').panel({
+		title: $.su.CHAR.IPV6_BRIDGE.IPV6_SETTING,
+		collapsible: false
+	});
+
+	$('#enable').radio({
+		fieldLabel:$.su.CHAR.IPV6_BRIDGE.SUPPORT_IPV6,
+		columns:2,
+		items:[
+			{boxlabel:$.su.CHAR.IPV6_BRIDGE.DISABLE, name:"enable", inputValue:"off", checked:true},
+			{boxlabel:$.su.CHAR.IPV6_BRIDGE.ENABLE, name:"enable", inputValue:"on"}
+		],
+		allowBlank:false
+	}).on("ev_change", function(e, oldVal, newVal){
+		if("on" == newVal){
+			$('#ipv6_WAN').combobox('enableStyle');
+			$('#ipv6_LAN').combobox('enableStyle');
+		}
+		else{
+			$('#ipv6_WAN').combobox('disableStyle');
+			$('#ipv6_LAN').combobox('disableStyle');
+		}
+	});
+
+	var ipv6_WAN = $('#ipv6_WAN').combobox({
+		fieldLabel:$.su.CHAR.IPV6_BRIDGE.IPV6_WAN,
+		items:interfaceItem
+	}).on('ev_change', function(e, oldVal, newVal){
+		var tmp_lan = ipv6_LAN.combobox('getValue');
+		ipv6_LAN.combobox('loadData', restInterface(interfaceItem, newVal[0], tmp_lan[0]));
+	});
+	ipv6_WAN.combobox('disableStyle');
+
+	var ipv6_LAN = $('#ipv6_LAN').combobox({
+		fieldLabel:$.su.CHAR.IPV6_BRIDGE.IPV6_LAN,
+		items:interfaceItem
+	}).on('ev_change', function(e, oldVal, newVal){
+		var tmp_wan = ipv6_WAN.combobox('getValue');
+		ipv6_WAN.combobox('loadData', restInterface(restInterface(interfaceItem, newVal[0], tmp_wan[0]), 'LAN', tmp_wan[0]));
+	});
+	ipv6_LAN.combobox('disableStyle');
+
+	$('#bt_ipv6').button({
+		text: "设置",
+		handler:function(e){
+			ipv6_setting_form.form('submit', function(){}, function(){});
+		}
+	});
+
+	var ipv6_proxy = new $.su.Proxy({});
+	var ipv6_setting_form = $('#ipv6_form').form({
+		proxy: ipv6_proxy,
+		fields: [
+			{name:"enable", mapping:"enable"},
+			{name:"ipv6_WAN", mapping:"ipv6_WAN"},
+			{name:"ipv6_LAN", mapping:"ipv6_LAN"}
+		],
+		parseKey:{
+			moduleName: "network",
+			sectionName: "bridge_v6"
+		},
+		autoLoad: true,
+		submitBtn: '#bt_ipv6',
+		validator:function(e){
+			if("on" == $('#enable').radio('getValue')){
+				var tmp_wan = ipv6_WAN.combobox('getValue');
+				if(null == tmp_wan || 0 == tmp_wan.length || "---" == tmp_wan[0]){
+					$('#ipv6_form').form('setError', "请选择广域网接口");
+					return false;
+				}
+				var tmp_lan = ipv6_LAN.combobox('getValue');
+				if(null == tmp_lan || 0 == tmp_lan.length || "---" == tmp_lan[0]){
+					$('#ipv6_form').form('setError', "请选择局域网接口");
+					return false;
+				}
+			}
+			return true;
+		}
+	});
+
+	function restInterface(items, value, selectVal){
+		var ret = [];
+		for(var i=0; i<items.length; i++){
+			if(items[i].value != value){
+				var tmpItem = items[i];
+				tmpItem.selected = false;
+				if(items[i].value == selectVal){
+					tmpItem.selected = true;
+				}
+				ret.push(tmpItem);
+			}
+		}
+		return ret;
+	}
+
+	var helpParentalControl = new $.su.Help({
+		container: "div#ipv6_bridge_help",
+		content: ["IPV6_BRIDGE"]
+	});
+	 $(".func-container").show();
+});
+</script>
+</body>
+
+</html>

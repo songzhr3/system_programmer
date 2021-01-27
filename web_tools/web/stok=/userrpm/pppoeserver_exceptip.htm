@@ -1,0 +1,199 @@
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
+<html xmlns="http://www.w3.org/1999/xhtml">
+<head>
+<meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
+<title>PPPOESERVER_EXCEPTIP</title>
+<style type="text/css">
+</style>
+</head>
+
+<body>
+
+<div class="func-container">
+	<div id="exceptip">
+		<div id="exceptip_grid"> </div>
+	</div>
+
+	<div id="own_editor">
+		<input id="start_ip" name="start_ip" value=""/>
+		<input id="end_ip" name="end_ip" value=""/>
+		<input id="note" name="note" value=""/>
+		<input id="enable" name="enable" value=""/>
+	</div>
+
+	<div id="exceptip_help"></div>
+</div>
+
+<script type="text/javascript">
+
+$(document).ready(function(e){
+    $(".func-container").hide();
+	$('div#exceptip').panel({
+		title: $.su.CHAR.PPPOESERVER_EXCEPTIP.EXCEPTIP,
+		collapsible: false
+	});
+
+	/* start_ip:'起始IP地址' */
+    $("input#start_ip").textbox({
+        fieldLabel: $.su.CHAR.PPPOESERVER_EXCEPTIP.START_IP,
+		allowBlank: false,
+		vtype: "ip",
+		tips: $.su.CHAR.PPPOESERVER_EXCEPTIP.START_IP_TIP
+    });
+	/* start_ip:'起始IP地址' */
+    $("input#end_ip").textbox({
+        fieldLabel: $.su.CHAR.PPPOESERVER_EXCEPTIP.END_IP,
+		allowBlank: false,
+		vtype: "ip",
+		tips: $.su.CHAR.PPPOESERVER_EXCEPTIP.END_IP_TIP
+    });
+	/* NOTE:"备注"*/
+	$("input#note").textbox({
+		fieldLabel: $.su.CHAR.PPPOESERVER_EXCEPTIP.NOTE,
+		maxLength:50,
+		allowBlank:true,
+		tips: $.su.CHAR.PPPOESERVER_EXCEPTIP.NOTE_TIP
+	});
+	/* ENABLE:'启用/禁用规则' */
+	$("input#enable").radio({
+		fieldLabel: $.su.CHAR.PPPOESERVER_EXCEPTIP.STATE,
+		columns: 2,
+		items:[
+			{boxlabel: $.su.CHAR.PPPOESERVER_EXCEPTIP.STATE_ON, name:'enable', inputValue:'on', checked:true},
+			{boxlabel: $.su.CHAR.PPPOESERVER_EXCEPTIP.STATE_OFF, name:'enable', inputValue:'off'}
+		]
+	}).on('ev_change', function(e, oldValue, newValue){});
+
+	/* grip */
+	var o = $("div#exceptip_grid").grid({
+		store:{
+			proxy: new $.su.Proxy(),
+			fields: [
+				{name: "start_ip"},
+				{name: "end_ip"},
+				{name: "note"},
+				{name: "enable"}
+			],
+			parseKey:{
+				moduleName: "pppoe_server",
+				pageSizeName: "pppoeserver_exceptip_entry",
+				tableName: "exceptip"
+			},
+			autoLoad: true
+		},
+		editor: {
+			content: "#own_editor",
+			fields: [
+				{name: "start_ip"},
+				{name: "end_ip"},
+				{name: "note"},
+				{name: "enable"}
+			]
+		},
+		paging_true:{},
+		columns: [
+			{
+				xtype: "checkcolumn",
+				width: $.su.CHAR.SETTING.PPPOESERVER_EXCEPTIP.CHECK_COLUMN_WIDTH
+			},
+			{
+				xtype: "rownumberer",
+				width: $.su.CHAR.SETTING.PPPOESERVER_EXCEPTIP.ROW_NUMBER_WIDTH
+			},
+			{
+				text: $.su.CHAR.PPPOESERVER_EXCEPTIP.COL_START_IP,
+				width: $.su.CHAR.SETTING.PPPOESERVER_EXCEPTIP.START_IP_WIDTH,
+				dataIndex: "start_ip",
+				scan: {
+					cmp: $.search.compare.string
+				}
+			},
+			{
+				text: $.su.CHAR.PPPOESERVER_EXCEPTIP.COL_END_IP,
+				width: $.su.CHAR.SETTING.PPPOESERVER_EXCEPTIP.END_IP_WIDTH,
+				dataIndex:"end_ip",
+				scan: {
+					cmp: $.search.compare.string
+				}
+			},
+			{
+				text: $.su.CHAR.PPPOESERVER_EXCEPTIP.COL_NOTE,
+				width: $.su.CHAR.SETTING.PPPOESERVER_EXCEPTIP.NOTE_WIDTH,
+				dataIndex:"note",
+				xtype:"comment",
+				scan: {
+					cmp: $.search.compare.string
+				}
+			},
+			{
+				text: $.su.CHAR.PPPOESERVER_EXCEPTIP.COL_STATE,
+				width: $.su.CHAR.SETTING.PPPOESERVER_EXCEPTIP.STATE_WIDTH,
+				dataIndex:"enable",
+				trueValue: "on",
+				falseValue: "off",
+				xtype: 'statuscolumn'
+			},
+			{
+				text: $.su.CHAR.PPPOESERVER_EXCEPTIP.COL_SET,
+				width: $.su.CHAR.PPPOESERVER_EXCEPTIP.SETTING_WIDTH,
+				xtype: "settings"
+			},
+			{
+				xtype: "globalSearch",
+				hidden: true,
+				columns: [
+					{
+						text: $.su.CHAR.PPPOESERVER_EXCEPTIP.COL_START_IP,
+						width: $.su.CHAR.SETTING.PPPOESERVER_EXCEPTIP.START_IP_WIDTH,
+						dataIndex: "start_ip",
+						scan: {
+							type: "textbox",
+							vtype: "string"
+						}
+					},
+					{
+						text: $.su.CHAR.PPPOESERVER_EXCEPTIP.COL_END_IP,
+						width: $.su.CHAR.SETTING.PPPOESERVER_EXCEPTIP.END_IP_WIDTH,
+						dataIndex:"end_ip",
+						scan: {
+							type: "textbox",
+							vtype: "string"
+						}
+					},
+					{
+						text: $.su.CHAR.PPPOESERVER_EXCEPTIP.COL_NOTE,
+						width: $.su.CHAR.SETTING.PPPOESERVER_EXCEPTIP.NOTE_WIDTH,
+						dataIndex: 'note',
+						scan: {
+							type: "textbox",
+							vtype: "string"
+						}
+					}
+				],
+				render_search: function(){
+				},
+				render_show: function(){
+				},
+				render_return: function(){
+				}
+			}
+		],
+		operation: "prompt|add|delete|search|searchAll"
+	}).on("ev_load", function(e, data, others){
+		if(others){
+			maxrules = others.max_rules;
+		}
+	});
+
+	var pppoeserver_exceptip_help = new $.su.Help({
+        container: "div#exceptip_help",
+        content: ["PPPOE_SERVER_EXCEPTIP_HELP"]
+    });
+    $(".func-container").show();
+});
+
+</script>
+
+</body>
+
+</html>

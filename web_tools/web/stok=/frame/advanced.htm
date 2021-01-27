@@ -1,0 +1,1679 @@
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
+<html xmlns="http://www.w3.org/1999/xhtml">
+<head>
+<meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
+<title>Advanced</title>
+</head>
+
+<body>
+
+<div class="content-container">
+
+<div id="menu-advanced" class="menu-container">
+</div>
+
+<div id="func-advanced" class="function-container">
+</div>
+
+</div><!-- content-container -->
+
+<script type="text/javascript">
+//<![CDATA[
+try{
+    $
+}catch(e){
+    location.href = "/";
+};
+
+$(document).ready(function(e){
+/************菜单部分的响�?***************/
+
+var advMenuList = {
+	"basic-setting":{
+		text: $.su.CHAR.MENU.BASIC_SETTING,
+        children: {
+            "status": {
+                text: $.su.CHAR.MENU.SYS_STATUS,
+                children: {
+                    "status":{
+                        text: $.su.CHAR.MENU.SYS_STATUS,
+                        url: "system_state.htm"
+                    }
+                }
+            },
+			"interface":{
+				text: $.su.CHAR.MENU.INTERFACE,
+                children: {
+                    "interface-setting": {
+                        text: $.su.CHAR.MENU.INTERFACE,
+                        url: "interface.htm"
+                    },
+					"bridge-setting": {
+                        text: $.su.CHAR.MENU.BRIDGE,
+                        url: "bridge.htm"
+                },
+					"ipv6_bridge": {
+						text: $.su.CHAR.MENU.IPV6_BRIDGE,
+						url: "ipv6_bridge.htm"
+					},
+					"sfp+_setting": {
+                        text: $.su.CHAR.MENU.SFP_SETTING,
+                        url: "optical_port.htm"
+                }
+            }
+    },
+			"dhcp-server":{
+				text: $.su.CHAR.MENU.DHCP_SERVER,
+                children: {
+                    "dhcp-server": {
+                        text: $.su.CHAR.MENU.DHCP_SERVER,
+                        url: "dhcp_server.htm"
+                    },
+					"clientlist": {
+                        text: $.su.CHAR.MENU.DHCP_CLIENT,
+                        url: "dhcp_client.htm"
+                    },
+					"static": {
+                        text: $.su.CHAR.MENU.DHCP_STATIC,
+                        url: "dhcp_static.htm"
+                    },
+					"dhcp6-server": {
+                        text: $.su.CHAR.MENU.DHCP6_SERVER,
+                        url: "dhcp6_server.htm"
+                    },
+					"slaac": {
+                        text: $.su.CHAR.MENU.SLAAC,
+                        url: "slaac.htm"
+                    },
+					"clientlist_v6": {
+                        text: $.su.CHAR.MENU.DHCP6_CLIENT,
+                        url: "dhcp6_client.htm"
+                    },
+					"static_v6": {
+                        text: $.su.CHAR.MENU.DHCP6_STATIC,
+                        url: "dhcp6_static.htm"
+                    }
+                }
+                    }
+                }
+            },
+    "wizard": {
+        text: $.su.CHAR.MENU.WIZARD,
+        url: "wizard.htm"
+    },
+	"object-mngt":{
+		text: $.su.CHAR.MENU.OBJECT_MNGT,
+		children:{
+			"ip-group":{
+				text: $.su.CHAR.MENU.IP_GROUP,
+                children: {
+                    "group": {
+                        text: $.su.CHAR.MENU.IP_GROUP_GROUP,
+                        url: "ipgroup_group.htm"
+                    },
+					"address": {
+                        text: $.su.CHAR.MENU.IP_GROUP_ADDRESS,
+                        url: "ipgroup_address.htm"
+                    }/*,
+					"view": {
+                        text: $.su.CHAR.MENU.IP_GROUP_VIEW,
+                        url: "ipgroup_view.htm"
+                    }
+                    */
+                }
+			},
+			"time-mngt":{
+				text: $.su.CHAR.MENU.TIME_MNGT,
+                children: {
+                    "time-mngt": {
+                        text: $.su.CHAR.MENU.TIME_MNGT,
+                        url: "time_mngt.htm"
+                    }
+                }
+			},
+			"ippool":{
+				text: $.su.CHAR.MENU.IP_POOL,
+                children: {
+                    "ippool": {
+                        text: $.su.CHAR.MENU.IP_POOL,
+                        url: "ippool.htm"
+                    }
+                }
+			},
+			"usergroup":{
+				text: $.su.CHAR.MENU.USER,
+                children: {
+                    "user": {
+                        text: $.su.CHAR.MENU.USERGROUP,
+                        url: "user.htm"
+                    },
+					"usergroup": {
+                        text: $.su.CHAR.MENU.IP_POOL,
+                        url: "usergroup.htm"
+                    },
+					"sessmngr": {
+                        text: "用户状态",
+                        url:"sessmngr.htm"
+                    },
+					"template": {
+                        text: "跳转页面",
+                        url:"template.htm"
+                    },
+					"multi_portal":{
+                        text:"组合认证",
+                        url:"multi_portal.htm"
+                    },
+                    "remote_portal": {
+                        text: "远程Portal",
+                        url: "remote_portal.htm"
+                    },
+                    "free": {
+                        text: "免认证策略",
+                        url: "free_strategy.htm"
+                    },
+                    "portal_para": {
+                        text: $.su.CHAR.MENU.PORTAL_PARA,
+                        url:"portal_para.htm"
+                    }
+                }
+			},
+			"service":{
+				text: $.su.CHAR.MENU.SERVICE,
+                children: {
+                    "service": {
+                        text: $.su.CHAR.MENU.SERVICE,
+                        url: "service.htm"
+                    }
+                }
+			},
+			"usermngr":{
+				text: $.su.CHAR.MENU.USERMNGR,
+                children: {
+                    "usermngr": {
+                        text: $.su.CHAR.MENU.USERMNGR,
+                        url: "usermngr_user.htm"
+                    }
+                }
+			}
+		}
+	},
+	"ap-manage":{
+        text: "AP管理",
+        children:{
+            "apmngr":{
+                text: "AP设置",
+                children: {
+					"apmngr": {
+						text: "AP设置",
+						url:  "apmng_set.htm"
+					},
+                    "ap-status": {
+                        text: $.su.CHAR.MENU.AP_STATUS,
+                        url: "apmng_status.htm"
+                    },
+					"ap-upgrade":{
+						text: $.su.CHAR.MENU.AC_APUPD,
+						url:  "apmng_upgrade.htm"
+					},
+                    "ac_roaming": {
+                        text: $.su.CHAR.MENU.AC_ROAMING,
+                        url: "apmng_roaming.htm"
+                    }
+				}
+            },
+			"rdmngr":{
+                cloud_config:true,
+				text: '射频设置',
+				children: {
+					"rdmngr": {
+						text: $.su.CHAR.MENU.RDCONFIG,
+						url: "apmng_rdmngr.htm"
+					},
+					"rrm": {
+						text: $.su.CHAR.MENU.RRM,
+						url: "apmng_rrm.htm"
+					}
+				}
+			},
+            "apmng_wserv-mngr":{
+                cloud_config:true,
+                text: "无线服务设置",
+                children: {
+                    "apmng_wserv": {
+                        text: "无线服务设置",
+                        url: "apmng_wserv.htm"
+                    }
+                }
+            },
+            "wstation-status": {
+                text: $.su.CHAR.MENU.STA_STATUS,
+                children: {
+					"wstation-status": {
+						text: $.su.CHAR.MENU.STA_STATUS,
+						url: "apmng_wstation.htm"
+					}
+                }
+            }
+        }
+    },
+	"wireless":{
+		text: $.su.CHAR.MENU.WIRELESS,
+		children:{
+			"wireless-setting":{
+				text: $.su.CHAR.MENU.WIRELESS_SETTING,
+                children: {
+                    "wireless-setting": {
+                        text: $.su.CHAR.MENU.WIRELESS_SETTING,
+                        url: "wireless_setting.htm"
+                    }
+                }
+			}
+		}
+	},
+	"transmisson-control":{
+		text: $.su.CHAR.MENU.TRANSMISSION_CONTROL,
+		children:{
+			"nat":{
+				text: $.su.CHAR.MENU.NAT,
+                children: {
+                    "napt": {
+                        text: $.su.CHAR.MENU.NAPT,
+                        url: "napt.htm"
+                    },
+                    "one-nat": {
+                        text: $.su.CHAR.MENU.ONE_NAT,
+                        url: "one_nat.htm"
+                    },
+                    "virtual-server": {
+                        text: $.su.CHAR.MENU.VIRTUAL_SERVER,
+                        url: "virtual_server.htm"
+                    },
+                    "port-trigger": {
+                        text: $.su.CHAR.MENU.PORT_TRIGGER,
+                        url: "port_trigger.htm"
+                    },
+					"alg": {
+                        text: $.su.CHAR.MENU.ALG,
+                        url: "alg.htm"
+                    },
+					"nat-dmz": {
+                        text: $.su.CHAR.MENU.NAT_DMZ,
+                        url: "nat_dmz.htm"
+                    }
+                }
+			},
+			"qos":{
+				text: $.su.CHAR.MENU.QOS,
+                children: {
+                    "qos": {
+                        text: $.su.CHAR.MENU.QOS,
+                        url: "qos.htm"
+                    }
+                }
+			},
+			"session-limit":{
+				text: $.su.CHAR.MENU.SESSION_LIMIT,
+                children: {
+                    "session-limit": {
+                        text: $.su.CHAR.MENU.SESSION_LIMIT,
+                        url: "session_limits.htm"
+                    },
+					"session-monitor": {
+                        text: $.su.CHAR.MENU.SESSION_MONITOR,
+                        url: "session_monitor.htm"
+                    }
+                }
+			},
+			"balance":{
+				text: $.su.CHAR.MENU.BALANCE,
+                children: {
+                    "basic-setting": {
+                        text: $.su.CHAR.MENU.BALANCE_BASIC,
+                        url: "balance_basic.htm"
+                    },
+					"isp-routing": {
+                        text: $.su.CHAR.MENU.ISP_ROUTING,
+                        url: "isp_routing.htm"
+                    },
+					"line-backup": {
+                        text: $.su.CHAR.MENU.LINE_BACKUP,
+                        url: "line_backup.htm"
+                    },
+                    "online": {
+                        text: $.su.CHAR.MENU.ONLINE,
+                        url: "online.htm"
+                    }
+                }
+			},
+			"routing":{
+				text: $.su.CHAR.MENU.ROUTING,
+                children: {
+                    "policy-routing": {
+                        text: $.su.CHAR.MENU.POLICY_ROUTING,
+                        url: "policy_routing.htm"
+                    },
+                    "static-routing": {
+                        text: $.su.CHAR.MENU.STATIC_ROUTING,
+                        url: "static_routing.htm"
+                    },
+                    "static6-routing": {
+                        text: $.su.CHAR.MENU.STATIC6_ROUTING,
+                        url: "static6_routing.htm"
+                    },
+                    "system-routetbl": {
+                        text: $.su.CHAR.MENU.SYSTEM_ROUTETBL,
+                        url: "system_routetbl.htm"
+                    }
+                }
+			}
+		}
+	},
+	"firewall":{
+		text: $.su.CHAR.MENU.FIREWALL,
+		children:{
+			"arp-defense":{
+				text: $.su.CHAR.MENU.ARP_DEFENSE,
+                children: {
+                    "imb": {
+                        text: $.su.CHAR.MENU.IMB,
+                        url: "imb.htm"
+                    },
+					"arp-scan": {
+                        text: $.su.CHAR.MENU.ARP_SCAN,
+                        url: "arp_scan.htm"
+                    },
+					"arp-list": {
+                        text: $.su.CHAR.MENU.ARP_LIST,
+                        url: "arp_list.htm"
+                    }
+                }
+			},
+			"macFiltering":{
+                text: $.su.CHAR.MENU.MAC_FILTERING,
+                children: {
+                    "macFiltering": {
+                        text: $.su.CHAR.MENU.MAC_FILTERING,
+                        url: "macFiltering.htm"
+                    }
+                }
+            },
+            "attack-defense":{
+                text: $.su.CHAR.MENU.ATTACK_DEFENSE,
+                children: {
+                    "attack-defense": {
+                        text: $.su.CHAR.MENU.ATTACK_DEFENSE,
+                        url: "attack-defense.htm"
+                    }
+                }
+            },
+            "access-control":{
+                text: $.su.CHAR.MENU.ACCESS_CONTROL,
+                children: {
+                    "acl": {
+                        text: $.su.CHAR.MENU.ACCESS_CONTROL,
+                        url: "access_control.htm"
+                    }
+                }
+            },
+            "app-control":{
+                text: $.su.CHAR.MENU.APP_CONTROL,
+                children: {
+                    "tabMenu3": {
+                        text: "tabMenu3",
+                        url: "static_routing.htm"
+                    }
+                }
+            }
+		}
+	},
+
+	"behavior-control":{
+		text: $.su.CHAR.MENU.BEHAVIOR_CONTROL,
+		children:{
+            "appdist":{
+                text: $.su.CHAR.MENU.APP_CONTROL,
+                children: {
+                    "appdist": {
+                        text: $.su.CHAR.MENU.APP_CONTROL,
+                        url: "appdist.htm"
+                    },
+                    "bwlist-qq": {
+                        text: $.su.CHAR.MENU.BWLIST_QQ,
+                        url: "bwlist_qq.htm"
+                    }
+                }
+            },
+            "websiteFilter": {
+                text: $.su.CHAR.MENU.WEB_FILTERING,
+                children: {
+                    "websiteFilter":{
+                         text: $.su.CHAR.MENU.WEB_FILTER,
+                         url: "web_filter.htm"
+                    },
+                    "websiteGroup": {
+                        text: $.su.CHAR.MENU.WEB_GROUP,
+                        url: "web_group.htm"
+                    },
+                    "url-filtering": {
+                        text: $.su.CHAR.MENU.URL_FILTERING,
+                        url: "url_filtering.htm"
+                    }
+                }
+            },
+            "websiteSecurity": {
+                text: $.su.CHAR.MENU.WEB_SECURITY,
+                children: {
+                    "websiteSecurity":{
+                        text: $.su.CHAR.MENU.WEB_SECURITY,
+                        url: "web_security.htm"
+                    }
+                }
+            },
+            "behavior_audit":{
+                text: $.su.CHAR.MENU.BEHAVIOR_AUDIT,
+                children: {
+                    "actionCheck":{
+                        text: $.su.CHAR.MENU.BEHAVIOR_AUDIT,
+                        url: "action_check.htm"
+                    }
+                }
+            },
+
+			"appdist_database": {
+				text: $.su.CHAR.MENU.APP_DATABASE,
+				children: {
+                    "appdist-database": {
+                        text: $.su.CHAR.MENU.APP_DATABASE,
+                        url: "appdist_database.htm"
+                    }
+				}
+			}
+		}
+	},
+	"vpn":{
+		text: $.su.CHAR.MENU.VPN,
+		children:{
+			"ipsec":{
+				text: $.su.CHAR.MENU.IPSEC,
+                children: {
+                    "ipsec-setting": {
+                        text: $.su.CHAR.MENU.IPSEC_POLICY_TITLE,
+                        url: "ipsec_tunnel.htm"
+                    },
+					"ipsec-sa": {
+                        text: $.su.CHAR.MENU.IPSEC_SA_TITLE,
+                        url: "ipsec_sa.htm"
+                    }
+                }
+			},
+			"l2tp":{
+				text: $.su.CHAR.MENU.L2TP,
+                children: {
+                    "l2tp-server": {
+                        text: $.su.CHAR.MENU.L2TP_SERVER,
+                        url: "l2tp_server.htm"
+                    },
+					"l2tp-client": {
+                        text: $.su.CHAR.MENU.L2TP_CLIENT,
+                        url: "l2tp_client.htm"
+                    },
+					"l2tp-tunnel": {
+                        text: $.su.CHAR.MENU.L2TP_TUNNEL,
+                        url: "l2tp_tunnel.htm"
+                    }
+                }
+			},
+			"pptp":{
+				text: $.su.CHAR.MENU.PPTP,
+                children: {
+                    "pptp-server": {
+                        text: $.su.CHAR.MENU.PPTP_SERVER,
+                        url: "pptp_server.htm"
+                    },
+					"pptp-client": {
+                        text: $.su.CHAR.MENU.PPTP_CLIENT,
+                        url: "pptp_client.htm"
+                    },
+					"pptp-tunnel": {
+                        text: $.su.CHAR.MENU.PPTP_TUNNEL,
+                        url: "pptp_tunnel.htm"
+                    }
+                }
+			},
+			"vpn-user":{
+				text: $.su.CHAR.MENU.VPN_USER,
+                children: {
+                    "vpn-user": {
+                        text: $.su.CHAR.MENU.VPN_USER_TAB,
+                        url: "vpn_user.htm"
+                    }
+                }
+			}
+		}
+	},
+        "portal":{
+        cloud_config:true,
+        text: $.su.CHAR.MENU.AUTH_MNGT,
+        children:{
+            "usermngr":{
+                text: $.su.CHAR.MENU.USERMNGR,
+                children: {
+                    "usermngr": {
+                        text: $.su.CHAR.MENU.AUTH_USERMNGR,
+                        url: "usermngr_user.htm"
+                    },
+                    "infomngr" :{
+                        text: $.su.CHAR.MENU.AUTH_USERBACKUP,
+                        url: "usermngr_backup.htm"
+                    }
+                }
+            },
+            "wportal":{
+                text: "认证设置",//$.su.CHAR.MENU.AUTH_MNGT,
+                children: {
+					"template": {
+                        text: "跳转页面",
+                        url:"template.htm"
+                    },
+                    "multi_portal":{
+                        text:"组合认证",
+                        url:"multi_portal.htm"
+                    },
+                    "remote_portal": {
+                        text: "远程Portal",
+                        url: "remote_portal.htm"
+                    },
+                    "free": {
+                        text: "免认证策略",
+                        url: "free_strategy.htm"
+                    },
+                    "portal_para": {
+                        text: $.su.CHAR.MENU.PORTAL_PARA,
+                        url:"portal_para.htm"
+                    }
+                }
+            },
+            "authserver":{
+                text: $.su.CHAR.MENU.PORTAL_AUTH_SERVER,
+                children:{
+                    "authserver": {
+                        text: $.su.CHAR.MENU.PORTAL_AUTH_SERVER,
+                        url:"auth_server_group.htm"
+                    },
+                    "radius": {
+                        text: $.su.CHAR.MENU.PORTAL_AUTH_RADIUS,
+                        url:"radius.htm"
+                    }
+                }
+            },
+            "sessmngr":{
+                text:"认证状态",
+                children:{
+                    "sessmngr": {
+                        text: "认证状态",
+                        url:"sessmngr.htm"
+                    }
+                }
+
+            }
+        }
+    },
+	"sys-services":{
+		text: $.su.CHAR.MENU.SYS_SERVICES,
+		children:{
+			"pppoe_server":{
+				text: $.su.CHAR.MENU.PPPOESERVER,
+				children: {
+					"pppoeserver_global": {
+						text: $.su.CHAR.MENU.PPPOESERVER_GLOBAL,
+						url: "pppoeserver_global.htm"
+					},
+					"pppoeserver_user": {
+						text: $.su.CHAR.MENU.PPPOESERVER_USER,
+						url: "pppoeserver_user.htm"
+					},
+					 "pppoeserver_exceptip": {
+						text: $.su.CHAR.MENU.PPPOESERVER_EXCEPTIP,
+						url: "pppoeserver_exceptip.htm"
+					},
+					 "pppoeserver_session": {
+						text: $.su.CHAR.MENU.PPPOESERVER_SESSION,
+						url: "pppoeserver_session.htm"
+					}
+				}
+			},
+			"ddns":{
+				text: $.su.CHAR.MENU.DDNS,
+                children: {
+
+                    "phddns": {
+                        text: $.su.CHAR.MENU.PHDDNS,
+                        url: "phddns.htm"
+                    },
+                        "cmxddns": {
+                        text: $.su.CHAR.MENU.CMXDDNS,
+                        url: "cmxddns.htm"
+                    },
+                     "dyn3322ddns": {
+                        text: $.su.CHAR.MENU.DNY3322DDNS,
+                        url: "dyn3322ddns.htm"
+                    }
+                }
+			},
+			"dns-proxy":{
+				text: $.su.CHAR.MENU.DNSPROXY,
+                children: {
+                    "dns-proxy": {
+                        text: $.su.CHAR.MENU.DNS_PROXY,
+                        url: "dns_proxy.htm"
+                    }
+                }
+			},
+            "upnp":{
+                text: $.su.CHAR.MENU.UPNP,
+                children: {
+                    "upnp": {
+                        text: $.su.CHAR.MENU.UPNP,
+                        url: "upnp.htm"
+                    }
+                }
+            }
+
+		}
+	},
+	"sys-tools":{
+		text: $.su.CHAR.MENU.SYS_TOOLS,
+		children:{
+			"account-mngt":{
+				text: $.su.CHAR.MENU.ACCOUNT,
+                children: {
+                    "account": {
+                        text: $.su.CHAR.MENU.ACCOUNT,
+                        url: "account_mngt.htm"
+                    },
+					"remote-mngt": {
+                        text: $.su.CHAR.MENU.REMOTE_MNGT,
+                        url: "remote_mngt.htm"
+                    },
+					"account-config": {
+                        text: $.su.CHAR.MENU.ACCOUNT_CONFIG,
+                        url: "account_config.htm"
+                    }
+                }
+			},
+			"firmware":{
+				text: $.su.CHAR.MENU.FIRMWARE,
+                children: {
+                    "factory": {
+                        text: $.su.CHAR.MENU.FACTORY,
+                        url: "firmware_factory.htm"
+                    },
+					"backup-restore": {
+                        text: $.su.CHAR.MENU.BACKUP_RESTORE,
+                        url: "firmware_backuprestore.htm"
+                    },
+					"reboot": {
+                        text: $.su.CHAR.MENU.REBOOT,
+                        url: "firmware_reboot.htm"
+                    },
+					"upgrade": {
+                        text: $.su.CHAR.MENU.UPGRADE,
+                        url: "firmware_upgrade.htm"
+                    },
+					"system_mgt": {
+						cloud_config: true,
+                        text: "设备管理",
+                        url: "system_mgt.htm"
+                    }
+                }
+			},
+			"statistics":{
+				text: $.su.CHAR.MENU.STATISTICS,
+                children: {
+					"ifstat": {
+                        text: $.su.CHAR.MENU.IFSTAT,
+                        url: "ifstat.htm"
+                    },
+					"ip_stats": {
+                        text: $.su.CHAR.MENU.IP_STATS,
+                        url: "ip_stats.htm"
+                    }
+                }
+			},
+			"diagnostic":{
+				text: $.su.CHAR.MENU.DIAGNOSTIC,
+                children: {
+                    "diagnostic": {
+                        text: $.su.CHAR.MENU.DIAGNOSTIC,
+                        url: "diagnostic.htm"
+                    },
+                    "dia_info": {
+                        text: $.su.CHAR.MENU.DIA_INFO,
+                        url: "dia_info.htm"
+                    }
+                }
+			},
+			"time-setting":{
+				text: $.su.CHAR.MENU.TIME_SETTING,
+                children: {
+                    "time-setting": {
+                        text: $.su.CHAR.MENU.TIME_SETTING,
+                        url: "time_setting.htm"
+                    }
+                }
+			},
+			"system-log":{
+                text: $.su.CHAR.MENU.SYSTEM_LOG,
+                children: {
+                    "system-log": {
+                        text: $.su.CHAR.MENU.SYSTEM_LOG,
+                        url: "system_log.htm"
+                    }
+                }
+            },
+            "system_params":{
+                text: $.su.CHAR.MENU.SYSTEM_PARAMS,
+                children: {
+					"metric": {
+						text: $.su.CHAR.MENU.METRIC,
+						url: "metric.htm"
+                    }
+                }
+            },
+            "license":{
+                text: $.su.CHAR.MENU.LICENSE,
+                children: {
+                    "license": {
+                        text: $.su.CHAR.MENU.LICENSE,
+                        url: "license.htm"
+                    }
+                }
+            }
+		}
+	},
+	"cloud_mngr": {
+		text: $.su.CHAR.MENU.CLOUD,
+		children: {
+			'global': {
+				text: $.su.CHAR.MENU.CLOUD_GLOBAL,
+				children: {
+					"global_config": {
+						text: $.su.CHAR.MENU.CLOUD_GLOBAL,
+						url: "cloud_management.htm"
+					}
+				}
+			},
+			"ucl":{
+                need_cloud_open: true,
+				text: $.su.CHAR.MENU.UCL,
+				children: {
+					"ucl_policy": {
+						text: $.su.CHAR.MENU.UCL_POLICY,
+						url: "ucl.htm"
+					},
+					"ucl_auth": {
+						text: $.su.CHAR.MENU.UCL_AUTH,
+						url: "ucl_auth.htm"
+					}
+				}
+			}
+		}
+	},
+	"panel": {
+		text: $.su.CHAR.MENU.PANEL,
+		children: {
+			"status": {
+				text: $.su.CHAR.MENU.SYS_STATUS,
+				children: {
+					"status":{
+						text: $.su.CHAR.MENU.SYS_STATUS,
+						url: "system_state.htm"
+					},
+					"alarm":{
+						text: $.su.CHAR.MENU.ALARM,
+						url: "alarm.htm"
+					}
+				}
+			}
+		}
+	},
+	"monitor": {
+		text: $.su.CHAR.MENU.MONITOR,
+		children: {
+			"log":{
+				text: $.su.CHAR.MENU.LOG,
+				children: {
+					"flow_log": {
+						text: $.su.CHAR.MENU.FLOW_LOG,
+						url: "flow_log.htm"
+					},
+					"operation_log": {
+						text: $.su.CHAR.MENU.OPERATION_LOG,
+						url: "operation_log.htm"
+					},
+					"log_view": {
+						text: $.su.CHAR.MENU.SYSTEM_LOG,
+						url: "system_log.htm"
+					},
+					"system_log_v2": {
+						text: $.su.CHAR.MENU.SYSTEM_LOG,
+						url: "system_log_v2.htm"
+					},
+					"sp_hit_log": {
+						text: $.su.CHAR.MENU.SP_HIT_LOG,
+						url: "sp_hit_log.htm"
+					},
+					"audit_log": {
+						text: $.su.CHAR.MENU.AUDIT_LOG,
+						url: "audit_log.htm"
+					},
+					"threat_log":{
+						text: $.su.CHAR.MENU.THREAT_LOG,
+						url: "threat_log.htm"
+					},
+					"url_log":{
+						text: $.su.CHAR.MENU.URL_LOG,
+						url: "url_log.htm"
+					},
+					"content_log":{
+						text: $.su.CHAR.MENU.CONTENT_LOG,
+						url: "content_log.htm"
+					},
+					"mail_filter_log":{
+						text: $.su.CHAR.MENU.MAIL_FILTER_LOG,
+						url: "mail_filter_log.htm"
+					}
+				}
+			},
+			"report":{
+				text: $.su.CHAR.MENU.REPORT,
+				children: {
+					"flow_report": {
+						text: $.su.CHAR.MENU.FLOW_REPORT,
+						url: "flow_report.htm"
+					},
+					"sphit_report": {
+						text: $.su.CHAR.MENU.SPHIT_REPORT,
+						url: "sphit_report.htm"
+					},
+					"threat_report": {
+						text: $.su.CHAR.MENU.THREAT_REPORT,
+						url: "threat_report.htm"
+					}
+				}
+			},
+			"system_statistics":{
+				text: $.su.CHAR.MENU.SYSTEM_STATISTICS,
+				children: {
+					"report_ifstat": {
+						text: $.su.CHAR.MENU.IFSTAT,
+						url: "ifstat.htm"
+					},
+					"report_ip_stats": {
+						text: $.su.CHAR.MENU.IP_STATS,
+						url: "ip_stats.htm"
+					},
+					"report_sp_stats": {
+						text: $.su.CHAR.MENU.SP_STATS,
+						url: "sp_stats.htm"
+					}
+				}
+			},
+			"diagnostic_center":{
+				text: $.su.CHAR.MENU.DIAGNOSTIC_CENTER,
+				children: {
+					"diagnostic": {
+						text: $.su.CHAR.MENU.DIAGNOSTIC,
+						url: "diagnostic.htm"
+					},
+					"dia_info": {
+						text: $.su.CHAR.MENU.DIA_INFO,
+						url: "dia_info.htm"
+					}
+				}
+			}
+		}
+	},
+	"policy": {
+		text: $.su.CHAR.MENU.POLICY,
+		children: {
+			"security_policy": {
+				text: $.su.CHAR.MENU.SECURITY_POLICY,
+				children: {
+					"security_policy":{
+						text: $.su.CHAR.MENU.SECURITY_POLICY,
+						url: "security_policy.htm"
+					},
+					"redundancy_analysis":{
+						text: $.su.CHAR.MENU.REDUNDANCY_ANALYSIS,
+						url: "redundancy_analysis.htm"
+					}
+				}
+			},
+			"audit_policy": {
+				text: $.su.CHAR.MENU.AUDIT_POLICY,
+				children: {
+					"audit_policy":{
+						text: $.su.CHAR.MENU.AUDIT_POLICY,
+						url: "audit_policy.htm"
+					}
+				}
+			},
+			"bandwidth_policy": {
+				text: $.su.CHAR.MENU.BANDWIDTH_POLICY,
+				children: {
+					"qos": {
+						text: $.su.CHAR.MENU.QOS,
+						url: "qos.htm"
+					},
+					"session-limit": {
+						text: $.su.CHAR.MENU.SESSION_LIMIT,
+						url: "session_limits.htm"
+					},
+					"session-monitor": {
+						text: $.su.CHAR.MENU.SESSION_MONITOR,
+						url: "session_monitor.htm"
+					}
+				}
+			},
+			"nat_policy": {
+				text: $.su.CHAR.MENU.NAT_POLICY,
+				children: {
+					"napt": {
+						text: $.su.CHAR.MENU.NAPT,
+						url: "napt.htm"
+					},
+					"one-nat": {
+						text: $.su.CHAR.MENU.ONE_NAT,
+						url: "one_nat.htm"
+					},
+					"virtual-server": {
+						text: $.su.CHAR.MENU.SERVER_MAP,
+						url: "virtual_server.htm"
+					},
+					"nat-dmz": {
+						text: $.su.CHAR.MENU.NAT_DMZ,
+						url: "nat_dmz.htm"
+					},
+					"upnp": {
+						text: $.su.CHAR.MENU.UPNP,
+						url: "upnp.htm"
+					}
+				}
+			},
+			"alg_policy": {
+				text: $.su.CHAR.MENU.ALG_POLICY,
+				children: {
+					"alg": {
+						text: $.su.CHAR.MENU.ALG,
+						url: "alg.htm"
+					}
+				}
+			},
+			"security_guard": {
+				text: $.su.CHAR.MENU.SECURITY_GUARD,
+				children: {
+					"imb": {
+						text: $.su.CHAR.MENU.IMB,
+						url: "imb.htm"
+					},
+					"arp-scan": {
+						text: $.su.CHAR.MENU.ARP_SCAN,
+						url: "arp_scan.htm"
+					},
+					"arp-list": {
+						text: $.su.CHAR.MENU.ARP_LIST,
+						url: "arp_list.htm"
+					},
+					"macFiltering": {
+						text: $.su.CHAR.MENU.MAC_FILTERING,
+						url: "macFiltering.htm"
+					},
+					"attack-defense": {
+						text: $.su.CHAR.MENU.ATTACK_DEFENSE,
+						url: "attack-defense.htm"
+					},
+					"ip-blacklist": {
+						text: $.su.CHAR.MENU.IP_BLACKLIST,
+						url: "ip_blacklist.htm"
+					},
+					"ip-whitelist": {
+						text: $.su.CHAR.MENU.IP_WHITELIST,
+						url: "ip_whitelist.htm"
+					}
+				}
+			}
+		}
+	},
+	"object": {
+		text: $.su.CHAR.MENU.OBJECT,
+		children: {
+			"addresses":{
+				text: $.su.CHAR.MENU.ADDRESSES,
+				children: {
+					"group": {
+						text: $.su.CHAR.MENU.IP_GROUP_GROUP,
+						url: "ipgroup_group.htm"
+					},
+					"address": {
+						text: $.su.CHAR.MENU.IP_GROUP_ADDRESS,
+						url: "ipgroup_address.htm"
+					}
+				}
+			},
+			"time_segs":{
+				text: $.su.CHAR.MENU.TIME_SEGS,
+				children: {
+					"time-mngt": {
+						text: $.su.CHAR.MENU.TIME_SEGS,
+						url: "time_mngt.htm"
+					}
+				}
+			},
+			"ippool":{
+				text: $.su.CHAR.MENU.IP_POOL,
+				children: {
+					"ippool": {
+						text: $.su.CHAR.MENU.IP_POOL,
+						url: "ippool.htm"
+					}
+				}
+			},
+			"usergroup":{
+				text: $.su.CHAR.MENU.USER,
+                children: {
+                    "user": {
+                        text: $.su.CHAR.MENU.USER,
+                        url: "usermngr_user.htm"
+                    },
+					"usergroup": {
+                        text: $.su.CHAR.MENU.USERGROUP,
+                        url: "usergroup_group.htm"
+                    },
+					"sessmngr": {
+                        text: "用户状态",
+                        url:"sessmngr.htm"
+                    },
+					"template": {
+                        text: "跳转页面",
+                        url:"template.htm"
+                    },
+					"multi_portal":{
+                        text:"组合认证",
+                        url:"multi_portal.htm"
+                    },
+                    "remote_portal": {
+                        text: "远程Portal",
+                        url: "remote_portal.htm"
+                    },
+                    "free": {
+                        text: "免认证策略",
+                        url: "free_strategy.htm"
+                    },
+                    "portal_para": {
+                        text: $.su.CHAR.MENU.PORTAL_PARA,
+                        url:"portal_para.htm"
+                    }					
+                }
+			},
+			"service":{
+				text: $.su.CHAR.MENU.SERVICE,
+				children: {
+					"service": {
+						text: $.su.CHAR.MENU.SERVICE,
+						url: "service.htm"
+					},
+					"service_group": {
+						text: $.su.CHAR.MENU.SERVICE_GROUP,
+						url: "service_group.htm"
+					}
+				}
+			},
+			"web_urls":{
+				text: $.su.CHAR.MENU.WEB_URLS,
+				children: {
+					"websiteGroup": {
+						text: $.su.CHAR.MENU.WEB_URL_GROUP,
+						url: "web_group.htm"
+					}
+				}
+			},
+			"apps":{
+				text: $.su.CHAR.MENU.APPS,
+				children: {
+					"appdist": {
+						text: $.su.CHAR.MENU.APP_CONTROL,
+						url: "appdist.htm"
+					},
+					"appdist-database": {
+						text: $.su.CHAR.MENU.APP_DATABASE,
+						url: "appdist_database.htm"
+					},
+                    "app_group": {
+                        text: $.su.CHAR.MENU.APP_GROUP,
+                        url: "app_group.htm"
+                    },
+                    "app_grouping": {
+                        text: $.su.CHAR.MENU.APP_GROUPING,
+                        url: "app_grouping.htm"
+                    },
+                    "app_library": {
+                        text: $.su.CHAR.MENU.APP_LIBRARY,
+                        url: "app_library.htm"
+                    }
+				}
+			},
+			"security_profile":{
+				text: $.su.CHAR.MENU.SECURITY_PROFILES,
+				children: {
+                    "sp_app_control_filter": {
+                        text: $.su.CHAR.MENU.APP_CONTROL_FILTER,
+                        url: "sp_app_control_filter.htm"
+                    },
+                    "sp_email_filter": {
+                        text: $.su.CHAR.MENU.EMAIL_FILTER,
+                        url: "sp_email_filter.htm"
+                    },
+					"sp_file_filter":{
+						 text: $.su.CHAR.MENU.FILE_FILTER,
+						 url: "sp_file_filter.htm"
+					},
+                    "sp_file_content_filter":{
+                         text: $.su.CHAR.MENU.FILE_CONTENT_FILTER,
+                         url: "sp_file_content_filter.htm"
+                    },
+					"sp_url_filter": {
+						text: $.su.CHAR.MENU.URL_FILTER,
+						url: "sp_url_filter.htm"
+					},
+					"sp_av_profile": {
+						text: $.su.CHAR.MENU.AV_PROFILE,
+						url: "sp_av_profile.htm"
+					},
+					"security_global_config": {
+						text: $.su.CHAR.MENU.SECURITY_GLOBAL_CONFIG,
+						url: "security_global_config.htm"
+					}
+				}
+			},
+			"ips": {
+				text: $.su.CHAR.MENU.IPS,
+				children: {
+					"ips-profile": {
+						text: $.su.CHAR.MENU.IPS_PROFILE,
+						url: "ips_profile.htm"
+					},
+					"ips-filter": {
+						text: $.su.CHAR.MENU.IPS_FILTER,
+						url: "ips_filter.htm"
+					},
+					"ips-signature": {
+						text: $.su.CHAR.MENU.IPS_SIGNATURE,
+						url: "ips_signature.htm"
+					}
+				}
+			},
+			"ssl_certificate":{
+				text: $.su.CHAR.MENU.CERTIFICATE,
+				children:{
+					"ssl_certificate":{
+						text: $.su.CHAR.MENU.SSL_CERTIFICATE,
+						url: "ssl_certificate.htm"
+					},
+					"server_ca_cert":{
+						text: $.su.CHAR.MENU.SERVER_CA_CERTIFICATE,
+						url: "server_ca_cert.htm"
+					},
+					"internal_server_cert":{
+						text: $.su.CHAR.MENU.INTERNAL_SERVER_CERTIFICATE,
+						url: "internal_server_cert.htm"
+					},
+				}
+			},
+			"audit_profile":{
+				text: $.su.CHAR.MENU.AUDIT_PROFILES,
+				children: {
+					"audit_profile":{
+						 text: $.su.CHAR.MENU.AUDIT_PROFILES,
+						 url: "audit_profile.htm"
+					}
+				}
+			}
+		}
+	},
+	"network": {
+		text: $.su.CHAR.MENU.NETWORK,
+		children: {
+			"interface":{
+				text: $.su.CHAR.MENU.INTERFACE,
+				children: {
+					"mngt_interface": {
+						text: $.su.CHAR.MENU.MNGT_INTERFACE,
+						url: "mngt_interface.htm"
+					},
+					"interface-setting": {
+						text: $.su.CHAR.MENU.INTERFACE,
+						url: "interface.htm"
+					},
+					"bridge-setting": {
+						text: $.su.CHAR.MENU.BRIDGE,
+						url: "bridge.htm"
+					},
+					"ipv6_bridge": {
+						text: $.su.CHAR.MENU.IPV6_BRIDGE,
+						url: "ipv6_bridge.htm"
+					},
+					"sfp+_setting": {
+						text: $.su.CHAR.MENU.SFP_SETTING,
+						url: "optical_port.htm"
+					}
+				}
+			},
+			"zone":{
+				text: $.su.CHAR.MENU.ZONE,
+				children: {
+					"zone": {
+						text: $.su.CHAR.MENU.ZONE,
+						url: "zone.htm"
+					}
+				}
+			},
+			"dhcp-server":{
+				text: $.su.CHAR.MENU.DHCP_SERVER,
+				children: {
+					"dhcp-server": {
+						text: $.su.CHAR.MENU.DHCP_SERVER,
+						url: "dhcp_server.htm"
+					},
+					"clientlist": {
+						text: $.su.CHAR.MENU.DHCP_CLIENT,
+						url: "dhcp_client.htm"
+					},
+					"static": {
+						text: $.su.CHAR.MENU.DHCP_STATIC,
+						url: "dhcp_static.htm"
+					},
+					"dhcp6-server": {
+						text: $.su.CHAR.MENU.DHCP6_SERVER,
+						url: "dhcp6_server.htm"
+					},
+					"slaac": {
+						text: $.su.CHAR.MENU.SLAAC,
+						url: "slaac.htm"
+					},
+					"clientlist_v6": {
+						text: $.su.CHAR.MENU.DHCP6_CLIENT,
+						url: "dhcp6_client.htm"
+					},
+					"static_v6": {
+						text: $.su.CHAR.MENU.DHCP6_STATIC,
+						url: "dhcp6_static.htm"
+					}
+				}
+			},
+			"routing":{
+				text: $.su.CHAR.MENU.ROUTING,
+				children: {
+					"basic-setting": {
+						text: $.su.CHAR.MENU.BALANCE_BASIC,
+						url: "balance_basic.htm"
+					},
+					"isp-routing": {
+						text: $.su.CHAR.MENU.ISP_ROUTING,
+						url: "isp_routing.htm"
+					},
+					"line-backup": {
+						text: $.su.CHAR.MENU.LINE_BACKUP,
+						url: "line_backup.htm"
+					},
+					"policy-routing": {
+						text: $.su.CHAR.MENU.POLICY_ROUTING,
+						url: "policy_routing.htm"
+					},
+					"static-routing": {
+						text: $.su.CHAR.MENU.STATIC_ROUTING,
+						url: "static_routing.htm"
+					},
+					"static6-routing": {
+						text: $.su.CHAR.MENU.STATIC6_ROUTING,
+						url: "static6_routing.htm"
+					},
+					"system-routetbl": {
+						text: $.su.CHAR.MENU.SYSTEM_ROUTETBL,
+						url: "system_routetbl.htm"
+					}
+				}
+			},
+			"ipsec":{
+				text: $.su.CHAR.MENU.IPSEC,
+				children: {
+					"ipsec-setting": {
+						text: $.su.CHAR.MENU.IPSEC_POLICY_TITLE,
+						url: "ipsec_tunnel.htm"
+					},
+					"ipsec-sa": {
+						text: $.su.CHAR.MENU.IPSEC_SA_TITLE,
+						url: "ipsec_sa.htm"
+					}
+				}
+			},
+			"l2tp":{
+				text: $.su.CHAR.MENU.L2TP,
+				children: {
+					"l2tp-server": {
+						text: $.su.CHAR.MENU.L2TP_SERVER,
+						url: "l2tp_server.htm"
+					},
+					"l2tp-client": {
+						text: $.su.CHAR.MENU.L2TP_CLIENT,
+						url: "l2tp_client.htm"
+					},
+					"l2tp-tunnel": {
+						text: $.su.CHAR.MENU.L2TP_TUNNEL,
+						url: "l2tp_tunnel.htm"
+					}
+				}
+			},
+			"pptp":{
+				text: $.su.CHAR.MENU.PPTP,
+				children: {
+					"pptp-server": {
+						text: $.su.CHAR.MENU.PPTP_SERVER,
+						url: "pptp_server.htm"
+					},
+					"pptp-client": {
+						text: $.su.CHAR.MENU.PPTP_CLIENT,
+						url: "pptp_client.htm"
+					},
+					"pptp-tunnel": {
+						text: $.su.CHAR.MENU.PPTP_TUNNEL,
+						url: "pptp_tunnel.htm"
+					}
+				}
+			},
+			"vpn-user":{
+				text: $.su.CHAR.MENU.VPN_USER,
+				children: {
+					"vpn-user": {
+						text: $.su.CHAR.MENU.VPN_USER_TAB,
+						url: "vpn_user.htm"
+					}
+				}
+			},
+			"dns":{
+				text: $.su.CHAR.MENU.DNS,
+				children: {
+					"dns-proxy": {
+						text: $.su.CHAR.MENU.DNSPROXY,
+						url: "dns_proxy.htm"
+					},
+					"phddns": {
+						text: $.su.CHAR.MENU.PHDDNS,
+						url: "phddns.htm"
+					},
+					"cmxddns": {
+						text: $.su.CHAR.MENU.CMXDDNS,
+						url: "cmxddns.htm"
+					},
+					 "dyn3322ddns": {
+						text: $.su.CHAR.MENU.DNY3322DDNS,
+						url: "dyn3322ddns.htm"
+					}
+				}
+			}
+		}
+	},
+	"system":{
+		text: $.su.CHAR.MENU.SYSTEM,
+		children:{
+			"cloud_mngr": {
+				text: $.su.CHAR.MENU.CLOUD,
+				children: {
+					"global_config": {
+						text: $.su.CHAR.MENU.CLOUD_GLOBAL,
+						url: "cloud_management.htm"
+					}
+				}
+			},
+			"administration":{
+				text: $.su.CHAR.MENU.ADMINISTRATION,
+				children: {
+					"administrator": {
+						text: $.su.CHAR.MENU.ADMINISTRATOR,
+						url: "administrator.htm"
+					},
+					"administrator_role": {
+						text: $.su.CHAR.MENU.ADMINISTRATOR_ROLE,
+						url: "administrator_role.htm"
+					},
+                    "remote-mngt": {
+                        text: $.su.CHAR.MENU.REMOTE_MNGT,
+                        url: "remote_mngt.htm"
+                    },
+                    "account-config": {
+                        text: $.su.CHAR.MENU.ACCOUNT_CONFIG,
+                        url: "account_config.htm"
+                    }
+				}
+			},
+			"upgrade_center":{
+				text: $.su.CHAR.MENU.UPGRADE_CENTER,
+				children: {
+					"signature_db": {
+						text: $.su.CHAR.MENU.UPGRADE_CENTER_LIST,
+						url: "signature_db.htm"
+					}
+				}
+			},
+			"firmware":{
+				text: $.su.CHAR.MENU.FIRMWARE,
+				children: {
+					"factory": {
+						text: $.su.CHAR.MENU.FACTORY,
+						url: "firmware_factory.htm"
+					},
+					"backup-restore": {
+						text: $.su.CHAR.MENU.BACKUP_RESTORE,
+						url: "firmware_backuprestore.htm"
+					},
+					"reboot": {
+						text: $.su.CHAR.MENU.REBOOT,
+						url: "firmware_reboot.htm"
+					},
+					"upgrade": {
+						text: $.su.CHAR.MENU.UPGRADE,
+						url: "firmware_upgrade.htm"
+					},
+					"system_mgt": {
+						text: "设备管理",
+						url: "system_mgt.htm",
+						cloud_config: true
+					}
+				}
+			},
+			"time-setting":{
+				text: $.su.CHAR.MENU.TIME_SETTING,
+				children: {
+					"time-setting": {
+						text: $.su.CHAR.MENU.TIME_SETTING,
+						url: "time_setting.htm"
+					}
+				}
+			},
+			"log_config":{
+				text: $.su.CHAR.MENU.LOG_CONFIG,
+				children: {
+					"log_config": {
+						text: $.su.CHAR.MENU.LOG_CONFIG,
+						url: "system_log.htm"
+					},
+					"audit_config": {
+						text: $.su.CHAR.MENU.AUDIT_CONFIG,
+						url: "action_check.htm"
+					}
+				}
+			},
+			"alarm_config":{
+				text: $.su.CHAR.MENU.ALARM_CONFIG,
+				children: {
+					"alarm_event_config": {
+						text: $.su.CHAR.MENU.ALARM_EVENT_CONFIG,
+						url: "alarm_config.htm"
+					},
+					"alarm_email_config": {
+						text: $.su.CHAR.MENU.ALARM_EMAIL_CONFIG,
+						url: "alarm_config.htm"
+					}
+				}
+			},
+			"disk_mngt":{
+				text: $.su.CHAR.MENU.DISK_MNGT,
+				children: {
+					"disk_mngt": {
+						text: $.su.CHAR.MENU.DISK_DEVICE_MNGT,
+						url: "disk_mngt.htm"
+					},
+					"log_storage":{
+						text: $.su.CHAR.MENU.LOG_STORAGE,
+						url: "log_storage.htm"
+					}
+				}
+			},
+			"high_available":{
+				text: $.su.CHAR.MENU.HIGH_AVAILABLE,
+				children: {
+					"keepalived": {
+						text: $.su.CHAR.MENU.KEEPALIVED,
+						url: "keepalived.htm"
+                    },
+					"online": {
+						text: $.su.CHAR.MENU.ONLINE,
+						url: "online.htm"
+					}
+				}
+			},
+			"system_params":{
+				text: $.su.CHAR.MENU.SYSTEM_PARAMS,
+				children: {
+					"metric": {
+						text: $.su.CHAR.MENU.METRIC,
+						url: "metric.htm"
+					}
+				}
+			},
+            "license":{
+                text: $.su.CHAR.MENU.LICENSE,
+                children: {
+                    "license": {
+                        text: $.su.CHAR.MENU.LICENSE,
+                        url: "license.htm"
+                    }
+                }
+            },
+			"wizard":{
+				text: $.su.CHAR.MENU.WIZARD,
+				children: {
+					"wizard": {
+						text: $.su.CHAR.MENU.WIZARD,
+						url: "wizard.htm"
+					}
+				}
+			}
+		}
+	}
+};
+
+var urlPath = "/userrpm/";
+if ($.su.isLocal)
+{
+	urlPath = ".." + urlPath;
+}
+else
+{
+	urlPath = $.su.url(urlPath);
+}
+
+$.su.menu = null;
+delete $.su.menu;
+$.su.menu = {};
+
+$.su.menu.set_cloud_mgt_status = function(cloud_mgt_status){
+	$.su.menu.cloud_mgt_status = cloud_mgt_status;
+    var $this = $('ul.menu-tree li.fst a.fst.deployed');
+    var name = $this.attr('data-name');
+    var cloud_config = $this.attr("cloud-config");
+    // 开启云管理后，将只能在云端配置的一级菜单收缩起来
+	if(1 == cloud_mgt_status)
+	{
+		if(cloud_config == "true")
+		{
+			$.su.menu.advanced.collapse(name);
+		}
+	}
+}
+
+$.su.menu.set_setting_function_selected = function(setting_function_selected){
+	$.su.menu.wservices_setting = setting_function_selected;
+}
+
+$.su.menu.set_top_bar_notify_again = function(top_bar_notify_again){
+    $.su.menu.top_bar_notify_again = top_bar_notify_again;
+}
+
+// 读取云管理状态
+var cloud_proxy = new $.su.Proxy();
+cloud_proxy.query({
+    cloud_config:{
+        name: ["ui_notify_info", "conf_mngt"]
+    }
+}, function(data) {
+    var mngt_switch = data.cloud_config.conf_mngt.mngt_switch;
+    var setting_function_selected = data.cloud_config.ui_notify_info.setting_function_selected;
+    var top_bar_notify_again = data.cloud_config.ui_notify_info.top_bar_notify_again;
+
+    $.su.menu.set_setting_function_selected(parseInt(setting_function_selected));
+    $.su.menu.set_cloud_mgt_status(parseInt(mngt_switch));
+    $.su.menu.set_top_bar_notify_again(parseInt(top_bar_notify_again));
+});
+
+$.su.menu.fixMarginTop = function(px) {
+    if (typeof(px) != "number") {
+        console.error("margin-top must be number");
+        return;
+    }
+
+    var strPx = px + "px";
+    $("#menu-advanced").css("margin-top", strPx);
+}
+
+var menuAdvanced = new $.su.Menu({
+    data: {"advanced_menu":{"name":"advanced_menu"}, "method": "get"},
+    urlPath: urlPath,
+    container: "div#menu-advanced",
+    tabMenuContainer: "#tab-menu",
+    list: advMenuList,
+    idTag: "advanced",
+    cls: "advanced",
+    handlers: {
+        init: function(e){
+            this.goToHome();
+            $('#menu-advanced').resize(function() {
+                $('#menu-advanced').css('height', '100%').css('height', '-=90px');
+            })
+        },
+        goTo: function(e, name, url){
+            $.su.app.menuGoTo(name, url, true);
+        },
+        goToHome: function(e){
+            $.su.Menu.goToHome();
+        }
+    }
+});
+
+$.su.menu.advanced = menuAdvanced;
+
+});
+//]]>
+</script>
+</body>
+</html>

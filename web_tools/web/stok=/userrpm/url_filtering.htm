@@ -1,0 +1,813 @@
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
+<html xmlns="http://www.w3.org/1999/xhtml">
+<head>
+<meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
+<title>IMB</title>
+<style type="text/css">
+</style>
+</head>
+
+<body>
+	<div class="func-container">
+		<div id="function_setting">
+			<form id="urlfilter_settings">
+				<input id="urlfilter_enable" name="enable" value="" />
+			</form>
+		</div>
+		<div id="local_function_setting">
+			<form id="local_urlfilter_settings">
+				<input id="local_urlfilter_enable" name="enable" value="" />
+			</form>
+		</div>
+
+		<div id="rule_list">
+			<div id="urlfilter_rule_grid">
+			</div>
+		</div>
+
+		<div id="local_rule_list">
+			<div id="local_urlfilter_rule_grid">
+			</div>
+		</div>
+
+	<div id="own_editor">
+		<input id="usergroup" name="usergroupname" />
+		<input id="radio_url_method" name="allow" />
+		<input id="radio_filter_method" name="filter_type" />
+		<textarea id="filter_content" name="filter_content" /></textarea>
+		<input id="action" name="action" />
+		<input id="redirect" name="redirect"/>
+
+		<input id="time" name="time" />
+		<input id="enable" name="enable" />
+
+		<input id="comment" name="comment" />
+		<input id="insert_index" name="insert_index" />
+	</div>
+
+	<div id="link-detail-window">
+        <table class="link-detail-table detail">
+            <tr>
+                <td class="detail-value"></td>
+            </tr>
+        </table>
+    </div>
+
+	<hr/><div class="notice"><p id="caution"/></div>
+		<div id="urlfilter_help"></div>
+	</div>
+
+
+<script type="text/javascript">
+	try{
+		$
+	}catch(e){
+		location.href="../web-static//";
+	};
+
+$(document).ready(function(e){
+    $(".func-container").hide();
+    var ucl_is_enable = false;
+    new $.su.Proxy({async: false}).query({"ucl":{"name": "global"}}, function(data){
+        if (typeof(data) != "undefined" && typeof(data.ucl) != "undefined" && typeof(data.ucl.global) != "undefined" && data.ucl.global.enable == "on") ucl_is_enable = true;
+    });
+
+	var enableProxy = new $.su.Proxy({
+	});
+
+	var maxrules;
+	var MAX_WEB_PER_RULE = 10;
+	var MAX_URL_LENGTH = 256;
+	$("#function_setting").panel({
+		title:$.su.CHAR.URLFILTER.SETTINGS,
+		collapsible:false
+	});
+
+
+	$("#urlfilter_enable").checkbox({
+		items:[
+			{boxlabel:$.su.CHAR.URLFILTER.ENABLE_FILTER,inputValue:"on",uncheckedValue:"off"}
+		]
+	});
+
+	var setting_form = $("#urlfilter_settings").form({
+		proxy:enableProxy,
+		fields:[
+			{name:"enable",mapping:"enable"}
+		],
+		parseKey: {					/* 此处在store中增加parseKey，便于store对象在底层对数据进行预处理，以实现SLP数据结构和SU数据结构的转变 */
+			moduleName:"url_filter",		/* 此处的moduleName和sectionName分别指数据块名和对应请求的table名 */
+			sectionName:"settings"
+		},
+		autoLoad:false,
+		submitBtn:"default"
+	});
+
+	$("#rule_list").panel({
+		title:$.su.CHAR.URLFILTER.RULE_LIST,
+		collapsible:false
+	});
+
+	$("#usergroup").combobox({
+		fieldLabel:$.su.CHAR.URLFILTER.USERGROUP,
+		cls:"inline-block",
+		allowBlank:false,
+		items:[
+			{"value":"ANY","name":$.su.CHAR.URLFILTER.USER_GROUPNAME, selected:true} //need an proxy here infact
+		]
+	});
+
+	if (ucl_is_enable == false){
+		var groupItem = [];
+		var groupProxy = new $.su.Proxy({
+				async: false
+		});
+		groupProxy.query({ipgroup:{table:"rule_ipgroup"}}, function(data){
+					var i,flag=0;
+					data = data["ipgroup"]["rule_ipgroup"];
+					for (i=0; i<data.length; i++){
+						for (var key in data[i])
+						{
+							data[i] = data[i][key];
+						}
+						groupItem.push({name:data[i].name,value:data[i].name});
+						if(data[i].name == "IPGROUP_ANY")
+						{
+							flag = 1;
+							continue;
+						}
+					}
+					if(flag == 0)
+					{
+						groupItem.push({name:"IPGROUP_ANY",value:"Any"});
+					}
+					var combobox = $('#usergroup');
+					combobox.combobox('loadData',groupItem);
+		});
+	}
+
+	$("input#radio_url_method").radio({
+		fieldLabel:$.su.CHAR.URLFILTER.STRATEGY,
+		columns:2,
+		items:[
+			  {boxlabel:$.su.CHAR.URLFILTER.ACCEPT_URL,name:"allow",inputValue:'accept'},
+			  {boxlabel:$.su.CHAR.URLFILTER.FORBIDDEN_URL,name:"allow",inputValue:'drop',checked:true}
+		]
+	});
+
+	$("input#radio_filter_method").radio({
+		fieldLabel:$.su.CHAR.URLFILTER.FILTER_METHOD,
+		columns:2,
+		items:[
+			{boxlabel:$.su.CHAR.URLFILTER.KEYWORD,name:"filter_type",inputValue:"keyword",checked:true},
+			{boxlabel:$.su.CHAR.URLFILTER.COMPLETE_URL,name:"filter_type",inputValue:"url"}
+		]
+	});
+
+	var fileext = $("#filter_content").textarea({
+		fieldLabel: $.su.CHAR.URLFILTER.FILTER_CONTENT,
+		tips:"多个过滤内容以换行或者分号隔开",
+		//allowBlank: false,
+		//vtype:"ascii_visible",
+		inputCls:"long",
+		setValueCb: function(data){
+			var dataString = data.join("\n");
+			return dataString;
+		},
+		getValueCb: function(data){
+			var tmp = data.replace(/\s/g,"\n")
+			var dataArray = tmp.split(/;|\n/);
+
+			for (var i = 0; i < dataArray.length; i++)
+			{
+				if (dataArray[i] == "")
+				{
+					dataArray.splice(i , 1);
+					i--;
+				}
+			}
+			//console.log(dataArray);
+			return dataArray;
+		}
+	});
+
+	var redirect = $("#redirect").textbox({
+		fieldLabel: "",
+		allowBlank: false,
+		cls: "inline",
+		labelCls: "xxxxs"
+	}).textbox("disable");
+
+	redirect.textbox("hide");
+
+	var action2 = $("#action").checkbox({
+		fieldLabel: "访问上述网站时",
+		columns: 3,
+        items: [
+        	{boxlabel: "记录到系统日志", inputValue: "log", uncheckedValue: "log_off"}
+        ],
+        cls: "inline"
+	}).on('ev_change', function(e, oldValue, newValue){
+		var value = action2.checkbox("getValue1");
+		var flag = false;
+		for (var i = 0; i < value.length; i++){
+			if (value[i] == "redirect"){
+				$("#redirect").textbox("enable");
+				flag = true;
+				break;
+			}
+		}
+		if (flag == false){
+			$("#redirect").textbox("disable");
+		}
+    });
+
+	var time = $("#time").combobox({
+		fieldLabel: "规则生效时间",
+		items: [
+			{name:"Any", value:"Any", selected:true}
+		]
+	});
+	if (ucl_is_enable == false){
+		//读取时间对象
+		var tmngtItem=[];
+		var tmngtProxy = new $.su.Proxy({
+			async: false
+		});
+		tmngtProxy.query({time_mngt:{table:"time_obj"}}, function(data){
+			data = data["time_mngt"]["time_obj"];
+			for (i=0; i<data.length; i++){
+				for (var key in data[i])
+				{
+					data[i] = data[i][key];
+				}
+				tmngtItem.push({name: data[i].name, value: data[i].name});
+			}
+		});
+
+		if (tmngtItem.length != 0){
+			$("#time").combobox("loadData", tmngtItem);
+		}
+	}
+
+	$("input#enable").checkbox({
+		fieldLabel:$.su.CHAR.URLFILTER.STATUS,
+		columns:1,
+		items:[
+		{
+			boxlabel:$.su.CHAR.URLFILTER.ENABLE,inputValue:'on',uncheckedValue:"off",checked:true
+			}]
+	});
+
+	$("input#comment").textbox({
+		fieldLabel:$.su.CHAR.URLFILTER.COMMENT,
+		tips:"(可选,1-50个字符)",
+		allowBlank:true,
+		maxLength:50
+	});
+
+	$("input#insert_index").textbox({
+		fieldLabel:$.su.CHAR.ACCESS_CONTROL.POSITION,
+		tips:$.su.CHAR.ACCESS_CONTROL.OPTIONAL,
+		vtype:"number"
+	});
+
+	var $linkDetail = $("#link-detail-window").msg({
+        closeBtn: true,
+        cls:"l",
+        title: "过滤内容列表",
+        type: "window"
+    }).msg("hide");
+
+    function showDetail(domain){
+ 		var domainString = "";
+		//var domainArray = domain.split('\n');
+
+		for(var i = 0; i < domain.length; i++){
+			if(i == domain.length - 1){
+				domainString += domain[i] + "</br>";
+			}else{
+				domainString += domain[i] + "&nbsp&nbsp&nbsp&nbsp" + domain[i+1] + "</br>";
+				i++;
+			}
+
+		}
+		$linkDetail.find(".detail-value").html(domainString).css({
+			"lineHeight":"20px",
+			"textAlign":"center",
+			"wordBreak":"break-all"
+		});
+        $linkDetail.msg('show');
+    }
+
+    function textSelect(o, a, b){
+        var a = parseInt(a, 10), b = parseInt(b, 10);
+        if(o.createTextRange){//IE浏览器
+            var range = o.createTextRange();
+            range.moveStart("character", a);
+            range.moveEnd("character",b);
+            range.select();
+        }else{
+            o.setSelectionRange(a, b);
+            o.focus();
+        }
+
+    }
+
+	function getArrayStrLen(a)
+	{
+		var strLen = 0;
+
+		if (!$.isArray(a))
+		{
+			a = [a];
+		}
+
+		for (var i = 0; i < a.length; i++)
+		{
+			strLen += a[i].length + strLen;
+		}
+
+		return strLen;
+	}
+
+
+	var ruleListProxy = new $.su.Proxy({
+	});
+
+	var ruleGrid = $("#urlfilter_rule_grid").grid({
+		maxRulesProperty: "max_rules",
+		editor:{
+			content:"#own_editor",
+			fields:[
+				{name:"usergroupname"},
+				{name:"allow"},
+				{name:"filter_type"},
+				{name:"filter_content"},
+				{name:"action"},
+				{name:"redirect"},
+				{name:"time"},
+				{name:"comment"},
+				{name:"enable"},
+				{name:"insert_index"}
+			],
+			validator:function(){
+				var extList = fileext.textarea("getValue");
+                if("" == extList[0]){
+                    fileext.textarea("setError", "请您输入过滤内容");
+                    $("div.textarea-container").find("div.widget-error-tips").css("margin-top", "200px");
+                    return false;
+                }
+				var tmp = extList.join("\n")
+                if(tmp.length > MAX_URL_LENGTH * MAX_WEB_PER_RULE){
+                	fileext.textarea("setError", "输入的字符总长度超过限制");
+                    $("div.textarea-container").find("div.widget-error-tips").css("margin-top", "200px");
+                    return false;
+                }
+                var errBegin = -1;
+                var errEnd = -1;
+                var reg =  new RegExp(/^[\x21-\x7e]{1,}$/);
+                var isValid = true;
+                var tmpExt = [];
+                var errString = "";
+                $(extList).each(function(i, obj){
+                    if(obj == ""){
+                        extList.splice(i,1);
+                        return;
+                    }
+                    if(obj.toString().length > MAX_URL_LENGTH){
+                    	isValid = false;
+                    	errBegin = getArrayStrLen(tmpExt);
+                        errEnd = errBegin + obj.length + 1;
+                    	errString = "输入的每个关键字或者URL长度超过限制";
+                    	return;
+                    }
+                    if(!reg.test(obj)){
+                        isValid = false;
+                        errBegin = getArrayStrLen(tmpExt);
+                        errEnd = errBegin + obj.length + 1;
+                        errString = "输入的关键字或者URL格式不正确";
+                        return;
+                    }
+                    //tmpExt = tmpExt + obj + "\n";
+					tmpExt.push(obj);
+                });
+
+                //tmpExt = tmpExt.match(/(.*[\n]){0,}.*[^\n]/);
+                //console.log(tmpExt)
+                if(extList.length > MAX_WEB_PER_RULE){
+					fileext.textarea("setError", "输入的关键字或者URL超过上限，最多支持"+MAX_WEB_PER_RULE+"个关键字或者URL");
+					$("div.textarea-container").find("div.widget-error-tips").css("margin-top", "210px");
+					isValid = false;
+					return false;
+				}
+				if(extList.length == 0){
+					fileext.textarea("setError", "输入内容不能为空");
+					$("div.textarea-container").find("div.widget-error-tips").css("margin-top", "210px");
+					isValid = false;
+					return false;
+				}
+
+                if(isValid){
+                    fileext.textarea("setValue",tmpExt);
+                }else{
+                	textSelect($("textarea").get(0), errBegin, errEnd);
+                    fileext.textarea("setError", errString);
+                    $("div.textarea-container").find("div.widget-error-tips").css("margin-top", "200px");
+                    return false;
+                }
+
+
+				var nameList = $("#urlfilter_rule_grid").grid('getStore').data;
+				var editingId = $($("#urlfilter_rule_grid").grid('getEditor')).editor("getEditingId");
+				var position = $("#insert_index").textbox('getValue');
+				if (position == "") {
+					return true;
+				}
+				if (!$("#insert_index").textbox('validate')) {
+					$("input#insert_index").textbox("setError", "请保持为空或者输入数字");
+					return false;
+				}
+
+				//insert index合法范围检查
+				position = parseInt(position);
+				var pos_max = nameList.length + 1	//最大insert index为条目数+1，即添加到最后
+				for (var i=0;i<nameList.length;i++) {
+					if (editingId == nameList[i].key) {
+						pos_max = nameList.length		//修改操作不增加条目，所以insert index最大为条目数
+						 break;
+					}
+				}
+				if (position < 1 || position > pos_max) {
+					$($("#urlfilter_rule_grid").grid("getEditor")).form('setError',"输入数字超过最大范围");
+					return false;
+				}
+
+				return true;
+
+			},
+			transParams: function(params){
+				for (var name in params)
+				{
+					if (name == "filter_content")
+					{
+						params[name] = $("textarea#filter_content").textarea("getValue");
+					}
+				}
+				return params;
+			}
+		},
+		store:{
+			proxy:ruleListProxy,
+			fields:[
+				{name:"usergroupname"},
+				{name:"allow"},
+				{name:"filter_type"},
+				{name:"filter_content"},
+				{name:"action"},
+				{name:"redirect"},
+				{name:"time"},
+				{name:"comment"},
+				{name:"enable"},
+				{name:"insert_index"}
+			],
+			parseKey: {					/* 此处在store中增加parseKey，便于store对象在底层对数据进行预处理，以实现SLP数据结构和SU数据结构的转变 */
+				moduleName:"url_filter",		/* 此处的moduleName和tableName分别指数据块名和对应请求的table名 */
+				tableName:"url_list"
+			},
+			autoLoad:false,
+			isAppointIndex: true,
+			appointIndex: 0
+		},
+		paging:[],
+		columns:[
+			{
+				xtype: "checkcolumn"
+			},
+			{
+				xtype: "rownumberer"
+			},
+			{
+				text:$.su.CHAR.URLFILTER.USERGROUP,
+				width:100,
+				dataIndex:"usergroupname"
+			},
+			{
+				text:$.su.CHAR.URLFILTER.STRATEGY,
+				width:60,
+				dataIndex:"allow",
+				renderer:function(val){
+					if(val == "accept")
+					{
+						return $.su.CHAR.URLFILTER.ACCEPT;
+					}
+					else{
+						return $.su.CHAR.URLFILTER.FORBIDDEN;
+					}
+				}
+			},
+			{
+				text:$.su.CHAR.URLFILTER.FILTER_METHOD,
+				width:60,
+				dataIndex:"filter_type",
+				renderer:function(val){
+					if(val=="keyword"){
+						return $.su.CHAR.URLFILTER.KEYWORD;
+					}else
+					{
+						return $.su.CHAR.URLFILTER.COMPLETE_URL;
+					}
+				}
+			},
+			{
+				text:$.su.CHAR.URLFILTER.FILTER_CONTENT,
+				width:120,
+				dataIndex:"filter_content",
+				renderer:function(dd, index, data){
+					if("" == dd || typeof dd == "undefined"){
+						return "---";
+					}
+					var URL = dd;
+
+					switch(URL.length){
+						case 0:
+							return "---";
+							break;
+						case 1:
+							return URL[0];
+							break;
+						case 2:
+							return URL[0] + "</br>" + URL[1];
+							break;
+						default:
+							return URL[0] + "&nbsp&nbsp" + "<a href='javascript:void(0);' class='btn-detail' data-index='"+ index +"'>更多</a>";
+							break;
+					}
+
+					return data;
+				}
+			},
+			{
+				text: "生效时间",
+				width:60,
+				dataIndex:"time"
+			},
+			{
+				text:$.su.CHAR.URLFILTER.STATUS,
+				dataIndex:"enable" ,
+				renderer:function(val){
+					if(val=="on"){
+						return $.su.CHAR.URLFILTER.ENABLE;
+					}
+					else{
+						return $.su.CHAR.URLFILTER.NON_USE;
+					}
+				},
+				xtype:"statuscolumn"
+			},
+			{
+
+				xtype:"comment",
+				dataIndex:"comment"
+			},
+			{
+				dataIndex:"insert_index",
+				hidden:true
+			},
+			{
+				xtype: "settings"
+			}
+		],
+		operation:"prompt|add|delete"
+	}).delegate('a.btn-detail', 'click', function(e){
+        var index = $(this).data('index');
+        showDetail(ruleGrid.grid("getStore").data[index].filter_content);
+    }).on("ev_load", function(e,data, others){
+		if(others)
+		{
+                MAX_WEB_PER_RULE = others.max_num_per_rule;
+		}
+
+	}).on("ev_insert", function(){
+        ruleGrid.grid("getStore").load();}
+    ).on("ev_remove", function(){
+        ruleGrid.grid("getStore").load();}
+    ).on("ev_update", function(){
+        ruleGrid.grid("getStore").load();
+    }).on("ev_startEdit",function(e, index, key){
+    	var value = action2.checkbox("getValue1");
+		var flag = false;
+		for (var i = 0; i < value.length; i++){
+			if (value[i] == "redirect"){
+				$("#redirect").textbox("enable");
+				flag = true;
+				break;
+			}
+		}
+		if (flag == false){
+			$("#redirect").textbox("disable");
+		}
+    }).on("ev_submit", function(){
+			var appointIndex = $("input#insert_index").textarea("getValue");
+			var store = ruleGrid.grid("getStore");
+
+			if (appointIndex == "")
+			{
+				store.isAppointIndex = false;
+				store.appointIndex = appointIndex;
+			}
+			else
+			{
+				store.isAppointIndex = true;
+				store.appointIndex = appointIndex;
+			}
+		});
+
+// backup-url_filter show
+	$("#local_function_setting").panel({
+		title:$.su.CHAR.URLFILTER.SETTINGS,
+		collapsible:false
+	});
+
+
+	$("#local_urlfilter_enable").checkbox({
+		items:[
+			{boxlabel:$.su.CHAR.URLFILTER.ENABLE_FILTER,inputValue:"on",uncheckedValue:"off"}
+		]
+	});
+
+	var local_setting_form = $("#local_urlfilter_settings").form({
+		proxy:enableProxy,
+		fields:[
+			{name:"enable",mapping:"enable"}
+		],
+		parseKey: {					/* 此处在store中增加parseKey，便于store对象在底层对数据进行预处理，以实现SLP数据结构和SU数据结构的转变 */
+			moduleName:"url_filter_backup",		/* 此处的moduleName和sectionName分别指数据块名和对应请求的table名 */
+			sectionName:"settings"
+		},
+		autoLoad:false
+	});
+
+	$("#local_rule_list").panel({
+		title:$.su.CHAR.URLFILTER.RULE_LIST,
+		collapsible:false
+	});
+	var localRuleGrid = $("#local_urlfilter_rule_grid").grid({
+		maxRulesProperty: "max_rules",
+		store:{
+			proxy:ruleListProxy,
+			fields:[
+				{name:"usergroupname"},
+				{name:"allow"},
+				{name:"filter_type"},
+				{name:"filter_content"},
+				{name:"action"},
+				{name:"redirect"},
+				{name:"time"},
+				{name:"comment"},
+				{name:"enable"},
+				{name:"ucl_enable"}
+			],
+			parseKey: {					/* 此处在store中增加parseKey，便于store对象在底层对数据进行预处理，以实现SLP数据结构和SU数据结构的转变 */
+				moduleName:"url_filter_backup",		/* 此处的moduleName和tableName分别指数据块名和对应请求的table名 */
+				tableName:"url_list",
+				pageSizeName:"urlfilter_entry"
+			},
+			autoLoad:false,
+			isAppointIndex: true,
+			appointIndex: 0
+		},
+		paging_true:[],
+		columns:[
+			{
+				xtype: "rownumberer"
+			},
+			{
+				text:$.su.CHAR.URLFILTER.USERGROUP,
+				width:100,
+				dataIndex:"usergroupname"
+			},
+			{
+				text:$.su.CHAR.URLFILTER.STRATEGY,
+				width:60,
+				dataIndex:"allow",
+				renderer:function(val){
+					if(val == "accept")
+					{
+						return $.su.CHAR.URLFILTER.ACCEPT;
+					}
+					else{
+						return $.su.CHAR.URLFILTER.FORBIDDEN;
+					}
+				}
+			},
+			{
+				text:$.su.CHAR.URLFILTER.FILTER_METHOD,
+				width:60,
+				dataIndex:"filter_type",
+				renderer:function(val){
+					if(val=="keyword"){
+						return $.su.CHAR.URLFILTER.KEYWORD;
+					}else
+					{
+						return $.su.CHAR.URLFILTER.COMPLETE_URL;
+					}
+				}
+			},
+			{
+				text:$.su.CHAR.URLFILTER.FILTER_CONTENT,
+				width:120,
+				dataIndex:"filter_content",
+				renderer:function(dd, index, data){
+					if("" == dd || typeof dd == "undefined"){
+						return "---";
+					}
+					var URL = dd;
+
+					switch(URL.length){
+						case 0:
+							return "---";
+							break;
+						case 1:
+							return URL[0];
+							break;
+						case 2:
+							return URL[0] + "</br>" + URL[1];
+							break;
+						default:
+							return URL[0] + "&nbsp&nbsp" + "<a href='javascript:void(0);' class='btn-detail' data-index='"+ index +"'>更多</a>";
+							break;
+					}
+
+					return data;
+				}
+			},
+			{
+				text: "生效时间",
+				width:60,
+				dataIndex:"time"
+			},
+			{
+
+				xtype:"comment",
+				dataIndex:"comment"
+			},
+            {
+                text: $.su.CHAR.URLFILTER.STATUS,
+                width: 120,
+                dataIndex: "enable",
+                hidden: false,
+                renderer: function(v){
+                    if(v == "on"){
+                        return "<font>"+$.su.CHAR.URLFILTER.ENABLED+"</font>";
+                    } else{
+                        return "<font>"+$.su.CHAR.URLFILTER.DISABLED+"</font>";
+                    }
+                }
+            },
+            {
+                text: $.su.CHAR.URLFILTER.UCL_STATUS,
+                width: 70,
+                dataIndex: "ucl_enable",
+                hidden: false,
+                renderer: function(v){
+                    return "<font>"+$.su.CHAR.URLFILTER.UCL_ENABLED+"</font>";
+                }
+            }
+		],
+		operation:"prompt"
+	});
+
+	function web_init()
+	{
+		// 开启终端上网策略功能后，不能修改条目
+		if (ucl_is_enable){
+			$('div#function_setting').hide();
+			$('div#local_function_setting').show();
+			local_setting_form.form("load");
+			$('div#rule_list').hide();
+			$('div#local_rule_list').show();
+			localRuleGrid.grid("getStore").load();
+		}else{
+			$('div#function_setting').show();
+			$('div#local_function_setting').hide();
+			setting_form.form("load");
+			$('div#rule_list').show();
+			$('div#local_rule_list').hide();
+			ruleGrid.grid("getStore").load();
+		}
+	}
+	web_init();
+
+	var cautionString = "<font>" + $.su.CHAR.URLFILTER.CAUTION1 + "</font><br>" +
+						"<font>" + $.su.CHAR.URLFILTER.CAUTION2 + "</font><br>";
+	$("#caution").html($.su.CHAR.URLFILTER.CAUTION+"<br>" + cautionString);
+	var helpImb = new $.su.Help({
+        container: "div#urlfilter_help",
+        content: ["URLFILTER_ENABLE", "URLFILTER_LIST"]
+    });
+    $(".func-container").show();
+});
+</script>
+</body>
+</html>

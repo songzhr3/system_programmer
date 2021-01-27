@@ -1,0 +1,509 @@
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN"
+		"http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
+<html xmlns="http://www.w3.org/1999/xhtml">
+<head>
+	<meta http-equiv="Content-Type" content="text/html; charset=utf-8"/>
+	<style type="text/css">
+
+	</style>
+	<title>AuditProfile</title>
+</head>
+
+<body>
+<div class="func-container">
+	<div id="own-editor">
+		<input id="audit_profile_name" name="name"/>
+		<input id="audit_profile_comment" name="comment"/>
+		<p id="title_http_audit"></p>
+		<div style="border: 1px solid #ccc; padding: 4px 8px; width: 800px; margin-top: 8px">
+			<input id="radio_http_url" name="http_url"/>
+			<input id="combobox_http_url_list" name="http_url_list"/>
+			<input id="checkbox_http_title" name="http_title"/></br>
+			<input id="checkbox_http_upload" name="http_upload"/></br>
+			<input id="checkbox_http_download" name="http_download"/>
+		</div>
+
+		<p id="title_ftp_audit"></p>
+		<div style="border: 1px solid #ccc; padding: 4px 8px; width: 800px; margin-top: 8px">
+			<input id="checkbox_ftp_cmd" name="ftp_cmd"/></br>
+			<input id="checkbox_ftp_upload" name="ftp_upload"/></br>
+			<input id="checkbox_ftp_download" name="ftp_download"/></br>
+		</div>
+
+		<p id="title_mail_audit"></p>
+		<div style="border: 1px solid #ccc; padding: 4px 8px; width: 800px; margin-top: 8px">
+			<input id="checkbox_mail_send" name="mail_send"/></br>
+			<input id="checkbox_mail_receive" name="mail_receive"/></br>
+		</div>
+
+		<p id="title_IM_audit"></p>
+		<div style="border: 1px solid #ccc; padding: 4px 8px; width: 800px; margin-top: 8px">
+			<input id="checkbox_im_login" name="im_login"/>
+		</div>
+
+	</div>
+
+	<div id="audit_profile">
+		<div id="audit_profile_grid">
+
+		</div>
+
+	</div>
+
+	<div id="link-detail-window">
+		<table class="link-detail-table detail">
+			<tr>
+				<td class="detail-value"></td>
+			</tr>
+		</table>
+	</div>
+
+	<div id="audit_profile_help"></div>
+</div>
+
+<script type="text/javascript">
+	try{
+		$
+	}catch(e){
+		location.href = "/";
+	};
+
+	$(document).ready(function(e){
+		var urlMap=[];
+		var urlItem=[];
+		var urlProxy = new $.su.Proxy({async: false});
+		urlProxy.query({"websort":{"table":"websort_list"}}, function(data){
+			for (var i=0; i<data.websort.websort_list.length; i++)
+				for (var j in data.websort.websort_list[i])
+				{
+					urlMap[j] = data.websort.websort_list[i][j].textname;
+					urlItem.push({name:data.websort.websort_list[i][j].textname,value:j});
+					break;
+				}
+		});
+
+		var auditProfileProxy = new $.su.Proxy({});
+		$("#audit_profile").panel({
+			title: $.su.CHAR.AUDIT_PROFILE.AUDIT_PROFILE_LIST,
+			collapsible: false
+		});
+
+		$('#audit_profile_name').textbox({
+			fieldLabel: $.su.CHAR.AUDIT_PROFILE.NAME,
+			tips:"(1-28个字符)",
+			allowBlank: false,
+			maxLength: 28
+		});
+
+		$('#audit_profile_comment').textbox({
+			fieldLabel: $.su.CHAR.AUDIT_PROFILE.COMMENT,
+			tips:"(1-50个字符)",
+			allowBlank: true,
+			maxLength: 50
+		});
+		$('#title_http_audit').html($.su.CHAR.AUDIT_PROFILE.AUDIT_HTTP);
+		$("#radio_http_url").radio({
+			fieldLabel: $.su.CHAR.AUDIT_PROFILE.AUDIT_HTTP_URL,
+			columns: 3,
+			items: [{
+				boxlabel: $.su.CHAR.AUDIT_PROFILE.AUDIT_HTTP_URL_OFF, inputValue: "off",checked: true
+			},{
+				boxlabel: $.su.CHAR.AUDIT_PROFILE.AUDIT_HTTP_URL_ON, inputValue: "on"
+			},{
+				boxlabel: $.su.CHAR.AUDIT_PROFILE.AUDIT_HTTP_URL_SPECIFY, inputValue: "specify"
+			}]
+		}).on("ev_change", function(e, oldValue, newValue) {
+			if(newValue === 'specify'){
+				$('#combobox_http_url_list').combobox('enableStyle');
+			}else{
+				$('#combobox_http_url_list').combobox('disableStyle');
+				$('#combobox_http_url_list').combobox('setValue', []);
+			}
+			if(newValue === 'off'){
+				$('#checkbox_http_title').checkbox('disable');
+				$('#checkbox_http_upload').checkbox('disable');
+				$('#checkbox_http_download').checkbox('disable');
+			}else{
+				$('#checkbox_http_title').checkbox('enable');
+				$('#checkbox_http_upload').checkbox('enable');
+				$('#checkbox_http_download').checkbox('enable');
+			}
+		});
+		$('#combobox_http_url_list').combobox({
+			fieldLabel: $.su.CHAR.AUDIT_PROFILE.AUDIT_HTTP_URL_LIST,
+			multiSelect: true,
+			allowBlank: false,
+			items:urlItem
+		});
+		$("#checkbox_http_title").checkbox({
+			fieldLabel:  $.su.CHAR.AUDIT_PROFILE.AUDIT_HTTP_TITLE,
+			cls: "inline",
+			items: [
+				{boxlabel: $.su.CHAR.AUDIT_PROFILE.AUDIT_HTTP_TITLE_SUPPORT, inputValue:'on', uncheckedValue:'off'}
+			]
+		});
+		$("#checkbox_http_upload").checkbox({
+			fieldLabel:  $.su.CHAR.AUDIT_PROFILE.AUDIT_HTTP_UPLAOD,
+			cls: "inline",
+			items: [
+				{boxlabel: $.su.CHAR.AUDIT_PROFILE.AUDIT_HTTP_UPLAOD_SUPPORT, inputValue:'on', uncheckedValue:'off'}
+			]
+		});
+		$("#checkbox_http_download").checkbox({
+			fieldLabel:  $.su.CHAR.AUDIT_PROFILE.AUDIT_HTTP_DOWNLAOD,
+			cls: "inline",
+			items: [
+				{boxlabel: $.su.CHAR.AUDIT_PROFILE.AUDIT_HTTP_DOWNLAOD_SUPPORT, inputValue:'on', uncheckedValue:'off'}
+			]
+		});
+
+		$('#title_ftp_audit').html($.su.CHAR.AUDIT_PROFILE.AUDIT_FTP);
+		$("#checkbox_ftp_cmd").checkbox({
+			fieldLabel:  $.su.CHAR.AUDIT_PROFILE.AUDIT_FTP_CMD,
+			cls: "inline",
+			items: [
+				{boxlabel: $.su.CHAR.AUDIT_PROFILE.AUDIT_FTP_CMD_SUPPORT, inputValue:'on', uncheckedValue:'off'}
+			]
+		});
+		$("#checkbox_ftp_upload").checkbox({
+			fieldLabel:  $.su.CHAR.AUDIT_PROFILE.AUDIT_FTP_UPLOAD,
+			cls: "inline",
+			items: [
+				{boxlabel: $.su.CHAR.AUDIT_PROFILE.AUDIT_FTP_UPLOAD_SUPPORT, inputValue:'on', uncheckedValue:'off'}
+			]
+		});
+		$("#checkbox_ftp_download").checkbox({
+			fieldLabel:  $.su.CHAR.AUDIT_PROFILE.AUDIT_FTP_DOWNLOAD,
+			cls: "inline",
+			items: [
+				{boxlabel: $.su.CHAR.AUDIT_PROFILE.AUDIT_FTP_DOWNLOAD_SUPPORT, inputValue:'on', uncheckedValue:'off'}
+			]
+		});
+
+		$('#title_mail_audit').html($.su.CHAR.AUDIT_PROFILE.AUDIT_MAIL);
+		$("#checkbox_mail_send").checkbox({
+			fieldLabel:  $.su.CHAR.AUDIT_PROFILE.AUDIT_MAIL_SEND,
+			cls: "inline",
+			items: [
+				{boxlabel: $.su.CHAR.AUDIT_PROFILE.AUDIT_MAIL_SEND_SUPPORT, inputValue:'on', uncheckedValue:'off'}
+			]
+		});
+		$("#checkbox_mail_receive").checkbox({
+			fieldLabel:  $.su.CHAR.AUDIT_PROFILE.AUDIT_MAIL_RECEIVE,
+			cls: "inline",
+			items: [
+				{boxlabel: $.su.CHAR.AUDIT_PROFILE.AUDIT_MAIL_RECEIVE_SUPPORT, inputValue:'on', uncheckedValue:'off'}
+			]
+		});
+
+		$('#title_IM_audit').html($.su.CHAR.AUDIT_PROFILE.AUDIT_IM);
+		$('#checkbox_im_login').checkbox({
+			fieldLabel:  $.su.CHAR.AUDIT_PROFILE.AUDIT_IM_LOGIN,
+			cls: "inline",
+			items: [
+				{boxlabel: $.su.CHAR.AUDIT_PROFILE.AUDIT_IM_LOGIN_SUPPORT, inputValue:'on', uncheckedValue:'off'}
+			]
+		});
+
+		var $linkDetail = $("#link-detail-window").msg({
+			closeBtn: true,
+			cls:"l",
+			title: "审计指定URL分类列表",
+			type: "window"
+		}).msg("hide");
+
+
+		function showDetail(urls){
+			var urlsString = "";
+
+			for(var i = 0; i < urls.length; i = i + 8){
+				for (var j = 0; j < 8; j++) { //每行显示八个元素
+					if(i+j == urls.length - 1){
+						urlsString += urlMap[urls[i+j]];
+						break
+					}else{
+						urlsString += urlMap[urls[i+j]] + "&nbsp&nbsp&nbsp&nbsp"
+					}
+				}
+				urlsString += "</br>"
+			}
+			$linkDetail.find(".detail-value").html(urlsString).css({
+				"lineHeight":"20px",
+				"textAlign":"center",
+				"wordBreak":"break-all"
+			});
+			$linkDetail.msg('show');
+		}
+
+		var auditProfileGrid = $('#audit_profile_grid').grid({
+			editor:{
+				validator:function()
+				{
+					var editor  = $(auditProfileGrid.grid("getEditor"));
+					var ruleName = editor.find(".text-text[name=name]").textbox("getValue");
+
+					var store 	= auditProfileGrid.grid("getStore");
+					var keyProperty = store.keyProperty;
+					var grid_array  = store.data;
+
+					var editingId = editor.editor("getEditingId");
+
+					if($.isArray(grid_array) && grid_array.length > 0)
+					{
+						for(var k = 0; k < grid_array.length;k++)
+						{
+							var data = grid_array[k];
+							if(data[keyProperty] == editingId)
+							{
+								continue;
+							}
+							else if(data["name"] == ruleName)
+							{
+								$($("div#audit_profile_grid").grid("getEditor")).form('setError', "审计配置文件名称不能重复！");
+								return false;
+							}
+						}
+					}
+					return true;
+				},
+				content:"#own-editor",
+				fields:[
+					{name: "name"},
+					{name: "comment"},
+					{name: "http_url"},  // 取值范围“on”/“off”/“specify”
+					{name: "http_url_list"}, // 数组，同“web_filter.htm”的“选择网站:”
+					{name: "http_title"},  // 取值范围“on”/“off”
+					{name: "http_upload"},  // 取值范围“on”/“off”
+					{name: "http_download"},  // 取值范围“on”/“off”
+					{name: "ftp_cmd"},  // 取值范围“on”/“off”
+					{name: "ftp_upload"},  // 取值范围“on”/“off”
+					{name: "ftp_download"},  // 取值范围“on”/“off”
+					{name: "mail_send"},  // 取值范围“on”/“off”
+					{name: "mail_receive"},  // 取值范围“on”/“off”
+					{name: "im_login"},  // 取值范围“on”/“off”
+				]
+			},
+			store:{
+				proxy: auditProfileProxy,
+				parseKey: {
+					moduleName: "audit_profile",
+					pageSizeName: "auditprofile_entry",
+					tableName: "audit_profile"
+				},
+				fields: [
+					{name: "name"},
+					{name: "comment"},
+					{name: "http_url"},  // 取值范围“on”/“off”/“specify”
+					{name: "http_url_list"}, // 数组，同“web_filter.htm”的“选择网站:”
+					{name: "http_title"},  // 取值范围“on”/“off”
+					{name: "http_upload"},  // 取值范围“on”/“off”
+					{name: "http_download"},  // 取值范围“on”/“off”
+					{name: "ftp_cmd"},  // 取值范围“on”/“off”
+					{name: "ftp_upload"},  // 取值范围“on”/“off”
+					{name: "ftp_download"},  // 取值范围“on”/“off”
+					{name: "mail_send"},  // 取值范围“on”/“off”
+					{name: "mail_receive"},  // 取值范围“on”/“off”
+					{name: "im_login"},  // 取值范围“on”/“off”
+					{name: "flag"}
+				],
+				autoLoad: true
+			},
+			paging_true: {},
+			columns:[
+				{
+					xtype: "checkcolumn",
+					width:40
+				},
+				{
+					xtype: "rownumberer",
+					width:40
+				},
+				{
+					text: $.su.CHAR.AUDIT_PROFILE.NAME,
+					width:50,
+					dataIndex:'name',
+					scan: {
+						cmp: $.search.compare.string,
+						vtype: "string"
+					}
+				},
+				{
+					text: $.su.CHAR.AUDIT_PROFILE.COMMENT,
+					width:70,
+					dataIndex:'comment',
+					scan: {
+						cmp: $.search.compare.string,
+						vtype: "string"
+					}
+				},
+				{
+					text: $.su.CHAR.AUDIT_PROFILE.AUDIT_HTTP,
+					width:120,
+					dataIndex:'http_url_list',
+					renderer:function(dd, index, data){
+						if(typeof data == "undefined"){
+							return "---";
+						}
+						var detail = "审计范围:&nbsp&nbsp";
+						if (data.http_url == "on") detail = detail + "所有URL";
+						else if (data.http_url == "specify") {
+							detail = detail + "指定URL:&nbsp&nbsp"
+							var urls = dd;
+							switch(urls.length){
+								case 0:
+									detail = detail + "---";
+									break;
+								case 1:
+									detail = detail + urlMap[urls[0]];
+									break;
+								case 2:
+									detail = detail + urlMap[urls[0]] + "&nbsp" + urlMap[urls[1]];
+									break;
+								default:
+									detail = detail + urlMap[urls[0]] + "&nbsp" + "<a href='javascript:void(0);' class='btn-detail' data-index='"+ index +"'>更多</a>";
+									break;
+							}
+						}
+						else detail = detail + "不审计";
+						if (data.http_url == "off"){
+							return detail;
+						}
+						detail = detail + "</br>";
+						detail = detail + "网页标题: "
+						if (data.http_title == "on") detail = detail + "记录";
+						else detail = detail + "不审计";
+						detail = detail + "</br>";
+						detail = detail + "HTTP上传文件: "
+						if (data.http_upload == "on") detail = detail + "记录";
+						else detail = detail + "不审计";
+						detail = detail + "</br>";
+						detail = detail + "HTTP下载文件: "
+						if (data.http_download == "on") detail = detail + "记录";
+						else detail = detail + "不审计";
+						return detail;
+					}
+				},
+				{
+					text: $.su.CHAR.AUDIT_PROFILE.AUDIT_FTP,
+					width:100,
+					dataIndex:'ftp_cmd',
+					renderer:function(dd, index, data){
+						if(typeof data == "undefined"){
+							return "---";
+						}
+						var detail = "FTP命令: ";
+						if (data.ftp_cmd == "on") detail = detail + "记录";
+						else detail = detail + "不审计";
+						detail = detail + "</br>";
+						detail = detail + "FTP文件上传: "
+						if (data.ftp_upload == "on") detail = detail + "记录";
+						else detail = detail + "不审计";
+						detail = detail + "</br>";
+						detail = detail + "FTP文件下载: "
+						if (data.ftp_download == "on") detail = detail + "记录";
+						else detail = detail + "不审计";
+						return detail
+					}
+				},
+				{
+					text: $.su.CHAR.AUDIT_PROFILE.AUDIT_MAIL,
+					width:100,
+					dataIndex:'mail_send',
+					renderer:function(dd, index, data){
+						if(typeof data == "undefined"){
+							return "---";
+						}
+						var detail = "邮件发送: ";
+						if (data.mail_send == "on") detail = detail + "记录";
+						else detail = detail + "不审计";
+						detail = detail + "</br>";
+						detail = detail + "邮件接收: "
+						if (data.mail_receive == "on") detail = detail + "记录";
+						else detail = detail + "不审计";
+						return detail
+					}
+				},
+				{
+					text: $.su.CHAR.AUDIT_PROFILE.AUDIT_IM,
+					width:100,
+					dataIndex:'im_login',
+					renderer:function(dd, index, data){
+						if(typeof data == "undefined"){
+							return "---";
+						}
+						var detail = "帐号登陆: ";
+						if (data.im_login == "on") detail = detail + "记录";
+						else detail = detail + "不审计";
+						return detail
+					}
+				},
+				{
+					xtype: "settings",
+					width: 50
+				}
+			],
+			operation:["add","delete","search"],
+			autoRefresh: false
+		}).on("ev_load", function(e,data, others){
+			for (var i = 0; i < data.length; i++){
+				if (data[i].flag == "system"){
+					$(auditProfileGrid).grid('disableRow',i);
+				}
+			}
+		}).on("ev_formatAddData", function(e, data){
+		if (typeof(data.http_url_list) == "string"){
+			data.http_url_list = [data.http_url_list];
+		}
+		}).on("ev_formatEditData", function(e, data){
+			if (typeof(data.http_url_list) == "string"){
+				data.http_url_list = [data.http_url_list];
+			}else if(typeof(data.http_url_list) == "undefined"){
+				data.http_url_list = [];
+			}
+		}).delegate('a.btn-detail', 'click', function(e){
+			var index = $(this).data('index');
+			showDetail(auditProfileGrid.grid("getStore").data[index].http_url_list);
+		});
+
+		var auditProfileEditor = $(auditProfileGrid.grid('getEditor'));
+		auditProfileEditor.on('ev_startEdit', function(e, index, key){
+			if(index == 'add'){
+				$("#audit_profile_name").textbox("enableStyle");
+				$("#radio_http_url").radio('setValue','off');
+				$('#combobox_http_url_list').combobox('disableStyle');
+				$('#checkbox_http_title').checkbox('disable');
+				$('#checkbox_http_upload').checkbox('disable');
+				$('#checkbox_http_download').checkbox('disable');
+			}else{
+				$("#audit_profile_name").textbox("disableStyle");
+				var store = auditProfileGrid.grid("getStore");
+				var data = store.getData(key);
+				$("#radio_http_url").radio('setValue',data.http_url);
+				if(data.http_url === 'specify'){
+					$('#combobox_http_url_list').combobox('enableStyle');
+				}else {
+					$('#combobox_http_url_list').combobox('disableStyle');
+				}
+				if(data.http_url === 'off'){
+					$('#checkbox_http_title').checkbox('disable');
+					$('#checkbox_http_upload').checkbox('disable');
+					$('#checkbox_http_download').checkbox('disable');
+				}else{
+					$('#checkbox_http_title').checkbox('enable');
+					$('#checkbox_http_upload').checkbox('enable');
+					$('#checkbox_http_download').checkbox('enable');
+				}
+			}
+		});
+
+		$(".grid-panel").css("marginBottom","40px");
+
+		var AUDIT_PROFILE_help = new $.su.Help({
+			container: "div#audit_profile_help",
+			content: ["AUDITPROFILE"]
+		});
+	});
+</script>
+</body>
+
+</html>

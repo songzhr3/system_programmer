@@ -1,0 +1,562 @@
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
+<html xmlns="http://www.w3.org/1999/xhtml">
+<head>
+<meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
+<style type="text/css">
+    #preview-frame{
+        border: none;
+        width: 400px;
+        height: 600px;
+    }
+
+	div.widget-container div.widget-fieldlabel-wrap.top_align{
+		vertical-align: top;
+	}
+</style>
+<title>Radius</title>
+</head>
+
+<body>
+<div class="func_container">
+    <div id="func_setting">
+        <div id="radius_editor">
+			<input id="server_name" name="server_name" value=""/>
+            <textarea id="server_addr" name="server_addr" value=""/>
+            <input id="auth_port" name="auth_port" value="1812"/>
+            <input id="account_port" name="account_port" value="0"/>
+            <input id="share_key" name="share_key" value=""/>
+            <input id="retry_count" name="retry_count" value="3"/>
+            <input id="retry_interval" name="retry_interval" value="3"/>
+			<input id="nas_ip" name="nas_ip" value=""/>
+            <input id="radius_auth_type" name="radius_auth_type" value=""/>
+
+        </div>
+        <div id="radius_list"></div>
+    </div>
+
+    <div id="radius_help"></div>
+</div>
+
+<script type="text/javascript">
+
+//<![CDATA[
+try{
+    $
+}catch(e){
+    location.href = "/";
+};
+$(document).ready(function(e){
+    $(".func_container").hide();
+    var firstLoad = true;
+
+    function stringToBytes(str)
+    {
+        var ch, st, re = [];
+        for (var i = 0; i < str.length; i++ )
+        {
+            ch = str.charCodeAt(i);  // get char
+            st = [];    			// set up "stack"
+            if ( ch < 0x007F )
+            {
+                st.push( ch & 0xFF );
+            }
+            else if ( (0x0080 <= ch) && (ch <= 0x07ff) )
+            {
+
+                st.push((ch & 0x003F) + 128 );
+                st.push(((ch>>6)&0x001F) + 192)
+            }
+            else if ((0x0800 <= ch ) && (ch <= 0xffff))
+            {
+                st.push((ch & 0x003F)+128);
+                st.push(((ch>>6)&0x003F)+128);
+                st.push(((ch>>12)&0x000F)+224);
+            }
+            re = re.concat( st.reverse() );
+        }
+        return re;  // return an array of bytes
+    }
+
+    function  strASCencode(sourceId)
+    {
+        var  temp = [];
+        var  index = 0;
+        var  ptr = 0;
+        var  high, low,inthis;
+        var  tempEncode = '';
+        temp = stringToBytes(sourceId);
+
+        for ( index = 0; index < temp.length; index++ )
+        {
+
+            high = (temp[index]>>4)&(0x0F);
+            low  = (temp[index])&(0x0F);
+
+            if ( high >= 0 && high <= 9 )
+            {
+                high += 48;
+            }
+            if ( high >= 10 && high <= 15 )
+            {
+                high += 55;
+            }
+
+            if ( low >= 0 && low <= 9 )
+            {
+                low += 48;
+            }
+            if ( low >= 10 && low<= 15 )
+            {
+                low += 55;
+            }
+            ptr = index<<1;
+            tempEncode += String.fromCharCode(high);
+            tempEncode +=String.fromCharCode(low);
+        }
+        return tempEncode;
+    }
+
+    function asctochar(high, low)
+    {
+        var connect = 0;
+        if ( high >= '0' && high <= '9' )
+        {
+            high = high.charCodeAt() - 48;
+        }
+        if ( high >= 'A' && high <= 'F' )
+        {
+            high = high.charCodeAt() - 55;
+        }
+        if ( low >= '0' && low <= '9' )
+        {
+            low = low.charCodeAt() - 48;
+        }
+        if ( low >= 'A' && low <= 'F' )
+        {
+            low = low.charCodeAt() - 55;
+        }
+        connect = high*16+low;
+        return connect;
+    }
+
+    function strASCdecode(sourceId)
+    {
+        var tempstr = sourceId;/*document.getElementById(sourceId).value*/
+        var index = 0;
+        var ptr = 0;
+        var tempDecode = '';
+        var high, low, high1,low1,high2,low2,inter1, inter2, inter;
+        var charcode = 0;
+        for ( index = 0; index <  tempstr.length; )
+        {
+            high = tempstr.slice(index,index+1);
+            low  = tempstr.slice(index+1,index+2);
+            inter = asctochar(high,low);
+            if ( 0 <= inter && inter <= 0x007f )
+            {
+                tempDecode += String.fromCharCode(inter);
+                index += 2;
+                continue;
+            }
+            if ( 192 <= inter && inter <= 223 )
+            {
+                high1 = tempstr.slice(index+2,index+3);
+                low1 = tempstr.slice(index+3,index+4);
+                inter1 = asctochar(high1,low1);
+                charcode = ((inter-192)<<6) + (inter1-128);
+                tempDecode += String.fromCharCode(charcode);
+                index += 4;
+                continue;
+            }
+            if ( 224<= inter && inter <= 239 )
+            {
+                high1 = tempstr.slice(index+2,index+3);
+                low1 = tempstr.slice(index+3,index+4);
+                high2 = tempstr.slice(index+4,index+5);
+                low2 = tempstr.slice(index+5,index+6);
+                inter1 = asctochar(high1,low1);
+                inter2 = asctochar(high2,low2);
+                charcode = ((inter-224)<<12)+((inter1-128)<<6)+(inter2-128);
+                tempDecode += String.fromCharCode(charcode);
+                index += 6;
+                continue;
+            }
+            else
+            {
+                tempDecode = sourceId;
+                break;
+            }
+        }
+        return tempDecode;
+    }
+
+	function urlValidator(value)
+	{
+		var codeStr	= /^([A-Za-z0-9\_\+\/\?\%\#\&\=\\\.\:\-]){1,250}$/;
+		if (!codeStr.test(value))
+		{
+			return $.su.CHAR.WPORTAL.URL_CHAR_ERR;
+		}
+		else
+		{
+			return true;
+		}
+	}
+
+    $("#func_setting").panel({
+        title: $.su.CHAR.WPORTAL.RADIUS
+    });
+
+	$('#server_name').textbox({
+        fieldLabel: $.su.CHAR.WPORTAL.RADIUS_NAME,
+        inputCls: 'xl',
+        maxLength: 50,
+        allowBlank: false,
+		vtype: 'string_visible_allow_blank',
+        tips: $.su.CHAR.WPORTAL.RADIUS_NAME_TIP,
+        validator: function(value)
+        {
+            var codeStr = /^([A-Za-z0-9\_\-]){1,50}$/;
+            if (!codeStr.test(value))
+            {
+                return $.su.CHAR.WPORTAL.RADIUS_NAME_ERR;
+            }
+            else
+            {
+                return true;
+            }
+        }
+    });
+
+	$('#server_addr').textarea({
+        fieldLabel: $.su.CHAR.WPORTAL.RADIUS_ADDRESS,
+        inputCls: 'xl',
+        tipsCls: 'a',
+		labelCls: 'widget-fieldlabel-wrap m top_align',
+        maxLength: 250,
+        allowBlank: false,
+		//vtype: "ascii_visible",
+        tips: $.su.CHAR.WPORTAL.RADIUS_ADDRESS_TIP,
+		validator:function(value)
+		{
+		 	var suObj = $.su.vtype.types["ip"];
+            var suObj6 = $.su.vtype.types["ipv6"]
+		 	suObj.allowLoopFlag = false;
+
+			var isIP  = suObj.regex.test(value);
+            var isIP6  = suObj6.regex.test(value);
+			var retStr = $.su.vtype.types["ip_all"].validator(value);
+			if(  (!isIP && !isIP6) || true != retStr )
+			{
+				//console.log(retStr)
+				if (isIP || isIP6)
+				{
+					return retStr;
+				}
+				else
+				{
+					if ( !$.su.vtype.types["domain_more"].regex.test(value) )
+					{
+						//console.log("not domain name")
+						return $.su.CHAR.VTYPETEXT.IP_DOMAIN
+					}
+				}
+			}
+			if(isIP6){
+				$("#server_addr").textarea("setValue", $.su.func.ipv6Simplyfy(value));
+			}
+			return true;
+		}
+    });
+
+	$('#auth_port').textbox({
+        fieldLabel: $.su.CHAR.WPORTAL.AUTH_PORT,
+        inputCls: 'xl',
+        tipsCls: 's',
+        maxLength: 5,
+        allowBlank: false,
+		vtype: {
+            vtype: "number",
+            max: 65535,
+            min: 1024
+        },
+        tips: $.su.CHAR.WPORTAL.AUTH_PORT_TIP
+    });
+
+	$('#account_port').textbox({
+        fieldLabel: $.su.CHAR.WPORTAL.ACCOUNT_PORT,
+        inputCls: 'xl',
+        tipsCls: 's',
+        maxLength: 5,
+        allowBlank: false,
+		validator: function(val){
+			var res = 	new $.su.vtype({vtype: "number"}).validate(val);
+			if(res != true)return res;
+			val = parseInt(val);
+			if (val == 0 || (1024 <= val && 65535 >= val)){
+				$('#account_port').textbox("setValue", val);
+				return true;
+			}
+			else
+				return $.su.CHAR.WPORTAL.NUM_CHAR_ERR;
+		},
+        tips: $.su.CHAR.WPORTAL.ACCOUNT_PORT_TIP
+    });
+
+	$('#share_key').textbox({
+        fieldLabel: $.su.CHAR.WPORTAL.SHARE_KEY,
+        inputCls: 'xl',
+        tipsCls: 's',
+        maxLength: 120,
+        allowBlank: false,
+		vtype: "ascii_visible",
+        tips: $.su.CHAR.WPORTAL.SHARE_KEY_TIP
+    });
+
+	$('#retry_count').textbox({
+        fieldLabel: $.su.CHAR.WPORTAL.RETRY_COUNT,
+        inputCls: 'xl',
+        tipsCls: 's',
+        maxLength:2,
+        allowBlank:false,
+        vtype: {
+            vtype: "number",
+            max: 10,
+            min: 0
+        },
+        tips: $.su.CHAR.WPORTAL.RETRY_COUNT_TIP
+    });
+
+    $('#retry_interval').textbox({
+        fieldLabel: $.su.CHAR.WPORTAL.RADIUS_INTERVAL,
+        inputCls: 'xl',
+        tipsCls: 's',
+        maxLength: 2,
+        allowBlank: false,
+        vtype: {
+            vtype: "number",
+            max: 60,
+            min: 1
+        },
+        tips: $.su.CHAR.WPORTAL.RADIUS_INTERVAL_TIP
+    });
+
+	$('#nas_ip').textbox({
+        fieldLabel: $.su.CHAR.WPORTAL.RADIUS_NAS_IP,
+        inputCls: 'xl',
+        tipsCls: 's',
+        vtype: "ip_all",
+		maxLength: 39,
+        tips: $.su.CHAR.WPORTAL.RADIUS_NAS_IP_TIP
+    });
+
+    $('#radius_auth_type').combobox({
+        fieldLabel: $.su.CHAR.WPORTAL.RADIUS_TYPE,
+        tipsCls: 's',
+		inputCls: 'xl',
+        allowBlank:false,
+        maxLength: 50,
+        vtype: "name",
+        items:[
+            {value:"pap", name: "PAP", selected: true},
+            {value:"chap", name: "CHAP"},
+            {value:"mschap", name: "MSCHAP"},
+            {value:"mschapv2", name: "MSCHAPv2"}
+        ]
+    });
+
+	var globalProxy = new $.su.Proxy(/*{
+        url: URL_GLOBAL
+    }*/);
+
+	var radiusGrid = $('#radius_list').grid({
+        store: {
+            proxy: globalProxy,
+            autoLoad: true,
+            fields: [
+				{name: "entry_id"},
+                {name: "server_name"},
+                {name: "server_addr"},
+                {name: "auth_port"},
+                {name: "account_port"},
+                {name: "share_key"},
+                {name: "retry_count"},
+                {name: "retry_interval"},
+				{name: "nas_ip"},
+                {name: "radius_auth_type"}
+            ],
+			keyProperty:["entry_id"],
+            rmField: ["entry_id"],
+			strEncode: [','],
+			parseKey:{
+				moduleName: "authentication",
+				tableName: "radius_list",
+				pageSizeName: "radius_entry",
+				maxSizeTableName: "wportal",
+				maxSizeOptionName: "radius_max",
+				setFilter:function(index, itemName, data){
+					var dataSet = $('#radius_list').grid("getStore").data;
+					return [{"entry_id" : dataSet[index].entry_id}];
+				},
+				delFilter:function(itemNames, data, indexes){
+					var result = [];
+					for (var i = 0, len = indexes.length; i < len; i++)
+					{
+						result.push({ "entry_id" : indexes[i].entry_id})
+					}
+					return result;
+				}
+			}
+        },
+
+		editor: {
+                validator:function(){
+                var editor  = $(radiusGrid.grid("getEditor"));
+                //var name    = editor.find(".text-text[name=template_name]").textbox("getValue");
+                var store   = radiusGrid.grid("getStore");
+                var keyProperty = store.keyProperty;
+                var grid_array  = store.data;
+                var editingId = editor.editor("getEditingId");
+                var i = 0;
+
+                if($.isArray(grid_array) && grid_array.length > 0)
+                {
+                    for(var k = 0; k < grid_array.length;k++)
+                    {
+                        var data = grid_array[k];
+                        if (data[keyProperty] == editingId)
+                        {
+                            continue;
+                        }
+                    }
+                }
+
+                return true;
+            },
+            content: '#radius_editor',
+            fields: [
+                {name: "server_name"},
+                {name: "server_addr"},
+                {name: "auth_port"},
+                {name: "account_port"},
+                {name: "share_key"},
+                {name: "retry_count"},
+                {name: "retry_interval"},
+				{name: "nas_ip"},
+                {name: "radius_auth_type"}
+            ]
+        },
+		paging_true:{},
+        columns: [
+            {
+                xtype: 'checkcolumn',
+                width: 30
+            },
+            {
+                xtype: 'rownumberer',
+                width: 30
+            },
+            {
+                text: $.su.CHAR.WPORTAL.RADIUS_NAME_SHORT,
+                width: 150,
+                dataIndex: 'server_name',
+				scan: {
+					cmp: $.search.compare.string
+				}
+            },
+			{
+                text: $.su.CHAR.WPORTAL.RADIUS_ADDRESS_SHORT,
+                width: 200,
+                dataIndex: 'server_addr',
+				scan: {
+					cmp: $.search.compare.string
+				}
+            },
+			{
+                text: $.su.CHAR.WPORTAL.AUTH_PORT,
+                width: 50,
+                dataIndex: 'auth_port'
+            },
+			{
+                text: $.su.CHAR.WPORTAL.ACCOUNT_PORT,
+                width: 50,
+                dataIndex: 'account_port'
+            },
+            {
+                text: $.su.CHAR.WPORTAL.RADIUS_TYPE,
+                width: 50,
+                dataIndex: 'radius_auth_type',
+                renderer: function(data){
+                    var result;
+                    switch (data){
+                        case "pap":
+                            result = 'PAP';
+                            break;
+                        case "chap":
+                            result = 'CHAP';
+                            break;
+                        case "mschap":
+                            result = 'MSCHAP';
+                            break;
+                        case "mschapv2":
+                            result = 'MSCHAPv2';
+                            break;
+                        default :
+                            break;
+                    }
+                    return result;
+                },
+				scan: {
+					type: "combobox",
+					cmp: $.search.compare.stringStrict,
+					items:[
+						{value:"pap", name: "PAP"},
+						{value:"chap", name: "CHAP"},
+						{value:"mschap", name: "MSCHAP"},
+						{value:"mschapv2", name: "MSCHAPv2"}
+					]
+				}
+            },
+            {
+                xtype: "settings",
+                width: 40
+            }
+        ],
+
+		operation: 'prompt|add|delete|search'
+
+
+    }).on('ev_load',  function(e, data, others){
+
+        if (others)
+        {
+            //console.log(others.max_rules);
+            //maxrules = others.max_rules;
+        }
+    });
+	var $gridEditor = $(radiusGrid.grid('getEditor'));
+
+	$($gridEditor).on("ev_startEdit", function(e, index, key){
+		if ("add" == index)
+		{
+			$("#server_name").textbox('enableStyle');
+		}
+		else
+		{
+			$("#server_name").textbox('disableStyle');
+		}
+	});
+
+	var helpRadius = new $.su.Help({
+        container: "div#radius_help",
+        content: ["AC_RADIUS_CONFIG"]
+    });
+    $(".func_container").show();
+});
+
+
+//]]>
+</script>
+</body>
+
+</html>

@@ -1,0 +1,585 @@
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN"
+        "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
+<html xmlns="http://www.w3.org/1999/xhtml">
+<head>
+    <meta http-equiv="Content-Type" content="text/html; charset=utf-8"/>
+    <style type="text/css">
+        .top {
+            min-width: 1480px !important;
+        }
+        .top-main .top-content {
+            min-width: 1405px !important;
+        }
+        #log_detail_msg td:nth-child(1) {
+            text-align: right;
+            white-space: pre-wrap;
+        }
+
+        #log_detail_msg td:nth-child(2) {
+            text-align: left;
+            white-space: pre-wrap;
+            word-break:break-all;
+            word-wrap:break-word;
+        }
+
+        #log_detail_msg table {
+            width: 100%;
+            line-height: 2em;
+        }
+    </style>
+    <title>threat_log</title>
+</head>
+
+<body>
+<div class="func-container">
+    <div id="threatlog_list">
+        <div id="threatlog_list_grid">
+
+        </div>
+        <div id="sort_remind"></div>
+
+    </div>
+
+    <div id="threatlog-detail"></div>
+
+    <div id="clean_alarm_cnt">
+        <h4 class="title">
+            <span class="icon" ></span>
+            <span class="text" id="error_str"></span>
+        </h4>
+    </div>
+
+    <div id="threatlog_help"></div>
+</div>
+<div id="log_detail_msg">
+    <div id="title-container">
+        <table id = "log_detail_content" style="table-layout:fixed;">
+
+        </table>
+    </div>
+</div>
+
+<script type="text/javascript">
+    try{
+        $
+    }catch(e){
+        location.href = "/";
+    };
+
+    $(document).ready(function(e){
+        var log_detail_msg = $("#log_detail_msg").msg({
+            grid: threatlog_grid,
+            cls: 'l',
+            closeBtn: true,
+            type: "alert",
+            okHandler: function (e) {
+                log_detail_msg.msg('hide');
+            },
+            cancelHandler: function () {
+                log_detail_msg.msg('hide');
+            }
+        });
+        $("#title-container").panel({
+            title: $.su.CHAR.THREATLOG.DETAIL,
+            collapsible: false
+        });
+        var clean_proxy = new $.su.Proxy({});
+        $("#threatlog_list").panel({
+            title: $.su.CHAR.THREATLOG.THREATLOG_LIST,
+            collapsible: false
+        });
+
+        var zoneItem=[];
+        var secPolicyItem=[];
+        var disk_status = "";
+        var itemProxy = new $.su.Proxy({async: false});
+        itemProxy.query(
+        {
+            "zone":{"table":"zone"},
+            "security_policy":{"table": "stat_list"},
+            "system": {"name": "check_disk_status"}
+        }, function(data){
+            for(var i=0; i<data.zone.zone.length;i++){
+                for(var j in data.zone.zone[i]){
+                    zoneItem.push({name:data.zone.zone[i][j].name,value:data.zone.zone[i][j].name});
+                    break;
+                }
+            }
+            var secPolicyList = data.security_policy.stat_list;
+            for(var i=0; i<secPolicyList.length;i++){
+                for(var j in secPolicyList[i]){
+                    if (secPolicyList[i][j].name != "default")
+                    {
+                        secPolicyItem.push({name:secPolicyList[i][j].name,value:secPolicyList[i][j].name});
+                    }
+                    break;
+                }
+            }
+            disk_status = data.system.check_disk_status.status;
+        });
+
+        $("#clean_alarm_cnt").msg({
+            cls: 'warning reboot-confirm-size',
+            msg: $.su.CHAR.SYSLOG.LOG_CLEAN_ALARM,
+            type: "alert"
+        });
+
+        var order = "down";
+
+        var threatlogProxy = new $.su.Proxy({});
+
+        var threatlog_grid = $("div#threatlog_list_grid").grid({
+            store:{
+                proxy: threatlogProxy,
+                parseKey: {					/* 此处在store中增加parseKey，便于store对象在底层对数据进行预处理，以实现SLP数据结构和SU数据结构的转变 */
+                    moduleName: "threat_log",
+                    pageSizeName: "threatlog_entry",
+                    tableName: "threat_log"
+                },
+                fields: [
+                    {name: "time"},
+                    {name: "threat_type"},
+                    {name: "src_zone"},
+                    {name: "dst_zone"},
+                    {name: "src_ip"},
+                    {name: "dst_ip"},
+                    {name: "src_port"},
+                    {name: "dst_port"},
+                    {name: "proto"},
+                    {name: "app"},
+                    {name: "action"},
+                    {name: "security_policy"},
+                    {name: "threat_name"},
+                    {name: "threat_id"},
+                    {name: "risk"},
+                    {name: "threat_num"},
+                    {name: "ips_profile"},
+                    {name: "severity"},
+                    {name: "os"},
+                    {name: "ips_type"},
+                    {name: "access_content"},
+                    {name: "av_profile"},
+                    {name: "file_name"},
+                    {name: "file_type"},
+                    {name: "hash"},
+                    {name: "threat_num"}
+                ],
+                autoLoad: true
+            },
+            selectionDisplay: true,
+            maxLines: 11,
+            minLines: 0,
+            paging_true:{},
+            columns: [
+                {
+                    text: $.su.CHAR.THREATLOG.ID,
+                    xtype: "rownumberer",
+                    width:40
+                },
+                {
+                    text: $.su.CHAR.THREATLOG.TIME,
+                    width:160,
+                    dataIndex: "time",
+                    scan: {
+                        cmp: $.search.compare.string
+                    }
+                },
+                {
+                    text: $.su.CHAR.THREATLOG.THREAT_TYPE,
+                    width:50,
+                    dataIndex: "threat_type",
+                    scan: {
+                        cmp: $.search.compare.string
+                    }
+                },
+                {
+                    text: $.su.CHAR.THREATLOG.SRC_ZONE,
+                    width:80,
+                    dataIndex: "src_zone",
+                    scan: {
+                        cmp: $.search.compare.string
+                    }
+                },
+                {
+                    text: $.su.CHAR.THREATLOG.DST_ZONE,
+                    width:80,
+                    dataIndex: "dst_zone",
+                    scan: {
+                        cmp: $.search.compare.string
+                    }
+                },
+                {
+                    text: $.su.CHAR.THREATLOG.SRC_IP,
+                    width:100,
+                    dataIndex: "src_ip",
+                    scan: {
+                        cmp: $.search.compare.ip
+                    }
+                },
+                {
+                    text: $.su.CHAR.THREATLOG.DST_IP,
+                    width:100,
+                    dataIndex: "dst_ip",
+                    scan: {
+                        cmp: $.search.compare.ip
+                    }
+                },
+                {
+                    text: $.su.CHAR.THREATLOG.SRC_PORT,
+                    width:50,
+                    dataIndex: "src_port",
+                    scan: {
+                        cmp: $.search.compare.string
+                    },
+                    renderer: function(dd, index, data){
+                        if (data.proto == "UDP" || data.proto == "TCP") return dd;
+                        else return "---";
+                    }
+                },
+                {
+                    text: $.su.CHAR.THREATLOG.DST_PORT,
+                    width:50,
+                    dataIndex: "dst_port",
+                    scan: {
+                        cmp: $.search.compare.string
+                    },
+                    renderer: function(dd, index, data){
+                        if (data.proto == "UDP" || data.proto == "TCP") return dd;
+                        else return "---";
+                    }
+                },
+                {
+                    text: $.su.CHAR.THREATLOG.PROTO,
+                    width:60,
+                    dataIndex: "proto",
+                    scan: {
+                        cmp: $.search.compare.string
+                    }
+                },
+                {
+                    text: $.su.CHAR.THREATLOG.APP,
+                    width:60,
+                    dataIndex: "app",
+                    scan: {
+                        cmp: $.search.compare.string
+                    }
+                },
+                {
+                    text: $.su.CHAR.THREATLOG.ACTION,
+                    width:60,
+                    dataIndex: "action",
+                    scan: {
+                        cmp: $.search.compare.string
+                    }
+                },
+                {
+                    text: $.su.CHAR.THREATLOG.SECURITY_POLICY,
+                    width:80,
+                    dataIndex: "security_policy",
+                    scan: {
+                        cmp: $.search.compare.string
+                    }
+                },
+                {
+                    text: $.su.CHAR.THREATLOG.THREAT_NAME,
+                    width:80,
+                    dataIndex: "threat_name",
+                    scan: {
+                        cmp: $.search.compare.string
+                    }
+                },
+                {
+                    text: $.su.CHAR.THREATLOG.THREAT_ID,
+                    width:60,
+                    dataIndex: "threat_id",
+                    scan: {
+                        cmp: $.search.compare.string
+                    }
+                },
+                {
+                    text: $.su.CHAR.THREATLOG.DETAIL,
+                    width:80,
+                    dataIndex: "detail",
+                    renderer: function(dd, index, data){
+                        return"<a href='javascript:void(0);' class='btn-detail' data-index='"+ index +"'>详细</a>";
+                    }
+                },
+                //todo 全局搜索时间端的字段待确定
+                {
+                    xtype: "globalSearch",
+                    hidden: true,
+                    columns: [
+                        {
+                            text: $.su.CHAR.THREATLOG.SRC_ZONE,
+                            width: 100,
+                            dataIndex: "src_zone",
+                            scan: {
+                                type: "combobox",
+                                vtype: "string",
+                                items: zoneItem
+                            }
+                        },
+                        {
+                            text: $.su.CHAR.THREATLOG.DST_ZONE,
+                            width: 100,
+                            dataIndex: "dst_zone",
+                            scan: {
+                                type: "combobox",
+                                vtype: "string",
+                                items: zoneItem
+                            }
+                        },
+                        {
+                            text: $.su.CHAR.THREATLOG.SRC_IP,
+                            width: 100,
+                            dataIndex: "src_ip",
+                            scan: {
+                                type: "textbox",
+                                vtype : "string"
+                            }
+                        },
+                        {
+                            text: $.su.CHAR.THREATLOG.DST_IP,
+                            width: 100,
+                            dataIndex: "dst_ip",
+                            scan: {
+                                type: "textbox",
+                                vtype : "string"
+                            }
+                        },
+                        {
+                            text: $.su.CHAR.THREATLOG.SRC_PORT,
+                            width: 100,
+                            dataIndex: "src_port",
+                            scan: {
+                                type: "textbox",
+                                vtype : "string"
+                            }
+                        },
+                        {
+                            text: $.su.CHAR.THREATLOG.DST_PORT,
+                            width: 100,
+                            dataIndex: "dst_port",
+                            scan: {
+                                type: "textbox",
+                                vtype : "string"
+                            }
+                        },
+                        {
+                            text: $.su.CHAR.THREATLOG.PROTO,
+                            width: 100,
+                            dataIndex: "proto",
+                            scan: {
+                                type: "textbox",
+                                vtype : "string"
+                            }
+                        },
+                        {
+                            text: $.su.CHAR.THREATLOG.APP,
+                            width:100,
+                            dataIndex: "app",
+                            scan:{
+                                type: "textbox",
+                                vtype: "string"
+                            }
+                        },
+                        {
+                            text: $.su.CHAR.THREATLOG.SECURITY_POLICY,
+                            width: 100,
+                            dataIndex: "security_policy",
+                            scan: {
+                                type: "combobox",
+                                vtype: "string",
+                                items: secPolicyItem
+                            }
+                        },
+                        {
+                            text: $.su.CHAR.THREATLOG.THREAT_TYPE,
+                            width: 100,
+                            dataIndex: "threat_type",
+                            scan: {
+                                type: "combobox",
+                                vtype : "string",
+                                items: [{name: "病毒", value: "VIRUS"},
+                                        {name: "入侵", value: "IPS"}]
+                            }
+                        },
+                        {
+                            text: $.su.CHAR.THREATLOG.THREAT_NAME,
+                            width: 100,
+                            dataIndex: "threat_name",
+                            scan: {
+                                type: "textbox",
+                                vtype: "string",
+                            }
+                        },
+                        {
+                            text: $.su.CHAR.THREATLOG.THREAT_ID,
+                            width: 100,
+                            dataIndex: "threat_id",
+                            scan: {
+                                type: "textbox",
+                                vtype: "string",
+                            }
+                        },
+                        {
+                            text:$.su.CHAR.THREATLOG.ACTION,
+                            width: 100,
+                            dataIndex: "action",
+                            scan: {
+                                type: "combobox",
+                                vtype: "string",
+                                items: [{name:"阻止",value:"阻止"},
+                                        {name:"放行",value:"放行"},
+                                        {name:"告警",value:"告警"}]
+                            }
+                        },
+                    ],
+
+                    render_search: function(){
+                    },
+                    render_show: function(){
+                    },
+                    render_return: function(){
+                    }
+                }
+            ],
+            exportCfg:{
+                text:$.su.CHAR.THREATLOG.SAVE_LOG,
+                url: $.su.url.subs + $.su.url.stok + "/admin/threat_log/download_threatlog",
+                checkCallback: function(callback){
+                    var exportCheckProxy = new $.su.Proxy();
+
+                    exportCheckProxy.query({threat_log:{name:"threatlog_download"}}, function(data){
+                        data = data.threat_log.threatlog_download;
+
+                        if (data.status == "1")
+                        {
+                            callback(true);
+                        }
+                        else
+                        {
+                            callback(false);
+                        }
+                    });
+                }
+            },
+            operation: ["clear","search","searchLog","refreshLog","autoRefresh","export"],
+            autoRefresh: false
+        }).on("ev_clear", function(e, obj, action){
+            if ("online" == disk_status){
+                $(clean_alarm_cnt).msg("show");
+            }else{
+                clean_proxy.action({"threat_log":{"threatlog_clean":{}}}, function(data){
+                    $(threatlog_grid.get(0).store).trigger("ev_refresh", []);
+                });
+            }
+        }).delegate('a.btn-detail', 'click', function(e){
+            var index = $(this).data('index');
+            var data = threatlog_grid.grid("getStore").getDataByIndex(parseInt(index));
+            showDetail(data);
+        });
+
+        function showDetail(data) {
+            var detail_name = {"threat_type": $.su.CHAR.THREATLOG_DETAIL.THREAT_TYPE,
+                            "threat_name":$.su.CHAR.THREATLOG_DETAIL.THREAT_NAME,
+                            "threat_id":$.su.CHAR.THREATLOG_DETAIL.THREAT_ID,
+                            "risk":$.su.CHAR.THREATLOG_DETAIL.RISK,
+                            "threat_num":$.su.CHAR.THREATLOG_DETAIL.THREAT_NUM,
+                            "action":$.su.CHAR.THREATLOG_DETAIL.ACTION,
+                            "av_profile":$.su.CHAR.THREATLOG_DETAIL.AV_PROFILE,
+                            "file_name":$.su.CHAR.THREATLOG_DETAIL.FILE_NAME,
+                            "file_type":$.su.CHAR.THREATLOG_DETAIL.FILE_TYPE,
+                            "hash":$.su.CHAR.THREATLOG_DETAIL.HASH,
+                            "ips_profile":$.su.CHAR.THREATLOG_DETAIL.IPS_PROFILE,
+                            "severity":$.su.CHAR.THREATLOG_DETAIL.SEVERITY,
+                            "os":$.su.CHAR.THREATLOG_DETAIL.OS,
+                            "ips_type":$.su.CHAR.THREATLOG_DETAIL.IPS_TYPE,
+                            "access_content":$.su.CHAR.THREATLOG_DETAIL.ACCESS_CONTENT,
+                            "threat_num":$.su.CHAR.THREATLOG_DETAIL.THREAT_NUM
+                        };
+
+            var detail_info = $(document).find("table#log_detail_content");
+            detail_info.find("tr").remove();
+            detail_info.find("td").remove();
+            for(var key in detail_name){
+                var detail_form = "";
+                detail_form += "<tr id =\""+ key.toString()+"\">";
+                detail_form +=  "</tr>";
+                detail_info.append(detail_form);
+            }
+
+            for(var key in data){
+                if(key == ".name")
+                    continue;
+
+                detail_form = "";
+                if(data[key]){
+                    var detail_tr = detail_info.find("tr#"+key.toString());
+                    detail_form += "<td id =\""+ key.toString()+"_key\" width=\"110px\"></td>";
+                    detail_form += 	"<td id = \""+key.toString()+"_data\" width=\"350px\"></td>";
+                    detail_tr.append(detail_form);
+                }
+            }
+
+            for(var key in data){
+                if(key == ".name")
+                    continue;
+                if(data[key]){
+                    detail_info.find("td#"+key+"_key").text(detail_name[key]+":  ");
+                    detail_info.find("td#"+key+"_data").text(data[key]);
+                }
+            }
+            log_detail_msg.msg('show');
+        }
+
+        var g_dataIndex = "time";
+        function dataSort(x, y) {
+            if(order == "down"){
+                if (x[g_dataIndex] > y[g_dataIndex]) {
+                    return -1;
+                }else if (x[g_dataIndex] < y[g_dataIndex]) {
+                    return 1;
+                }
+            }else{
+                if (x[g_dataIndex] > y[g_dataIndex]) {
+                    return 1;
+                }else if (x[g_dataIndex] < y[g_dataIndex]) {
+                    return -1;
+                }
+            }
+        }
+
+        function sort_click_cb(dataIndex) {
+            var store = threatlog_grid.grid("getStore");
+            var data = store.data;
+            g_dataIndex = dataIndex;
+            store.loadData(data.sort(dataSort));
+            if(order == "down"){
+                order = "up";
+            }else{
+                order = "down";
+            }
+        }
+
+        threatlog_grid.delegate("th", "click", function(e){
+            sort_click_cb($(this).attr('name'))
+        });
+
+        $("th").css({
+            "color": "#00E",
+            "cursor": "pointer"
+        });
+
+        $("#sort_remind").html("<hr/>如需要按指定内容排序，请点击表头切换排序方式。");
+        $(".grid-panel").css("marginBottom","40px");
+
+        var threatlog_help = new $.su.Help({
+            container: "div#threatlog_help",
+            content: ["THREATLOG"]
+        });
+    });
+</script>
+</body>
+
+</html>

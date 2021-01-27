@@ -1,0 +1,420 @@
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
+<html xmlns="http://www.w3.org/1999/xhtml">
+<head>
+	<meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
+	<title>Website Filter</title>
+	<style type="text/css">
+	</style>
+</head>
+
+<body>
+	<div class="func-container">
+		<div id="function_setting">
+			<form id="setting_form">
+				<input id="global-enable" name="enable"/>
+			</form>
+		</div>
+
+		<div id="filter_setting">
+			<input id="group" name="group" />
+			<input id="allow" name="allow" />
+			<input id="website" name="website" />
+			<input id="action" name="action" />
+			<input id="redirect" name="redirect"/>
+			<input id="time" name="time" />
+			<input id="comment" name="comment" />
+			<input id="insert_index" name="insert_index" />
+			<input id="enable" name="enable" />
+		</div>
+
+		<div id="website_filter">
+			<div id="website_filter_grid"></div>
+		</div>
+
+		<div id="help"></div>
+	</div>
+<script type="text/javascript">
+try{
+    $
+}catch(e){
+    location.href = "/";
+};
+
+$(document).ready(function(e){
+	var ipgroupNameTrans = {};
+
+    $(".func-container").hide();
+	var webfilter_list_proxy = new $.su.Proxy({});
+	var webfilter_global_proxy = new $.su.Proxy({});
+
+	$("div#function_setting").panel({
+		title: "功能设置",
+		collapsible: false
+	});
+
+	$("div#website_filter").panel({
+		title: "规则列表",
+		collapsible: false
+	});
+
+	var enable = $("#global-enable").checkbox({
+        items: [
+            {boxlabel: "启用网站过滤功能", inputValue: "on", uncheckedValue: "off"}
+        ]
+	});
+
+	$("#setting_form").form({
+		proxy: webfilter_global_proxy,
+		parseKey: {
+			moduleName:"webfilter",
+			sectionName:"settings"
+		},
+		submitBtn:"default",
+		fields:[
+			{name:"enable"}
+		]
+	});
+
+	var group = $("#group").combobox({
+		fieldLabel: "用户组",
+		cls: "l",
+		allowBlank: false,
+		vtype: "name",
+		items: [
+			{name:"---", value:"---", selected:true}
+		]
+	});
+
+	var allow = $("#allow").radio({
+		fieldLabel: "规则类型",
+		columns: 2,
+        items:[
+            {boxlabel: "允许访问", name:'allow', inputValue:'on',checked:true},
+            {boxlabel: "禁止访问", name:'allow', inputValue:'off'}
+        ]
+	});
+
+	var website = $("#website").combobox({
+		fieldLabel: "选择网站",
+		multiSelect: true,
+		allowBlank:false,
+        items:[
+        	{name: "所有网站", value: "ALL"}
+        ]
+	}).on("ev_change", function(e, oldValue, newValue){
+		if(newValue.length > 15){
+			website.combobox("setError", "最多只支持15个网站组");
+			website.combobox("setValue", oldValue);
+		}
+	});
+
+	var redirect = $("#redirect").textbox({
+		fieldLabel: "",
+		allowBlank: false,
+		cls: "inline",
+		labelCls: "xxxxs"
+	}).textbox("disable");
+	redirect.textbox("hide");
+
+	var action = $("#action").checkbox({
+		fieldLabel: "访问上述网站时",
+		columns: 3,
+        items: [
+        	{boxlabel: "记录到系统日志", inputValue: "log", uncheckedValue: "log_off"}
+        ],
+        cls: "inline"
+	}).on('ev_change', function(e, oldValue, newValue){
+		var value = action.checkbox("getValue1");
+		var flag = false;
+		for (var i = 0; i < value.length; i++) {
+			if (value[i] == "redirect"){
+				$("#redirect").textbox("enable");
+				flag = true;
+				break;
+			}
+		}
+		if (flag == false) {
+			$("#redirect").textbox("disable");
+		}
+    });
+
+	var time = $("#time").combobox({
+		fieldLabel: "规则生效时间",
+		items: [
+			{name:"Any", value:"Any", selected:true}
+		]
+	});
+
+	var comment = $("#comment").textbox({
+		fieldLabel: "备注",
+		allowBlank: true,
+		tips: "（可选）"
+	});
+
+	var state = $("#enable").checkbox({
+        fieldLabel: "状态",
+        columns: 2,
+        items:[
+            {boxlabel: "启用", name:'enable', inputValue:'on', uncheckedValue:"off", checked:true}
+        ]
+	});
+
+	var insert_index = $("#insert_index").textbox({
+		fieldLabel: "添加到指定位置(第几条)",
+		allowBlank: true,
+		vtype: "number",
+		tips: "（可选）"
+	});
+
+	/* 发送form请求,获取ip地址组对象,时间对象,网站分组对象，提供给规则下拉框 */
+	var ipgroupItem = [];
+	var tmngtItem = [];
+	var webItemALL=[{name: "所有网站", value: "ALL"}];
+	var webItemValueALL = ["ALL"];
+	var webItem = [];
+    var webItemValue = [];
+    var objProxy = new $.su.Proxy({async: false});
+    objProxy.query({ipgroup:{table:"rule_ipgroup"}, time_mngt:{table:"time_obj"}, websort:{table:"websort_list"}}, function(data){
+		var ipgroupData = data["ipgroup"]["rule_ipgroup"];
+        for (i=0; i<ipgroupData.length; i++) {
+			for (var key in ipgroupData[i]) {
+				var item = slpIpgroupToItem(ipgroupData[i][key]);
+				ipgroupItem.push(item);
+				ipgroupNameTrans[item.value] = item.name;
+			}
+        }
+
+		var timeData = data["time_mngt"]["time_obj"];
+        for (i=0; i<timeData.length; i++) {
+			for (var key in timeData[i]) {
+				tmngtItem.push({name:timeData[i][key].name, value:timeData[i][key].name});
+			}
+        }
+
+		var webData = data["websort"]["websort_list"];
+        for (i=0; i<webData.length; i++) {
+			for (var key in webData[i]) {
+				webItemValue.push(key);
+				webItemValueALL.push(key);
+				webItem.push({name: unescape(webData[i][key].textname), value: key});
+				webItemALL.push({name: unescape(webData[i][key].textname), value: key});
+			}
+        }
+    });
+    if (ipgroupItem.length != 0) {
+        group.combobox("loadData", ipgroupItem);
+    }
+    if (tmngtItem.length != 0) {
+        $("#time").combobox("loadData", tmngtItem);
+    }
+    if (webItemALL.length != 0){
+        $("#website").combobox("loadData", webItemALL);
+    }
+
+	var website_filter_grid = $("#website_filter_grid").grid({
+		editor:{
+			content:"#filter_setting",
+			fields:[
+				{name:"group"},
+				{name:"allow"},
+				{name:"website"},
+				{name:"action"},
+				{name:"redirect"},
+				{name:"time"},
+				{name:"comment"},
+				{name:"enable"},
+				{name:"insert_index"}
+			],
+			validator:function(e){
+				var data = website_filter_grid.grid("getStore").data;
+				var number = insert_index.textbox("getValue");
+				if (number == "") {
+					return true;
+				}
+				number = parseInt(number);
+				var paging = $(website_filter_grid.grid("getPaging"));
+				var totalNum = paging.get(0).totalNum;
+				if (number < 1 || number > totalNum) {
+					insert_index.textbox("setError", "输入的位置超出了指定的范围");
+					return false;
+				}
+				return true;
+			}
+		},
+		store:{
+			proxy:webfilter_list_proxy,
+			fields:[
+				{name:"group"},
+				{name:"allow"},
+				{name:"website"},
+				{name:"action"},
+				{name:"redirect"},
+				{name:"time"},
+				{name:"comment"},
+				{name:"enable"},
+				{name:"insert_index"}
+			],
+			parseKey: {
+				moduleName:"webfilter",
+				tableName:"webfilter_list",
+				pageSizeName:"webfilter_entry"
+			},
+			autoLoad: true
+		},
+		paging_true:{
+			evInsert:false,
+			evUpdate:false
+		},
+		columns:[
+			 {
+                xtype: "checkcolumn",
+                width: 32
+            },
+            {
+                xtype: "rownumberer",
+                width: 30
+            },
+			{
+				text: "用户组",
+				width:60,
+				dataIndex:"group",
+				renderer: function (v) {
+					return ipgroupNameTrans[v] || v;
+				}
+			},
+			{
+				text: "策略",
+				width:60,
+				dataIndex:"allow",
+				renderer:function(dd,index,data){
+					if("on" == dd){
+						return "允许访问";
+					}else if("off" == dd){
+						return "禁止访问";
+					}else{
+						return "---";
+					}
+				}
+			},
+			{
+				text: "网站过滤列表",
+				width:60,
+				dataIndex:"website",
+				renderer:function(dd,index,data){
+					var website = [];
+					var ddFormat = [];
+					if (typeof(dd) == "string") {
+						ddFormat.push(dd);
+					} else {
+						ddFormat = dd;
+					}
+					$(webItemALL).each(function(i, obj){
+						$(ddFormat).each(function(j, qbj){
+							if(obj.value == qbj){
+								website.push(unescape(obj.name));
+							}
+						});
+					});
+					return website;
+				}
+			},
+			{
+				text: "生效时间",
+				width:60,
+				dataIndex:"time"
+			},
+			{
+				xtype:"statuscolumn",
+				dataIndex:"enable"
+			},
+			{
+				xtype:"comment"
+			},
+			{
+				xtype: "settings"
+			}
+		],
+		operation: 'prompt|add|delete'
+	}).on("ev_insert", function(e, index, data){
+		var paging = $(website_filter_grid.grid("getPaging"));
+		var numPerPage = paging.get(0).numPerPage;
+		var totalNum = paging.get(0).totalNum + 1;
+		var gotoPage = paging.get(0).currentPage;
+		if (data && data[0] && data[0].insert_index) {
+			gotoPage = parseInt((parseInt(data[0].insert_index)-1)/parseInt(numPerPage));
+		} else {
+			gotoPage = parseInt((totalNum-1)/parseInt(numPerPage));
+		}
+		paging.paging_true("goToPage", gotoPage, "ev_insert");
+	}).on("ev_update", function(e, key, index, data){
+		var paging = $(website_filter_grid.grid("getPaging"));
+		var numPerPage = paging.get(0).numPerPage;
+		var totalNum = paging.get(0).totalNum;
+		var gotoPage = paging.get(0).currentPage;
+		if (data && data.insert_index) {
+			gotoPage = parseInt((parseInt(data.insert_index)-1)/parseInt(numPerPage));
+		}
+		paging.paging_true("goToPage", gotoPage, "ev_update");
+	});
+
+	var editor = $(website_filter_grid.grid("getEditor"));
+	editor.on("ev_startEdit", function(e, index, key){
+		var site = editor.find('.combobox-value[name=website]');
+		if ("ALL" == site.combobox("getValue")) {
+   			site.combobox("disableItem", webItemValue);
+   		} else {
+   			site.combobox("enableItem", webItemValue);
+   		}
+		$(site).on("ev_change", function(e, oldValue, newValue){
+			var isALL = false;
+			$(newValue).each(function(i, obj){
+				if(obj == "ALL"){
+					isALL = true;
+				}
+			});
+			if (isALL == true && oldValue[0] != "ALL") {
+				site.combobox("setValue", "ALL");
+				site.combobox("disableItem", webItemValue);
+				return;
+			} else {
+				site.combobox("enableItem", webItemValue);
+			}
+			if (newValue.length > 15) {
+				editor.find("div.combobox-list-wrap").hide();
+				site.combobox("setError", "最多只支持15个网站组");
+				site.combobox("setValue", oldValue);
+			}
+		});
+		var value = action.checkbox("getValue1");
+		var flag = false;
+		for (var i = 0; i < value.length; i++) {
+			if (value[i] == "redirect") {
+				$("#redirect").textbox("enable");
+				flag = true;
+				break;
+			}
+		}
+		if (flag == false) {
+			$("#redirect").textbox("disable");
+		}
+	});
+
+	function slpIpgroupToItem(ipgroup_obj) {
+		if (ipgroup_obj.flag == "system" && typeof(ipgroup_obj.comment) == "string" && ipgroup_obj.comment.length > 1) {
+			return {name: ipgroup_obj.comment, value: ipgroup_obj.name};
+		} else {
+			return {name: ipgroup_obj.name, value: ipgroup_obj.name};
+		}
+	}
+
+	var help = new $.su.Help({
+        container: "div#help",
+        content: ["WEB_FILTER_ENABLE","WEB_FILTER"]
+    });
+    $(".func-container").show();
+
+});
+</script>
+</body>
+
+</html>
